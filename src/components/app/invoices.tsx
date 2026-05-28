@@ -3,6 +3,7 @@
 import { useState, useCallback, useMemo } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { toast } from '@/hooks/use-toast'
+import { pluralize } from '@/lib/utils'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -1769,7 +1770,7 @@ export function Invoices() {
                   <FileSpreadsheet className="h-5 w-5 text-amber-600 dark:text-amber-400" />
                   <div>
                     <p className="text-sm font-medium">
-                      Итого: {filteredSummary.total} {filteredSummary.total === 1 ? 'счёт' : filteredSummary.total < 5 ? 'счёта' : 'счетов'}
+                      Итого: {filteredSummary.total} {pluralize(filteredSummary.total, 'счёт', 'счёта', 'счетов')}
                       {hasActiveFilters && <span className="text-muted-foreground"> (из {invoicesList.length})</span>}
                     </p>
                     {hasActiveFilters && (

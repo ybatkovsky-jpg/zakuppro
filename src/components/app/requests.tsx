@@ -3,6 +3,7 @@
 import { useState, useCallback, useMemo, Fragment } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { toast } from '@/hooks/use-toast'
+import { pluralize } from '@/lib/utils'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -773,7 +774,7 @@ export function Requests() {
                 </div>
                 <div className="flex-1">
                   <p className="text-sm font-medium text-red-700 dark:text-red-400">
-                    {stats.overdue} {stats.overdue === 1 ? 'запрос' : stats.overdue < 5 ? 'запроса' : 'запросов'} без ответа более 3 дней
+                    {stats.overdue} {pluralize(stats.overdue, 'запрос', 'запроса', 'запросов')} без ответа более 3 дней
                   </p>
                   <p className="text-xs text-red-600/70 dark:text-red-400/60">
                     Нажмите «Напомнить» для повторной отправки

@@ -60,7 +60,7 @@ import {
   BarChart3,
   Timer,
 } from 'lucide-react'
-import { formatRelativeTime } from '@/lib/utils'
+import { formatRelativeTime, pluralize } from '@/lib/utils'
 import { useMemo, useEffect, useState, useRef } from 'react'
 import Image from 'next/image'
 
@@ -851,7 +851,7 @@ function UrgentItemsSection({ items }: { items: UrgentItem[] }) {
             </CardTitle>
             {items.length > 0 && (
               <Badge variant="destructive" className="text-[11px] px-2">
-                {items.length} {items.length === 1 ? 'задача' : items.length < 5 ? 'задачи' : 'задач'}
+                {items.length} {pluralize(items.length, 'задача', 'задачи', 'задач')}
               </Badge>
             )}
           </div>
@@ -1308,7 +1308,7 @@ export function Dashboard() {
             <div className="flex items-center gap-1.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 px-3 py-1.5 text-emerald-700 dark:text-emerald-400 dark:border-emerald-500/30">
               <div className="size-2 rounded-full bg-emerald-500 animate-pulse" />
               <span className="text-sm font-medium">
-                {data.activeProjects} проектов в работе
+                {data.activeProjects} {pluralize(data.activeProjects, 'проект', 'проекта', 'проектов')} в работе
               </span>
             </div>
           </div>
@@ -1354,7 +1354,7 @@ export function Dashboard() {
           title="Запросов в процессе"
           value={data.sentRequests}
           icon={Mail}
-          description={`${data.pendingRequests} черновиков · ожидает отправки`}
+          description={`${data.pendingRequests} ${pluralize(data.pendingRequests, 'черновик', 'черновика', 'черновиков')} · ожидает отправки`}
           iconClassName="text-violet-600 dark:text-violet-400"
           borderColor="border-l-violet-500"
           sparkColor="bg-violet-500"

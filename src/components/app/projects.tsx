@@ -68,9 +68,11 @@ import {
   Calendar,
   User,
   Package,
+  GripVertical,
 } from 'lucide-react'
 import { EmptyState } from '@/components/app/empty-state'
 import { exportToCSV } from '@/lib/export-csv'
+import { pluralize } from '@/lib/utils'
 
 // --- Types ---
 
@@ -128,12 +130,12 @@ const STATUS_FILTER_OPTIONS = [
 
 const KANBAN_COLUMNS: { status: string; label: string; color: string; border: string; bg: string; badgeBg: string; badgeText: string; dotColor: string; cardBg: string; nameColor: string }[] = [
   { status: 'new', label: 'Новый', color: 'slate', border: 'border-l-slate-400', bg: 'bg-slate-50 dark:bg-slate-950/30', badgeBg: 'bg-slate-100 dark:bg-slate-800', badgeText: 'text-slate-700 dark:text-slate-300', dotColor: 'bg-slate-400', cardBg: 'bg-slate-50/50 dark:bg-slate-950/20', nameColor: 'text-slate-700 dark:text-slate-300' },
-  { status: 'processing', label: 'В обработке', color: 'sky', border: 'border-l-sky-400', bg: 'bg-sky-50 dark:bg-sky-950/30', badgeBg: 'bg-sky-100 dark:bg-sky-800', badgeText: 'text-sky-700 dark:text-sky-300', dotColor: 'bg-sky-400', cardBg: 'bg-sky-50/50 dark:bg-sky-950/20', nameColor: 'text-sky-700 dark:text-sky-300' },
+  { status: 'processing', label: 'В обработке', color: 'primary', border: 'border-l-primary', bg: 'bg-primary/5 dark:bg-primary/10', badgeBg: 'bg-primary/10 dark:bg-primary/20', badgeText: 'text-primary', dotColor: 'bg-primary', cardBg: 'bg-primary/[0.03] dark:bg-primary/[0.06]', nameColor: 'text-primary' },
   { status: 'requested', label: 'Запрошено', color: 'violet', border: 'border-l-violet-400', bg: 'bg-violet-50 dark:bg-violet-950/30', badgeBg: 'bg-violet-100 dark:bg-violet-800', badgeText: 'text-violet-700 dark:text-violet-300', dotColor: 'bg-violet-400', cardBg: 'bg-violet-50/50 dark:bg-violet-950/20', nameColor: 'text-violet-700 dark:text-violet-300' },
   { status: 'invoiced', label: 'Счёт выставлен', color: 'amber', border: 'border-l-amber-400', bg: 'bg-amber-50 dark:bg-amber-950/30', badgeBg: 'bg-amber-100 dark:bg-amber-800', badgeText: 'text-amber-700 dark:text-amber-300', dotColor: 'bg-amber-400', cardBg: 'bg-amber-50/50 dark:bg-amber-950/20', nameColor: 'text-amber-700 dark:text-amber-300' },
   { status: 'paid', label: 'Оплачено', color: 'emerald', border: 'border-l-emerald-400', bg: 'bg-emerald-50 dark:bg-emerald-950/30', badgeBg: 'bg-emerald-100 dark:bg-emerald-800', badgeText: 'text-emerald-700 dark:text-emerald-300', dotColor: 'bg-emerald-400', cardBg: 'bg-emerald-50/50 dark:bg-emerald-950/20', nameColor: 'text-emerald-700 dark:text-emerald-300' },
-  { status: 'delivered', label: 'Доставлено', color: 'green', border: 'border-l-green-500', bg: 'bg-green-50 dark:bg-green-950/30', badgeBg: 'bg-green-100 dark:bg-green-800', badgeText: 'text-green-700 dark:text-green-300', dotColor: 'bg-green-500', cardBg: 'bg-green-50/50 dark:bg-green-950/20', nameColor: 'text-green-700 dark:text-green-300' },
-  { status: 'completed', label: 'Завершён', color: 'green-dark', border: 'border-l-green-700', bg: 'bg-green-50 dark:bg-green-950/40', badgeBg: 'bg-green-100 dark:bg-green-900', badgeText: 'text-green-800 dark:text-green-300', dotColor: 'bg-green-700', cardBg: 'bg-green-50/50 dark:bg-green-950/20', nameColor: 'text-green-800 dark:text-green-300' },
+  { status: 'delivered', label: 'Доставлено', color: 'sky', border: 'border-l-sky-400', bg: 'bg-sky-50 dark:bg-sky-950/30', badgeBg: 'bg-sky-100 dark:bg-sky-800', badgeText: 'text-sky-700 dark:text-sky-300', dotColor: 'bg-sky-400', cardBg: 'bg-sky-50/50 dark:bg-sky-950/20', nameColor: 'text-sky-700 dark:text-sky-300' },
+  { status: 'completed', label: 'Завершён', color: 'green', border: 'border-l-green-600', bg: 'bg-green-50 dark:bg-green-950/40', badgeBg: 'bg-green-100 dark:bg-green-900', badgeText: 'text-green-800 dark:text-green-300', dotColor: 'bg-green-600', cardBg: 'bg-green-50/50 dark:bg-green-950/20', nameColor: 'text-green-800 dark:text-green-300' },
   { status: 'cancelled', label: 'Отменён', color: 'red', border: 'border-l-red-400', bg: 'bg-red-50 dark:bg-red-950/30', badgeBg: 'bg-red-100 dark:bg-red-800', badgeText: 'text-red-700 dark:text-red-300', dotColor: 'bg-red-400', cardBg: 'bg-red-50/50 dark:bg-red-950/20', nameColor: 'text-red-700 dark:text-red-300' },
 ]
 
@@ -184,9 +186,9 @@ function KanbanBoard({
                 </span>
               </div>
 
-              {/* Column Body */}
-              <div className="flex-1 rounded-b-xl border border-t-0 p-2 flex flex-col gap-3 min-h-[120px] bg-muted/20">
-                <AnimatePresence>
+              {/* Column Body — scrollable */}
+              <div className="flex-1 rounded-b-xl border border-t-0 p-2 flex flex-col gap-3 min-h-[120px] max-h-[calc(100vh-200px)] overflow-y-auto bg-muted/20 custom-scrollbar">
+                <AnimatePresence mode="popLayout">
                   {columnProjects.length === 0 ? (
                     <div className="flex items-center justify-center h-24 rounded-xl border-2 border-dashed border-muted-foreground/20">
                       <span className="text-xs text-muted-foreground">Нет проектов</span>
@@ -200,10 +202,16 @@ function KanbanBoard({
                           key={project.id}
                           initial={{ opacity: 0, y: 10, scale: 0.97 }}
                           animate={{ opacity: 1, y: 0, scale: 1 }}
+                          exit={{ opacity: 0, scale: 0.95, transition: { duration: 0.15 } }}
                           transition={{ delay: idx * 0.04, duration: 0.25 }}
-                          className={`rounded-xl border p-4 cursor-pointer shadow-sm hover:shadow-md transition-all duration-200 hover:-translate-y-0.5 border-l-[3px] ${col.border} ${col.cardBg} relative`}
+                          className={`group rounded-xl border p-4 cursor-pointer shadow-sm hover:shadow-md transition-all duration-200 hover:-translate-y-0.5 border-l-[3px] ${col.border} ${col.cardBg} relative`}
                           onClick={() => navigateToProject(project.id)}
                         >
+                          {/* Drag indicator */}
+                          <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-40 transition-opacity cursor-grab">
+                            <GripVertical className="h-4 w-4 text-muted-foreground" />
+                          </div>
+
                           {/* Project Name */}
                           <div className="flex items-start justify-between gap-2 mb-1.5">
                             <h4 className={`font-semibold text-sm leading-tight line-clamp-2 ${col.nameColor}`}>
@@ -263,7 +271,7 @@ function KanbanBoard({
                             {itemCount > 0 && (
                               <span className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-medium ${col.badgeBg} ${col.badgeText}`}>
                                 <Package className="h-3 w-3" />
-                                {itemCount}
+                                {itemCount} {pluralize(itemCount, 'поз.', 'поз.', 'поз.')}
                               </span>
                             )}
                             {budget > 0 && (
@@ -659,7 +667,7 @@ export function Projects() {
       {/* Project Count Summary Bar */}
       <div className="flex items-center gap-3 rounded-lg bg-muted/30 px-4 py-2 text-sm">
         <span className="font-medium">{projects.length}</span>
-        <span className="text-muted-foreground">{projects.length === 1 ? 'проект' : projects.length < 5 ? 'проекта' : 'проектов'}</span>
+        <span className="text-muted-foreground">{pluralize(projects.length, 'проект', 'проекта', 'проектов')}</span>
         <span className="text-muted-foreground/40">•</span>
         {Object.entries(
           projects.reduce((acc, p) => { acc[p.status] = (acc[p.status] || 0) + 1; return acc }, {} as Record<string, number>)
@@ -686,7 +694,7 @@ export function Projects() {
           </SelectContent>
         </Select>
         <span className="text-muted-foreground text-sm">
-          {projects.length} {projects.length === 1 ? 'проект' : 'проектов'}
+          {projects.length} {pluralize(projects.length, 'проект', 'проекта', 'проектов')}
         </span>
         <div className="ml-auto flex items-center rounded-lg border bg-muted/50 p-0.5">
           <Button
