@@ -54,7 +54,9 @@ import {
   Trash2,
   Search,
   Receipt,
+  PlusCircle,
 } from 'lucide-react'
+import { EmptyState } from '@/components/app/empty-state'
 
 // ── Types ──────────────────────────────────────────────────
 
@@ -396,17 +398,6 @@ export function Invoices() {
         </div>
       </div>
 
-      {/* Search */}
-      <div className="relative max-w-sm">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-        <Input
-          placeholder="Поиск по номеру, проекту, поставщику..."
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-          className="pl-9"
-        />
-      </div>
-
       {/* Filter Bar */}
       <Card>
         <CardContent className="p-4">
@@ -451,28 +442,30 @@ export function Invoices() {
               <span className="ml-2 text-muted-foreground">Загрузка...</span>
             </div>
           ) : filteredInvoices.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-16 text-muted-foreground">
-              <div className="rounded-full bg-muted p-4 mb-4">
-                <Receipt className="h-10 w-10 text-muted-foreground/50" />
-              </div>
-              <p className="text-base font-medium">
-                {searchQuery ? 'Ничего не найдено по запросу' : 'Счета не найдены'}
-              </p>
-              <p className="text-sm mt-1">
-                {searchQuery ? 'Попробуйте изменить параметры поиска' : 'Создайте первый счёт от поставщика'}
-              </p>
-            </div>
+            <EmptyState
+              type={searchQuery ? 'search' : 'invoices'}
+              action={
+                !searchQuery
+                  ? {
+                      label: 'Новый счёт',
+                      onClick: () => setCreateOpen(true),
+                      icon: PlusCircle,
+                    }
+                  : undefined
+              }
+            />
           ) : (
+            <div className="overflow-x-auto">
             <Table>
               <TableHeader>
                 <TableRow>
                   <TableHead className="w-8" />
                   <TableHead>Проект</TableHead>
-                  <TableHead>Поставщик</TableHead>
-                  <TableHead>№ счёта</TableHead>
+                  <TableHead className="hidden sm:table-cell">Поставщик</TableHead>
+                  <TableHead className="hidden md:table-cell">№ счёта</TableHead>
                   <TableHead className="text-right">Сумма</TableHead>
                   <TableHead>Статус</TableHead>
-                  <TableHead>Дата</TableHead>
+                  <TableHead className="hidden lg:table-cell">Дата</TableHead>
                   <TableHead className="text-right">Действия</TableHead>
                 </TableRow>
               </TableHeader>
@@ -487,15 +480,15 @@ export function Invoices() {
                       <ChevronDown className="h-4 w-4" />
                     </TableCell>
                     <TableCell className="font-medium">{inv.project.name}</TableCell>
-                    <TableCell>{inv.supplier.name}</TableCell>
-                    <TableCell>{inv.invoiceNumber || '—'}</TableCell>
+                    <TableCell className="hidden sm:table-cell">{inv.supplier.name}</TableCell>
+                    <TableCell className="hidden md:table-cell">{inv.invoiceNumber || '—'}</TableCell>
                     <TableCell className="text-right font-semibold tabular-nums text-sm">
                       {formatAmount(inv.totalAmount)}
                     </TableCell>
                     <TableCell>
                       <StatusBadge status={inv.status} />
                     </TableCell>
-                    <TableCell>{formatDate(inv.receivedAt)}</TableCell>
+                    <TableCell className="hidden lg:table-cell">{formatDate(inv.receivedAt)}</TableCell>
                     <TableCell className="text-right">
                       <div className="flex justify-end gap-1" onClick={(e) => e.stopPropagation()}>
                         {inv.status === 'received' && (
@@ -548,6 +541,7 @@ export function Invoices() {
                 ))}
               </TableBody>
             </Table>
+            </div>
           )}
         </CardContent>
       </Card>
@@ -690,10 +684,11 @@ export function Invoices() {
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setCreateOpen(false)}>
+            <Button type="button" variant="outline" onClick={() => setCreateOpen(false)}>
               Отмена
             </Button>
             <Button
+              type="button"
               onClick={handleCreate}
               disabled={
                 createMutation.isPending ||
@@ -905,10 +900,10 @@ export function Invoices() {
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setPaymentOpen(false)}>
+            <Button type="button" variant="outline" onClick={() => setPaymentOpen(false)}>
               Отмена
             </Button>
-            <Button onClick={handlePay} disabled={updateMutation.isPending}>
+            <Button type="button" onClick={handlePay} disabled={updateMutation.isPending}>
               {updateMutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               <CreditCard className="mr-2 h-4 w-4" />
               Подтвердить оплату

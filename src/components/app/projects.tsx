@@ -61,7 +61,9 @@ import {
   FileSpreadsheet,
   Download,
   Loader2,
+  PlusCircle,
 } from 'lucide-react'
+import { EmptyState } from '@/components/app/empty-state'
 
 // --- Types ---
 
@@ -468,33 +470,26 @@ export function Projects() {
 
       {/* Projects Table */}
       {projects.length === 0 ? (
-        <motion.div
-          initial={{ opacity: 0, y: 12 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="flex flex-col items-center justify-center gap-4 rounded-xl border border-dashed p-12 text-center"
-        >
-          <div className="rounded-full bg-muted p-4">
-            <FolderOpen className="text-muted-foreground h-10 w-10" />
-          </div>
-          <div>
-            <p className="text-lg font-medium">Нет проектов</p>
-            <p className="text-muted-foreground text-sm">
-              Создайте новый проект или загрузите позиции из Excel
-            </p>
-          </div>
-        </motion.div>
+        <EmptyState
+          type="projects"
+          action={{
+            label: 'Новый проект',
+            onClick: () => setCreateOpen(true),
+            icon: PlusCircle,
+          }}
+        />
       ) : (
-        <div className="rounded-xl border overflow-hidden">
+        <div className="rounded-xl border overflow-hidden overflow-x-auto">
           <Table>
             <TableHeader>
               <TableRow className="bg-muted/30">
                 <TableHead>Название</TableHead>
-                <TableHead>Заказчик</TableHead>
+                <TableHead className="hidden sm:table-cell">Заказчик</TableHead>
                 <TableHead>Статус</TableHead>
-                <TableHead className="text-center">Позиций</TableHead>
-                <TableHead className="text-right">Бюджет</TableHead>
-                <TableHead className="text-center">Прогресс</TableHead>
-                <TableHead>Дата создания</TableHead>
+                <TableHead className="text-center hidden sm:table-cell">Позиций</TableHead>
+                <TableHead className="text-right hidden md:table-cell">Бюджет</TableHead>
+                <TableHead className="text-center hidden lg:table-cell">Прогресс</TableHead>
+                <TableHead className="hidden md:table-cell">Дата создания</TableHead>
                 <TableHead className="text-right">Действия</TableHead>
               </TableRow>
             </TableHeader>
@@ -519,7 +514,7 @@ export function Projects() {
                         )}
                       </div>
                     </TableCell>
-                    <TableCell>
+                    <TableCell className="hidden sm:table-cell">
                       {project.customerName || (
                         <span className="text-muted-foreground">—</span>
                       )}
@@ -527,12 +522,12 @@ export function Projects() {
                     <TableCell>
                       <StatusBadge status={project.status} />
                     </TableCell>
-                    <TableCell className="text-center">
+                    <TableCell className="text-center hidden sm:table-cell">
                       <span className="inline-flex items-center justify-center size-6 rounded-full bg-muted text-xs font-medium">
                         {project._count?.items ?? 0}
                       </span>
                     </TableCell>
-                    <TableCell className="text-right font-mono">
+                    <TableCell className="text-right font-mono hidden md:table-cell">
                       {(() => {
                         const budget = (project.items ?? []).reduce((sum, item) => sum + item.price * item.quantity, 0)
                         return budget > 0
@@ -540,7 +535,7 @@ export function Projects() {
                           : '—'
                       })()}
                     </TableCell>
-                    <TableCell className="text-center">
+                    <TableCell className="text-center hidden lg:table-cell">
                       {(() => {
                         const totalItems = project.items?.length ?? 0
                         if (totalItems === 0) return <span className="text-muted-foreground text-xs">—</span>
@@ -563,7 +558,7 @@ export function Projects() {
                         )
                       })()}
                     </TableCell>
-                    <TableCell className="text-muted-foreground text-sm">{formatDate(project.createdAt)}</TableCell>
+                    <TableCell className="text-muted-foreground text-sm hidden md:table-cell">{formatDate(project.createdAt)}</TableCell>
                     <TableCell className="text-right">
                       <AlertDialog>
                         <DropdownMenu>

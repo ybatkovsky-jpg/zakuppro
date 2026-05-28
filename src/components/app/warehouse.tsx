@@ -18,7 +18,9 @@ import {
   FileText,
   Download,
   ShoppingCart,
+  PlusCircle,
 } from 'lucide-react'
+import { EmptyState } from '@/components/app/empty-state'
 
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -788,25 +790,18 @@ export function Warehouse() {
           </CardContent>
         </Card>
       ) : items.length === 0 ? (
-        <Card>
-          <CardContent className="flex flex-col items-center justify-center py-12 text-center">
-            <WarehouseIcon className="h-12 w-12 text-muted-foreground mb-4" />
-            <h3 className="text-lg font-semibold">
-              {search ? 'Ничего не найдено' : 'Склад пуст'}
-            </h3>
-            <p className="text-muted-foreground mt-1">
-              {search
-                ? 'Попробуйте изменить параметры поиска'
-                : 'Добавьте первую позицию, нажав кнопку выше'}
-            </p>
-            {!search && (
-              <Button onClick={openAddDialog} variant="outline" className="mt-4 gap-2">
-                <Plus className="h-4 w-4" />
-                Добавить на склад
-              </Button>
-            )}
-          </CardContent>
-        </Card>
+        <EmptyState
+          type={search ? 'search' : 'warehouse'}
+          action={
+            !search
+              ? {
+                  label: 'Добавить на склад',
+                  onClick: openAddDialog,
+                  icon: PlusCircle,
+                }
+              : undefined
+          }
+        />
       ) : (
         <Card>
           <ScrollArea className="max-h-[500px]">
@@ -814,13 +809,13 @@ export function Warehouse() {
               <TableHeader>
                 <TableRow>
                   <TableHead>Наименование</TableHead>
-                  <TableHead>Артикул</TableHead>
-                  <TableHead>Категория</TableHead>
+                  <TableHead className="hidden md:table-cell">Артикул</TableHead>
+                  <TableHead className="hidden lg:table-cell">Категория</TableHead>
                   <TableHead className="text-right">Количество</TableHead>
-                  <TableHead className="text-right">Мин. остаток</TableHead>
-                  <TableHead>Ед.</TableHead>
-                  <TableHead>Место</TableHead>
-                  <TableHead>Статус</TableHead>
+                  <TableHead className="text-right hidden sm:table-cell">Мин. остаток</TableHead>
+                  <TableHead className="hidden sm:table-cell">Ед.</TableHead>
+                  <TableHead className="hidden lg:table-cell">Место</TableHead>
+                  <TableHead className="hidden sm:table-cell">Статус</TableHead>
                   <TableHead className="text-right">Действия</TableHead>
                 </TableRow>
               </TableHeader>
@@ -839,8 +834,8 @@ export function Warehouse() {
                           {item.name}
                         </div>
                       </TableCell>
-                      <TableCell className="text-muted-foreground">{item.article || '—'}</TableCell>
-                      <TableCell>
+                      <TableCell className="text-muted-foreground hidden md:table-cell">{item.article || '—'}</TableCell>
+                      <TableCell className="hidden lg:table-cell">
                         {item.category ? (
                           <Badge variant="outline" className="font-normal">{item.category}</Badge>
                         ) : '—'}
@@ -848,14 +843,14 @@ export function Warehouse() {
                       <TableCell className={`text-right font-mono font-medium ${isOut ? 'text-destructive' : isLow ? 'text-amber-600 dark:text-amber-400' : ''}`}>
                         {item.quantity}
                       </TableCell>
-                      <TableCell className="text-right font-mono text-muted-foreground">
+                      <TableCell className="text-right font-mono text-muted-foreground hidden sm:table-cell">
                         {item.minQuantity || '—'}
                       </TableCell>
-                      <TableCell>{item.unit}</TableCell>
-                      <TableCell className="text-muted-foreground max-w-[120px] truncate" title={item.location}>
+                      <TableCell className="hidden sm:table-cell">{item.unit}</TableCell>
+                      <TableCell className="text-muted-foreground max-w-[120px] truncate hidden lg:table-cell" title={item.location}>
                         {item.location || '—'}
                       </TableCell>
-                      <TableCell>
+                      <TableCell className="hidden sm:table-cell">
                         <div className="flex items-center gap-2">
                           <StatusBadge item={item} />
                           {item.minQuantity > 0 && <StockBar item={item} />}
@@ -1013,7 +1008,7 @@ export function Warehouse() {
             <Button variant="outline" onClick={closeAddDialog} disabled={createItemMutation.isPending}>
               Отмена
             </Button>
-            <Button onClick={handleAddSubmit} disabled={createItemMutation.isPending}>
+            <Button type="button" onClick={handleAddSubmit} disabled={createItemMutation.isPending}>
               {createItemMutation.isPending ? 'Создание...' : 'Создать'}
             </Button>
           </DialogFooter>
@@ -1039,7 +1034,7 @@ export function Warehouse() {
             <Button variant="outline" onClick={closeEditDialog} disabled={updateItemMutation.isPending}>
               Отмена
             </Button>
-            <Button onClick={handleEditSubmit} disabled={updateItemMutation.isPending}>
+            <Button type="button" onClick={handleEditSubmit} disabled={updateItemMutation.isPending}>
               {updateItemMutation.isPending ? 'Сохранение...' : 'Сохранить'}
             </Button>
           </DialogFooter>
@@ -1072,7 +1067,7 @@ export function Warehouse() {
             <Button variant="outline" onClick={closeTransactionDialog} disabled={createTransactionMutation.isPending}>
               Отмена
             </Button>
-            <Button onClick={handleTransactionSubmit} disabled={createTransactionMutation.isPending}>
+            <Button type="button" onClick={handleTransactionSubmit} disabled={createTransactionMutation.isPending}>
               {createTransactionMutation.isPending ? 'Оформление...' : 'Оформить'}
             </Button>
           </DialogFooter>

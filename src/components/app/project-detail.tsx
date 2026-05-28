@@ -62,6 +62,8 @@ import {
   Package,
   Download,
 } from 'lucide-react'
+import { ProjectTimeline } from '@/components/app/project-timeline'
+import { EmptyState } from '@/components/app/empty-state'
 
 // --- Types ---
 
@@ -626,10 +628,7 @@ export function ProjectDetail() {
           </div>
 
           {project.items.length === 0 ? (
-            <div className="flex flex-col items-center justify-center gap-4 rounded-lg border border-dashed p-12 text-center">
-              <Package className="text-muted-foreground h-12 w-12" />
-              <p className="text-muted-foreground">Нет позиций в проекте</p>
-            </div>
+            <EmptyState type="items" />
           ) : (
             <div className="space-y-2">
               {itemsBySupplier.map(([key, group]) => {
@@ -743,15 +742,7 @@ export function ProjectDetail() {
         {/* ===== Tab: Запросы ===== */}
         <TabsContent value="requests" className="space-y-4">
           {project.purchaseRequests.length === 0 ? (
-            <div className="flex flex-col items-center justify-center gap-4 rounded-lg border border-dashed p-12 text-center">
-              <ShoppingCart className="text-muted-foreground h-12 w-12" />
-              <div>
-                <p className="text-lg font-medium">Нет запросов</p>
-                <p className="text-muted-foreground text-sm">
-                  Создайте запросы поставщикам из вкладки &laquo;Позиции&raquo;
-                </p>
-              </div>
-            </div>
+            <EmptyState type="requests" />
           ) : (
             <div className="space-y-2">
               {project.purchaseRequests.map((request) => {
@@ -859,15 +850,7 @@ export function ProjectDetail() {
         {/* ===== Tab: Счета ===== */}
         <TabsContent value="invoices" className="space-y-4">
           {project.invoices.length === 0 ? (
-            <div className="flex flex-col items-center justify-center gap-4 rounded-lg border border-dashed p-12 text-center">
-              <FileText className="text-muted-foreground h-12 w-12" />
-              <div>
-                <p className="text-lg font-medium">Нет счетов</p>
-                <p className="text-muted-foreground text-sm">
-                  Счета от поставщиков появятся здесь
-                </p>
-              </div>
-            </div>
+            <EmptyState type="invoices" />
           ) : (
             <div className="space-y-2">
               {project.invoices.map((invoice) => {
@@ -1030,12 +1013,16 @@ export function ProjectDetail() {
         </TabsContent>
 
         {/* ===== Tab: История ===== */}
-        <TabsContent value="history" className="space-y-4">
+        <TabsContent value="history" className="space-y-6">
+          {/* Project Lifecycle Timeline */}
+          <ProjectTimeline
+            currentStatus={project.status}
+            statusHistory={statusHistory}
+          />
+
+          {/* Detailed History Log */}
           {statusHistory.length === 0 && project.purchaseRequests.length === 0 && project.invoices.length === 0 ? (
-            <div className="flex flex-col items-center justify-center gap-4 rounded-lg border border-dashed p-12 text-center">
-              <History className="text-muted-foreground h-12 w-12" />
-              <p className="text-muted-foreground">История изменений пуста</p>
-            </div>
+            <EmptyState type="history" />
           ) : (
             <div className="relative space-y-0">
               {/* Combine status history, requests, and invoices into a timeline */}

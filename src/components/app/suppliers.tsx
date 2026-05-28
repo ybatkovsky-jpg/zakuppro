@@ -15,7 +15,9 @@ import {
   MapPin,
   StickyNote,
   Package,
+  PlusCircle,
 } from 'lucide-react'
+import { EmptyState } from '@/components/app/empty-state'
 import { useAppStore } from '@/store/app-store'
 
 import { Button } from '@/components/ui/button'
@@ -521,25 +523,18 @@ export function Suppliers() {
           </CardContent>
         </Card>
       ) : suppliers.length === 0 ? (
-        <Card>
-          <CardContent className="flex flex-col items-center justify-center py-12 text-center">
-            <Building2 className="h-12 w-12 text-muted-foreground mb-4" />
-            <h3 className="text-lg font-semibold">
-              {search ? 'Ничего не найдено' : 'Нет поставщиков'}
-            </h3>
-            <p className="text-muted-foreground mt-1">
-              {search
-                ? 'Попробуйте изменить параметры поиска'
-                : 'Добавьте первого поставщика, нажав кнопку выше'}
-            </p>
-            {!search && (
-              <Button onClick={openAddDialog} variant="outline" className="mt-4 gap-2">
-                <Plus className="h-4 w-4" />
-                Добавить поставщика
-              </Button>
-            )}
-          </CardContent>
-        </Card>
+        <EmptyState
+          type={search ? 'search' : 'suppliers'}
+          action={
+            !search
+              ? {
+                  label: 'Добавить поставщика',
+                  onClick: openAddDialog,
+                  icon: PlusCircle,
+                }
+              : undefined
+          }
+        />
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {suppliers.map((supplier) => (
@@ -573,7 +568,7 @@ export function Suppliers() {
             <Button variant="outline" onClick={closeAddDialog} disabled={createMutation.isPending}>
               Отмена
             </Button>
-            <Button onClick={handleAddSubmit} disabled={createMutation.isPending}>
+            <Button type="button" onClick={handleAddSubmit} disabled={createMutation.isPending}>
               {createMutation.isPending ? 'Создание...' : 'Создать'}
             </Button>
           </DialogFooter>
@@ -599,7 +594,7 @@ export function Suppliers() {
             <Button variant="outline" onClick={closeEditDialog} disabled={updateMutation.isPending}>
               Отмена
             </Button>
-            <Button onClick={handleEditSubmit} disabled={updateMutation.isPending}>
+            <Button type="button" onClick={handleEditSubmit} disabled={updateMutation.isPending}>
               {updateMutation.isPending ? 'Сохранение...' : 'Сохранить'}
             </Button>
           </DialogFooter>

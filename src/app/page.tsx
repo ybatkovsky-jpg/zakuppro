@@ -13,6 +13,8 @@ import { Requests } from '@/components/app/requests'
 import { Invoices } from '@/components/app/invoices'
 import { Settings } from '@/components/app/settings'
 import { GlobalSearch } from '@/components/app/global-search'
+import { ThemeToggle } from '@/components/app/theme-toggle'
+import { NotificationCenter } from '@/components/app/notification-center'
 
 const pageTitles: Record<string, string> = {
   dashboard: 'Дашборд',
@@ -41,7 +43,9 @@ function AppContent() {
           {!hasOwnHeader && (
             <h1 className="text-lg font-semibold">{pageTitle}</h1>
           )}
-          <div className="ml-auto">
+          <div className="ml-auto flex items-center gap-1">
+            <ThemeToggle />
+            <NotificationCenter />
             <GlobalSearch />
           </div>
         </div>

@@ -58,7 +58,9 @@ import {
   Loader2,
   Search,
   Eye,
+  PlusCircle,
 } from 'lucide-react'
+import { EmptyState } from '@/components/app/empty-state'
 
 // ── Types ──────────────────────────────────────────────────
 
@@ -494,24 +496,30 @@ export function Requests() {
               <span className="ml-2 text-muted-foreground">Загрузка...</span>
             </div>
           ) : filteredRequests.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-16 text-muted-foreground">
-              <div className="rounded-full bg-muted p-4 mb-4">
-                <Mail className="h-10 w-10 text-muted-foreground/50" />
-              </div>
-              <p className="text-base font-medium">{searchQuery ? 'Ничего не найдено по запросу' : 'Запросы не найдены'}</p>
-              <p className="text-sm mt-1">{searchQuery ? 'Попробуйте изменить параметры поиска' : 'Создайте первый запрос поставщику'}</p>
-            </div>
+            <EmptyState
+              type={searchQuery ? 'search' : 'requests'}
+              action={
+                !searchQuery
+                  ? {
+                      label: 'Новый запрос',
+                      onClick: () => setCreateOpen(true),
+                      icon: PlusCircle,
+                    }
+                  : undefined
+              }
+            />
           ) : (
+            <div className="overflow-x-auto">
             <Table>
               <TableHeader>
                 <TableRow>
                   <TableHead className="w-8" />
                   <TableHead>Проект</TableHead>
-                  <TableHead>Поставщик</TableHead>
+                  <TableHead className="hidden sm:table-cell">Поставщик</TableHead>
                   <TableHead>Статус</TableHead>
-                  <TableHead className="text-center">Позиций</TableHead>
-                  <TableHead>Отправлено</TableHead>
-                  <TableHead>Ответ получен</TableHead>
+                  <TableHead className="text-center hidden sm:table-cell">Позиций</TableHead>
+                  <TableHead className="hidden lg:table-cell">Отправлено</TableHead>
+                  <TableHead className="hidden lg:table-cell">Ответ получен</TableHead>
                   <TableHead className="text-right">Действия</TableHead>
                 </TableRow>
               </TableHeader>
@@ -531,13 +539,13 @@ export function Requests() {
                         )}
                       </TableCell>
                       <TableCell className="font-medium">{req.project.name}</TableCell>
-                      <TableCell>{req.supplier.name}</TableCell>
+                      <TableCell className="hidden sm:table-cell">{req.supplier.name}</TableCell>
                       <TableCell>
                         <StatusBadge status={req.status} />
                       </TableCell>
-                      <TableCell className="text-center">{req.items.length}</TableCell>
-                      <TableCell>{formatDate(req.sentAt)}</TableCell>
-                      <TableCell>{formatDate(req.responseAt)}</TableCell>
+                      <TableCell className="text-center hidden sm:table-cell">{req.items.length}</TableCell>
+                      <TableCell className="hidden lg:table-cell">{formatDate(req.sentAt)}</TableCell>
+                      <TableCell className="hidden lg:table-cell">{formatDate(req.responseAt)}</TableCell>
                       <TableCell className="text-right">
                         <div className="flex justify-end gap-1" onClick={(e) => e.stopPropagation()}>
                           {req.emailBody && (
@@ -662,6 +670,7 @@ export function Requests() {
                 ))}
               </TableBody>
             </Table>
+            </div>
           )}
         </CardContent>
       </Card>
@@ -695,7 +704,7 @@ export function Requests() {
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setPreviewEmailOpen(false)}>
+            <Button type="button" variant="outline" onClick={() => setPreviewEmailOpen(false)}>
               Закрыть
             </Button>
           </DialogFooter>
@@ -901,12 +910,13 @@ export function Requests() {
 
           <DialogFooter className="gap-2">
             {step > 1 && (
-              <Button variant="outline" onClick={() => setStep(step - 1)}>
+              <Button type="button" variant="outline" onClick={() => setStep(step - 1)}>
                 Назад
               </Button>
             )}
             {step < 5 ? (
               <Button
+                type="button"
                 onClick={() => setStep(step + 1)}
                 disabled={
                   (step === 1 && !selectedProjectId) ||
@@ -917,7 +927,7 @@ export function Requests() {
                 Далее
               </Button>
             ) : (
-              <Button onClick={handleCreate} disabled={createMutation.isPending}>
+              <Button type="button" onClick={handleCreate} disabled={createMutation.isPending}>
                 {createMutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                 Создать запрос
               </Button>
@@ -1040,10 +1050,10 @@ export function Requests() {
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setResponseOpen(false)}>
+            <Button type="button" variant="outline" onClick={() => setResponseOpen(false)}>
               Отмена
             </Button>
-            <Button onClick={handleRecordResponse} disabled={updateMutation.isPending}>
+            <Button type="button" onClick={handleRecordResponse} disabled={updateMutation.isPending}>
               {updateMutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               Записать ответ
             </Button>
