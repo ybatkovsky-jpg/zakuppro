@@ -1,5 +1,117 @@
 # ЗакупПро — Project Worklog
 
+## Session 8: QA, Styling Enhancements, Invoice Reconciliation, Status Workflow
+
+### Current Project Status Assessment
+
+The app has gone through 7 development sessions and is at quality rating 8.5/10. It's a comprehensive procurement management system with 10+ views, rich seed data, and full CRUD operations. Previous session added rich seed data, budget cards, and settings improvements.
+
+### QA Findings (Session 8 Start)
+
+**Agent-Browser QA Results:**
+- All 8 pages load correctly with no console errors
+- All API endpoints returning 200
+- Bug 1: `STATUS_MAP` for `invoiced` status displayed "Счета" instead of "Счёт выставлен" — FIXED
+- Bug 2: React key prop warning in requests.tsx (Fragment shorthand without key) — FIXED
+- Bug 3: "Сверить" button on Invoices page had no visible effect when clicked (sheet rendered null during loading) — FIXED
+- Bug 4: Status transition API crashing server (heavy Prisma query with includes) — FIXED by simplifying response
+- Overall grade: A-
+
+### Completed Work
+
+#### 1. Styling Enhancements (Task 8)
+- **Global CSS**: Page transitions, custom scrollbar, card hover elevation, status pulse animation, expand/collapse animation, accent border left utility, improved focus ring, subtle gradient background
+- **Sidebar**: Animated active state with taller indicator, hover mini left-bar effect, "v2.0" version badge, gradient footer
+- **Header**: Breadcrumb navigation for detail pages, subtle bottom shadow replacing hard border
+- **Dashboard**: Animated gradient blobs in welcome section, inner shadow for depth on stat cards, timeline line gradient
+- **Projects**: Status badge hover shadow, project count summary bar, improved table row hover
+- **Invoices**: Colored dot indicators next to status badges, status-based colored left borders, total amounts summary section
+- **Warehouse**: Pulsing dot animation for low/out-of-stock items, search input focus shadow
+- **Requests**: Expand-enter animation, improved status filter pills with shadow
+- **Suppliers**: card-hover-elevate, star rating hover scale effect, search input focus shadow
+- **Settings**: Left accent border on section cards, document preview with shadow-inner
+- **Analytics**: card-hover-elevate on KPI scorecards, improved table row hover
+
+#### 2. Invoice Reconciliation Feature (Task 9)
+- **API**: `/api/invoices/[id]/reconcile/route.ts` — Auto-matching algorithm with two passes (exact projectItemId match, then Levenshtein name similarity)
+- **UI**: ReconciliationSheet side panel with summary cards, two-column comparison, match indicators (green/yellow/red), difference indicators, totals comparison, action buttons
+- **Button**: "Сверить" on invoice table rows for received/verified/discrepancy statuses
+- **Fix**: Added loading state when reconciliation data is being fetched (was returning null causing invisible sheet)
+
+#### 3. Project Status Workflow (Task 10)
+- **Schema**: Added fromStatus, toStatus, comment, changedBy fields to ProjectStatusHistory
+- **API**: `/api/projects/[id]/status/route.ts` — Validates transitions against VALID_TRANSITIONS, requires comment for cancellation, creates history entry
+- **UI**: StatusFlowDiagram component (horizontal flow with completed/current/future states)
+- **UI**: StatusTransitionModal component (dropdown with valid transitions, comment textarea, date picker)
+- **UI**: EnhancedTimeline component (vertical timeline with from→to badges, comments, pulsing current indicator)
+- **Fix**: Simplified API response (removed heavy fullProject query) to prevent server crashes
+
+#### 4. Bug Fixes
+- STATUS_MAP label inconsistency ("Счета" → "Счёт выставлен") in projects.tsx
+- React key prop warning in requests.tsx (Fragment shorthand → Fragment with key)
+- ReconciliationSheet null return during loading (added loading spinner)
+- Status API crash (simplified response, removed heavy Prisma includes)
+- Prisma client cache issue (regenerated after schema changes, cleared .next cache)
+
+### Verification
+- `bun run lint`: Clean pass
+- All API endpoints returning 200
+- Reconciliation API: Returns correct match data with similarity scoring
+- Status transition API: Validates transitions, creates history entries
+- Dev server: Running with no runtime errors
+
+### Unresolved Issues / Next Phase Recommendations
+- Email integration is template-only (no actual SMTP sending)
+- Could add PDF generation for invoices/reports
+- Could add user authentication via NextAuth.js
+- Could add bulk operations (multi-select, batch status changes)
+- Could add delivery tracking integration with date management
+- Could add data import from other sources (1C, SAP)
+- Project comparison view (side-by-side)
+- Light mode could use more refinement
+- Status workflow UI could benefit from drag-and-drop on the flow diagram
+- Reconciliation could support manual item matching/editing
+
+---
+
+Task ID: 9
+Agent: Feature Agent - Invoice Reconciliation
+Task: Add invoice reconciliation UI
+
+Work Log:
+- Read worklog.md, prisma schema, and existing invoices.tsx to understand current state
+- Initialized fullstack dev environment
+- Created API endpoint `/api/invoices/[id]/reconcile/route.ts` with:
+  - Fetches invoice with items and related purchase request items
+  - Auto-matching algorithm: first pass by projectItemId, second pass by Levenshtein name similarity
+  - Returns ReconciliationResult with matches, unmatched items, and summary
+  - Computes name similarity score, quantity match, price match for each pair
+- Created ReconciliationSheet component inside invoices.tsx with:
+  - Full side panel (Sheet) from shadcn/ui with responsive width (sm:max-w-3xl)
+  - Summary cards: matched items, discrepancies, unmatched items, amount difference
+  - Two-column layout: request items vs invoice items
+  - Match status indicators: green CheckCircle2 (full match), amber AlertTriangle (discrepancy), red XCircle (no match)
+  - Difference indicators for quantity/price changes with arrows
+  - Name similarity percentage display
+  - Unmatched items sections for both request and invoice sides
+  - Totals comparison with difference highlighting
+  - Overall result banner (full match or discrepancies found)
+  - Action buttons: "Подтвердить сверку" / "Подтвердить с расхождениями" and "Закрыть"
+  - framer-motion entrance animations for matched items and unmatched items
+- Added "Сверить" (Reconcile) button on invoice table rows for received/verified/discrepancy status
+- Added "Сверить" button in detail dialog for received/verified/discrepancy status
+- Reconcile verify action: sets status to "verified" if all match, or "discrepancy" if any differences found
+- All text in Russian, responsive design, amber-themed reconcile buttons
+
+Stage Summary:
+- New API endpoint: `/api/invoices/[id]/reconcile/route.ts` — full reconciliation data with auto-matching
+- New UI: ReconciliationSheet side panel with side-by-side comparison, match indicators, summary
+- New buttons: "Сверить" on invoice table rows and detail dialog
+- Verified: lint passes, API returns 200, reconciliation correctly matches items and detects discrepancies
+- Files modified: `/home/z/my-project/src/components/app/invoices.tsx`, `/home/z/my-project/src/app/api/invoices/[id]/reconcile/route.ts`
+
+---
+
 ## Session 7: QA Review, Rich Seed Data, Project Detail & Settings Improvements
 
 ### Current Project Status Assessment
@@ -89,6 +201,60 @@ The app has gone through 6 development rounds with 10 navigable views. The previ
 - Could add data import from other sources (1C, SAP)
 - Could add project comparison view (side-by-side)
 - Light mode could use more refinement (some gradient backgrounds designed for dark theme)
+
+---
+
+## Task 10: Project Status Workflow Feature
+
+### Summary
+Added project status transition workflow with validation, visual flow diagram, status transition modal with comments, and enhanced timeline.
+
+### 1. Prisma Schema Updates
+**File**: `/home/z/my-project/prisma/schema.prisma`
+- Added `fromStatus`, `toStatus`, `comment`, `changedBy` fields to ProjectStatusHistory model
+- Ran `bun run db:push` to sync schema changes
+
+### 2. API Endpoint for Status Change
+**File**: `/home/z/my-project/src/app/api/projects/[id]/status/route.ts` (NEW)
+- POST handler validates status transitions using VALID_TRANSITIONS constant
+- Rejects invalid transitions with 400 error
+- Requires comment for "cancelled" transitions
+- Creates ProjectStatusHistory entry with fromStatus, toStatus, comment, changedBy
+- Supports optional `changedAt` for backdated status changes
+- Returns full updated project with relations and new history entry
+
+### 3. Status Flow Diagram Component
+New `StatusFlowDiagram` component in project-detail.tsx:
+- Horizontal flow for desktop, vertical flow for mobile
+- 7 status nodes with icons and colors
+- States: completed (green checkmark), current (pulse glow), future (faded), available-next (dashed ring)
+- Animated connecting lines between nodes
+- framer-motion entrance animations and pulse effects
+
+### 4. Status Transition Modal
+New `StatusTransitionModal` component:
+- Dialog with current→next status badge preview and animated arrow
+- Next status dropdown showing only valid transitions
+- Comment textarea (required for cancelled, optional otherwise)
+- Datetime-local date picker for backdating
+- "Подтвердить" (Confirm) button with validation
+
+### 5. Enhanced Timeline
+New `EnhancedTimeline` component:
+- Vertical timeline with status changes sorted chronologically
+- Each entry: from→to badge transition, date/time, user, comment
+- Pulsing current status indicator
+- Available next statuses as ghost dashed badges
+- framer-motion staggered entrance animations
+
+### 6. Integration
+- Status Flow Diagram between header and budget cards
+- "Изменить статус" buttons in banner and History tab
+- Existing Select dropdown retained for backward compatibility
+
+### Verification
+- `bun run lint`: Clean pass
+- Dev server: No runtime errors
 
 ---
 

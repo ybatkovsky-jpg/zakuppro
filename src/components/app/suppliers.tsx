@@ -286,7 +286,7 @@ function SupplierCard({
       : 'bg-muted-foreground/30'
 
   return (
-    <Card className="group relative overflow-hidden transition-all duration-200 hover:shadow-lg hover:-translate-y-1 cursor-pointer" onClick={onClick}>
+    <Card className="group relative overflow-hidden transition-all duration-200 hover:shadow-lg hover:-translate-y-1 cursor-pointer card-hover-elevate" onClick={onClick}>
       {/* Status indicator bar at top */}
       <div className={`absolute top-0 left-0 right-0 h-[2px] ${statusBarColor}`} />
 
@@ -382,10 +382,10 @@ function SupplierCard({
               {[1, 2, 3].map((star) => (
                 <Star
                   key={star}
-                  className={`h-4 w-4 ${
+                  className={`h-4 w-4 transition-all duration-200 ${
                     star <= rating.stars
-                      ? 'fill-amber-400 text-amber-400'
-                      : 'text-muted-foreground/20'
+                      ? 'fill-amber-400 text-amber-400 group-hover:scale-110'
+                      : 'text-muted-foreground/20 group-hover:text-muted-foreground/40'
                   }`}
                 />
               ))}
@@ -668,7 +668,7 @@ export function Suppliers() {
           placeholder="Поиск по названию, email, телефону..."
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          className="pl-9"
+          className="pl-9 transition-shadow duration-200 focus:shadow-md focus:shadow-primary/5"
         />
       </div>
 

@@ -37,33 +37,52 @@ function AppContent() {
   const pageTitle = pageTitles[currentView] ?? 'ЗакупПро'
   const hasOwnHeader = currentView === 'project-detail' || currentView === 'supplier-detail'
 
+  // Breadcrumb section
+  const getBreadcrumb = () => {
+    if (currentView === 'project-detail') return 'Проекты'
+    if (currentView === 'supplier-detail') return 'Поставщики'
+    return null
+  }
+  const breadcrumb = getBreadcrumb()
+
   return (
     <SidebarProvider>
       <AppSidebar />
       <main className="flex-1 overflow-auto min-h-screen">
-        <div className="sticky top-0 z-30 flex items-center gap-2 border-b bg-background/80 backdrop-blur-sm px-4 py-2">
+        <div className="sticky top-0 z-30 flex items-center gap-2 px-4 py-2 bg-background/80 backdrop-blur-sm shadow-[0_1px_3px_0_oklch(0_0_0/0.04)] dark:shadow-[0_1px_3px_0_oklch(0_0_0/0.2)]">
           <SidebarTrigger />
           {!hasOwnHeader && (
-            <AnimatePresence mode="wait">
-              <motion.h1
-                key={currentView}
-                initial={{ opacity: 0, y: -6 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: 6 }}
-                transition={{ duration: 0.2, ease: 'easeInOut' }}
-                className="text-lg font-semibold"
-              >
-                {pageTitle}
-              </motion.h1>
-            </AnimatePresence>
+            <>
+              {breadcrumb && (
+                <>
+                  <span className="text-sm text-muted-foreground/60 cursor-pointer hover:text-muted-foreground transition-colors" onClick={() => {
+                    if (currentView === 'project-detail') useAppStore.getState().navigate('projects')
+                    if (currentView === 'supplier-detail') useAppStore.getState().navigate('suppliers')
+                  }}>{breadcrumb}</span>
+                  <span className="text-muted-foreground/30">/</span>
+                </>
+              )}
+              <AnimatePresence mode="wait">
+                <motion.h1
+                  key={currentView}
+                  initial={{ opacity: 0, y: -6 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: 6 }}
+                  transition={{ duration: 0.2, ease: 'easeInOut' }}
+                  className="text-lg font-semibold"
+                >
+                  {pageTitle}
+                </motion.h1>
+              </AnimatePresence>
+            </>
           )}
-          <div className="ml-auto flex items-center gap-1">
+          <div className="ml-auto flex items-center gap-1.5">
             <ThemeToggle />
             <NotificationCenter />
             <GlobalSearch />
           </div>
         </div>
-        <div className={hasOwnHeader ? '' : 'p-6'}>
+        <div className={`page-transition ${hasOwnHeader ? '' : 'p-6'}`}>
           {currentView === 'dashboard' && <Dashboard />}
           {currentView === 'projects' && <Projects />}
           {currentView === 'project-detail' && <ProjectDetail />}

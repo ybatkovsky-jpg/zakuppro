@@ -119,9 +119,10 @@ function SectionCard({
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.3 }}
     >
-      <Card className="relative overflow-hidden">
+      <Card className="relative overflow-hidden accent-border-left" style={{ '--accent-color': colors.line.replace('bg-', '').replace(/\/(\d+)\)?$/, '') } as React.CSSProperties}>
         <div className={`absolute top-0 left-0 right-0 h-[2px] ${colors.line}`} />
-        <CardHeader className="pb-4">
+        <div className={`absolute top-0 bottom-0 left-0 w-[3px] rounded-full ${colors.line}`} />
+        <CardHeader className="pb-4 pl-6">
           <div className="flex items-center gap-3">
             <div className={`flex size-10 shrink-0 items-center justify-center rounded-lg ${colors.iconBg} ${colors.iconText}`}>
               <Icon className="size-5" />
@@ -324,6 +325,7 @@ export function Settings() {
             value={formData.companyName}
             onChange={(e) => handleChange('companyName', e.target.value)}
             placeholder="ООО «Моя Компания»"
+            className="transition-shadow duration-200 focus:shadow-sm focus:shadow-primary/5"
           />
         </div>
 
@@ -484,7 +486,7 @@ export function Settings() {
         description="Как данные компании будут выглядеть в документах"
         accentColor="amber-600"
       >
-        <div className="rounded-xl border-2 border-dashed border-primary/20 bg-gradient-to-br from-muted/30 to-muted/10 p-6 space-y-4">
+        <div className="rounded-xl border-2 border-dashed border-primary/20 bg-gradient-to-br from-muted/30 to-muted/10 p-6 space-y-4 shadow-inner">
           {/* Formal letterhead */}
           <div className="text-center border-b-2 border-foreground/10 pb-4">
             <div className="inline-block border border-primary/20 rounded-lg px-6 py-1 mb-3">
@@ -563,7 +565,7 @@ export function Settings() {
       >
         <div className="space-y-1">
           {/* Email уведомления */}
-          <div className="flex items-center justify-between gap-4 rounded-lg p-3 hover:bg-muted/50 transition-colors">
+          <div className="flex items-center justify-between gap-4 rounded-lg p-3 hover:bg-muted/50 transition-all duration-200">
             <div className="space-y-0.5 min-w-0">
               <Label className="text-sm font-medium cursor-pointer">Email уведомления</Label>
               <p className="text-xs text-muted-foreground">Получать уведомления на email</p>
@@ -571,13 +573,14 @@ export function Settings() {
             <Switch
               checked={notifications.email}
               onCheckedChange={() => handleNotificationToggle('email')}
+              className="data-[state=checked]:bg-primary"
             />
           </div>
 
           <Separator />
 
           {/* Уведомления о низком запасе */}
-          <div className="flex items-center justify-between gap-4 rounded-lg p-3 hover:bg-muted/50 transition-colors">
+          <div className="flex items-center justify-between gap-4 rounded-lg p-3 hover:bg-muted/50 transition-all duration-200">
             <div className="space-y-0.5 min-w-0">
               <Label className="text-sm font-medium cursor-pointer">Уведомления о низком запасе</Label>
               <p className="text-xs text-muted-foreground">Предупреждения когда остаток ниже минимума</p>
@@ -585,13 +588,14 @@ export function Settings() {
             <Switch
               checked={notifications.lowStock}
               onCheckedChange={() => handleNotificationToggle('lowStock')}
+              className="data-[state=checked]:bg-amber-500"
             />
           </div>
 
           <Separator />
 
           {/* Уведомления о новых счетах */}
-          <div className="flex items-center justify-between gap-4 rounded-lg p-3 hover:bg-muted/50 transition-colors">
+          <div className="flex items-center justify-between gap-4 rounded-lg p-3 hover:bg-muted/50 transition-all duration-200">
             <div className="space-y-0.5 min-w-0">
               <Label className="text-sm font-medium cursor-pointer">Уведомления о новых счетах</Label>
               <p className="text-xs text-muted-foreground">Уведомлять при поступлении новых счетов</p>
@@ -599,13 +603,14 @@ export function Settings() {
             <Switch
               checked={notifications.newInvoices}
               onCheckedChange={() => handleNotificationToggle('newInvoices')}
+              className="data-[state=checked]:bg-sky-500"
             />
           </div>
 
           <Separator />
 
           {/* Уведомления о статусе проектов */}
-          <div className="flex items-center justify-between gap-4 rounded-lg p-3 hover:bg-muted/50 transition-colors">
+          <div className="flex items-center justify-between gap-4 rounded-lg p-3 hover:bg-muted/50 transition-all duration-200">
             <div className="space-y-0.5 min-w-0">
               <Label className="text-sm font-medium cursor-pointer">Уведомления о статусе проектов</Label>
               <p className="text-xs text-muted-foreground">Оповещения при изменении статуса проекта</p>
@@ -613,13 +618,14 @@ export function Settings() {
             <Switch
               checked={notifications.projectStatus}
               onCheckedChange={() => handleNotificationToggle('projectStatus')}
+              className="data-[state=checked]:bg-emerald-500"
             />
           </div>
 
           <Separator />
 
           {/* Ежедневная сводка */}
-          <div className="flex items-center justify-between gap-4 rounded-lg p-3 hover:bg-muted/50 transition-colors">
+          <div className="flex items-center justify-between gap-4 rounded-lg p-3 hover:bg-muted/50 transition-all duration-200">
             <div className="space-y-0.5 min-w-0">
               <Label className="text-sm font-medium cursor-pointer">Ежедневная сводка</Label>
               <p className="text-xs text-muted-foreground">Краткий отчёт каждый рабочий день</p>
@@ -627,6 +633,7 @@ export function Settings() {
             <Switch
               checked={notifications.dailyDigest}
               onCheckedChange={() => handleNotificationToggle('dailyDigest')}
+              className="data-[state=checked]:bg-violet-500"
             />
           </div>
         </div>

@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useCallback, useMemo } from 'react'
+import { useState, useCallback, useMemo, Fragment } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { toast } from '@/hooks/use-toast'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -540,10 +540,10 @@ export function Requests() {
                   <button
                     key={val}
                     onClick={() => setStatusFilter(val)}
-                    className={`px-3 py-1 rounded-full text-xs font-medium transition-all duration-150 border ${
+                    className={`px-3 py-1 rounded-full text-xs font-medium transition-all duration-200 border ${
                       isActive
-                        ? 'bg-primary text-primary-foreground border-primary'
-                        : 'bg-muted/50 text-muted-foreground border-transparent hover:bg-muted hover:border-border'
+                        ? 'bg-primary text-primary-foreground border-primary shadow-sm'
+                        : 'bg-muted/50 text-muted-foreground border-transparent hover:bg-muted hover:border-border hover:shadow-sm'
                     }`}
                   >
                     {label}
@@ -616,10 +616,9 @@ export function Requests() {
               </TableHeader>
               <TableBody>
                 {filteredRequests.map((req) => (
-                  <>
+                  <Fragment key={req.id}>
                     <TableRow
-                      key={req.id}
-                      className={`cursor-pointer border-l-[3px] ${REQUEST_ROW_BORDER[req.status] ?? 'border-l-muted'} ${REQUEST_ROW_BG[req.status] ?? 'hover:bg-muted/50'} transition-all duration-150 hover:shadow-sm`}
+                      className={`cursor-pointer border-l-[3px] ${REQUEST_ROW_BORDER[req.status] ?? 'border-l-muted'} ${REQUEST_ROW_BG[req.status] ?? 'hover:bg-muted/50'} transition-all duration-200 hover:shadow-sm`}
                       onClick={() => setExpandedId(expandedId === req.id ? null : req.id)}
                     >
                       <TableCell>
@@ -686,7 +685,7 @@ export function Requests() {
                     </TableRow>
                     {expandedId === req.id && (
                       <TableRow key={`${req.id}-detail`}>
-                        <TableCell colSpan={8} className="bg-muted/30 p-4">
+                        <TableCell colSpan={8} className="bg-muted/30 p-4 expand-enter">
                           <div className="space-y-4">
                             {/* Items */}
                             <div>
@@ -743,7 +742,7 @@ export function Requests() {
                                     <Mail className="h-4 w-4" />
                                     Email
                                   </h4>
-                                  <div className="text-sm space-y-1 bg-background rounded-md p-3 border">
+                                  <div className="text-sm space-y-1 bg-background rounded-xl p-4 border shadow-sm">
                                     <p><span className="text-muted-foreground">Кому:</span> {req.emailTo}</p>
                                     <p><span className="text-muted-foreground">Тема:</span> {req.emailSubject}</p>
                                     <div className="mt-2 whitespace-pre-wrap text-muted-foreground text-xs max-h-40 overflow-y-auto">
@@ -757,7 +756,7 @@ export function Requests() {
                         </TableCell>
                       </TableRow>
                     )}
-                  </>
+                  </Fragment>
                 ))}
               </TableBody>
             </Table>

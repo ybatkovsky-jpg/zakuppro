@@ -247,7 +247,7 @@ function KPIScorecard({
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: index * 0.1, duration: 0.5 }}
     >
-      <Card className={`relative overflow-hidden ${accentBg}`}>
+      <Card className={`relative overflow-hidden ${accentBg} card-hover-elevate`}>
         <CardContent className="p-5">
           <div className="flex items-start justify-between">
             <div className="space-y-2">
@@ -405,7 +405,7 @@ function PipelineCard() {
   const isEmpty = total === 0
 
   return (
-    <Card>
+    <Card className="overflow-hidden">
       <CardHeader>
         <div className="flex items-center gap-2">
           <div className="flex size-8 items-center justify-center rounded-lg bg-primary/10">
@@ -504,7 +504,7 @@ function SupplierComparisonCard() {
   const activeSuppliers = suppliers.filter(s => s.totalItems > 0 || s.totalSpent > 0)
 
   return (
-    <Card>
+    <Card className="overflow-hidden">
       <CardHeader>
         <div className="flex items-center gap-2">
           <div className="flex size-8 items-center justify-center rounded-lg bg-amber-500/10">
@@ -560,7 +560,7 @@ function SupplierComparisonCard() {
                       initial={{ opacity: 0, x: -12 }}
                       animate={{ opacity: 1, x: 0 }}
                       transition={{ delay: idx * 0.05, duration: 0.3 }}
-                      className={`transition-colors hover:bg-muted/50 ${idx % 2 === 1 ? 'bg-muted/20' : ''}`}
+                      className={`transition-all duration-200 hover:bg-muted/50 ${idx % 2 === 1 ? 'bg-muted/20' : ''}`}
                     >
                       <TableCell className="text-center font-bold text-muted-foreground text-sm">
                         {idx + 1}
@@ -631,7 +631,7 @@ function CategorySpendingCard() {
   const maxBudget = Math.max(...categories.map((c) => c.budget), 1)
 
   return (
-    <Card>
+    <Card className="overflow-hidden">
       <CardHeader>
         <div className="flex items-center gap-2">
           <div className="flex size-8 items-center justify-center rounded-lg bg-emerald-500/10">
@@ -761,7 +761,7 @@ function MonthlyTrendsCard() {
   const currentMonthIdx = monthlyData.length - 1
 
   return (
-    <Card>
+    <Card className="overflow-hidden">
       <CardHeader>
         <div className="flex items-center gap-2">
           <div className="flex size-8 items-center justify-center rounded-lg bg-violet-500/10">

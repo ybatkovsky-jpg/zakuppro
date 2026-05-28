@@ -166,6 +166,28 @@
     @apply bg-background text-foreground;
     transition: background-color 0.3s ease, color 0.3s ease;
   }
+
+  /* Subtle gradient background for main content area */
+  main {
+    background: linear-gradient(180deg, oklch(0.98 0 0 / 30%) 0%, transparent 40%);
+  }
+  .dark main {
+    background: linear-gradient(180deg, oklch(0.15 0 0 / 50%) 0%, transparent 40%);
+  }
+
+  /* Text selection color */
+  ::selection {
+    background-color: oklch(0.5 0.2 270 / 20%);
+    color: inherit;
+  }
+  .dark ::selection {
+    background-color: oklch(0.6 0.2 270 / 25%);
+  }
+
+  /* Page transition animation */
+  .page-transition {
+    animation: page-enter 0.25s ease-out;
+  }
 }
 
 /* ── Background Pattern ─────────────────────────────────────── */
@@ -258,12 +280,90 @@
 
 *:focus-visible {
   transition: box-shadow 0.2s ease;
+  outline-offset: 2px;
 }
 
 /* ── Table Row Hover ───────────────────────────────────────── */
 
 .table-row-hover {
   transition: background-color 0.15s ease;
+}
+
+/* ── Card Hover Elevation ───────────────────────────────────── */
+
+.card-hover-elevate {
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+.card-hover-elevate:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px -5px oklch(0 0 0 / 8%), 0 4px 10px -6px oklch(0 0 0 / 5%);
+}
+.dark .card-hover-elevate:hover {
+  box-shadow: 0 8px 25px -5px oklch(0 0 0 / 25%), 0 4px 10px -6px oklch(0 0 0 / 15%);
+}
+
+/* ── Page Enter Animation ───────────────────────────────────── */
+
+@keyframes page-enter {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* ── Status Pulse Animation ─────────────────────────────────── */
+
+@keyframes status-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.6; }
+}
+
+.animate-status-pulse {
+  animation: status-pulse 2s ease-in-out infinite;
+}
+
+/* ── Expand/Collapse Animation ─────────────────────────────── */
+
+.expand-enter {
+  animation: expand-in 0.2s ease-out;
+}
+
+@keyframes expand-in {
+  from {
+    opacity: 0;
+    max-height: 0;
+    transform: translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    max-height: 500px;
+    transform: translateY(0);
+  }
+}
+
+/* ── Left Accent Border ─────────────────────────────────────── */
+
+.accent-border-left {
+  position: relative;
+}
+.accent-border-left::before {
+  content: '';
+  position: absolute;
+  top: 12px;
+  bottom: 12px;
+  left: 0;
+  width: 3px;
+  border-radius: 9999px;
+  background: var(--accent-color, var(--primary));
+  opacity: 0.5;
+  transition: opacity 0.2s ease;
+}
+.accent-border-left:hover::before {
+  opacity: 0.8;
 }
 
 /* ── Glass Card ────────────────────────────────────────────── */

@@ -122,15 +122,15 @@ export function AppSidebar() {
           tooltip={item.label}
           onClick={() => navigate(item.view)}
           className={`
-            relative transition-all duration-200 group
+            relative transition-all duration-200 group overflow-hidden
             ${isActive
-              ? 'bg-primary/10 text-primary font-semibold before:absolute before:left-0 before:top-1/2 before:-translate-y-1/2 before:h-5 before:w-[3px] before:rounded-full before:bg-primary before:transition-all before:duration-300'
-              : 'hover:bg-sidebar-accent/80 hover:translate-x-0.5'
+              ? 'bg-primary/10 text-primary font-semibold before:absolute before:left-0 before:top-1/2 before:-translate-y-1/2 before:h-6 before:w-[3px] before:rounded-full before:bg-primary before:transition-all before:duration-300 after:absolute after:inset-0 after:bg-primary/[0.03] after:rounded-md'
+              : 'hover:bg-sidebar-accent/60 hover:translate-x-0.5 hover:before:absolute hover:before:left-0 hover:before:top-1/2 hover:before:-translate-y-1/2 hover:before:h-3 hover:before:w-[2px] hover:before:rounded-full hover:before:bg-sidebar-foreground/20 hover:before:transition-all hover:before:duration-200'
             }
           `}
         >
-          <item.icon className={`h-4 w-4 transition-transform duration-200 ${isActive ? 'scale-110' : ''}`} />
-          <span>{item.label}</span>
+          <item.icon className={`h-4 w-4 transition-transform duration-200 ${isActive ? 'scale-110' : 'group-hover:scale-105'}`} />
+          <span className={`transition-colors duration-150 ${!isActive ? 'group-hover:text-sidebar-foreground' : ''}`}>{item.label}</span>
           {badgeCount > 0 && (
             <span className={`ml-auto flex h-5 min-w-5 items-center justify-center rounded-full px-1.5 text-[10px] font-semibold leading-none ${badgeColor}`}>
               {badgeCount}
@@ -173,7 +173,7 @@ export function AppSidebar() {
           </SidebarGroupContent>
         </SidebarGroup>
 
-        <SidebarSeparator />
+        <SidebarSeparator className="mx-2 opacity-50" />
 
         <SidebarGroup>
           <SidebarGroupLabel className="sr-only">Система</SidebarGroupLabel>
@@ -185,11 +185,13 @@ export function AppSidebar() {
         </SidebarGroup>
       </SidebarContent>
 
-      <SidebarFooter className="border-t border-sidebar-border">
+      <SidebarFooter className="border-t border-sidebar-border bg-gradient-to-t from-sidebar-accent/20 to-transparent">
         <div className="px-2 py-1.5 group-data-[collapsible=icon]:hidden">
-          <p className="text-[10px] text-sidebar-foreground/50 font-medium tracking-wide">
-            ЗакупПро v1.0
-          </p>
+          <div className="flex items-center gap-2 mb-1">
+            <span className="inline-flex items-center rounded-md bg-primary/10 px-2 py-0.5 text-[10px] font-semibold text-primary tracking-wide">
+              ЗакупПро v2.0
+            </span>
+          </div>
           <p className="text-[10px] text-sidebar-foreground/40">
             {getRussianDate()}
           </p>

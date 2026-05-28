@@ -328,7 +328,7 @@ function TableSkeleton() {
 function StatusBadge({ item }: { item: WarehouseItem }) {
   if (item.quantity <= 0) {
     return (
-      <Badge variant="destructive" className="gap-1 rounded-full">
+      <Badge variant="destructive" className="gap-1 rounded-full animate-status-pulse">
         <AlertTriangle className="h-3 w-3" />
         Нет в наличии
       </Badge>
@@ -834,7 +834,7 @@ export function Warehouse() {
 
       {/* Low Stock Alert */}
       {lowStockItems.length > 0 && (
-        <Card className="border-amber-500/40 bg-gradient-to-r from-amber-50/80 to-amber-50/30 dark:from-amber-950/30 dark:to-amber-950/10 overflow-hidden">
+        <Card className="border-amber-500/40 bg-gradient-to-r from-amber-50/80 to-amber-50/30 dark:from-amber-950/30 dark:to-amber-950/10 overflow-hidden relative">
           <div className="absolute top-0 left-0 right-0 h-[2px] bg-amber-500 animate-pulse-soft" />
           <CardHeader className="pb-3">
             <div className="flex items-center gap-2">
@@ -854,7 +854,7 @@ export function Warehouse() {
               {lowStockItems.map((item) => (
                 <div
                   key={item.id}
-                  className="flex items-center justify-between rounded-lg border border-amber-500/20 bg-background/80 px-3 py-2.5"
+                  className="flex items-center justify-between rounded-lg border border-amber-500/20 bg-background/80 px-3 py-2.5 transition-all duration-200 hover:shadow-sm hover:border-amber-500/40"
                 >
                   <div className="min-w-0 flex-1 mr-3">
                     <p className="text-sm font-medium truncate">{item.name}</p>
@@ -894,7 +894,7 @@ export function Warehouse() {
           placeholder="Поиск по названию, артикулу, категории..."
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          className="pl-9"
+          className="pl-9 transition-shadow duration-200 focus:shadow-md focus:shadow-primary/5"
         />
       </div>
 
@@ -952,7 +952,7 @@ export function Warehouse() {
                     >
                       <TableCell className="font-medium max-w-[200px] truncate" title={item.name}>
                         <div className="flex items-center gap-2">
-                          <div className={`size-2 rounded-full shrink-0 ${isOut ? 'bg-red-500' : isLow ? 'bg-amber-500' : 'bg-emerald-500'}`} />
+                          <div className={`size-2 rounded-full shrink-0 ${isOut ? 'bg-red-500 animate-pulse-dot' : isLow ? 'bg-amber-500 animate-pulse-dot' : 'bg-emerald-500'}`} />
                           {item.name}
                         </div>
                       </TableCell>

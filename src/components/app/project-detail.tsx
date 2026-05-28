@@ -7,6 +7,8 @@ import { useToast } from '@/hooks/use-toast'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Skeleton } from '@/components/ui/skeleton'
+import { Textarea } from '@/components/ui/textarea'
+import { Label } from '@/components/ui/label'
 import {
   Table,
   TableBody,
@@ -34,6 +36,14 @@ import {
   CollapsibleTrigger,
 } from '@/components/ui/collapsible'
 import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog'
+import {
   AlertDialog,
   AlertDialogAction,
   AlertDialogCancel,
@@ -44,7 +54,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog'
-import { motion } from 'framer-motion'
+import { motion, AnimatePresence } from 'framer-motion'
 import {
   ArrowLeft,
   ChevronDown,
@@ -65,6 +75,17 @@ import {
   Building2,
   ArrowRight,
   Lightbulb,
+  RefreshCcw,
+  User,
+  CalendarDays,
+  MessageSquare,
+  Check,
+  Ban,
+  FileText as FileTextIcon,
+  Settings2,
+  Receipt,
+  CreditCard,
+  Truck,
 } from 'lucide-react'
 import { ProjectTimeline } from '@/components/app/project-timeline'
 import { EmptyState } from '@/components/app/empty-state'
@@ -145,6 +166,10 @@ interface Invoice {
 interface StatusHistoryEntry {
   id: string
   status: string
+  fromStatus: string
+  toStatus: string
+  comment: string
+  changedBy: string
   notes: string
   createdAt: string
 }
@@ -163,6 +188,22 @@ interface ProjectDetail {
   invoices: Invoice[]
   statusHistory?: StatusHistoryEntry[]
 }
+
+// --- Valid Status Transitions ---
+
+const VALID_TRANSITIONS: Record<string, string[]> = {
+  'new': ['processing', 'cancelled'],
+  'processing': ['requested', 'cancelled'],
+  'requested': ['invoiced', 'processing', 'cancelled'],
+  'invoiced': ['paid', 'requested', 'cancelled'],
+  'paid': ['delivered', 'invoiced'],
+  'delivered': ['completed', 'paid'],
+  'completed': [],
+  'cancelled': [],
+}
+
+// Transitions that require a mandatory comment
+const MANDATORY_COMMENT_TRANSITIONS = ['cancelled']
 
 // --- Next Step suggestions ---
 
@@ -233,6 +274,84 @@ const INVOICE_STATUS_MAP: Record<string, { label: string; variant: 'default' | '
   cancelled: { label: 'Отменён', variant: 'destructive' },
 }
 
+// --- Status flow diagram config ---
+
+const STATUS_FLOW_STEPS = [
+  { key: 'new', label: 'Новый', icon: FileTextIcon, color: 'sky' },
+  { key: 'processing', label: 'Обработка', icon: Settings2, color: 'violet' },
+  { key: 'requested', label: 'Запросы', icon: Send, color: 'blue' },
+  { key: 'invoiced', label: 'Счета', icon: Receipt, color: 'amber' },
+  { key: 'paid', label: 'Оплата', icon: CreditCard, color: 'green' },
+  { key: 'delivered', label: 'Доставка', icon: Truck, color: 'teal' },
+  { key: 'completed', label: 'Завершён', icon: CheckCircle2, color: 'emerald' },
+] as const
+
+const STATUS_FLOW_COLORS: Record<string, { bg: string; text: string; border: string; activeBg: string; activeBorder: string; completedBg: string; completedBorder: string }> = {
+  sky: {
+    bg: 'bg-sky-100 dark:bg-sky-950/40',
+    text: 'text-sky-600 dark:text-sky-400',
+    border: 'border-sky-300 dark:border-sky-700',
+    activeBg: 'bg-sky-500 dark:bg-sky-600',
+    activeBorder: 'border-sky-500 dark:border-sky-600',
+    completedBg: 'bg-green-500 dark:bg-green-600',
+    completedBorder: 'border-green-500 dark:border-green-600',
+  },
+  violet: {
+    bg: 'bg-violet-100 dark:bg-violet-950/40',
+    text: 'text-violet-600 dark:text-violet-400',
+    border: 'border-violet-300 dark:border-violet-700',
+    activeBg: 'bg-violet-500 dark:bg-violet-600',
+    activeBorder: 'border-violet-500 dark:border-violet-600',
+    completedBg: 'bg-green-500 dark:bg-green-600',
+    completedBorder: 'border-green-500 dark:border-green-600',
+  },
+  blue: {
+    bg: 'bg-blue-100 dark:bg-blue-950/40',
+    text: 'text-blue-600 dark:text-blue-400',
+    border: 'border-blue-300 dark:border-blue-700',
+    activeBg: 'bg-blue-500 dark:bg-blue-600',
+    activeBorder: 'border-blue-500 dark:border-blue-600',
+    completedBg: 'bg-green-500 dark:bg-green-600',
+    completedBorder: 'border-green-500 dark:border-green-600',
+  },
+  amber: {
+    bg: 'bg-amber-100 dark:bg-amber-950/40',
+    text: 'text-amber-600 dark:text-amber-400',
+    border: 'border-amber-300 dark:border-amber-700',
+    activeBg: 'bg-amber-500 dark:bg-amber-600',
+    activeBorder: 'border-amber-500 dark:border-amber-600',
+    completedBg: 'bg-green-500 dark:bg-green-600',
+    completedBorder: 'border-green-500 dark:border-green-600',
+  },
+  green: {
+    bg: 'bg-green-100 dark:bg-green-950/40',
+    text: 'text-green-600 dark:text-green-400',
+    border: 'border-green-300 dark:border-green-700',
+    activeBg: 'bg-green-500 dark:bg-green-600',
+    activeBorder: 'border-green-500 dark:border-green-600',
+    completedBg: 'bg-green-500 dark:bg-green-600',
+    completedBorder: 'border-green-500 dark:border-green-600',
+  },
+  teal: {
+    bg: 'bg-teal-100 dark:bg-teal-950/40',
+    text: 'text-teal-600 dark:text-teal-400',
+    border: 'border-teal-300 dark:border-teal-700',
+    activeBg: 'bg-teal-500 dark:bg-teal-600',
+    activeBorder: 'border-teal-500 dark:border-teal-600',
+    completedBg: 'bg-green-500 dark:bg-green-600',
+    completedBorder: 'border-green-500 dark:border-green-600',
+  },
+  emerald: {
+    bg: 'bg-emerald-100 dark:bg-emerald-950/40',
+    text: 'text-emerald-600 dark:text-emerald-400',
+    border: 'border-emerald-300 dark:border-emerald-700',
+    activeBg: 'bg-emerald-500 dark:bg-emerald-600',
+    activeBorder: 'border-emerald-500 dark:border-emerald-600',
+    completedBg: 'bg-green-500 dark:bg-green-600',
+    completedBorder: 'border-green-500 dark:border-green-600',
+  },
+}
+
 function StatusBadge({
   status,
   map,
@@ -248,6 +367,560 @@ function StatusBadge({
   )
 }
 
+// --- Status Flow Diagram ---
+
+function StatusFlowDiagram({ currentStatus }: { currentStatus: string }) {
+  const stepsOrder = STATUS_FLOW_STEPS.map(s => s.key)
+  const currentIndex = stepsOrder.indexOf(currentStatus)
+  const isCancelled = currentStatus === 'cancelled'
+  const availableNext = VALID_TRANSITIONS[currentStatus] ?? []
+
+  return (
+    <div className="rounded-xl border bg-card p-4 sm:p-6">
+      <div className="flex items-center gap-2 mb-4">
+        <RefreshCcw className="h-4 w-4 text-primary" />
+        <h3 className="text-sm font-semibold">Жизненный цикл проекта</h3>
+      </div>
+
+      {/* Desktop horizontal flow */}
+      <div className="hidden md:block">
+        <div className="flex items-start justify-between relative">
+          {STATUS_FLOW_STEPS.map((step, idx) => {
+            const colorConfig = STATUS_FLOW_COLORS[step.color]
+            let state: 'completed' | 'current' | 'future'
+            if (isCancelled) {
+              state = 'future'
+            } else if (idx < currentIndex) {
+              state = 'completed'
+            } else if (idx === currentIndex) {
+              state = 'current'
+            } else {
+              state = 'future'
+            }
+
+            const isNextAvailable = availableNext.includes(step.key)
+
+            return (
+              <div
+                key={step.key}
+                className="flex flex-col items-center relative"
+                style={{ flex: 1, maxWidth: `${100 / STATUS_FLOW_STEPS.length}%` }}
+              >
+                <motion.div
+                  initial={{ opacity: 0, scale: 0.8 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  transition={{ delay: idx * 0.06, duration: 0.3 }}
+                  className="relative"
+                >
+                  <motion.div
+                    className={`
+                      size-10 rounded-full border-2 flex items-center justify-center transition-all duration-300
+                      ${state === 'completed'
+                        ? `${colorConfig.completedBg} ${colorConfig.completedBorder}`
+                        : state === 'current'
+                          ? `${colorConfig.activeBg} ${colorConfig.activeBorder}`
+                          : isNextAvailable
+                            ? `${colorConfig.bg} ${colorConfig.border} ring-2 ring-dashed ring-primary/30`
+                            : `${colorConfig.bg} ${colorConfig.border} opacity-40`
+                      }
+                    `}
+                    animate={
+                      state === 'current'
+                        ? { scale: [1, 1.08, 1], transition: { duration: 2, repeat: Infinity, ease: 'easeInOut' } }
+                        : {}
+                    }
+                  >
+                    {state === 'completed' ? (
+                      <Check className="size-5 text-white" strokeWidth={3} />
+                    ) : state === 'current' ? (
+                      <step.icon className="size-5 text-white" />
+                    ) : (
+                      <step.icon className={`size-4 ${colorConfig.text} ${isNextAvailable ? 'opacity-70' : 'opacity-40'}`} />
+                    )}
+                  </motion.div>
+
+                  {/* Current step pulse glow */}
+                  {state === 'current' && (
+                    <motion.div
+                      className="absolute inset-0 rounded-full border-2 border-primary/30"
+                      animate={{ scale: [1, 1.2, 1], opacity: [0.6, 0, 0.6] }}
+                      transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut' }}
+                    />
+                  )}
+                </motion.div>
+
+                <motion.p
+                  initial={{ opacity: 0, y: 4 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: idx * 0.06 + 0.1 }}
+                  className={`
+                    mt-2 text-xs font-medium text-center leading-tight
+                    ${state === 'completed'
+                      ? 'text-green-700 dark:text-green-400'
+                      : state === 'current'
+                        ? 'text-foreground'
+                        : isNextAvailable
+                          ? 'text-primary/70'
+                          : 'text-muted-foreground opacity-50'
+                    }
+                  `}
+                >
+                  {step.label}
+                </motion.p>
+              </div>
+            )
+          })}
+        </div>
+
+        {/* Connecting lines */}
+        <div className="relative mt-[-88px] mb-[56px] px-5 pointer-events-none">
+          <div className="flex">
+            {STATUS_FLOW_STEPS.map((step, idx) => {
+              if (idx === 0) return null
+              const prevState = isCancelled
+                ? 'future'
+                : idx - 1 < currentIndex ? 'completed' : idx - 1 === currentIndex ? 'current' : 'future'
+              const currState = isCancelled
+                ? 'future'
+                : idx < currentIndex ? 'completed' : idx === currentIndex ? 'current' : 'future'
+              const lineCompleted = prevState === 'completed' && (currState === 'completed' || currState === 'current')
+
+              return (
+                <div key={`line-${step.key}`} className="relative h-0.5" style={{ flex: 1 }}>
+                  <div className="absolute inset-0 bg-border" />
+                  <motion.div
+                    initial={{ scaleX: 0 }}
+                    animate={{ scaleX: lineCompleted ? 1 : 0 }}
+                    transition={{ duration: 0.4, delay: idx * 0.06 }}
+                    className={`absolute inset-y-0 left-0 origin-left ${lineCompleted ? 'bg-green-500 dark:bg-green-600' : 'bg-border'}`}
+                  />
+                </div>
+              )
+            })}
+          </div>
+        </div>
+
+        {/* Cancelled indicator */}
+        {isCancelled && (
+          <motion.div
+            initial={{ opacity: 0, y: -8 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="flex items-center justify-center gap-2 text-red-600 dark:text-red-400"
+          >
+            <Ban className="h-4 w-4" />
+            <span className="text-sm font-semibold">Проект отменён</span>
+          </motion.div>
+        )}
+      </div>
+
+      {/* Mobile vertical flow */}
+      <div className="md:hidden">
+        <div className="relative">
+          {STATUS_FLOW_STEPS.map((step, idx) => {
+            const colorConfig = STATUS_FLOW_COLORS[step.color]
+            let state: 'completed' | 'current' | 'future'
+            if (isCancelled) {
+              state = 'future'
+            } else if (idx < currentIndex) {
+              state = 'completed'
+            } else if (idx === currentIndex) {
+              state = 'current'
+            } else {
+              state = 'future'
+            }
+            const isNextAvailable = availableNext.includes(step.key)
+            const isLast = idx === STATUS_FLOW_STEPS.length - 1
+
+            return (
+              <div key={step.key}>
+                <div className="flex items-start gap-3">
+                  <div className="flex flex-col items-center shrink-0">
+                    <motion.div
+                      initial={{ opacity: 0, scale: 0.8 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      transition={{ delay: idx * 0.06 }}
+                      className="relative"
+                    >
+                      <motion.div
+                        className={`
+                          size-8 rounded-full border-2 flex items-center justify-center
+                          ${state === 'completed'
+                            ? `${colorConfig.completedBg} ${colorConfig.completedBorder}`
+                            : state === 'current'
+                              ? `${colorConfig.activeBg} ${colorConfig.activeBorder}`
+                              : isNextAvailable
+                                ? `${colorConfig.bg} ${colorConfig.border} ring-2 ring-dashed ring-primary/30`
+                                : `${colorConfig.bg} ${colorConfig.border} opacity-40`
+                          }
+                        `}
+                        animate={state === 'current' ? { scale: [1, 1.1, 1], transition: { duration: 2, repeat: Infinity } } : {}}
+                      >
+                        {state === 'completed' ? (
+                          <Check className="size-4 text-white" strokeWidth={3} />
+                        ) : state === 'current' ? (
+                          <step.icon className="size-4 text-white" />
+                        ) : (
+                          <step.icon className={`size-3.5 ${colorConfig.text} ${isNextAvailable ? 'opacity-70' : 'opacity-40'}`} />
+                        )}
+                      </motion.div>
+                      {state === 'current' && (
+                        <motion.div
+                          className="absolute inset-0 rounded-full border-2 border-primary/30"
+                          animate={{ scale: [1, 1.2, 1], opacity: [0.6, 0, 0.6] }}
+                          transition={{ duration: 2, repeat: Infinity }}
+                        />
+                      )}
+                    </motion.div>
+                    {!isLast && (
+                      <div className={`w-0.5 h-6 ${state === 'completed' || state === 'current' ? 'bg-green-400 dark:bg-green-600' : 'bg-border'}`} />
+                    )}
+                  </div>
+                  <div className="pb-3 pt-0.5">
+                    <p className={`text-sm font-medium ${
+                      state === 'completed' ? 'text-green-700 dark:text-green-400'
+                        : state === 'current' ? 'text-foreground'
+                          : isNextAvailable ? 'text-primary/70'
+                            : 'text-muted-foreground opacity-50'
+                    }`}>
+                      {step.label}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )
+          })}
+          {isCancelled && (
+            <motion.div
+              initial={{ opacity: 0, x: -8 }}
+              animate={{ opacity: 1, x: 0 }}
+              className="flex items-center gap-2 mt-2 text-red-600 dark:text-red-400 pl-11"
+            >
+              <Ban className="h-4 w-4" />
+              <span className="text-sm font-semibold">Проект отменён</span>
+            </motion.div>
+          )}
+        </div>
+      </div>
+    </div>
+  )
+}
+
+// --- Status Transition Modal ---
+
+function StatusTransitionModal({
+  open,
+  onOpenChange,
+  currentStatus,
+  projectId,
+  onSuccess,
+}: {
+  open: boolean
+  onOpenChange: (open: boolean) => void
+  currentStatus: string
+  projectId: string
+  onSuccess: () => void
+}) {
+  const { toast } = useToast()
+  const [nextStatus, setNextStatus] = useState<string>('')
+  const [comment, setComment] = useState('')
+  const [changedAt, setChangedAt] = useState('')
+
+  const allowedTransitions = VALID_TRANSITIONS[currentStatus] ?? []
+  const isCommentRequired = MANDATORY_COMMENT_TRANSITIONS.includes(nextStatus)
+  const canSubmit = nextStatus && (!isCommentRequired || comment.trim().length > 0)
+
+  const changeStatusMutation = useMutation({
+    mutationFn: async () => {
+      const body: Record<string, string> = { status: nextStatus }
+      if (comment.trim()) body.comment = comment.trim()
+      if (changedAt) body.changedAt = new Date(changedAt).toISOString()
+
+      const res = await fetch(`/api/projects/${projectId}/status`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+      })
+      if (!res.ok) {
+        const err = await res.json()
+        throw new Error(err.error || 'Ошибка изменения статуса')
+      }
+      return res.json()
+    },
+    onSuccess: () => {
+      onSuccess()
+      onOpenChange(false)
+      setNextStatus('')
+      setComment('')
+      setChangedAt('')
+      toast({ title: 'Статус успешно изменён' })
+    },
+    onError: (err: Error) => {
+      toast({ title: 'Ошибка', description: err.message, variant: 'destructive' })
+    },
+  })
+
+  const currentConfig = PROJECT_STATUS_MAP[currentStatus]
+  const nextConfig = PROJECT_STATUS_MAP[nextStatus]
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="sm:max-w-md">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2">
+            <RefreshCcw className="h-5 w-5 text-primary" />
+            Изменение статуса проекта
+          </DialogTitle>
+          <DialogDescription>
+            Выберите новый статус и добавьте комментарий к переходу
+          </DialogDescription>
+        </DialogHeader>
+
+        <div className="space-y-4">
+          {/* Current → Next preview */}
+          <div className="flex items-center justify-center gap-3 py-3">
+            <div className="flex flex-col items-center gap-1">
+              <Badge
+                variant={currentConfig?.variant ?? 'secondary'}
+                className={currentConfig?.className}
+              >
+                {currentConfig?.label ?? currentStatus}
+              </Badge>
+              <span className="text-[10px] text-muted-foreground">Текущий</span>
+            </div>
+            <motion.div
+              initial={{ x: -5 }}
+              animate={{ x: 5 }}
+              transition={{ duration: 0.8, repeat: Infinity, repeatType: 'reverse', ease: 'easeInOut' }}
+            >
+              <ArrowRight className="h-5 w-5 text-primary" />
+            </motion.div>
+            <div className="flex flex-col items-center gap-1">
+              {nextStatus ? (
+                <Badge
+                  variant={nextConfig?.variant ?? 'secondary'}
+                  className={nextConfig?.className}
+                >
+                  {nextConfig?.label ?? nextStatus}
+                </Badge>
+              ) : (
+                <Badge variant="outline" className="opacity-50">???</Badge>
+              )}
+              <span className="text-[10px] text-muted-foreground">Новый</span>
+            </div>
+          </div>
+
+          {/* Next status select */}
+          <div className="space-y-2">
+            <Label>Новый статус</Label>
+            <Select value={nextStatus} onValueChange={setNextStatus}>
+              <SelectTrigger>
+                <SelectValue placeholder="Выберите статус" />
+              </SelectTrigger>
+              <SelectContent>
+                {allowedTransitions.length === 0 ? (
+                  <div className="px-2 py-1.5 text-sm text-muted-foreground">
+                    Нет доступных переходов
+                  </div>
+                ) : (
+                  allowedTransitions.map((status) => {
+                    const config = PROJECT_STATUS_MAP[status]
+                    return (
+                      <SelectItem key={status} value={status}>
+                        <div className="flex items-center gap-2">
+                          {status === 'cancelled' && <Ban className="h-3.5 w-3.5 text-red-500" />}
+                          <span>{config?.label ?? status}</span>
+                        </div>
+                      </SelectItem>
+                    )
+                  })
+                )}
+              </SelectContent>
+            </Select>
+          </div>
+
+          {/* Comment */}
+          <div className="space-y-2">
+            <Label className="flex items-center gap-1.5">
+              <MessageSquare className="h-3.5 w-3.5" />
+              Комментарий
+              {isCommentRequired && <span className="text-red-500 text-xs">(обязательно)</span>}
+            </Label>
+            <Textarea
+              placeholder={isCommentRequired ? 'Укажите причину изменения статуса...' : 'Добавьте комментарий (необязательно)...'}
+              value={comment}
+              onChange={(e) => setComment(e.target.value)}
+              className="min-h-[80px] resize-none"
+            />
+          </div>
+
+          {/* Date picker */}
+          <div className="space-y-2">
+            <Label className="flex items-center gap-1.5">
+              <CalendarDays className="h-3.5 w-3.5" />
+              Дата изменения
+            </Label>
+            <input
+              type="datetime-local"
+              value={changedAt}
+              onChange={(e) => setChangedAt(e.target.value)}
+              className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-xs transition-colors placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+            />
+            {!changedAt && (
+              <p className="text-xs text-muted-foreground">Если не указана, используется текущее время</p>
+            )}
+          </div>
+        </div>
+
+        <DialogFooter className="gap-2 sm:gap-0">
+          <Button variant="outline" onClick={() => onOpenChange(false)}>
+            Отмена
+          </Button>
+          <Button
+            onClick={() => changeStatusMutation.mutate()}
+            disabled={!canSubmit || changeStatusMutation.isPending}
+          >
+            {changeStatusMutation.isPending ? (
+              <Loader2 className="h-4 w-4 animate-spin mr-1" />
+            ) : (
+              <CheckCircle2 className="h-4 w-4 mr-1" />
+            )}
+            Подтвердить
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  )
+}
+
+// --- Enhanced Timeline ---
+
+function EnhancedTimeline({ statusHistory, currentStatus }: { statusHistory: StatusHistoryEntry[]; currentStatus: string }) {
+  // Sort history chronologically (oldest first)
+  const sortedHistory = useMemo(() => {
+    return [...statusHistory].sort((a, b) =>
+      new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
+    )
+  }, [statusHistory])
+
+  const availableNext = VALID_TRANSITIONS[currentStatus] ?? []
+
+  function formatTimelineDate(dateStr: string) {
+    try {
+      return new Date(dateStr).toLocaleDateString('ru-RU', {
+        day: '2-digit',
+        month: '2-digit',
+        year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
+      })
+    } catch {
+      return dateStr
+    }
+  }
+
+  return (
+    <div className="space-y-1">
+      {sortedHistory.map((entry, idx) => {
+        const isCurrent = entry.toStatus === currentStatus || (!entry.toStatus && entry.status === currentStatus)
+        const prevConfig = entry.fromStatus ? PROJECT_STATUS_MAP[entry.fromStatus] : null
+        const nextConfig = PROJECT_STATUS_MAP[entry.toStatus || entry.status]
+
+        return (
+          <motion.div
+            key={entry.id}
+            initial={{ opacity: 0, x: -12 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ delay: idx * 0.05, duration: 0.3 }}
+            className="flex items-start gap-3 relative"
+          >
+            {/* Vertical line + dot */}
+            <div className="flex flex-col items-center shrink-0">
+              <div className={`
+                size-3 rounded-full mt-1.5
+                ${isCurrent
+                  ? 'bg-primary ring-4 ring-primary/20 animate-pulse'
+                  : 'bg-green-500 dark:bg-green-600'
+                }
+              `} />
+              {idx < sortedHistory.length - 1 && (
+                <div className="w-0.5 h-full min-h-[24px] bg-border" />
+              )}
+            </div>
+
+            {/* Content */}
+            <div className={`flex-1 pb-4 ${isCurrent ? '' : ''}`}>
+              <div className="flex items-center gap-2 flex-wrap">
+                {prevConfig && (
+                  <>
+                    <Badge variant={prevConfig.variant} className={`text-xs ${prevConfig.className}`}>
+                      {prevConfig.label}
+                    </Badge>
+                    <ArrowRight className="h-3 w-3 text-muted-foreground" />
+                  </>
+                )}
+                <Badge variant={nextConfig?.variant ?? 'secondary'} className={`text-xs ${nextConfig?.className}`}>
+                  {nextConfig?.label ?? entry.status}
+                </Badge>
+              </div>
+
+              <div className="flex items-center gap-3 mt-1 text-xs text-muted-foreground">
+                <span className="flex items-center gap-1">
+                  <Clock className="h-3 w-3" />
+                  {formatTimelineDate(entry.createdAt)}
+                </span>
+                <span className="flex items-center gap-1">
+                  <User className="h-3 w-3" />
+                  {entry.changedBy || 'Система'}
+                </span>
+              </div>
+
+              {entry.comment && (
+                <div className="mt-1.5 flex items-start gap-1.5 text-xs text-muted-foreground bg-muted/40 rounded-md px-2 py-1.5">
+                  <MessageSquare className="h-3 w-3 mt-0.5 shrink-0" />
+                  <span>{entry.comment}</span>
+                </div>
+              )}
+            </div>
+          </motion.div>
+        )
+      })}
+
+      {/* Available next statuses as ghost badges */}
+      {availableNext.length > 0 && (
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.3 }}
+          className="mt-3 pt-3 border-t"
+        >
+          <p className="text-xs text-muted-foreground mb-2">Доступные переходы:</p>
+          <div className="flex flex-wrap gap-2">
+            {availableNext.map((status) => {
+              const config = PROJECT_STATUS_MAP[status]
+              return (
+                <Badge
+                  key={status}
+                  variant="outline"
+                  className="opacity-50 text-xs border-dashed"
+                >
+                  {config?.label ?? status}
+                </Badge>
+              )
+            })}
+          </div>
+        </motion.div>
+      )}
+
+      {sortedHistory.length === 0 && (
+        <div className="text-center py-6 text-muted-foreground">
+          <History className="h-8 w-8 mx-auto mb-2 opacity-40" />
+          <p className="text-sm">История изменений пуста</p>
+        </div>
+      )}
+    </div>
+  )
+}
+
 // --- Main Component ---
 
 export function ProjectDetail() {
@@ -258,6 +931,7 @@ export function ProjectDetail() {
   const [expandedSuppliers, setExpandedSuppliers] = useState<Record<string, boolean>>({})
   const [expandedRequests, setExpandedRequests] = useState<Record<string, boolean>>({})
   const [expandedInvoices, setExpandedInvoices] = useState<Record<string, boolean>>({})
+  const [statusModalOpen, setStatusModalOpen] = useState(false)
 
   // --- Queries ---
 
@@ -372,7 +1046,6 @@ export function ProjectDetail() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ itemUpdates: [{ itemId, status }] }),
       })
-      // Fallback: if API doesn't support itemUpdates, just refresh
       if (!res.ok) throw new Error('Ошибка обновления позиции')
       return res.json()
     },
@@ -397,7 +1070,6 @@ export function ProjectDetail() {
       groups[key].items.push(item)
     }
 
-    // Sort: items with supplier first, then "Без поставщика"
     const entries = Object.entries(groups).sort(([a], [b]) => {
       if (a === '__no_supplier__') return 1
       if (b === '__no_supplier__') return -1
@@ -424,7 +1096,6 @@ export function ProjectDetail() {
       return
     }
 
-    // Group by supplier
     const bySupplier: Record<string, { projectItemId: string; quantity: number; price: number }[]> = {}
     for (const item of itemsWithSupplier) {
       const sid = item.supplierId!
@@ -515,6 +1186,13 @@ export function ProjectDetail() {
     }))
   }, [project])
 
+  // --- Invalidate queries after status change ---
+  const handleStatusChangeSuccess = () => {
+    queryClient.invalidateQueries({ queryKey: ['project', selectedProjectId] })
+    queryClient.invalidateQueries({ queryKey: ['project-history', selectedProjectId] })
+    queryClient.invalidateQueries({ queryKey: ['projects'] })
+  }
+
   // --- Loading ---
 
   if (isLoading) {
@@ -556,6 +1234,8 @@ export function ProjectDetail() {
   // --- Status banner color ---
   const statusBanner = PROJECT_STATUS_MAP[project?.status ?? 'new']
   const nextStep = STATUS_NEXT_STEP[project?.status ?? 'new']
+  const allowedTransitions = VALID_TRANSITIONS[project.status] ?? []
+  const canChangeStatus = allowedTransitions.length > 0
 
   return (
     <div className="space-y-4">
@@ -578,13 +1258,26 @@ export function ProjectDetail() {
                 )}
               </div>
             </div>
-            {nextStep && project.status !== 'completed' && project.status !== 'cancelled' && (
-              <div className="flex items-center gap-1.5 text-xs opacity-80">
-                <Lightbulb className="h-3.5 w-3.5" />
-                <span>Следующий шаг: {nextStep}</span>
-                <ArrowRight className="h-3 w-3" />
-              </div>
-            )}
+            <div className="flex items-center gap-2 flex-wrap">
+              {nextStep && project.status !== 'completed' && project.status !== 'cancelled' && (
+                <div className="flex items-center gap-1.5 text-xs opacity-80">
+                  <Lightbulb className="h-3.5 w-3.5" />
+                  <span>Следующий шаг: {nextStep}</span>
+                  <ArrowRight className="h-3 w-3" />
+                </div>
+              )}
+              {canChangeStatus && (
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="h-7 gap-1.5 text-xs bg-background/50"
+                  onClick={() => setStatusModalOpen(true)}
+                >
+                  <RefreshCcw className="h-3 w-3" />
+                  Изменить статус
+                </Button>
+              )}
+            </div>
           </div>
         </motion.div>
       )}
@@ -647,6 +1340,9 @@ export function ProjectDetail() {
           </Select>
         </div>
       </div>
+
+      {/* Status Flow Diagram */}
+      <StatusFlowDiagram currentStatus={project.status} />
 
       {/* Budget Summary Cards */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
@@ -998,16 +1694,11 @@ export function ProjectDetail() {
                                   {ri.quantity}
                                 </TableCell>
                                 <TableCell className="text-right">
-                                  {ri.price > 0
-                                    ? `${ri.price.toLocaleString('ru-RU')} ₽`
-                                    : '—'}
+                                  {ri.price.toLocaleString('ru-RU')} ₽
                                 </TableCell>
                                 <TableCell>
                                   {ri.available ? (
-                                    <Badge
-                                      variant="outline"
-                                      className="border-green-500 text-green-700 bg-green-50 text-xs"
-                                    >
+                                    <Badge variant="outline" className="text-xs border-green-500 text-green-700 bg-green-50 dark:text-green-400 dark:bg-green-950/30">
                                       Да ({ri.availableQty})
                                     </Badge>
                                   ) : (
@@ -1016,20 +1707,11 @@ export function ProjectDetail() {
                                     </Badge>
                                   )}
                                 </TableCell>
-                                <TableCell>
-                                  {ri.deliveryDays > 0 ? ri.deliveryDays : '—'}
-                                </TableCell>
+                                <TableCell>{ri.deliveryDays || '—'}</TableCell>
                               </TableRow>
                             ))}
                           </TableBody>
                         </Table>
-                        {request.notes && (
-                          <div className="border-t px-4 py-2">
-                            <p className="text-muted-foreground text-xs">
-                              Примечание: {request.notes}
-                            </p>
-                          </div>
-                        )}
                       </div>
                     </CollapsibleContent>
                   </Collapsible>
@@ -1047,8 +1729,6 @@ export function ProjectDetail() {
             <div className="space-y-2">
               {project.invoices.map((invoice) => {
                 const isOpen = expandedInvoices[invoice.id] ?? false
-                const allMatch = invoice.items.every((i) => i.isMatch)
-                const hasMismatch = invoice.items.some((i) => !i.isMatch)
 
                 return (
                   <Collapsible
@@ -1069,82 +1749,51 @@ export function ProjectDetail() {
                               <span className="font-medium text-sm">
                                 {invoice.supplier.name}
                               </span>
-                              {invoice.invoiceNumber && (
-                                <span className="text-muted-foreground text-xs">
-                                  #{invoice.invoiceNumber}
-                                </span>
-                              )}
                               <StatusBadge
                                 status={invoice.status}
                                 map={INVOICE_STATUS_MAP}
                               />
                             </div>
                             <div className="text-muted-foreground text-xs">
-                              {invoice.items.length} поз. •{' '}
-                              {invoice.totalAmount.toLocaleString('ru-RU')} ₽ •{' '}
-                              {formatShortDate(invoice.receivedAt)}
+                              {invoice.invoiceNumber} • {invoice.totalAmount.toLocaleString('ru-RU')} ₽ • {formatShortDate(invoice.receivedAt)}
                             </div>
                           </div>
                         </div>
-                        {invoice.status === 'verified' && (
-                          <div className="flex items-center gap-1">
-                            {allMatch ? (
-                              <CheckCircle2 className="h-4 w-4 text-green-600" />
-                            ) : hasMismatch ? (
-                              <XCircle className="h-4 w-4 text-red-500" />
-                            ) : null}
-                          </div>
-                        )}
-                      </div>
-                    </CollapsibleTrigger>
-                    <CollapsibleContent>
-                      <div className="rounded-md border border-t-0">
-                        <div className="flex items-center justify-between border-b px-4 py-2 bg-muted/30">
-                          <span className="text-sm font-medium">
-                            Позиции счёта
-                          </span>
+                        <div className="flex items-center gap-2">
                           {invoice.status === 'received' && (
                             <Button
                               size="sm"
                               variant="outline"
-                              onClick={() =>
+                              className="h-7 text-xs"
+                              onClick={(e) => {
+                                e.stopPropagation()
                                 verifyInvoiceMutation.mutate(invoice.id)
-                              }
-                              disabled={verifyInvoiceMutation.isPending}
+                              }}
                             >
-                              {verifyInvoiceMutation.isPending ? (
-                                <Loader2 className="h-3 w-3 animate-spin" />
-                              ) : (
-                                <CheckCircle2 className="h-3 w-3" />
-                              )}
-                              Проверить счёт
+                              <CheckCircle2 className="h-3 w-3 mr-1" />
+                              Проверить
                             </Button>
                           )}
+                          <Badge variant="secondary" className="text-xs">
+                            {invoice.items.length} поз.
+                          </Badge>
                         </div>
+                      </div>
+                    </CollapsibleTrigger>
+                    <CollapsibleContent>
+                      <div className="rounded-md border border-t-0">
                         <Table>
                           <TableHeader>
                             <TableRow>
-                              <TableHead className="w-8" />
-                              <TableHead>Наименование</TableHead>
+                              <TableHead>Позиция</TableHead>
                               <TableHead className="text-center">Кол-во</TableHead>
                               <TableHead className="text-right">Цена</TableHead>
-                              <TableHead>Результат</TableHead>
+                              <TableHead>Совпадение</TableHead>
                             </TableRow>
                           </TableHeader>
                           <TableBody>
                             {invoice.items.map((ii) => (
                               <TableRow key={ii.id}>
-                                <TableCell>
-                                  {invoice.status === 'verified' ? (
-                                    ii.isMatch ? (
-                                      <CheckCircle2 className="h-4 w-4 text-green-600" />
-                                    ) : (
-                                      <XCircle className="h-4 w-4 text-red-500" />
-                                    )
-                                  ) : (
-                                    <Clock className="h-4 w-4 text-muted-foreground" />
-                                  )}
-                                </TableCell>
                                 <TableCell className="font-medium text-sm">
                                   {ii.name}
                                 </TableCell>
@@ -1155,46 +1804,16 @@ export function ProjectDetail() {
                                   {ii.price.toLocaleString('ru-RU')} ₽
                                 </TableCell>
                                 <TableCell>
-                                  {invoice.status === 'verified' ? (
-                                    ii.isMatch ? (
-                                      <Badge
-                                        variant="outline"
-                                        className="border-green-500 text-green-700 bg-green-50 text-xs"
-                                      >
-                                        Совпадает
-                                      </Badge>
-                                    ) : (
-                                      <div className="flex flex-col gap-0.5">
-                                        <Badge
-                                          variant="outline"
-                                          className="border-red-500 text-red-700 bg-red-50 text-xs w-fit"
-                                        >
-                                          Расхождение
-                                        </Badge>
-                                        {ii.mismatchReason && (
-                                          <span className="text-red-600 text-[10px] leading-tight max-w-48">
-                                            {ii.mismatchReason}
-                                          </span>
-                                        )}
-                                      </div>
-                                    )
+                                  {ii.isMatch ? (
+                                    <CheckCircle2 className="h-4 w-4 text-green-600" />
                                   ) : (
-                                    <span className="text-muted-foreground text-xs">
-                                      Ожидает проверки
-                                    </span>
+                                    <XCircle className="h-4 w-4 text-red-500" />
                                   )}
                                 </TableCell>
                               </TableRow>
                             ))}
                           </TableBody>
                         </Table>
-                        {invoice.notes && (
-                          <div className="border-t px-4 py-2">
-                            <p className="text-muted-foreground text-xs">
-                              Примечание: {invoice.notes}
-                            </p>
-                          </div>
-                        )}
                       </div>
                     </CollapsibleContent>
                   </Collapsible>
@@ -1205,119 +1824,38 @@ export function ProjectDetail() {
         </TabsContent>
 
         {/* ===== Tab: История ===== */}
-        <TabsContent value="history" className="space-y-6">
-          {/* Project Lifecycle Timeline */}
-          <ProjectTimeline
-            currentStatus={project.status}
-            statusHistory={statusHistory}
-          />
-
-          {/* Detailed History Log */}
-          {statusHistory.length === 0 && project.purchaseRequests.length === 0 && project.invoices.length === 0 ? (
-            <EmptyState type="history" />
-          ) : (
-            <div className="relative space-y-0">
-              {/* Combine status history, requests, and invoices into a timeline */}
-              {[
-                ...statusHistory.map((h) => ({
-                  type: 'status' as const,
-                  date: h.createdAt,
-                  content: (
-                    <div className="flex items-start gap-3">
-                      <div className="mt-0.5 h-8 w-8 rounded-full bg-muted flex items-center justify-center shrink-0">
-                        <History className="h-4 w-4 text-muted-foreground" />
-                      </div>
-                      <div>
-                        <p className="text-sm font-medium">
-                          Статус:{' '}
-                          <StatusBadge
-                            status={h.status}
-                            map={PROJECT_STATUS_MAP}
-                          />
-                        </p>
-                        {h.notes && (
-                          <p className="text-muted-foreground text-xs mt-0.5">
-                            {h.notes}
-                          </p>
-                        )}
-                        <p className="text-muted-foreground text-xs mt-0.5">
-                          {formatDate(h.createdAt)}
-                        </p>
-                      </div>
-                    </div>
-                  ),
-                })),
-                ...project.purchaseRequests.map((r) => ({
-                  type: 'request' as const,
-                  date: r.createdAt,
-                  content: (
-                    <div className="flex items-start gap-3">
-                      <div className="mt-0.5 h-8 w-8 rounded-full bg-blue-50 flex items-center justify-center shrink-0 dark:bg-blue-950/30">
-                        <Mail className="h-4 w-4 text-blue-600" />
-                      </div>
-                      <div>
-                        <p className="text-sm font-medium">
-                          Запрос: {r.supplier.name}
-                        </p>
-                        <p className="text-muted-foreground text-xs">
-                          {r.items.length} позиций •{' '}
-                          <StatusBadge
-                            status={r.status}
-                            map={REQUEST_STATUS_MAP}
-                          />
-                        </p>
-                        <p className="text-muted-foreground text-xs mt-0.5">
-                          {formatDate(r.createdAt)}
-                        </p>
-                      </div>
-                    </div>
-                  ),
-                })),
-                ...project.invoices.map((inv) => ({
-                  type: 'invoice' as const,
-                  date: inv.createdAt,
-                  content: (
-                    <div className="flex items-start gap-3">
-                      <div className="mt-0.5 h-8 w-8 rounded-full bg-amber-50 flex items-center justify-center shrink-0 dark:bg-amber-950/30">
-                        <FileText className="h-4 w-4 text-amber-600" />
-                      </div>
-                      <div>
-                        <p className="text-sm font-medium">
-                          Счёт: {inv.supplier.name}
-                          {inv.invoiceNumber && ` #${inv.invoiceNumber}`}
-                        </p>
-                        <p className="text-muted-foreground text-xs">
-                          {inv.totalAmount.toLocaleString('ru-RU')} ₽ •{' '}
-                          <StatusBadge
-                            status={inv.status}
-                            map={INVOICE_STATUS_MAP}
-                          />
-                        </p>
-                        <p className="text-muted-foreground text-xs mt-0.5">
-                          {formatDate(inv.createdAt)}
-                        </p>
-                      </div>
-                    </div>
-                  ),
-                })),
-              ]
-                .sort(
-                  (a, b) =>
-                    new Date(b.date).getTime() - new Date(a.date).getTime()
-                )
-                .map((entry, idx) => (
-                  <div key={idx} className="flex gap-4 pb-4">
-                    {/* Timeline line */}
-                    <div className="flex flex-col items-center">
-                      <div className="w-px flex-1 bg-border" />
-                    </div>
-                    <div className="pb-2">{entry.content}</div>
-                  </div>
-                ))}
+        <TabsContent value="history" className="space-y-4">
+          <div className="rounded-xl border bg-card p-4 sm:p-6">
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center gap-2">
+                <History className="h-4 w-4 text-primary" />
+                <h3 className="text-sm font-semibold">История изменений статуса</h3>
+              </div>
+              {canChangeStatus && (
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="h-7 gap-1.5 text-xs"
+                  onClick={() => setStatusModalOpen(true)}
+                >
+                  <RefreshCcw className="h-3 w-3" />
+                  Изменить статус
+                </Button>
+              )}
             </div>
-          )}
+            <EnhancedTimeline statusHistory={statusHistory} currentStatus={project.status} />
+          </div>
         </TabsContent>
       </Tabs>
+
+      {/* Status Transition Modal */}
+      <StatusTransitionModal
+        open={statusModalOpen}
+        onOpenChange={setStatusModalOpen}
+        currentStatus={project.status}
+        projectId={project.id}
+        onSuccess={handleStatusChangeSuccess}
+      />
     </div>
   )
 }

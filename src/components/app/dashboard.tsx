@@ -346,11 +346,13 @@ function StatCard({
   return (
     <motion.div variants={itemVariants} className="h-full">
       <Card
-        className={`relative overflow-hidden transition-all duration-300 ${borderColor ? `border-l-4 ${borderColor}` : ''} ${cardClassName ?? ''} ${isClickable ? 'cursor-pointer hover:shadow-lg hover:-translate-y-0.5 active:scale-[0.98]' : 'hover:shadow-lg'}`}
+        className={`relative overflow-hidden transition-all duration-300 ${borderColor ? `border-l-4 ${borderColor}` : ''} ${cardClassName ?? ''} ${isClickable ? 'cursor-pointer hover:shadow-lg hover:-translate-y-0.5 active:scale-[0.98]' : 'hover:shadow-md'}`}
         onClick={onClick}
       >
         {/* Gradient background */}
         <div className={`absolute inset-0 bg-gradient-to-br ${gradientBg} pointer-events-none`} />
+        {/* Subtle inner shadow for depth */}
+        <div className="absolute inset-0 shadow-[inset_0_1px_0_oklch(1_0_0/0.05)] dark:shadow-[inset_0_1px_0_oklch(1_0_0/0.03)] pointer-events-none" />
         <CardHeader className="relative flex flex-row items-center justify-between pb-2">
           <CardDescription className="text-sm font-medium">
             {title}
@@ -597,7 +599,7 @@ function ActivityFeed() {
                   <div className={`z-10 size-3 rounded-full border-2 border-background ${getActivityDotColor(activity.type)} shrink-0`} />
                   {/* Timeline line */}
                   {idx < activities.length - 1 && (
-                    <div className="absolute top-3 bottom-0 w-px bg-border" />
+                    <div className="absolute top-3 bottom-0 w-px bg-gradient-to-b from-border via-border/60 to-border/20" />
                   )}
                 </div>
                 {/* Activity content */}
@@ -927,8 +929,13 @@ export function Dashboard() {
       {/* ── Welcome Header Section ────────────────────────────────────── */}
       <motion.div
         variants={itemVariants}
-        className="relative -mx-6 -mt-6 px-6 pt-6 pb-5 bg-gradient-to-b from-primary/8 via-primary/[0.03] to-transparent"
+        className="relative -mx-6 -mt-6 px-6 pt-6 pb-5 bg-gradient-to-b from-primary/8 via-primary/[0.03] to-transparent overflow-hidden"
       >
+        {/* Animated gradient background accent */}
+        <div className="absolute inset-0 opacity-30 dark:opacity-20">
+          <div className="absolute top-0 right-0 w-64 h-64 rounded-full bg-gradient-to-br from-primary/20 to-transparent blur-3xl animate-pulse-soft" />
+          <div className="absolute bottom-0 left-0 w-48 h-48 rounded-full bg-gradient-to-tr from-emerald-500/10 to-transparent blur-3xl animate-pulse-soft" style={{ animationDelay: '1s' }} />
+        </div>
         <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <h2 className="text-2xl font-bold tracking-tight">

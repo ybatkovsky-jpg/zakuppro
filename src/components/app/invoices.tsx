@@ -42,6 +42,14 @@ import {
 } from '@/components/ui/table'
 import { Separator } from '@/components/ui/separator'
 import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetDescription,
+  SheetFooter,
+} from '@/components/ui/sheet'
+import {
   Plus,
   Filter,
   ChevronDown,
@@ -57,10 +65,16 @@ import {
   PlusCircle,
   FileDown,
   ArrowRight,
+  Scale,
+  ArrowUpRight,
+  ArrowDownRight,
+  Package,
+  DollarSign,
+  ShieldCheck,
 } from 'lucide-react'
 import { EmptyState } from '@/components/app/empty-state'
 import { exportToCSV } from '@/lib/export-csv'
-import { motion } from 'framer-motion'
+import { motion, AnimatePresence } from 'framer-motion'
 
 // ── Types ──────────────────────────────────────────────────
 
@@ -131,6 +145,50 @@ interface InvoiceListItem {
   _count: { items: number }
 }
 
+// ── Reconciliation Types ───────────────────────────────────
+
+interface ReconcileMatchItem {
+  id: string
+  name: string
+  quantity: number
+  price: number
+}
+
+interface ReconcileMatch {
+  requestItem: ReconcileMatchItem
+  invoiceItem: ReconcileMatchItem
+  nameMatch: boolean
+  quantityMatch: boolean
+  priceMatch: boolean
+  matchScore: number
+}
+
+interface ReconcileSummary {
+  totalRequestItems: number
+  totalInvoiceItems: number
+  matchedItems: number
+  quantityDiscrepancies: number
+  priceDiscrepancies: number
+  unmatchedRequestItems: number
+  unmatchedInvoiceItems: number
+  totalRequestAmount: number
+  totalInvoiceAmount: number
+  amountDifference: number
+}
+
+interface ReconciliationResult {
+  invoiceId: string
+  requestId: string | null
+  invoiceNumber: string
+  projectName: string
+  supplierName: string
+  invoiceStatus: string
+  matches: ReconcileMatch[]
+  unmatchedRequestItems: ReconcileMatchItem[]
+  unmatchedInvoiceItems: ReconcileMatchItem[]
+  summary: ReconcileSummary
+}
+
 // ── Status helpers ─────────────────────────────────────────
 
 const INVOICE_STATUS_MAP: Record<string, { label: string; variant: 'default' | 'secondary' | 'destructive' | 'outline'; className?: string }> = {
@@ -168,7 +226,6 @@ function InvoiceWorkflow({ invoices }: { invoices: InvoiceListItem[] }) {
     return counts
   }, [invoices])
 
-  // Find the highest active step (the furthest step with invoices)
   const activeStepIndex = useMemo(() => {
     let highest = -1
     WORKFLOW_STEPS.forEach((step, idx) => {
@@ -194,7 +251,6 @@ function InvoiceWorkflow({ invoices }: { invoices: InvoiceListItem[] }) {
               transition={{ delay: idx * 0.1, duration: 0.3 }}
               className="flex flex-col items-center gap-2"
             >
-              {/* Circle with count */}
               <div
                 className={`
                   relative flex size-12 items-center justify-center rounded-full transition-all duration-500
@@ -215,13 +271,11 @@ function InvoiceWorkflow({ invoices }: { invoices: InvoiceListItem[] }) {
                 )}
               </div>
 
-              {/* Label */}
               <span className={`text-xs font-medium whitespace-nowrap ${isActive ? 'text-foreground' : 'text-muted-foreground'}`}>
                 {step.label}
               </span>
             </motion.div>
 
-            {/* Connector line */}
             {idx < WORKFLOW_STEPS.length - 1 && (
               <div className="flex-1 flex items-center justify-center px-1 -mt-5">
                 <div className="h-[2px] w-full rounded-full bg-muted relative overflow-hidden">
@@ -249,6 +303,399 @@ interface NewInvoiceItem {
   quantity: number
   price: number
   projectItemId: string | null
+}
+
+// ── Match Status Icon Component ────────────────────────────
+
+function MatchStatusIcon({ match }: { match: ReconcileMatch }) {
+  const isFullMatch = match.nameMatch && match.quantityMatch && match.priceMatch
+  const hasDiscrepancy = match.nameMatch && (match.quantityMatch !== match.priceMatch)
+  const isPartialMatch = match.nameMatch && (!match.quantityMatch || !match.priceMatch)
+  const isNoMatch = !match.nameMatch
+
+  if (isFullMatch) {
+    return (
+      <div className="flex items-center gap-1.5">
+        <CheckCircle2 className="h-5 w-5 text-emerald-500" />
+        <span className="text-xs font-medium text-emerald-600 dark:text-emerald-400">Совпадение</span>
+      </div>
+    )
+  }
+
+  if (isPartialMatch) {
+    return (
+      <div className="flex items-center gap-1.5">
+        <AlertTriangle className="h-5 w-5 text-amber-500" />
+        <span className="text-xs font-medium text-amber-600 dark:text-amber-400">Расхождение</span>
+      </div>
+    )
+  }
+
+  if (hasDiscrepancy) {
+    return (
+      <div className="flex items-center gap-1.5">
+        <AlertTriangle className="h-5 w-5 text-amber-500" />
+        <span className="text-xs font-medium text-amber-600 dark:text-amber-400">Расхождение</span>
+      </div>
+    )
+  }
+
+  return (
+    <div className="flex items-center gap-1.5">
+      <XCircle className="h-5 w-5 text-red-500" />
+      <span className="text-xs font-medium text-red-600 dark:text-red-400">Не совпадает</span>
+    </div>
+  )
+}
+
+// ── Quantity/Price Difference Indicator ────────────────────
+
+function DifferenceIndicator({ request, invoice, type }: { request: number; invoice: number; type: 'quantity' | 'price' }) {
+  const diff = invoice - request
+  if (diff === 0) return null
+
+  const isIncrease = diff > 0
+  const absDiff = Math.abs(diff)
+  const formattedDiff = type === 'price'
+    ? new Intl.NumberFormat('ru-RU', { style: 'currency', currency: 'RUB' }).format(absDiff)
+    : String(absDiff)
+
+  return (
+    <span className={`inline-flex items-center gap-0.5 text-xs font-medium ${isIncrease ? 'text-red-500' : 'text-amber-500'}`}>
+      {isIncrease ? <ArrowUpRight className="h-3 w-3" /> : <ArrowDownRight className="h-3 w-3" />}
+      {formattedDiff}
+    </span>
+  )
+}
+
+// ── Reconciliation Sheet Component ─────────────────────────
+
+function ReconciliationSheet({
+  open,
+  onOpenChange,
+  reconciliation,
+  onVerify,
+  isVerifying,
+}: {
+  open: boolean
+  onOpenChange: (open: boolean) => void
+  reconciliation: ReconciliationResult | null
+  onVerify: () => void
+  isVerifying: boolean
+}) {
+  const formatAmount = (n: number) =>
+    new Intl.NumberFormat('ru-RU', { style: 'currency', currency: 'RUB' }).format(n)
+
+  const { matches, unmatchedRequestItems, unmatchedInvoiceItems, summary } = reconciliation ?? {
+    matches: [], unmatchedRequestItems: [], unmatchedInvoiceItems: [],
+    summary: {
+      totalRequestItems: 0, totalInvoiceItems: 0, matchedItems: 0,
+      quantityDiscrepancies: 0, priceDiscrepancies: 0,
+      unmatchedRequestItems: 0, unmatchedInvoiceItems: 0,
+      totalRequestAmount: 0, totalInvoiceAmount: 0, amountDifference: 0,
+    },
+  }
+
+  // Show loading state while data is being fetched
+  if (!reconciliation) {
+    return (
+      <Sheet open={open} onOpenChange={onOpenChange}>
+        <SheetContent side="right" className="w-full sm:max-w-3xl overflow-y-auto p-0">
+          <SheetHeader className="p-4">
+            <SheetTitle>Сверка счёта</SheetTitle>
+            <SheetDescription>Загрузка данных сверки...</SheetDescription>
+          </SheetHeader>
+          <div className="flex flex-col items-center justify-center py-16 gap-4">
+            <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+            <p className="text-sm text-muted-foreground">Сравнение позиций запроса и счёта...</p>
+          </div>
+        </SheetContent>
+      </Sheet>
+    )
+  }
+  const allGood = summary.unmatchedRequestItems === 0 && summary.unmatchedInvoiceItems === 0 && summary.quantityDiscrepancies === 0 && summary.priceDiscrepancies === 0
+
+  return (
+    <Sheet open={open} onOpenChange={onOpenChange}>
+      <SheetContent side="right" className="w-full sm:max-w-3xl overflow-y-auto p-0">
+        {/* Header */}
+        <div className="sticky top-0 z-10 bg-background border-b">
+          <SheetHeader className="p-4 pb-3">
+            <div className="flex items-center gap-3">
+              <div className="flex size-10 items-center justify-center rounded-full bg-amber-100 dark:bg-amber-950/30">
+                <Scale className="h-5 w-5 text-amber-600 dark:text-amber-400" />
+              </div>
+              <div>
+                <SheetTitle className="text-lg">
+                  Сверка счёта {reconciliation.invoiceNumber ? `№ ${reconciliation.invoiceNumber}` : ''}
+                </SheetTitle>
+                <SheetDescription className="text-sm">
+                  {reconciliation.projectName} • {reconciliation.supplierName}
+                </SheetDescription>
+              </div>
+              <div className="ml-auto">
+                <StatusBadge status={reconciliation.invoiceStatus} />
+              </div>
+            </div>
+          </SheetHeader>
+        </div>
+
+        <div className="p-4 space-y-5">
+          {/* Summary Cards */}
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.3 }}
+            className="grid grid-cols-2 sm:grid-cols-4 gap-3"
+          >
+            <div className="rounded-lg border bg-emerald-50 dark:bg-emerald-950/20 p-3 text-center">
+              <p className="text-2xl font-bold text-emerald-600 dark:text-emerald-400">{summary.matchedItems}</p>
+              <p className="text-xs text-muted-foreground">Совпадений</p>
+            </div>
+            <div className="rounded-lg border bg-amber-50 dark:bg-amber-950/20 p-3 text-center">
+              <p className="text-2xl font-bold text-amber-600 dark:text-amber-400">{summary.quantityDiscrepancies + summary.priceDiscrepancies}</p>
+              <p className="text-xs text-muted-foreground">Расхождений</p>
+            </div>
+            <div className="rounded-lg border bg-red-50 dark:bg-red-950/20 p-3 text-center">
+              <p className="text-2xl font-bold text-red-600 dark:text-red-400">{summary.unmatchedRequestItems + summary.unmatchedInvoiceItems}</p>
+              <p className="text-xs text-muted-foreground">Не сопоставлено</p>
+            </div>
+            <div className="rounded-lg border bg-sky-50 dark:bg-sky-950/20 p-3 text-center">
+              <p className={`text-2xl font-bold ${summary.amountDifference > 0 ? 'text-red-600' : summary.amountDifference < 0 ? 'text-amber-600' : 'text-emerald-600'}`}>
+                {summary.amountDifference > 0 ? '+' : ''}{formatAmount(summary.amountDifference)}
+              </p>
+              <p className="text-xs text-muted-foreground">Разница сумм</p>
+            </div>
+          </motion.div>
+
+          {/* Two-column header */}
+          <div className="grid grid-cols-2 gap-4">
+            <div className="flex items-center gap-2 text-sm font-semibold text-sky-700 dark:text-sky-400">
+              <FileText className="h-4 w-4" />
+              Запрос ({summary.totalRequestItems} поз.)
+            </div>
+            <div className="flex items-center gap-2 text-sm font-semibold text-amber-700 dark:text-amber-400">
+              <Receipt className="h-4 w-4" />
+              Счёт ({summary.totalInvoiceItems} поз.)
+            </div>
+          </div>
+
+          <Separator />
+
+          {/* Matched items */}
+          <AnimatePresence>
+            {matches.map((match, idx) => (
+              <motion.div
+                key={`${match.requestItem.id}-${match.invoiceItem.id}`}
+                initial={{ opacity: 0, x: -10 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ delay: idx * 0.05, duration: 0.25 }}
+                className="rounded-lg border bg-card"
+              >
+                {/* Match status bar */}
+                <div className={`px-3 py-1.5 rounded-t-lg text-xs font-medium flex items-center justify-between ${
+                  match.nameMatch && match.quantityMatch && match.priceMatch
+                    ? 'bg-emerald-50 dark:bg-emerald-950/20 text-emerald-700 dark:text-emerald-400'
+                    : match.nameMatch
+                      ? 'bg-amber-50 dark:bg-amber-950/20 text-amber-700 dark:text-amber-400'
+                      : 'bg-red-50 dark:bg-red-950/20 text-red-700 dark:text-red-400'
+                }`}>
+                  <MatchStatusIcon match={match} />
+                  {match.matchScore < 1 && (
+                    <span className="text-xs opacity-70">
+                      Совпадение имён: {Math.round(match.matchScore * 100)}%
+                    </span>
+                  )}
+                </div>
+
+                {/* Two-column comparison */}
+                <div className="grid grid-cols-2 gap-4 p-3">
+                  {/* Request item */}
+                  <div className="space-y-1">
+                    <p className="text-sm font-medium">{match.requestItem.name}</p>
+                    <div className="flex items-center gap-3 text-xs text-muted-foreground">
+                      <span className="flex items-center gap-1">
+                        <Package className="h-3 w-3" />
+                        {match.requestItem.quantity} шт
+                      </span>
+                      <span className="flex items-center gap-1">
+                        <DollarSign className="h-3 w-3" />
+                        {formatAmount(match.requestItem.price)}
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Invoice item */}
+                  <div className="space-y-1">
+                    <p className="text-sm font-medium">{match.invoiceItem.name}</p>
+                    <div className="flex items-center gap-3 text-xs">
+                      <span className="flex items-center gap-1 text-muted-foreground">
+                        <Package className="h-3 w-3" />
+                        {match.invoiceItem.quantity} шт
+                      </span>
+                      <DifferenceIndicator request={match.requestItem.quantity} invoice={match.invoiceItem.quantity} type="quantity" />
+                    </div>
+                    <div className="flex items-center gap-3 text-xs">
+                      <span className="flex items-center gap-1 text-muted-foreground">
+                        <DollarSign className="h-3 w-3" />
+                        {formatAmount(match.invoiceItem.price)}
+                      </span>
+                      <DifferenceIndicator request={match.requestItem.price} invoice={match.invoiceItem.price} type="price" />
+                    </div>
+                  </div>
+                </div>
+              </motion.div>
+            ))}
+          </AnimatePresence>
+
+          {/* Unmatched request items */}
+          {unmatchedRequestItems.length > 0 && (
+            <div className="space-y-2">
+              <h4 className="text-sm font-semibold text-red-600 dark:text-red-400 flex items-center gap-2">
+                <XCircle className="h-4 w-4" />
+                В запросе без соответствия в счёте ({unmatchedRequestItems.length})
+              </h4>
+              {unmatchedRequestItems.map((item) => (
+                <motion.div
+                  key={item.id}
+                  initial={{ opacity: 0, y: 5 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="rounded-lg border border-red-200 dark:border-red-900 bg-red-50/50 dark:bg-red-950/10 p-3"
+                >
+                  <div className="flex items-center justify-between">
+                    <p className="text-sm font-medium">{item.name}</p>
+                    <div className="flex items-center gap-3 text-xs text-muted-foreground">
+                      <span>{item.quantity} шт</span>
+                      <span>{formatAmount(item.price)}</span>
+                    </div>
+                  </div>
+                </motion.div>
+              ))}
+            </div>
+          )}
+
+          {/* Unmatched invoice items */}
+          {unmatchedInvoiceItems.length > 0 && (
+            <div className="space-y-2">
+              <h4 className="text-sm font-semibold text-red-600 dark:text-red-400 flex items-center gap-2">
+                <XCircle className="h-4 w-4" />
+                В счёте без соответствия в запросе ({unmatchedInvoiceItems.length})
+              </h4>
+              {unmatchedInvoiceItems.map((item) => (
+                <motion.div
+                  key={item.id}
+                  initial={{ opacity: 0, y: 5 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="rounded-lg border border-red-200 dark:border-red-900 bg-red-50/50 dark:bg-red-950/10 p-3"
+                >
+                  <div className="flex items-center justify-between">
+                    <p className="text-sm font-medium">{item.name}</p>
+                    <div className="flex items-center gap-3 text-xs text-muted-foreground">
+                      <span>{item.quantity} шт</span>
+                      <span>{formatAmount(item.price)}</span>
+                    </div>
+                  </div>
+                </motion.div>
+              ))}
+            </div>
+          )}
+
+          {/* Totals comparison */}
+          <Separator />
+          <div className="rounded-lg border bg-muted/30 p-4 space-y-3">
+            <h4 className="text-sm font-semibold flex items-center gap-2">
+              <DollarSign className="h-4 w-4" />
+              Итоги сверки
+            </h4>
+            <div className="grid grid-cols-2 gap-4 text-sm">
+              <div>
+                <p className="text-muted-foreground text-xs">Сумма по запросу</p>
+                <p className="font-semibold">{formatAmount(summary.totalRequestAmount)}</p>
+              </div>
+              <div>
+                <p className="text-muted-foreground text-xs">Сумма по счёту</p>
+                <p className="font-semibold">{formatAmount(summary.totalInvoiceAmount)}</p>
+              </div>
+            </div>
+            <Separator />
+            <div className="flex items-center justify-between">
+              <span className="text-sm text-muted-foreground">Разница</span>
+              <span className={`text-sm font-bold ${
+                summary.amountDifference === 0
+                  ? 'text-emerald-600'
+                  : 'text-red-600'
+              }`}>
+                {summary.amountDifference > 0 ? '+' : ''}{formatAmount(summary.amountDifference)}
+              </span>
+            </div>
+          </div>
+
+          {/* Overall result */}
+          <div className={`rounded-lg p-4 ${
+            allGood
+              ? 'bg-emerald-50 dark:bg-emerald-950/20 border border-emerald-200 dark:border-emerald-800'
+              : 'bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-800'
+          }`}>
+            <div className="flex items-start gap-3">
+              {allGood ? (
+                <ShieldCheck className="h-6 w-6 text-emerald-600 dark:text-emerald-400 shrink-0 mt-0.5" />
+              ) : (
+                <AlertTriangle className="h-6 w-6 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
+              )}
+              <div>
+                <p className="text-sm font-semibold">
+                  {allGood
+                    ? 'Полное совпадение — все позиции сверены'
+                    : 'Обнаружены расхождения'}
+                </p>
+                {!allGood && (
+                  <ul className="mt-1.5 space-y-0.5 text-xs text-muted-foreground">
+                    {summary.quantityDiscrepancies > 0 && (
+                      <li>• {summary.quantityDiscrepancies} поз. с расхождением количества</li>
+                    )}
+                    {summary.priceDiscrepancies > 0 && (
+                      <li>• {summary.priceDiscrepancies} поз. с расхождением цены</li>
+                    )}
+                    {summary.unmatchedRequestItems > 0 && (
+                      <li>• {summary.unmatchedRequestItems} поз. в запросе без соответствия</li>
+                    )}
+                    {summary.unmatchedInvoiceItems > 0 && (
+                      <li>• {summary.unmatchedInvoiceItems} поз. в счёте без соответствия</li>
+                    )}
+                  </ul>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Footer with actions */}
+        <SheetFooter className="border-t p-4 bg-background sticky bottom-0">
+          <div className="flex gap-2 w-full sm:justify-end">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => onOpenChange(false)}
+            >
+              Закрыть
+            </Button>
+            {(reconciliation.invoiceStatus === 'received' || reconciliation.invoiceStatus === 'verified' || reconciliation.invoiceStatus === 'discrepancy') && (
+              <Button
+                type="button"
+                onClick={onVerify}
+                disabled={isVerifying}
+                className={allGood ? '' : 'bg-amber-600 hover:bg-amber-700'}
+              >
+                {isVerifying && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                <ShieldCheck className="mr-2 h-4 w-4" />
+                {allGood ? 'Подтвердить сверку' : 'Подтвердить с расхождениями'}
+              </Button>
+            )}
+          </div>
+        </SheetFooter>
+      </SheetContent>
+    </Sheet>
+  )
 }
 
 // ── Main Component ─────────────────────────────────────────
@@ -280,6 +727,10 @@ export function Invoices() {
 
   // Cancel dialog
   const [cancelId, setCancelId] = useState<string | null>(null)
+
+  // Reconciliation sheet
+  const [reconcileOpen, setReconcileOpen] = useState(false)
+  const [reconcileInvoiceId, setReconcileInvoiceId] = useState<string | null>(null)
 
   // ── Queries ────────────────────────────────────────────────
 
@@ -320,6 +771,18 @@ export function Invoices() {
       return res.json() as Promise<Project & { items: ProjectItem[] }>
     },
     enabled: !!newProjectId,
+  })
+
+  // Reconciliation data query
+  const { data: reconciliationData, isLoading: reconciliationLoading } = useQuery({
+    queryKey: ['reconcile', reconcileInvoiceId],
+    queryFn: async () => {
+      if (!reconcileInvoiceId) return null
+      const res = await fetch(`/api/invoices/${reconcileInvoiceId}/reconcile`)
+      if (!res.ok) throw new Error('Failed to fetch reconciliation data')
+      return res.json() as Promise<ReconciliationResult>
+    },
+    enabled: !!reconcileInvoiceId,
   })
 
   // ── Filtered invoices by search ────────────────────────────
@@ -470,6 +933,39 @@ export function Invoices() {
     const detail = await fetchDetail(invoice.id)
     setDetailInvoice(detail)
     setDetailOpen(true)
+  }
+
+  const openReconcile = (invoiceId: string) => {
+    setReconcileInvoiceId(invoiceId)
+    setReconcileOpen(true)
+  }
+
+  const handleReconcileVerify = () => {
+    if (!reconcileInvoiceId) return
+    // Determine status based on reconciliation result
+    const hasDiscrepancies = reconciliationData && (
+      reconciliationData.summary.quantityDiscrepancies > 0 ||
+      reconciliationData.summary.priceDiscrepancies > 0 ||
+      reconciliationData.summary.unmatchedRequestItems > 0 ||
+      reconciliationData.summary.unmatchedInvoiceItems > 0
+    )
+    const newStatus = hasDiscrepancies ? 'discrepancy' : 'verified'
+    updateMutation.mutate(
+      { id: reconcileInvoiceId, data: { status: newStatus } },
+      {
+        onSuccess: () => {
+          setReconcileOpen(false)
+          setReconcileInvoiceId(null)
+          queryClient.invalidateQueries({ queryKey: ['reconcile'] })
+          toast({
+            title: hasDiscrepancies ? 'Сверка завершена с расхождениями' : 'Сверка подтверждена',
+            description: hasDiscrepancies
+              ? 'Счёт помечен как имеющий расхождения'
+              : 'Все позиции совпадают, счёт проверен',
+          })
+        },
+      }
+    )
   }
 
   const formatDate = (d: string | null) => {
@@ -628,6 +1124,18 @@ export function Invoices() {
                     <TableCell className="hidden lg:table-cell">{formatDate(inv.receivedAt)}</TableCell>
                     <TableCell className="text-right">
                       <div className="flex justify-end gap-1" onClick={(e) => e.stopPropagation()}>
+                        {/* Reconcile button - for received and verified invoices */}
+                        {(inv.status === 'received' || inv.status === 'verified' || inv.status === 'discrepancy') && (
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => openReconcile(inv.id)}
+                            className="border-amber-300 text-amber-700 hover:bg-amber-50 dark:border-amber-700 dark:text-amber-400 dark:hover:bg-amber-950/30"
+                          >
+                            <Scale className="mr-1 h-3 w-3" />
+                            Сверить
+                          </Button>
+                        )}
                         {inv.status === 'received' && (
                           <Button
                             size="sm"
@@ -970,6 +1478,20 @@ export function Invoices() {
               {/* Action buttons */}
               <Separator />
               <div className="flex flex-wrap gap-2">
+                {/* Reconcile button in detail dialog */}
+                {(detailInvoice.status === 'received' || detailInvoice.status === 'verified' || detailInvoice.status === 'discrepancy') && (
+                  <Button
+                    variant="outline"
+                    onClick={() => {
+                      openReconcile(detailInvoice.id)
+                      setDetailOpen(false)
+                    }}
+                    className="border-amber-300 text-amber-700 hover:bg-amber-50 dark:border-amber-700 dark:text-amber-400 dark:hover:bg-amber-950/30"
+                  >
+                    <Scale className="mr-2 h-4 w-4" />
+                    Сверить
+                  </Button>
+                )}
                 {detailInvoice.status === 'received' && (
                   <Button
                     onClick={() => {
@@ -1069,6 +1591,18 @@ export function Invoices() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* ── Reconciliation Sheet ───────────────────────────── */}
+      <ReconciliationSheet
+        open={reconcileOpen}
+        onOpenChange={(open) => {
+          setReconcileOpen(open)
+          if (!open) setReconcileInvoiceId(null)
+        }}
+        reconciliation={reconciliationData ?? null}
+        onVerify={handleReconcileVerify}
+        isVerifying={updateMutation.isPending}
+      />
     </div>
   )
 }
