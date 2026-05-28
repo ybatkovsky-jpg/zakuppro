@@ -1,0 +1,216 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+// === COMPANY DETAILS ===
+model CompanyDetails {
+  id          String @id @default(cuid())
+  companyName String
+  inn         String @default("")
+  kpp         String @default("")
+  ogrn        String @default("")
+  address     String @default("")
+  email       String @default("")
+  phone       String @default("")
+  bankName    String @default("")
+  bankAccount String @default("")
+  korAccount  String @default("")
+  bik         String @default("")
+  isDefault   Boolean @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+// === SUPPLIERS ===
+model Supplier {
+  id           String @id @default(cuid())
+  name         String
+  email        String @default("")
+  phone        String @default("")
+  contactPerson String @default("")
+  address      String @default("")
+  notes        String @default("")
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  projectItems   ProjectItem[]
+  purchaseRequests PurchaseRequest[]
+  invoices      Invoice[]
+  emailLogs     EmailLog[]
+}
+
+// === PROJECTS ===
+model Project {
+  id          String @id @default(cuid())
+  name        String
+  description String @default("")
+  status      String @default("new") // new, processing, requested, invoiced, paid, delivered, completed, cancelled
+  fileName    String @default("")
+  customerName String @default("")
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  items          ProjectItem[]
+  purchaseRequests PurchaseRequest[]
+  invoices       Invoice[]
+  emailLogs      EmailLog[]
+  statusHistory  ProjectStatusHistory[]
+}
+
+// === PROJECT ITEMS (positions from Excel) ===
+model ProjectItem {
+  id           String @id @default(cuid())
+  projectId    String
+  supplierId   String?
+  name         String
+  article      String @default("")
+  category     String @default("")
+  quantity     Int
+  unit         String @default("шт")
+  price        Float @default(0)
+  isFromWarehouse Boolean @default(false)
+  status       String @default("pending") // pending, requested, invoiced, partial, available, ordered, delivered, completed
+  notes        String @default("")
+  rowNumber    Int @default(0)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  project      Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  supplier     Supplier? @relation(fields: [supplierId], references: [id])
+  requestItems PurchaseRequestItem[]
+  invoiceItems InvoiceItem[]
+  warehouseTransactions WarehouseTransaction[]
+}
+
+// === PURCHASE REQUESTS ===
+model PurchaseRequest {
+  id          String @id @default(cuid())
+  projectId   String
+  supplierId  String
+  status      String @default("draft") // draft, sent, responded, partial, cancelled
+  emailTo     String @default("")
+  emailSubject String @default("")
+  emailBody   String @default("")
+  sentAt      DateTime?
+  responseAt  DateTime?
+  notes       String @default("")
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  project     Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  supplier    Supplier @relation(fields: [supplierId], references: [id])
+  items       PurchaseRequestItem[]
+}
+
+// === PURCHASE REQUEST ITEMS ===
+model PurchaseRequestItem {
+  id             String @id @default(cuid())
+  requestId      String
+  projectItemId  String
+  quantity       Int
+  price          Float @default(0)
+  available      Boolean @default(false)
+  availableQty   Int @default(0)
+  deliveryDays   Int @default(0)
+  notes          String @default("")
+
+  request        PurchaseRequest @relation(fields: [requestId], references: [id], onDelete: Cascade)
+  projectItem    ProjectItem @relation(fields: [projectItemId], references: [id])
+}
+
+// === INVOICES ===
+model Invoice {
+  id            String @id @default(cuid())
+  projectId     String
+  supplierId    String
+  invoiceNumber String @default("")
+  totalAmount   Float @default(0)
+  status        String @default("received") // received, verified, discrepancy, approved, paid, cancelled
+  receivedAt    DateTime @default(now())
+  paidAt        DateTime?
+  notes         String @default("")
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  project       Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  supplier      Supplier @relation(fields: [supplierId], references: [id])
+  items         InvoiceItem[]
+}
+
+// === INVOICE ITEMS ===
+model InvoiceItem {
+  id             String @id @default(cuid())
+  invoiceId      String
+  projectItemId  String?
+  name           String
+  quantity       Int
+  price          Float @default(0)
+  isMatch        Boolean @default(false)
+  mismatchReason String @default("")
+
+  invoice        Invoice @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+  projectItem    ProjectItem? @relation(fields: [projectItemId], references: [id])
+}
+
+// === WAREHOUSE ===
+model WarehouseItem {
+  id          String @id @default(cuid())
+  name        String
+  article     String @default("")
+  category    String @default("")
+  quantity    Int @default(0)
+  minQuantity Int @default(0)
+  unit        String @default("шт")
+  location    String @default("")
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  transactions WarehouseTransaction[]
+}
+
+// === WAREHOUSE TRANSACTIONS ===
+model WarehouseTransaction {
+  id              String @id @default(cuid())
+  warehouseItemId String
+  projectItemId   String?
+  type            String // in, out
+  quantity        Int
+  notes           String @default("")
+  createdAt       DateTime @default(now())
+
+  warehouseItem   WarehouseItem @relation(fields: [warehouseItemId], references: [id], onDelete: Cascade)
+  projectItem     ProjectItem? @relation(fields: [projectItemId], references: [id])
+}
+
+// === EMAIL LOG ===
+model EmailLog {
+  id          String @id @default(cuid())
+  projectId   String?
+  supplierId  String?
+  direction   String // outgoing, incoming
+  subject     String
+  body        String @default("")
+  from        String @default("")
+  to          String @default("")
+  sentAt      DateTime @default(now())
+  createdAt   DateTime @default(now())
+
+  project     Project? @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  supplier    Supplier? @relation(fields: [supplierId], references: [id])
+}
+
+// === PROJECT STATUS HISTORY ===
+model ProjectStatusHistory {
+  id        String @id @default(cuid())
+  projectId String
+  status    String
+  notes     String @default("")
+  createdAt DateTime @default(now())
+
+  project   Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+}
