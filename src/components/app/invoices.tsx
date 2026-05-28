@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Badge } from '@/components/ui/badge'
+import { Skeleton } from '@/components/ui/skeleton'
 import {
   Dialog,
   DialogContent,
@@ -50,6 +51,12 @@ import {
   SheetFooter,
 } from '@/components/ui/sheet'
 import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from '@/components/ui/popover'
+import { Calendar } from '@/components/ui/calendar'
+import {
   Plus,
   Filter,
   ChevronDown,
@@ -72,11 +79,22 @@ import {
   DollarSign,
   ShieldCheck,
   Printer,
+  CalendarIcon,
+  X,
+  Clock,
+  TrendingUp,
+  CircleDot,
+  CheckCheck,
+  Wallet,
+  FileSpreadsheet,
+  Eye,
 } from 'lucide-react'
 import { EmptyState } from '@/components/app/empty-state'
 import { exportToCSV } from '@/lib/export-csv'
 import { openReport } from '@/lib/print-report'
 import { motion, AnimatePresence } from 'framer-motion'
+import { format } from 'date-fns'
+import { ru } from 'date-fns/locale'
 
 // ── Types ──────────────────────────────────────────────────
 
@@ -193,17 +211,80 @@ interface ReconciliationResult {
 
 // ── Status helpers ─────────────────────────────────────────
 
-const INVOICE_STATUS_MAP: Record<string, { label: string; variant: 'default' | 'secondary' | 'destructive' | 'outline'; className?: string; leftBorder?: string; animatedIcon?: string }> = {
-  received: { label: 'Получен', variant: 'secondary', className: 'rounded-full', leftBorder: 'border-l-slate-400', animatedIcon: 'text-slate-500' },
-  verified: { label: 'Проверен', variant: 'default', className: 'rounded-full bg-sky-100 text-sky-800 dark:bg-sky-950/30 dark:text-sky-400 border-sky-200 dark:border-sky-800', leftBorder: 'border-l-sky-500', animatedIcon: 'text-sky-500' },
-  discrepancy: { label: 'Расхождение', variant: 'destructive', className: 'rounded-full', leftBorder: 'border-l-red-500', animatedIcon: 'text-red-500' },
-  approved: { label: 'Одобрен', variant: 'default', className: 'rounded-full bg-emerald-100 text-emerald-800 dark:bg-emerald-950/30 dark:text-emerald-400 border-emerald-200 dark:border-emerald-800', leftBorder: 'border-l-emerald-500', animatedIcon: 'text-emerald-500' },
-  paid: { label: 'Оплачен', variant: 'default', className: 'rounded-full bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400 border-green-200 dark:border-green-800', leftBorder: 'border-l-green-500', animatedIcon: 'text-green-500' },
-  cancelled: { label: 'Отменён', variant: 'destructive', className: 'rounded-full', leftBorder: 'border-l-red-400', animatedIcon: 'text-red-400' },
+const INVOICE_STATUS_MAP: Record<string, {
+  label: string
+  variant: 'default' | 'secondary' | 'destructive' | 'outline'
+  className?: string
+  leftBorder?: string
+  animatedIcon?: string
+  dotColor?: string
+  bgColor?: string
+  icon: typeof FileText
+}> = {
+  received: {
+    label: 'Получен',
+    variant: 'secondary',
+    className: 'rounded-full',
+    leftBorder: 'border-l-slate-400',
+    animatedIcon: 'text-slate-500',
+    dotColor: 'bg-slate-400',
+    bgColor: 'bg-slate-100 dark:bg-slate-900/30',
+    icon: FileText,
+  },
+  verified: {
+    label: 'Проверен',
+    variant: 'default',
+    className: 'rounded-full bg-sky-100 text-sky-800 dark:bg-sky-950/30 dark:text-sky-400 border-sky-200 dark:border-sky-800',
+    leftBorder: 'border-l-sky-500',
+    animatedIcon: 'text-sky-500',
+    dotColor: 'bg-sky-500',
+    bgColor: 'bg-sky-100 dark:bg-sky-900/30',
+    icon: CheckCircle2,
+  },
+  discrepancy: {
+    label: 'Расхождение',
+    variant: 'destructive',
+    className: 'rounded-full',
+    leftBorder: 'border-l-red-500',
+    animatedIcon: 'text-red-500',
+    dotColor: 'bg-red-500',
+    bgColor: 'bg-red-100 dark:bg-red-900/30',
+    icon: AlertTriangle,
+  },
+  approved: {
+    label: 'Утверждён',
+    variant: 'default',
+    className: 'rounded-full bg-emerald-100 text-emerald-800 dark:bg-emerald-950/30 dark:text-emerald-400 border-emerald-200 dark:border-emerald-800',
+    leftBorder: 'border-l-emerald-500',
+    animatedIcon: 'text-emerald-500',
+    dotColor: 'bg-emerald-500',
+    bgColor: 'bg-emerald-100 dark:bg-emerald-900/30',
+    icon: CheckCheck,
+  },
+  paid: {
+    label: 'Оплачен',
+    variant: 'default',
+    className: 'rounded-full bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400 border-green-200 dark:border-green-800',
+    leftBorder: 'border-l-green-500',
+    animatedIcon: 'text-green-500',
+    dotColor: 'bg-green-500',
+    bgColor: 'bg-green-100 dark:bg-green-900/30',
+    icon: Wallet,
+  },
+  cancelled: {
+    label: 'Отменён',
+    variant: 'destructive',
+    className: 'rounded-full',
+    leftBorder: 'border-l-red-400',
+    animatedIcon: 'text-red-400',
+    dotColor: 'bg-red-400',
+    bgColor: 'bg-red-100 dark:bg-red-900/30',
+    icon: XCircle,
+  },
 }
 
 function StatusBadge({ status }: { status: string }) {
-  const info = INVOICE_STATUS_MAP[status] || { label: status, variant: 'outline' as const, className: 'rounded-full', animatedIcon: '' }
+  const info = INVOICE_STATUS_MAP[status] || { label: status, variant: 'outline' as const, className: 'rounded-full', animatedIcon: '', icon: FileText }
   return (
     <div className="flex items-center gap-1.5">
       {info.animatedIcon && (
@@ -214,13 +295,130 @@ function StatusBadge({ status }: { status: string }) {
   )
 }
 
+// ── Relative time helper ──────────────────────────────────
+
+function getRelativeTime(dateStr: string): string | null {
+  const now = new Date()
+  const date = new Date(dateStr)
+  const diffMs = now.getTime() - date.getTime()
+  const diffMin = Math.floor(diffMs / 60000)
+  const diffHrs = Math.floor(diffMs / 3600000)
+  const diffDays = Math.floor(diffMs / 86400000)
+
+  if (diffMin < 1) return 'только что'
+  if (diffMin < 60) return `${diffMin} мин назад`
+  if (diffHrs < 24) return `${diffHrs} ч назад`
+  if (diffDays < 7) return `${diffDays} дн назад`
+  return null
+}
+
+// ── Skeleton Loading ───────────────────────────────────────
+
+function InvoicePageSkeleton() {
+  return (
+    <div className="space-y-6">
+      {/* Header skeleton */}
+      <div className="relative -mx-6 -mt-6 px-6 pt-6 pb-5">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <div className="space-y-2">
+            <Skeleton className="h-8 w-48" />
+            <Skeleton className="h-4 w-64" />
+          </div>
+          <div className="flex gap-2">
+            <Skeleton className="h-9 w-20" />
+            <Skeleton className="h-9 w-20" />
+            <Skeleton className="h-9 w-32" />
+          </div>
+        </div>
+      </div>
+
+      {/* Summary cards skeleton */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        {Array.from({ length: 4 }).map((_, i) => (
+          <Card key={i}>
+            <CardContent className="p-4">
+              <div className="flex items-center gap-3">
+                <Skeleton className="h-10 w-10 rounded-full" />
+                <div className="space-y-1.5 flex-1">
+                  <Skeleton className="h-4 w-16" />
+                  <Skeleton className="h-6 w-24" />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+
+      {/* Pipeline skeleton */}
+      <Card>
+        <CardContent className="p-4">
+          <div className="flex items-center justify-between gap-2 py-2">
+            {Array.from({ length: 4 }).map((_, i) => (
+              <div key={i} className="flex items-center flex-1 last:flex-initial">
+                <div className="flex flex-col items-center gap-2">
+                  <Skeleton className="h-12 w-12 rounded-full" />
+                  <Skeleton className="h-3 w-16" />
+                </div>
+                {i < 3 && <Skeleton className="flex-1 h-0.5 mx-2" />}
+              </div>
+            ))}
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Filter bar skeleton */}
+      <Card>
+        <CardContent className="p-4">
+          <div className="flex gap-4 items-center">
+            <Skeleton className="h-4 w-12" />
+            <Skeleton className="h-9 w-48" />
+            <Skeleton className="h-9 w-40" />
+            <Skeleton className="h-9 w-40" />
+            <Skeleton className="flex-1 h-9" />
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Table skeleton */}
+      <Card>
+        <CardContent className="p-0">
+          <div className="space-y-0">
+            <div className="border-b px-4 py-3 flex gap-4">
+              <Skeleton className="h-4 w-8" />
+              <Skeleton className="h-4 w-32" />
+              <Skeleton className="h-4 w-28" />
+              <Skeleton className="h-4 w-20" />
+              <Skeleton className="h-4 w-24" />
+              <Skeleton className="h-4 w-16" />
+              <Skeleton className="h-4 w-20" />
+              <Skeleton className="h-4 w-28" />
+            </div>
+            {Array.from({ length: 5 }).map((_, i) => (
+              <div key={i} className="border-b px-4 py-3 flex gap-4 items-center">
+                <Skeleton className="h-4 w-8" />
+                <Skeleton className="h-4 w-32" />
+                <Skeleton className="h-4 w-28" />
+                <Skeleton className="h-4 w-20" />
+                <Skeleton className="h-4 w-24" />
+                <Skeleton className="h-6 w-20 rounded-full" />
+                <Skeleton className="h-4 w-20" />
+                <Skeleton className="h-8 w-28" />
+              </div>
+            ))}
+          </div>
+        </CardContent>
+      </Card>
+    </div>
+  )
+}
+
 // ── Invoice Workflow Visualization ──────────────────────────
 
 const WORKFLOW_STEPS = [
-  { status: 'received', label: 'Получен', color: 'slate', circleBg: 'bg-slate-200 dark:bg-slate-700', circleText: 'text-slate-700 dark:text-slate-300', activeBg: 'bg-slate-500', glowColor: 'shadow-slate-400/50' },
-  { status: 'verified', label: 'Проверен', color: 'sky', circleBg: 'bg-sky-200 dark:bg-sky-700', circleText: 'text-sky-700 dark:text-sky-300', activeBg: 'bg-sky-500', glowColor: 'shadow-sky-400/50' },
-  { status: 'approved', label: 'Одобрен', color: 'emerald', circleBg: 'bg-emerald-200 dark:bg-emerald-700', circleText: 'text-emerald-700 dark:text-emerald-300', activeBg: 'bg-emerald-500', glowColor: 'shadow-emerald-400/50' },
-  { status: 'paid', label: 'Оплачен', color: 'green', circleBg: 'bg-green-200 dark:bg-green-700', circleText: 'text-green-700 dark:text-green-300', activeBg: 'bg-green-500', glowColor: 'shadow-green-400/50' },
+  { status: 'received', label: 'Получен', color: 'slate', circleBg: 'bg-slate-200 dark:bg-slate-700', circleText: 'text-slate-700 dark:text-slate-300', activeBg: 'bg-slate-500', glowColor: 'shadow-slate-400/50', icon: FileText },
+  { status: 'verified', label: 'Проверен', color: 'sky', circleBg: 'bg-sky-200 dark:bg-sky-700', circleText: 'text-sky-700 dark:text-sky-300', activeBg: 'bg-sky-500', glowColor: 'shadow-sky-400/50', icon: CheckCircle2 },
+  { status: 'approved', label: 'Утверждён', color: 'emerald', circleBg: 'bg-emerald-200 dark:bg-emerald-700', circleText: 'text-emerald-700 dark:text-emerald-300', activeBg: 'bg-emerald-500', glowColor: 'shadow-emerald-400/50', icon: CheckCheck },
+  { status: 'paid', label: 'Оплачен', color: 'green', circleBg: 'bg-green-200 dark:bg-green-700', circleText: 'text-green-700 dark:text-green-300', activeBg: 'bg-green-500', glowColor: 'shadow-green-400/50', icon: Wallet },
 ] as const
 
 function InvoiceWorkflow({ invoices }: { invoices: InvoiceListItem[] }) {
@@ -251,6 +449,7 @@ function InvoiceWorkflow({ invoices }: { invoices: InvoiceListItem[] }) {
         const count = statusCounts[step.status] ?? 0
         const isActive = idx <= activeStepIndex
         const isCurrentStep = idx === activeStepIndex
+        const StepIcon = step.icon
 
         return (
           <div key={step.status} className="flex items-center flex-1 last:flex-initial">
@@ -269,7 +468,11 @@ function InvoiceWorkflow({ invoices }: { invoices: InvoiceListItem[] }) {
                   }
                 `}
               >
-                <span className="text-sm font-bold">{count}</span>
+                {isActive ? (
+                  <StepIcon className="h-5 w-5" />
+                ) : (
+                  <span className="text-sm font-bold">{count}</span>
+                )}
                 {isCurrentStep && (
                   <motion.div
                     className="absolute inset-0 rounded-full border-2 border-current"
@@ -280,9 +483,14 @@ function InvoiceWorkflow({ invoices }: { invoices: InvoiceListItem[] }) {
                 )}
               </div>
 
-              <span className={`text-xs font-medium whitespace-nowrap ${isActive ? 'text-foreground' : 'text-muted-foreground'}`}>
-                {step.label}
-              </span>
+              <div className="flex flex-col items-center">
+                <span className={`text-xs font-medium whitespace-nowrap ${isActive ? 'text-foreground' : 'text-muted-foreground'}`}>
+                  {step.label}
+                </span>
+                <span className={`text-[10px] ${isActive ? 'text-foreground/70' : 'text-muted-foreground/60'}`}>
+                  {count} сч.
+                </span>
+              </div>
             </motion.div>
 
             {idx < WORKFLOW_STEPS.length - 1 && (
@@ -318,7 +526,6 @@ interface NewInvoiceItem {
 
 function MatchStatusIcon({ match }: { match: ReconcileMatch }) {
   const isFullMatch = match.nameMatch && match.quantityMatch && match.priceMatch
-  const hasDiscrepancy = match.nameMatch && (match.quantityMatch !== match.priceMatch)
   const isPartialMatch = match.nameMatch && (!match.quantityMatch || !match.priceMatch)
   const isNoMatch = !match.nameMatch
 
@@ -332,15 +539,6 @@ function MatchStatusIcon({ match }: { match: ReconcileMatch }) {
   }
 
   if (isPartialMatch) {
-    return (
-      <div className="flex items-center gap-1.5">
-        <AlertTriangle className="h-5 w-5 text-amber-500" />
-        <span className="text-xs font-medium text-amber-600 dark:text-amber-400">Расхождение</span>
-      </div>
-    )
-  }
-
-  if (hasDiscrepancy) {
     return (
       <div className="flex items-center gap-1.5">
         <AlertTriangle className="h-5 w-5 text-amber-500" />
@@ -405,7 +603,6 @@ function ReconciliationSheet({
     },
   }
 
-  // Show loading state while data is being fetched
   if (!reconciliation) {
     return (
       <Sheet open={open} onOpenChange={onOpenChange}>
@@ -457,19 +654,23 @@ function ReconciliationSheet({
             transition={{ duration: 0.3 }}
             className="grid grid-cols-2 sm:grid-cols-4 gap-3"
           >
-            <div className="rounded-lg border bg-emerald-50 dark:bg-emerald-950/20 p-3 text-center">
+            <div className="rounded-xl border bg-emerald-50 dark:bg-emerald-950/20 p-3 text-center">
+              <CheckCircle2 className="h-5 w-5 text-emerald-500 mx-auto mb-1" />
               <p className="text-2xl font-bold text-emerald-600 dark:text-emerald-400">{summary.matchedItems}</p>
               <p className="text-xs text-muted-foreground">Совпадений</p>
             </div>
-            <div className="rounded-lg border bg-amber-50 dark:bg-amber-950/20 p-3 text-center">
+            <div className="rounded-xl border bg-amber-50 dark:bg-amber-950/20 p-3 text-center">
+              <AlertTriangle className="h-5 w-5 text-amber-500 mx-auto mb-1" />
               <p className="text-2xl font-bold text-amber-600 dark:text-amber-400">{summary.quantityDiscrepancies + summary.priceDiscrepancies}</p>
               <p className="text-xs text-muted-foreground">Расхождений</p>
             </div>
-            <div className="rounded-lg border bg-red-50 dark:bg-red-950/20 p-3 text-center">
+            <div className="rounded-xl border bg-red-50 dark:bg-red-950/20 p-3 text-center">
+              <XCircle className="h-5 w-5 text-red-500 mx-auto mb-1" />
               <p className="text-2xl font-bold text-red-600 dark:text-red-400">{summary.unmatchedRequestItems + summary.unmatchedInvoiceItems}</p>
               <p className="text-xs text-muted-foreground">Не сопоставлено</p>
             </div>
-            <div className="rounded-lg border bg-sky-50 dark:bg-sky-950/20 p-3 text-center">
+            <div className="rounded-xl border bg-sky-50 dark:bg-sky-950/20 p-3 text-center">
+              <DollarSign className="h-5 w-5 text-sky-500 mx-auto mb-1" />
               <p className={`text-2xl font-bold ${summary.amountDifference > 0 ? 'text-red-600' : summary.amountDifference < 0 ? 'text-amber-600' : 'text-emerald-600'}`}>
                 {summary.amountDifference > 0 ? '+' : ''}{formatAmount(summary.amountDifference)}
               </p>
@@ -477,13 +678,16 @@ function ReconciliationSheet({
             </div>
           </motion.div>
 
-          {/* Two-column header */}
-          <div className="grid grid-cols-2 gap-4">
-            <div className="flex items-center gap-2 text-sm font-semibold text-sky-700 dark:text-sky-400">
+          {/* Visual comparison header */}
+          <div className="grid grid-cols-[1fr,40px,1fr] gap-2 items-center">
+            <div className="flex items-center gap-2 text-sm font-semibold text-sky-700 dark:text-sky-400 bg-sky-50 dark:bg-sky-950/20 rounded-lg px-3 py-2">
               <FileText className="h-4 w-4" />
               Запрос ({summary.totalRequestItems} поз.)
             </div>
-            <div className="flex items-center gap-2 text-sm font-semibold text-amber-700 dark:text-amber-400">
+            <div className="flex items-center justify-center">
+              <ArrowRight className="h-4 w-4 text-muted-foreground" />
+            </div>
+            <div className="flex items-center gap-2 text-sm font-semibold text-amber-700 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/20 rounded-lg px-3 py-2">
               <Receipt className="h-4 w-4" />
               Счёт ({summary.totalInvoiceItems} поз.)
             </div>
@@ -491,70 +695,88 @@ function ReconciliationSheet({
 
           <Separator />
 
-          {/* Matched items */}
+          {/* Matched items - improved visual comparison */}
           <AnimatePresence>
-            {matches.map((match, idx) => (
-              <motion.div
-                key={`${match.requestItem.id}-${match.invoiceItem.id}`}
-                initial={{ opacity: 0, x: -10 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: idx * 0.05, duration: 0.25 }}
-                className="rounded-lg border bg-card"
-              >
-                {/* Match status bar */}
-                <div className={`px-3 py-1.5 rounded-t-lg text-xs font-medium flex items-center justify-between ${
-                  match.nameMatch && match.quantityMatch && match.priceMatch
-                    ? 'bg-emerald-50 dark:bg-emerald-950/20 text-emerald-700 dark:text-emerald-400'
-                    : match.nameMatch
-                      ? 'bg-amber-50 dark:bg-amber-950/20 text-amber-700 dark:text-amber-400'
-                      : 'bg-red-50 dark:bg-red-950/20 text-red-700 dark:text-red-400'
-                }`}>
-                  <MatchStatusIcon match={match} />
-                  {match.matchScore < 1 && (
-                    <span className="text-xs opacity-70">
-                      Совпадение имён: {Math.round(match.matchScore * 100)}%
-                    </span>
-                  )}
-                </div>
-
-                {/* Two-column comparison */}
-                <div className="grid grid-cols-2 gap-4 p-3">
-                  {/* Request item */}
-                  <div className="space-y-1">
-                    <p className="text-sm font-medium">{match.requestItem.name}</p>
-                    <div className="flex items-center gap-3 text-xs text-muted-foreground">
-                      <span className="flex items-center gap-1">
-                        <Package className="h-3 w-3" />
-                        {match.requestItem.quantity} шт
+            {matches.map((match, idx) => {
+              const isFullMatch = match.nameMatch && match.quantityMatch && match.priceMatch
+              return (
+                <motion.div
+                  key={`${match.requestItem.id}-${match.invoiceItem.id}`}
+                  initial={{ opacity: 0, x: -10 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ delay: idx * 0.05, duration: 0.25 }}
+                  className={`rounded-xl border overflow-hidden ${
+                    isFullMatch
+                      ? 'border-emerald-200 dark:border-emerald-800'
+                      : match.nameMatch
+                        ? 'border-amber-200 dark:border-amber-800'
+                        : 'border-red-200 dark:border-red-800'
+                  }`}
+                >
+                  {/* Match status bar */}
+                  <div className={`px-3 py-1.5 text-xs font-medium flex items-center justify-between ${
+                    isFullMatch
+                      ? 'bg-emerald-50 dark:bg-emerald-950/20 text-emerald-700 dark:text-emerald-400'
+                      : match.nameMatch
+                        ? 'bg-amber-50 dark:bg-amber-950/20 text-amber-700 dark:text-amber-400'
+                        : 'bg-red-50 dark:bg-red-950/20 text-red-700 dark:text-red-400'
+                  }`}>
+                    <MatchStatusIcon match={match} />
+                    {match.matchScore < 1 && (
+                      <span className="text-xs opacity-70">
+                        Совпадение имён: {Math.round(match.matchScore * 100)}%
                       </span>
-                      <span className="flex items-center gap-1">
-                        <DollarSign className="h-3 w-3" />
-                        {formatAmount(match.requestItem.price)}
-                      </span>
-                    </div>
+                    )}
                   </div>
 
-                  {/* Invoice item */}
-                  <div className="space-y-1">
-                    <p className="text-sm font-medium">{match.invoiceItem.name}</p>
-                    <div className="flex items-center gap-3 text-xs">
-                      <span className="flex items-center gap-1 text-muted-foreground">
-                        <Package className="h-3 w-3" />
-                        {match.invoiceItem.quantity} шт
-                      </span>
-                      <DifferenceIndicator request={match.requestItem.quantity} invoice={match.invoiceItem.quantity} type="quantity" />
+                  {/* Two-column visual comparison */}
+                  <div className="grid grid-cols-[1fr,40px,1fr] gap-0">
+                    {/* Request item */}
+                    <div className="p-3 border-r bg-sky-50/30 dark:bg-sky-950/10 space-y-1.5">
+                      <p className="text-sm font-medium">{match.requestItem.name}</p>
+                      <div className="flex items-center gap-2 text-xs">
+                        <span className="inline-flex items-center gap-1 bg-background/80 rounded px-1.5 py-0.5 text-muted-foreground">
+                          <Package className="h-3 w-3" />
+                          {match.requestItem.quantity} шт
+                        </span>
+                        <span className="inline-flex items-center gap-1 bg-background/80 rounded px-1.5 py-0.5 text-muted-foreground">
+                          <DollarSign className="h-3 w-3" />
+                          {formatAmount(match.requestItem.price)}
+                        </span>
+                      </div>
                     </div>
-                    <div className="flex items-center gap-3 text-xs">
-                      <span className="flex items-center gap-1 text-muted-foreground">
-                        <DollarSign className="h-3 w-3" />
-                        {formatAmount(match.invoiceItem.price)}
-                      </span>
-                      <DifferenceIndicator request={match.requestItem.price} invoice={match.invoiceItem.price} type="price" />
+
+                    {/* Center arrow / status */}
+                    <div className="flex items-center justify-center bg-muted/20">
+                      {isFullMatch ? (
+                        <CheckCircle2 className="h-4 w-4 text-emerald-500" />
+                      ) : (
+                        <AlertTriangle className="h-4 w-4 text-amber-500" />
+                      )}
+                    </div>
+
+                    {/* Invoice item */}
+                    <div className="p-3 bg-amber-50/30 dark:bg-amber-950/10 space-y-1.5">
+                      <p className="text-sm font-medium">{match.invoiceItem.name}</p>
+                      <div className="flex items-center gap-2 text-xs flex-wrap">
+                        <span className="inline-flex items-center gap-1 bg-background/80 rounded px-1.5 py-0.5 text-muted-foreground">
+                          <Package className="h-3 w-3" />
+                          {match.invoiceItem.quantity} шт
+                        </span>
+                        <DifferenceIndicator request={match.requestItem.quantity} invoice={match.invoiceItem.quantity} type="quantity" />
+                      </div>
+                      <div className="flex items-center gap-2 text-xs flex-wrap">
+                        <span className="inline-flex items-center gap-1 bg-background/80 rounded px-1.5 py-0.5 text-muted-foreground">
+                          <DollarSign className="h-3 w-3" />
+                          {formatAmount(match.invoiceItem.price)}
+                        </span>
+                        <DifferenceIndicator request={match.requestItem.price} invoice={match.invoiceItem.price} type="price" />
+                      </div>
                     </div>
                   </div>
-                </div>
-              </motion.div>
-            ))}
+                </motion.div>
+              )
+            })}
           </AnimatePresence>
 
           {/* Unmatched request items */}
@@ -611,19 +833,19 @@ function ReconciliationSheet({
 
           {/* Totals comparison */}
           <Separator />
-          <div className="rounded-lg border bg-muted/30 p-4 space-y-3">
+          <div className="rounded-xl border bg-muted/30 p-4 space-y-3">
             <h4 className="text-sm font-semibold flex items-center gap-2">
               <DollarSign className="h-4 w-4" />
               Итоги сверки
             </h4>
             <div className="grid grid-cols-2 gap-4 text-sm">
-              <div>
+              <div className="rounded-lg bg-sky-50 dark:bg-sky-950/10 p-3">
                 <p className="text-muted-foreground text-xs">Сумма по запросу</p>
-                <p className="font-semibold">{formatAmount(summary.totalRequestAmount)}</p>
+                <p className="font-semibold text-lg">{formatAmount(summary.totalRequestAmount)}</p>
               </div>
-              <div>
+              <div className="rounded-lg bg-amber-50 dark:bg-amber-950/10 p-3">
                 <p className="text-muted-foreground text-xs">Сумма по счёту</p>
-                <p className="font-semibold">{formatAmount(summary.totalInvoiceAmount)}</p>
+                <p className="font-semibold text-lg">{formatAmount(summary.totalInvoiceAmount)}</p>
               </div>
             </div>
             <Separator />
@@ -640,7 +862,7 @@ function ReconciliationSheet({
           </div>
 
           {/* Overall result */}
-          <div className={`rounded-lg p-4 ${
+          <div className={`rounded-xl p-4 ${
             allGood
               ? 'bg-emerald-50 dark:bg-emerald-950/20 border border-emerald-200 dark:border-emerald-800'
               : 'bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-800'
@@ -714,7 +936,12 @@ export function Invoices() {
 
   // Filters
   const [projectFilter, setProjectFilter] = useState<string>('all')
+  const [supplierFilter, setSupplierFilter] = useState<string>('all')
+  const [statusFilter, setStatusFilter] = useState<string>('all')
   const [searchQuery, setSearchQuery] = useState('')
+  const [dateFrom, setDateFrom] = useState<Date | undefined>(undefined)
+  const [dateTo, setDateTo] = useState<Date | undefined>(undefined)
+  const [calendarOpen, setCalendarOpen] = useState<'from' | 'to' | null>(null)
 
   // Create dialog
   const [createOpen, setCreateOpen] = useState(false)
@@ -783,7 +1010,7 @@ export function Invoices() {
   })
 
   // Reconciliation data query
-  const { data: reconciliationData, isLoading: reconciliationLoading } = useQuery({
+  const { data: reconciliationData } = useQuery({
     queryKey: ['reconcile', reconcileInvoiceId],
     queryFn: async () => {
       if (!reconcileInvoiceId) return null
@@ -794,18 +1021,69 @@ export function Invoices() {
     enabled: !!reconcileInvoiceId,
   })
 
-  // ── Filtered invoices by search ────────────────────────────
+  // ── Filtered invoices ──────────────────────────────────────
 
   const filteredInvoices = useMemo(() => {
-    if (!searchQuery.trim()) return invoicesList
-    const q = searchQuery.toLowerCase().trim()
-    return invoicesList.filter(
-      (inv) =>
-        inv.supplier.name.toLowerCase().includes(q) ||
-        inv.invoiceNumber.toLowerCase().includes(q) ||
-        inv.project.name.toLowerCase().includes(q)
-    )
-  }, [invoicesList, searchQuery])
+    let result = invoicesList
+
+    // Search filter
+    if (searchQuery.trim()) {
+      const q = searchQuery.toLowerCase().trim()
+      result = result.filter(
+        (inv) =>
+          inv.supplier.name.toLowerCase().includes(q) ||
+          inv.invoiceNumber.toLowerCase().includes(q) ||
+          inv.project.name.toLowerCase().includes(q)
+      )
+    }
+
+    // Status filter
+    if (statusFilter && statusFilter !== 'all') {
+      result = result.filter((inv) => inv.status === statusFilter)
+    }
+
+    // Supplier filter
+    if (supplierFilter && supplierFilter !== 'all') {
+      result = result.filter((inv) => inv.supplierId === supplierFilter)
+    }
+
+    // Date range filter
+    if (dateFrom) {
+      result = result.filter((inv) => new Date(inv.receivedAt) >= dateFrom)
+    }
+    if (dateTo) {
+      const toDate = new Date(dateTo)
+      toDate.setHours(23, 59, 59, 999)
+      result = result.filter((inv) => new Date(inv.receivedAt) <= toDate)
+    }
+
+    return result
+  }, [invoicesList, searchQuery, statusFilter, supplierFilter, dateFrom, dateTo])
+
+  // ── Summary calculations ───────────────────────────────────
+
+  const summary = useMemo(() => {
+    const total = invoicesList.length
+    const totalAmount = invoicesList.reduce((sum, inv) => sum + inv.totalAmount, 0)
+    const byStatus: Record<string, { count: number; amount: number }> = {}
+    Object.keys(INVOICE_STATUS_MAP).forEach((status) => {
+      const statusInvoices = invoicesList.filter((inv) => inv.status === status)
+      byStatus[status] = {
+        count: statusInvoices.length,
+        amount: statusInvoices.reduce((sum, inv) => sum + inv.totalAmount, 0),
+      }
+    })
+    const paidAmount = byStatus.paid?.amount ?? 0
+    const pendingAmount = totalAmount - paidAmount
+    return { total, totalAmount, byStatus, paidAmount, pendingAmount }
+  }, [invoicesList])
+
+  const filteredSummary = useMemo(() => {
+    const totalAmount = filteredInvoices.reduce((sum, inv) => sum + inv.totalAmount, 0)
+    return { total: filteredInvoices.length, totalAmount }
+  }, [filteredInvoices])
+
+  const hasActiveFilters = statusFilter !== 'all' || supplierFilter !== 'all' || dateFrom || dateTo || searchQuery.trim()
 
   // ── Mutations ──────────────────────────────────────────────
 
@@ -853,7 +1131,6 @@ export function Invoices() {
     },
     onSuccess: (result) => {
       queryClient.invalidateQueries({ queryKey: ['invoices'] })
-      // If we just verified, show the detail
       if (result && result.status === 'verified') {
         setDetailInvoice(result as Invoice)
         setDetailOpen(true)
@@ -951,7 +1228,6 @@ export function Invoices() {
 
   const handleReconcileVerify = () => {
     if (!reconcileInvoiceId) return
-    // Determine status based on reconciliation result
     const hasDiscrepancies = reconciliationData && (
       reconciliationData.summary.quantityDiscrepancies > 0 ||
       reconciliationData.summary.priceDiscrepancies > 0 ||
@@ -985,7 +1261,20 @@ export function Invoices() {
   const formatAmount = (n: number) =>
     new Intl.NumberFormat('ru-RU', { style: 'currency', currency: 'RUB' }).format(n)
 
+  const clearAllFilters = () => {
+    setProjectFilter('all')
+    setSupplierFilter('all')
+    setStatusFilter('all')
+    setSearchQuery('')
+    setDateFrom(undefined)
+    setDateTo(undefined)
+  }
+
   // ── Render ─────────────────────────────────────────────────
+
+  if (invoicesLoading) {
+    return <InvoicePageSkeleton />
+  }
 
   return (
     <div className="space-y-6">
@@ -993,12 +1282,17 @@ export function Invoices() {
       <div className="relative -mx-6 -mt-6 px-6 pt-6 pb-5 bg-gradient-to-b from-amber-500/5 via-amber-500/[0.02] to-transparent">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
-            <p className="text-muted-foreground text-sm">Управление входящими счетами</p>
+            <h2 className="text-2xl font-bold tracking-tight flex items-center gap-2">
+              <Receipt className="h-6 w-6 text-amber-600" />
+              Счета
+            </h2>
+            <p className="text-muted-foreground text-sm">Управление входящими счетами от поставщиков</p>
           </div>
-          <div className="flex gap-2">
+          <div className="flex gap-2 flex-wrap">
             <Button
               type="button"
               variant="outline"
+              size="sm"
               onClick={() => {
                 const csvData = filteredInvoices.map((inv) => ({
                   Проект: inv.project.name,
@@ -1006,7 +1300,8 @@ export function Invoices() {
                   '№ счёта': inv.invoiceNumber || '',
                   Сумма: inv.totalAmount,
                   Статус: INVOICE_STATUS_MAP[inv.status]?.label ?? inv.status,
-                  Дата: formatDate(inv.receivedAt),
+                  'Дата получения': formatDate(inv.receivedAt),
+                  'Дата оплаты': formatDate(inv.paidAt),
                 }))
                 exportToCSV(csvData, 'invoices.csv', [
                   { key: 'Проект', header: 'Проект' },
@@ -1014,7 +1309,8 @@ export function Invoices() {
                   { key: '№ счёта', header: '№ счёта' },
                   { key: 'Сумма', header: 'Сумма' },
                   { key: 'Статус', header: 'Статус' },
-                  { key: 'Дата', header: 'Дата' },
+                  { key: 'Дата получения', header: 'Дата получения' },
+                  { key: 'Дата оплаты', header: 'Дата оплаты' },
                 ])
               }}
               className="transition-all duration-200 hover:shadow-md hover:-translate-y-0.5 hover:border-primary/30"
@@ -1025,13 +1321,14 @@ export function Invoices() {
             <Button
               type="button"
               variant="outline"
+              size="sm"
               onClick={() => openReport('invoice-report')}
               className="transition-all duration-200 hover:shadow-md hover:-translate-y-0.5 hover:border-primary/30"
             >
               <Printer className="h-4 w-4" />
               Печать
             </Button>
-            <Button onClick={() => setCreateOpen(true)} className="transition-all duration-200 hover:shadow-md hover:-translate-y-0.5 hover:scale-[1.02]">
+            <Button size="sm" onClick={() => setCreateOpen(true)} className="transition-all duration-200 hover:shadow-md hover:-translate-y-0.5 hover:scale-[1.02]">
               <Plus className="mr-2 h-4 w-4" />
               Новый счёт
             </Button>
@@ -1039,40 +1336,99 @@ export function Invoices() {
         </div>
       </div>
 
-      {/* Filter Bar */}
-      <Card>
-        <CardContent className="p-4">
-          <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center">
-            <div className="flex items-center gap-2">
-              <Filter className="h-4 w-4 text-muted-foreground" />
-              <span className="text-sm font-medium">Фильтр:</span>
+      {/* Summary Cards */}
+      <motion.div
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.3 }}
+        className="grid grid-cols-2 md:grid-cols-4 gap-4"
+      >
+        <Card className="overflow-hidden">
+          <CardContent className="p-4">
+            <div className="flex items-center gap-3">
+              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-amber-100 dark:bg-amber-950/30">
+                <FileText className="h-5 w-5 text-amber-600 dark:text-amber-400" />
+              </div>
+              <div>
+                <p className="text-xs text-muted-foreground">Всего счетов</p>
+                <p className="text-xl font-bold">{summary.total}</p>
+              </div>
             </div>
-            <Select value={projectFilter} onValueChange={setProjectFilter}>
-              <SelectTrigger className="w-[220px]">
-                <SelectValue placeholder="Проект" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Все проекты</SelectItem>
-                {projects.map((p) => (
-                  <SelectItem key={p.id} value={p.id}>
-                    {p.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            {/* Search Input */}
-            <div className="relative flex-1 min-w-[200px]">
-              <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input
-                placeholder="Поиск по поставщику, № счёта или проекту..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-9"
-              />
+          </CardContent>
+        </Card>
+        <Card className="overflow-hidden">
+          <CardContent className="p-4">
+            <div className="flex items-center gap-3">
+              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-sky-100 dark:bg-sky-950/30">
+                <TrendingUp className="h-5 w-5 text-sky-600 dark:text-sky-400" />
+              </div>
+              <div>
+                <p className="text-xs text-muted-foreground">Общая сумма</p>
+                <p className="text-xl font-bold tabular-nums">{formatAmount(summary.totalAmount)}</p>
+              </div>
             </div>
-          </div>
-        </CardContent>
-      </Card>
+          </CardContent>
+        </Card>
+        <Card className="overflow-hidden">
+          <CardContent className="p-4">
+            <div className="flex items-center gap-3">
+              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-green-100 dark:bg-green-950/30">
+                <Wallet className="h-5 w-5 text-green-600 dark:text-green-400" />
+              </div>
+              <div>
+                <p className="text-xs text-muted-foreground">Оплачено</p>
+                <p className="text-xl font-bold tabular-nums text-green-600 dark:text-green-400">{formatAmount(summary.paidAmount)}</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+        <Card className="overflow-hidden">
+          <CardContent className="p-4">
+            <div className="flex items-center gap-3">
+              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-red-100 dark:bg-red-950/30">
+                <Clock className="h-5 w-5 text-red-600 dark:text-red-400" />
+              </div>
+              <div>
+                <p className="text-xs text-muted-foreground">К оплате</p>
+                <p className="text-xl font-bold tabular-nums text-red-600 dark:text-red-400">{formatAmount(summary.pendingAmount)}</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </motion.div>
+
+      {/* Status Breakdown */}
+      <motion.div
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.3, delay: 0.1 }}
+      >
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex flex-wrap gap-3 items-center">
+              <span className="text-sm font-medium text-muted-foreground mr-1">По статусам:</span>
+              {Object.entries(INVOICE_STATUS_MAP).map(([status, info]) => {
+                const data = summary.byStatus[status]
+                if (!data || data.count === 0) return null
+                return (
+                  <div
+                    key={status}
+                    className={`flex items-center gap-2 rounded-full px-3 py-1.5 border ${info.bgColor} cursor-pointer transition-all hover:shadow-sm`}
+                    onClick={() => setStatusFilter(statusFilter === status ? 'all' : status)}
+                  >
+                    <div className={`h-2 w-2 rounded-full ${info.dotColor}`} />
+                    <span className="text-xs font-medium">{info.label}</span>
+                    <Badge variant="secondary" className="h-5 px-1.5 text-[10px] font-bold">
+                      {data.count}
+                    </Badge>
+                    <span className="text-[10px] text-muted-foreground tabular-nums">{formatAmount(data.amount)}</span>
+                  </div>
+                )
+              })}
+            </div>
+          </CardContent>
+        </Card>
+      </motion.div>
 
       {/* Invoice Workflow Visualization */}
       <Card>
@@ -1107,19 +1463,152 @@ export function Invoices() {
         </CardContent>
       </Card>
 
+      {/* Filter Bar */}
+      <Card>
+        <CardContent className="p-4">
+          <div className="flex flex-col gap-3">
+            <div className="flex flex-col sm:flex-row gap-3 items-start sm:items-center">
+              <div className="flex items-center gap-2 shrink-0">
+                <Filter className="h-4 w-4 text-muted-foreground" />
+                <span className="text-sm font-medium">Фильтр:</span>
+              </div>
+              <Select value={projectFilter} onValueChange={setProjectFilter}>
+                <SelectTrigger className="w-full sm:w-[200px]">
+                  <SelectValue placeholder="Проект" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Все проекты</SelectItem>
+                  {projects.map((p) => (
+                    <SelectItem key={p.id} value={p.id}>
+                      {p.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <Select value={supplierFilter} onValueChange={setSupplierFilter}>
+                <SelectTrigger className="w-full sm:w-[200px]">
+                  <SelectValue placeholder="Поставщик" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Все поставщики</SelectItem>
+                  {suppliers.map((s) => (
+                    <SelectItem key={s.id} value={s.id}>
+                      {s.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <Select value={statusFilter} onValueChange={setStatusFilter}>
+                <SelectTrigger className="w-full sm:w-[180px]">
+                  <SelectValue placeholder="Статус" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Все статусы</SelectItem>
+                  {Object.entries(INVOICE_STATUS_MAP).map(([status, info]) => (
+                    <SelectItem key={status} value={status}>
+                      <div className="flex items-center gap-2">
+                        <div className={`h-2 w-2 rounded-full ${info.dotColor}`} />
+                        {info.label}
+                      </div>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="flex flex-col sm:flex-row gap-3 items-start sm:items-center">
+              {/* Date range filter */}
+              <div className="flex items-center gap-2">
+                <Popover open={calendarOpen === 'from'} onOpenChange={(o) => setCalendarOpen(o ? 'from' : null)}>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className={`w-[160px] justify-start text-left font-normal ${!dateFrom && 'text-muted-foreground'}`}
+                    >
+                      <CalendarIcon className="mr-2 h-3.5 w-3.5" />
+                      {dateFrom ? format(dateFrom, 'dd.MM.yyyy', { locale: ru }) : 'С даты'}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0" align="start">
+                    <Calendar
+                      mode="single"
+                      selected={dateFrom}
+                      onSelect={(d) => { setDateFrom(d); setCalendarOpen(null) }}
+                      initialFocus
+                    />
+                  </PopoverContent>
+                </Popover>
+                <span className="text-muted-foreground text-xs">—</span>
+                <Popover open={calendarOpen === 'to'} onOpenChange={(o) => setCalendarOpen(o ? 'to' : null)}>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className={`w-[160px] justify-start text-left font-normal ${!dateTo && 'text-muted-foreground'}`}
+                    >
+                      <CalendarIcon className="mr-2 h-3.5 w-3.5" />
+                      {dateTo ? format(dateTo, 'dd.MM.yyyy', { locale: ru }) : 'По дату'}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0" align="start">
+                    <Calendar
+                      mode="single"
+                      selected={dateTo}
+                      onSelect={(d) => { setDateTo(d); setCalendarOpen(null) }}
+                      initialFocus
+                    />
+                  </PopoverContent>
+                </Popover>
+                {(dateFrom || dateTo) && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-7 w-7 p-0"
+                    onClick={() => { setDateFrom(undefined); setDateTo(undefined) }}
+                  >
+                    <X className="h-3.5 w-3.5" />
+                  </Button>
+                )}
+              </div>
+              {/* Search Input */}
+              <div className="relative flex-1 min-w-[200px]">
+                <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input
+                  placeholder="Поиск по поставщику, № счёта или проекту..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="pl-9"
+                />
+                {searchQuery && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="absolute right-1 top-1/2 -translate-y-1/2 h-6 w-6 p-0"
+                    onClick={() => setSearchQuery('')}
+                  >
+                    <X className="h-3.5 w-3.5" />
+                  </Button>
+                )}
+              </div>
+              {hasActiveFilters && (
+                <Button variant="ghost" size="sm" onClick={clearAllFilters} className="text-muted-foreground shrink-0">
+                  <X className="mr-1 h-3.5 w-3.5" />
+                  Сбросить
+                </Button>
+              )}
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
       {/* Invoices Table */}
       <Card>
         <CardContent className="p-0">
-          {invoicesLoading ? (
-            <div className="flex items-center justify-center py-12">
-              <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
-              <span className="ml-2 text-muted-foreground">Загрузка...</span>
-            </div>
-          ) : filteredInvoices.length === 0 ? (
+          {filteredInvoices.length === 0 ? (
             <EmptyState
-              type={searchQuery ? 'search' : 'invoices'}
+              type={searchQuery || hasActiveFilters ? 'search' : 'invoices'}
               action={
-                !searchQuery
+                !searchQuery && !hasActiveFilters
                   ? {
                       label: 'Новый счёт',
                       onClick: () => setCreateOpen(true),
@@ -1140,100 +1629,179 @@ export function Invoices() {
                   <TableHead className="text-right">Сумма</TableHead>
                   <TableHead>Статус</TableHead>
                   <TableHead className="hidden lg:table-cell">Дата</TableHead>
+                  <TableHead className="hidden xl:table-cell">Обновлено</TableHead>
                   <TableHead className="text-right">Действия</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {filteredInvoices.map((inv) => {
-                  const statusInfo = INVOICE_STATUS_MAP[inv.status]
-                  return (
-                  <TableRow
-                    key={inv.id}
-                    className={`cursor-pointer hover:bg-muted/50 transition-colors duration-150 border-l-3 ${statusInfo?.leftBorder ?? 'border-l-transparent'}`}
-                    onClick={() => openDetail(inv)}
-                  >
-                    <TableCell>
-                      <ChevronDown className="h-4 w-4" />
-                    </TableCell>
-                    <TableCell className="font-medium">{inv.project.name}</TableCell>
-                    <TableCell className="hidden sm:table-cell">{inv.supplier.name}</TableCell>
-                    <TableCell className="hidden md:table-cell">{inv.invoiceNumber || '—'}</TableCell>
-                    <TableCell className="text-right font-semibold tabular-nums text-sm">
-                      {formatAmount(inv.totalAmount)}
-                    </TableCell>
-                    <TableCell>
-                      <StatusBadge status={inv.status} />
-                    </TableCell>
-                    <TableCell className="hidden lg:table-cell">{formatDate(inv.receivedAt)}</TableCell>
-                    <TableCell className="text-right">
-                      <div className="flex justify-end gap-1" onClick={(e) => e.stopPropagation()}>
-                        {/* Reconcile button - for received and verified invoices */}
-                        {(inv.status === 'received' || inv.status === 'verified' || inv.status === 'discrepancy') && (
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => openReconcile(inv.id)}
-                            className="border-amber-300 text-amber-700 hover:bg-amber-50 dark:border-amber-700 dark:text-amber-400 dark:hover:bg-amber-950/30"
-                          >
-                            <Scale className="mr-1 h-3 w-3" />
-                            Сверить
-                          </Button>
+                <AnimatePresence mode="popLayout">
+                  {filteredInvoices.map((inv, idx) => {
+                    const statusInfo = INVOICE_STATUS_MAP[inv.status]
+                    const relativeTime = getRelativeTime(inv.updatedAt)
+                    const isRecentlyUpdated = relativeTime !== null
+                    return (
+                    <motion.tr
+                      key={inv.id}
+                      initial={{ opacity: 0, x: -10 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      exit={{ opacity: 0, x: 10 }}
+                      transition={{ delay: idx * 0.02, duration: 0.2 }}
+                      className={`cursor-pointer hover:bg-muted/50 transition-colors duration-150 border-l-3 ${statusInfo?.leftBorder ?? 'border-l-transparent'}`}
+                      onClick={() => openDetail(inv)}
+                    >
+                      <TableCell>
+                        <Eye className="h-4 w-4 text-muted-foreground/50" />
+                      </TableCell>
+                      <TableCell>
+                        <div className="font-medium text-sm">{inv.project.name}</div>
+                        <div className="text-xs text-muted-foreground sm:hidden">{inv.supplier.name}</div>
+                      </TableCell>
+                      <TableCell className="hidden sm:table-cell text-sm">{inv.supplier.name}</TableCell>
+                      <TableCell className="hidden md:table-cell">
+                        <span className="font-mono text-xs bg-muted px-1.5 py-0.5 rounded">
+                          {inv.invoiceNumber || '—'}
+                        </span>
+                      </TableCell>
+                      <TableCell className="text-right font-semibold tabular-nums text-sm">
+                        {formatAmount(inv.totalAmount)}
+                      </TableCell>
+                      <TableCell>
+                        <StatusBadge status={inv.status} />
+                      </TableCell>
+                      <TableCell className="hidden lg:table-cell text-sm text-muted-foreground">
+                        {formatDate(inv.receivedAt)}
+                      </TableCell>
+                      <TableCell className="hidden xl:table-cell">
+                        {isRecentlyUpdated ? (
+                          <div className="flex items-center gap-1">
+                            <CircleDot className="h-3 w-3 text-amber-500" />
+                            <span className="text-xs text-amber-600 dark:text-amber-400 font-medium">{relativeTime}</span>
+                          </div>
+                        ) : (
+                          <span className="text-xs text-muted-foreground">{formatDate(inv.updatedAt)}</span>
                         )}
-                        {inv.status === 'received' && (
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => handleVerify(inv.id)}
-                            disabled={updateMutation.isPending}
-                          >
-                            <CheckCircle2 className="mr-1 h-3 w-3" />
-                            Проверить
-                          </Button>
-                        )}
-                        {(inv.status === 'verified' || inv.status === 'discrepancy') && (
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => handleApprove(inv.id)}
-                            disabled={updateMutation.isPending}
-                          >
-                            Одобрить
-                          </Button>
-                        )}
-                        {inv.status === 'approved' && (
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => {
-                              setPaymentInvoiceId(inv.id)
-                              setPaymentOpen(true)
-                            }}
-                          >
-                            <CreditCard className="mr-1 h-3 w-3" />
-                            Оплатить
-                          </Button>
-                        )}
-                        {inv.status !== 'cancelled' && inv.status !== 'paid' && (
-                          <Button
-                            size="sm"
-                            variant="ghost"
-                            className="text-destructive hover:text-destructive"
-                            onClick={() => setCancelId(inv.id)}
-                          >
-                            Отменить
-                          </Button>
-                        )}
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                  )
-                })}
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <div className="flex justify-end gap-1" onClick={(e) => e.stopPropagation()}>
+                          {/* Inline status action buttons */}
+                          {(inv.status === 'received' || inv.status === 'verified' || inv.status === 'discrepancy') && (
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => openReconcile(inv.id)}
+                              className="border-amber-300 text-amber-700 hover:bg-amber-50 dark:border-amber-700 dark:text-amber-400 dark:hover:bg-amber-950/30 h-7 text-xs"
+                            >
+                              <Scale className="mr-1 h-3 w-3" />
+                              Сверить
+                            </Button>
+                          )}
+                          {inv.status === 'received' && (
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => handleVerify(inv.id)}
+                              disabled={updateMutation.isPending}
+                              className="h-7 text-xs border-sky-300 text-sky-700 hover:bg-sky-50 dark:border-sky-700 dark:text-sky-400 dark:hover:bg-sky-950/30"
+                            >
+                              <CheckCircle2 className="mr-1 h-3 w-3" />
+                              Проверить
+                            </Button>
+                          )}
+                          {(inv.status === 'verified' || inv.status === 'discrepancy') && (
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => handleApprove(inv.id)}
+                              disabled={updateMutation.isPending}
+                              className="h-7 text-xs border-emerald-300 text-emerald-700 hover:bg-emerald-50 dark:border-emerald-700 dark:text-emerald-400 dark:hover:bg-emerald-950/30"
+                            >
+                              Утвердить
+                            </Button>
+                          )}
+                          {inv.status === 'approved' && (
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => {
+                                setPaymentInvoiceId(inv.id)
+                                setPaymentOpen(true)
+                              }}
+                              className="h-7 text-xs border-green-300 text-green-700 hover:bg-green-50 dark:border-green-700 dark:text-green-400 dark:hover:bg-green-950/30"
+                            >
+                              <CreditCard className="mr-1 h-3 w-3" />
+                              Оплатить
+                            </Button>
+                          )}
+                          {inv.status !== 'cancelled' && inv.status !== 'paid' && (
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              className="text-destructive hover:text-destructive h-7 text-xs"
+                              onClick={() => setCancelId(inv.id)}
+                            >
+                              Отменить
+                            </Button>
+                          )}
+                        </div>
+                      </TableCell>
+                    </motion.tr>
+                    )
+                  })}
+                </AnimatePresence>
               </TableBody>
             </Table>
             </div>
           )}
         </CardContent>
       </Card>
+
+      {/* Bottom Summary */}
+      {filteredInvoices.length > 0 && (
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.3, delay: 0.2 }}
+        >
+          <Card className="border-amber-200 dark:border-amber-800 bg-amber-50/30 dark:bg-amber-950/10">
+            <CardContent className="p-4">
+              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+                <div className="flex items-center gap-3">
+                  <FileSpreadsheet className="h-5 w-5 text-amber-600 dark:text-amber-400" />
+                  <div>
+                    <p className="text-sm font-medium">
+                      Итого: {filteredSummary.total} {filteredSummary.total === 1 ? 'счёт' : filteredSummary.total < 5 ? 'счёта' : 'счетов'}
+                      {hasActiveFilters && <span className="text-muted-foreground"> (из {invoicesList.length})</span>}
+                    </p>
+                    {hasActiveFilters && (
+                      <p className="text-xs text-muted-foreground">С учётом активных фильтров</p>
+                    )}
+                  </div>
+                </div>
+                <div className="flex items-center gap-6">
+                  <div className="text-right">
+                    <p className="text-xs text-muted-foreground">Общая сумма</p>
+                    <p className="text-lg font-bold tabular-nums">{formatAmount(filteredSummary.totalAmount)}</p>
+                  </div>
+                  <Separator orientation="vertical" className="h-8" />
+                  <div className="text-right">
+                    <p className="text-xs text-muted-foreground">Оплачено</p>
+                    <p className="text-lg font-bold tabular-nums text-green-600 dark:text-green-400">
+                      {formatAmount(filteredInvoices.filter((i) => i.status === 'paid').reduce((s, i) => s + i.totalAmount, 0))}
+                    </p>
+                  </div>
+                  <Separator orientation="vertical" className="h-8" />
+                  <div className="text-right">
+                    <p className="text-xs text-muted-foreground">К оплате</p>
+                    <p className="text-lg font-bold tabular-nums text-red-600 dark:text-red-400">
+                      {formatAmount(filteredSummary.totalAmount - filteredInvoices.filter((i) => i.status === 'paid').reduce((s, i) => s + i.totalAmount, 0))}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </motion.div>
+      )}
 
       {/* ── Create Invoice Dialog ──────────────────────────── */}
       <Dialog open={createOpen} onOpenChange={(open) => { if (!open) resetCreateDialog() }}>
@@ -1556,7 +2124,7 @@ export function Invoices() {
                     }}
                     disabled={updateMutation.isPending}
                   >
-                    Одобрить
+                    Утвердить
                   </Button>
                 )}
                 {detailInvoice.status === 'approved' && (

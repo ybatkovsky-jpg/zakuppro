@@ -9,6 +9,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Badge } from '@/components/ui/badge'
 import { Textarea } from '@/components/ui/textarea'
+import { Skeleton } from '@/components/ui/skeleton'
 import {
   Dialog,
   DialogContent,
@@ -44,6 +45,12 @@ import {
 import { Checkbox } from '@/components/ui/checkbox'
 import { Separator } from '@/components/ui/separator'
 import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from '@/components/ui/tooltip'
+import { Progress } from '@/components/ui/progress'
+import {
   Plus,
   Filter,
   Send,
@@ -59,8 +66,15 @@ import {
   Search,
   Eye,
   PlusCircle,
+  RefreshCw,
+  ArrowRight,
+  Timer,
+  AlertTriangle,
+  DollarSign,
+  Calendar,
+  Zap,
 } from 'lucide-react'
-import { motion } from 'framer-motion'
+import { motion, AnimatePresence } from 'framer-motion'
 import { EmptyState } from '@/components/app/empty-state'
 
 // ── Types ──────────────────────────────────────────────────
@@ -125,12 +139,12 @@ interface PurchaseRequest {
 
 // ── Status helpers ─────────────────────────────────────────
 
-const REQUEST_STATUS_MAP: Record<string, { label: string; variant: 'default' | 'secondary' | 'destructive' | 'outline'; className?: string }> = {
-  draft: { label: 'Черновик', variant: 'secondary', className: 'rounded-full bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300 border-slate-200 dark:border-slate-700' },
-  sent: { label: 'Отправлен', variant: 'default', className: 'rounded-full bg-sky-100 text-sky-800 dark:bg-sky-950/30 dark:text-sky-400 border-sky-200 dark:border-sky-800' },
-  responded: { label: 'Ответ получен', variant: 'default', className: 'rounded-full bg-emerald-100 text-emerald-800 dark:bg-emerald-950/30 dark:text-emerald-400 border-emerald-200 dark:border-emerald-800' },
-  partial: { label: 'Частичный ответ', variant: 'outline', className: 'rounded-full border-amber-400 text-amber-700 bg-amber-50 dark:text-amber-400 dark:bg-amber-950/30' },
-  cancelled: { label: 'Отменён', variant: 'destructive', className: 'rounded-full' },
+const REQUEST_STATUS_MAP: Record<string, { label: string; variant: 'default' | 'secondary' | 'destructive' | 'outline'; className?: string; icon: typeof Clock }> = {
+  draft: { label: 'Черновик', variant: 'secondary', className: 'rounded-full bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300 border-slate-200 dark:border-slate-700', icon: FileText },
+  sent: { label: 'Отправлен', variant: 'default', className: 'rounded-full bg-sky-100 text-sky-800 dark:bg-sky-950/30 dark:text-sky-400 border-sky-200 dark:border-sky-800', icon: Send },
+  responded: { label: 'Ответ получен', variant: 'default', className: 'rounded-full bg-emerald-100 text-emerald-800 dark:bg-emerald-950/30 dark:text-emerald-400 border-emerald-200 dark:border-emerald-800', icon: CheckCircle2 },
+  partial: { label: 'Частичный ответ', variant: 'outline', className: 'rounded-full border-amber-400 text-amber-700 bg-amber-50 dark:text-amber-400 dark:bg-amber-950/30', icon: AlertTriangle },
+  cancelled: { label: 'Отменён', variant: 'destructive', className: 'rounded-full', icon: XCircle },
 }
 
 const REQUEST_ROW_BORDER: Record<string, string> = {
@@ -149,9 +163,178 @@ const REQUEST_ROW_BG: Record<string, string> = {
   cancelled: 'hover:bg-red-50/50 dark:hover:bg-red-950/20',
 }
 
+// Pipeline step config
+const PIPELINE_STEPS = [
+  { key: 'draft', label: 'Черновик', color: 'bg-slate-400' },
+  { key: 'sent', label: 'Отправлен', color: 'bg-sky-500' },
+  { key: 'responded', label: 'Ответ получен', color: 'bg-emerald-500' },
+]
+
 function StatusBadge({ status }: { status: string }) {
-  const info = REQUEST_STATUS_MAP[status] || { label: status, variant: 'outline' as const, className: 'rounded-full' }
-  return <Badge variant={info.variant} className={info.className}>{info.label}</Badge>
+  const info = REQUEST_STATUS_MAP[status] || { label: status, variant: 'outline' as const, className: 'rounded-full', icon: Clock }
+  const Icon = info.icon
+  return (
+    <Badge variant={info.variant} className={`${info.className} gap-1`}>
+      <Icon className="h-3 w-3" />
+      {info.label}
+    </Badge>
+  )
+}
+
+// ── Pipeline Visual ────────────────────────────────────────
+
+function RequestPipeline({ stats }: { stats: { drafts: number; sent: number; responded: number; partial: number; cancelled: number; total: number } }) {
+  const steps = [
+    { ...PIPELINE_STEPS[0], count: stats.drafts },
+    { ...PIPELINE_STEPS[1], count: stats.sent },
+    { ...PIPELINE_STEPS[2], count: stats.responded + stats.partial },
+  ]
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 12 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ delay: 0.2 }}
+    >
+      <Card className="border-dashed bg-gradient-to-r from-violet-50/50 via-transparent to-violet-50/30 dark:from-violet-950/10 dark:to-violet-950/5">
+        <CardHeader className="pb-3">
+          <div className="flex items-center gap-2">
+            <ArrowRight className="h-5 w-5 text-violet-500" />
+            <CardTitle className="text-base">Воронка запросов</CardTitle>
+          </div>
+        </CardHeader>
+        <CardContent>
+          <div className="flex items-center gap-0">
+            {steps.map((step, idx) => (
+              <Fragment key={step.key}>
+                <div className="flex-1 flex flex-col items-center gap-1.5">
+                  <div className={`flex h-10 w-10 items-center justify-center rounded-full ${step.color} text-white text-sm font-bold shadow-md`}>
+                    {step.count}
+                  </div>
+                  <span className="text-xs font-medium text-muted-foreground">{step.label}</span>
+                  {stats.total > 0 && (
+                    <span className="text-[10px] text-muted-foreground/60">
+                      {Math.round((step.count / stats.total) * 100)}%
+                    </span>
+                  )}
+                </div>
+                {idx < steps.length - 1 && (
+                  <div className="flex items-center px-1 -mt-4">
+                    <div className="w-8 h-0.5 bg-gradient-to-r from-muted-foreground/20 to-muted-foreground/30" />
+                    <ArrowRight className="h-3 w-3 text-muted-foreground/40 -ml-0.5" />
+                  </div>
+                )}
+              </Fragment>
+            ))}
+          </div>
+        </CardContent>
+      </Card>
+    </motion.div>
+  )
+}
+
+// ── Skeleton ───────────────────────────────────────────────
+
+function RequestsTableSkeleton() {
+  return (
+    <div className="space-y-2 p-4">
+      <div className="flex items-center gap-4">
+        <Skeleton className="h-4 w-8" />
+        <Skeleton className="h-4 w-32" />
+        <Skeleton className="h-4 w-24" />
+        <Skeleton className="h-6 w-20 rounded-full" />
+        <Skeleton className="h-4 w-10" />
+        <Skeleton className="h-4 w-24" />
+        <Skeleton className="h-4 w-24" />
+        <Skeleton className="h-4 w-20" />
+      </div>
+      {Array.from({ length: 5 }).map((_, i) => (
+        <div key={i} className="flex items-center gap-4 py-2">
+          <Skeleton className="h-4 w-8" />
+          <Skeleton className="h-4 w-32" />
+          <Skeleton className="h-4 w-24" />
+          <Skeleton className="h-6 w-20 rounded-full" />
+          <Skeleton className="h-4 w-10" />
+          <Skeleton className="h-4 w-24" />
+          <Skeleton className="h-4 w-24" />
+          <Skeleton className="h-4 w-20" />
+        </div>
+      ))}
+    </div>
+  )
+}
+
+// ── Response Time Tracker ──────────────────────────────────
+
+function ResponseTimeTracker({ sentAt, responseAt, status }: { sentAt: string | null; responseAt: string | null; status: string }) {
+  if (!sentAt) return null
+
+  const sentDate = new Date(sentAt)
+  const now = new Date()
+
+  if (status === 'responded' || status === 'partial') {
+    if (!responseAt) return null
+    const responseDate = new Date(responseAt)
+    const diffMs = responseDate.getTime() - sentDate.getTime()
+    const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24))
+    const diffHours = Math.floor((diffMs % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60))
+
+    const isFast = diffDays < 2
+    const isMedium = diffDays >= 2 && diffDays < 5
+
+    return (
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <div className={`flex items-center gap-1 text-xs font-medium cursor-help ${
+            isFast ? 'text-emerald-600 dark:text-emerald-400' : isMedium ? 'text-amber-600 dark:text-amber-400' : 'text-red-600 dark:text-red-400'
+          }`}>
+            <Timer className="h-3 w-3" />
+            {diffDays > 0 ? `${diffDays}д ` : ''}{diffHours}ч
+          </div>
+        </TooltipTrigger>
+        <TooltipContent>
+          <p>Время ответа: {diffDays > 0 ? `${diffDays} дн. ` : ''}{diffHours} ч.</p>
+          <p className="text-[10px] text-muted-foreground">
+            {isFast ? 'Быстрый ответ' : isMedium ? 'Среднее время' : 'Долгий ответ'}
+          </p>
+        </TooltipContent>
+      </Tooltip>
+    )
+  }
+
+  // Still waiting
+  if (status === 'sent') {
+    const diffMs = now.getTime() - sentDate.getTime()
+    const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24))
+    const isOverdue = diffDays >= 3
+
+    return (
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <div className={`flex items-center gap-1 text-xs cursor-help ${
+            isOverdue ? 'text-red-600 dark:text-red-400 font-medium animate-pulse' : 'text-muted-foreground'
+          }`}>
+            {isOverdue ? (
+              <AlertTriangle className="h-3 w-3" />
+            ) : (
+              <Clock className="h-3 w-3" />
+            )}
+            {diffDays}д
+          </div>
+        </TooltipTrigger>
+        <TooltipContent>
+          <p>Ожидание: {diffDays} дн.</p>
+          {isOverdue && (
+            <p className="text-[10px] text-red-500 font-medium">
+              Нет ответа более 3 дней!
+            </p>
+          )}
+        </TooltipContent>
+      </Tooltip>
+    )
+  }
+
+  return null
 }
 
 // ── Main Component ─────────────────────────────────────────
@@ -162,6 +345,7 @@ export function Requests() {
   // Filters
   const [statusFilter, setStatusFilter] = useState<string>('all')
   const [supplierFilter, setSupplierFilter] = useState<string>('all')
+  const [projectFilter, setProjectFilter] = useState<string>('all')
 
   // Search
   const [searchQuery, setSearchQuery] = useState('')
@@ -248,17 +432,24 @@ export function Requests() {
     },
   })
 
-  // ── Filtered requests by search ────────────────────────────
+  // ── Filtered requests by search and project ────────────────
 
   const filteredRequests = useMemo(() => {
-    if (!searchQuery.trim()) return requests
-    const q = searchQuery.toLowerCase().trim()
-    return requests.filter(
-      (req) =>
-        req.supplier.name.toLowerCase().includes(q) ||
-        req.project.name.toLowerCase().includes(q)
-    )
-  }, [requests, searchQuery])
+    let result = requests
+    if (searchQuery.trim()) {
+      const q = searchQuery.toLowerCase().trim()
+      result = result.filter(
+        (req) =>
+          req.supplier.name.toLowerCase().includes(q) ||
+          req.project.name.toLowerCase().includes(q) ||
+          req.emailTo.toLowerCase().includes(q)
+      )
+    }
+    if (projectFilter && projectFilter !== 'all') {
+      result = result.filter((req) => req.projectId === projectFilter)
+    }
+    return result
+  }, [requests, searchQuery, projectFilter])
 
   // ── Mutations ──────────────────────────────────────────────
 
@@ -389,6 +580,13 @@ export function Requests() {
     setCancelId(null)
   }
 
+  const handleResend = (req: PurchaseRequest) => {
+    updateMutation.mutate({
+      id: req.id,
+      data: { status: 'sent', sentAt: new Date().toISOString() },
+    })
+  }
+
   const openResponseDialog = (request: PurchaseRequest) => {
     setResponseRequestId(request.id)
     setResponseItems(
@@ -425,16 +623,26 @@ export function Requests() {
     setResponseOpen(false)
   }
 
+  const handleInlineStatusUpdate = (id: string, newStatus: string) => {
+    updateMutation.mutate({ id, data: { status: newStatus } })
+  }
+
   const formatDate = (d: string | null) => {
     if (!d) return '—'
     return new Date(d).toLocaleDateString('ru-RU', { day: '2-digit', month: '2-digit', year: 'numeric' })
   }
 
+  // Check if request needs resend (sent 3+ days ago, no response)
+  const needsResend = useCallback((req: PurchaseRequest) => {
+    if (req.status !== 'sent' || !req.sentAt) return false
+    const sentDate = new Date(req.sentAt)
+    const diffDays = Math.floor((Date.now() - sentDate.getTime()) / (1000 * 60 * 60 * 24))
+    return diffDays >= 3
+  }, [])
+
   // ── Step labels ────────────────────────────────────────────
 
   const stepLabels = ['Проект', 'Поставщик', 'Позиции', 'Письмо', 'Проверка']
-
-  // ── Render ─────────────────────────────────────────────────
 
   // ── Statistics ────────────────────────────────────────────
 
@@ -442,9 +650,15 @@ export function Requests() {
     const total = requests.length
     const sent = requests.filter((r) => r.status === 'sent').length
     const drafts = requests.filter((r) => r.status === 'draft').length
-    const responded = requests.filter((r) => r.status === 'responded' || r.status === 'partial').length
-    return { total, sent, drafts, responded }
-  }, [requests])
+    const responded = requests.filter((r) => r.status === 'responded').length
+    const partial = requests.filter((r) => r.status === 'partial').length
+    const cancelled = requests.filter((r) => r.status === 'cancelled').length
+    const totalValue = requests.reduce((sum, r) => {
+      return sum + r.items.reduce((s, i) => s + (i.price * i.quantity), 0)
+    }, 0)
+    const overdue = requests.filter((r) => needsResend(r)).length
+    return { total, sent, drafts, responded, partial, cancelled, totalValue, overdue }
+  }, [requests, needsResend])
 
   return (
     <div className="space-y-6">
@@ -462,7 +676,7 @@ export function Requests() {
       </div>
 
       {/* Request Statistics Summary */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+      <div className="grid grid-cols-2 lg:grid-cols-5 gap-3">
         <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0 }}>
           <Card className="relative overflow-hidden border-l-[3px] border-l-violet-400">
             <CardContent className="p-4">
@@ -508,7 +722,7 @@ export function Requests() {
             </CardContent>
           </Card>
         </motion.div>
-        <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }}>
+        <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.13 }}>
           <Card className="relative overflow-hidden border-l-[3px] border-l-emerald-400">
             <CardContent className="p-4">
               <div className="flex items-center gap-3">
@@ -516,14 +730,60 @@ export function Requests() {
                   <CheckCircle2 className="h-4.5 w-4.5 text-emerald-600 dark:text-emerald-400" />
                 </div>
                 <div>
-                  <p className="text-2xl font-bold">{stats.responded}</p>
+                  <p className="text-2xl font-bold">{stats.responded + stats.partial}</p>
                   <p className="text-xs text-muted-foreground">Ответ получен</p>
                 </div>
               </div>
             </CardContent>
           </Card>
         </motion.div>
+        <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }}>
+          <Card className="relative overflow-hidden border-l-[3px] border-l-rose-400">
+            <CardContent className="p-4">
+              <div className="flex items-center gap-3">
+                <div className="flex h-9 w-9 items-center justify-center rounded-full bg-rose-500/10">
+                  <DollarSign className="h-4.5 w-4.5 text-rose-600 dark:text-rose-400" />
+                </div>
+                <div>
+                  <p className="text-lg font-bold">{stats.totalValue >= 1000000 ? `${(stats.totalValue / 1000000).toFixed(1)}М` : stats.totalValue >= 1000 ? `${(stats.totalValue / 1000).toFixed(0)}к` : stats.totalValue.toFixed(0)} ₽</p>
+                  <p className="text-xs text-muted-foreground">Общая сумма</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </motion.div>
       </div>
+
+      {/* Visual Pipeline */}
+      {!requestsLoading && requests.length > 0 && (
+        <RequestPipeline stats={stats} />
+      )}
+
+      {/* Overdue Alert */}
+      {!requestsLoading && stats.overdue > 0 && (
+        <motion.div
+          initial={{ opacity: 0, x: -12 }}
+          animate={{ opacity: 1, x: 0 }}
+        >
+          <Card className="border-red-200 dark:border-red-800 bg-red-50/50 dark:bg-red-950/20">
+            <CardContent className="p-3">
+              <div className="flex items-center gap-3">
+                <div className="flex h-8 w-8 items-center justify-center rounded-full bg-red-500/10 shrink-0">
+                  <AlertTriangle className="h-4 w-4 text-red-600 dark:text-red-400" />
+                </div>
+                <div className="flex-1">
+                  <p className="text-sm font-medium text-red-700 dark:text-red-400">
+                    {stats.overdue} {stats.overdue === 1 ? 'запрос' : stats.overdue < 5 ? 'запроса' : 'запросов'} без ответа более 3 дней
+                  </p>
+                  <p className="text-xs text-red-600/70 dark:text-red-400/60">
+                    Нажмите «Напомнить» для повторной отправки
+                  </p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </motion.div>
+      )}
 
       {/* Filter Bar */}
       <Card className="border-dashed">
@@ -536,6 +796,7 @@ export function Requests() {
               {['all', 'draft', 'sent', 'responded', 'partial', 'cancelled'].map((val) => {
                 const label = val === 'all' ? 'Все' : REQUEST_STATUS_MAP[val]?.label ?? val
                 const isActive = statusFilter === val
+                const count = val === 'all' ? requests.length : requests.filter((r) => r.status === val).length
                 return (
                   <button
                     key={val}
@@ -546,7 +807,7 @@ export function Requests() {
                         : 'bg-muted/50 text-muted-foreground border-transparent hover:bg-muted hover:border-border hover:shadow-sm'
                     }`}
                   >
-                    {label}
+                    {label} <span className="opacity-60 ml-0.5">{count}</span>
                   </button>
                 )
               })}
@@ -564,11 +825,24 @@ export function Requests() {
                 ))}
               </SelectContent>
             </Select>
+            <Select value={projectFilter} onValueChange={setProjectFilter}>
+              <SelectTrigger className="w-[180px] h-8 text-xs">
+                <SelectValue placeholder="Проект" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Все проекты</SelectItem>
+                {projects.map((p) => (
+                  <SelectItem key={p.id} value={p.id}>
+                    {p.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
             {/* Search Input */}
             <div className="relative flex-1 min-w-[200px]">
               <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
-                placeholder="Поиск по поставщику или проекту..."
+                placeholder="Поиск по поставщику, проекту, email..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="pl-9 h-8 text-xs"
@@ -582,15 +856,12 @@ export function Requests() {
       <Card>
         <CardContent className="p-0">
           {requestsLoading ? (
-            <div className="flex items-center justify-center py-12">
-              <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
-              <span className="ml-2 text-muted-foreground">Загрузка...</span>
-            </div>
+            <RequestsTableSkeleton />
           ) : filteredRequests.length === 0 ? (
             <EmptyState
-              type={searchQuery ? 'search' : 'requests'}
+              type={searchQuery || projectFilter !== 'all' ? 'search' : 'requests'}
               action={
-                !searchQuery
+                !searchQuery && projectFilter === 'all'
                   ? {
                       label: 'Новый запрос',
                       onClick: () => setCreateOpen(true),
@@ -610,11 +881,13 @@ export function Requests() {
                   <TableHead>Статус</TableHead>
                   <TableHead className="text-center hidden sm:table-cell">Позиций</TableHead>
                   <TableHead className="hidden lg:table-cell">Отправлено</TableHead>
-                  <TableHead className="hidden lg:table-cell">Ответ получен</TableHead>
+                  <TableHead className="hidden lg:table-cell">Ответ</TableHead>
+                  <TableHead className="hidden lg:table-cell">Время</TableHead>
                   <TableHead className="text-right">Действия</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
+                <AnimatePresence>
                 {filteredRequests.map((req) => (
                   <Fragment key={req.id}>
                     <TableRow
@@ -622,11 +895,12 @@ export function Requests() {
                       onClick={() => setExpandedId(expandedId === req.id ? null : req.id)}
                     >
                       <TableCell>
-                        {expandedId === req.id ? (
-                          <ChevronUp className="h-4 w-4" />
-                        ) : (
+                        <motion.div
+                          animate={{ rotate: expandedId === req.id ? 180 : 0 }}
+                          transition={{ duration: 0.2 }}
+                        >
                           <ChevronDown className="h-4 w-4" />
-                        )}
+                        </motion.div>
                       </TableCell>
                       <TableCell className="font-medium">{req.project.name}</TableCell>
                       <TableCell className="hidden sm:table-cell">{req.supplier.name}</TableCell>
@@ -636,17 +910,25 @@ export function Requests() {
                       <TableCell className="text-center hidden sm:table-cell">{req.items.length}</TableCell>
                       <TableCell className="hidden lg:table-cell">{formatDate(req.sentAt)}</TableCell>
                       <TableCell className="hidden lg:table-cell">{formatDate(req.responseAt)}</TableCell>
+                      <TableCell className="hidden lg:table-cell">
+                        <ResponseTimeTracker sentAt={req.sentAt} responseAt={req.responseAt} status={req.status} />
+                      </TableCell>
                       <TableCell className="text-right">
                         <div className="flex justify-end gap-1" onClick={(e) => e.stopPropagation()}>
                           {req.emailBody && (
-                            <Button
-                              size="sm"
-                              variant="ghost"
-                              onClick={() => openPreviewEmail(req)}
-                              title="Предпросмотр письма"
-                            >
-                              <Eye className="h-3 w-3" />
-                            </Button>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <Button
+                                  size="sm"
+                                  variant="ghost"
+                                  onClick={() => openPreviewEmail(req)}
+                                  className="h-7 w-7 p-0"
+                                >
+                                  <Eye className="h-3 w-3" />
+                                </Button>
+                              </TooltipTrigger>
+                              <TooltipContent>Предпросмотр письма</TooltipContent>
+                            </Tooltip>
                           )}
                           {req.status === 'draft' && (
                             <Button
@@ -654,6 +936,7 @@ export function Requests() {
                               variant="outline"
                               onClick={() => handleMarkSent(req.id)}
                               disabled={updateMutation.isPending}
+                              className="h-7 text-xs"
                             >
                               <Send className="mr-1 h-3 w-3" />
                               Отправить
@@ -664,16 +947,34 @@ export function Requests() {
                               size="sm"
                               variant="outline"
                               onClick={() => openResponseDialog(req)}
+                              className="h-7 text-xs"
                             >
                               <MessageSquare className="mr-1 h-3 w-3" />
                               Записать ответ
                             </Button>
                           )}
+                          {needsResend(req) && (
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  onClick={() => handleResend(req)}
+                                  disabled={updateMutation.isPending}
+                                  className="h-7 text-xs border-amber-300 text-amber-700 hover:bg-amber-50 dark:border-amber-700 dark:text-amber-400 dark:hover:bg-amber-950/30"
+                                >
+                                  <RefreshCw className="mr-1 h-3 w-3" />
+                                  Напомнить
+                                </Button>
+                              </TooltipTrigger>
+                              <TooltipContent>Нет ответа более 3 дней. Отправить повторно.</TooltipContent>
+                            </Tooltip>
+                          )}
                           {req.status !== 'cancelled' && req.status !== 'responded' && (
                             <Button
                               size="sm"
                               variant="ghost"
-                              className="text-destructive hover:text-destructive"
+                              className="h-7 text-xs text-destructive hover:text-destructive"
                               onClick={() => setCancelId(req.id)}
                             >
                               <XCircle className="mr-1 h-3 w-3" />
@@ -685,55 +986,99 @@ export function Requests() {
                     </TableRow>
                     {expandedId === req.id && (
                       <TableRow key={`${req.id}-detail`}>
-                        <TableCell colSpan={8} className="bg-muted/30 p-4 expand-enter">
-                          <div className="space-y-4">
+                        <TableCell colSpan={9} className="bg-muted/30 p-4">
+                          <motion.div
+                            initial={{ opacity: 0, height: 0 }}
+                            animate={{ opacity: 1, height: 'auto' }}
+                            exit={{ opacity: 0, height: 0 }}
+                            transition={{ duration: 0.2 }}
+                            className="space-y-4"
+                          >
+                            {/* Inline Status Update Actions */}
+                            <div className="flex items-center gap-2 flex-wrap">
+                              <span className="text-xs text-muted-foreground font-medium">Сменить статус:</span>
+                              {req.status === 'draft' && (
+                                <Button size="sm" variant="outline" className="h-7 text-xs" onClick={() => handleInlineStatusUpdate(req.id, 'sent')} disabled={updateMutation.isPending}>
+                                  <Send className="mr-1 h-3 w-3" /> Отправлен
+                                </Button>
+                              )}
+                              {(req.status === 'sent' || req.status === 'partial') && (
+                                <>
+                                  <Button size="sm" variant="outline" className="h-7 text-xs" onClick={() => openResponseDialog(req)}>
+                                    <MessageSquare className="mr-1 h-3 w-3" /> Записать ответ
+                                  </Button>
+                                  <Button size="sm" variant="outline" className="h-7 text-xs" onClick={() => handleInlineStatusUpdate(req.id, 'responded')} disabled={updateMutation.isPending}>
+                                    <CheckCircle2 className="mr-1 h-3 w-3" /> Ответ получен
+                                  </Button>
+                                </>
+                              )}
+                              {req.status !== 'cancelled' && (
+                                <Button size="sm" variant="ghost" className="h-7 text-xs text-destructive hover:text-destructive" onClick={() => setCancelId(req.id)}>
+                                  <XCircle className="mr-1 h-3 w-3" /> Отменить
+                                </Button>
+                              )}
+                            </div>
+
                             {/* Items */}
                             <div>
                               <h4 className="text-sm font-semibold mb-2">Позиции запроса</h4>
-                              <Table>
-                                <TableHeader>
-                                  <TableRow>
-                                    <TableHead>Наименование</TableHead>
-                                    <TableHead>Артикул</TableHead>
-                                    <TableHead className="text-center">Кол-во</TableHead>
-                                    <TableHead className="text-right">Цена</TableHead>
-                                    <TableHead className="text-center">Доступно</TableHead>
-                                    <TableHead className="text-center">Доступное кол-во</TableHead>
-                                    <TableHead className="text-center">Срок (дн.)</TableHead>
-                                  </TableRow>
-                                </TableHeader>
-                                <TableBody>
-                                  {req.items.map((item) => (
-                                    <TableRow key={item.id}>
-                                      <TableCell>{item.projectItem.name}</TableCell>
-                                      <TableCell className="text-muted-foreground">
-                                        {item.projectItem.article || '—'}
-                                      </TableCell>
-                                      <TableCell className="text-center">{item.quantity} {item.projectItem.unit}</TableCell>
-                                      <TableCell className="text-right">
-                                        {item.price > 0 ? `${item.price.toFixed(2)} ₽` : '—'}
-                                      </TableCell>
-                                      <TableCell className="text-center">
-                                        {item.available ? (
-                                          <CheckCircle2 className="h-4 w-4 text-green-600 mx-auto" />
-                                        ) : req.status === 'responded' || req.status === 'partial' ? (
-                                          <XCircle className="h-4 w-4 text-red-500 mx-auto" />
-                                        ) : (
-                                          <Clock className="h-4 w-4 text-muted-foreground mx-auto" />
-                                        )}
-                                      </TableCell>
-                                      <TableCell className="text-center">
-                                        {item.availableQty > 0 ? item.availableQty : '—'}
-                                      </TableCell>
-                                      <TableCell className="text-center">
-                                        {item.deliveryDays > 0 ? item.deliveryDays : '—'}
-                                      </TableCell>
+                              <div className="border rounded-md overflow-hidden">
+                                <Table>
+                                  <TableHeader>
+                                    <TableRow>
+                                      <TableHead>Наименование</TableHead>
+                                      <TableHead>Артикул</TableHead>
+                                      <TableHead className="text-center">Кол-во</TableHead>
+                                      <TableHead className="text-right">Цена</TableHead>
+                                      <TableHead className="text-right">Сумма</TableHead>
+                                      <TableHead className="text-center">Доступно</TableHead>
+                                      <TableHead className="text-center">Доступное кол-во</TableHead>
+                                      <TableHead className="text-center">Срок (дн.)</TableHead>
                                     </TableRow>
-                                  ))}
-                                </TableBody>
-                              </Table>
+                                  </TableHeader>
+                                  <TableBody>
+                                    {req.items.map((item) => (
+                                      <TableRow key={item.id}>
+                                        <TableCell>{item.projectItem.name}</TableCell>
+                                        <TableCell className="text-muted-foreground">
+                                          {item.projectItem.article || '—'}
+                                        </TableCell>
+                                        <TableCell className="text-center">{item.quantity} {item.projectItem.unit}</TableCell>
+                                        <TableCell className="text-right">
+                                          {item.price > 0 ? `${item.price.toFixed(2)} ₽` : '—'}
+                                        </TableCell>
+                                        <TableCell className="text-right font-medium">
+                                          {item.price > 0 ? `${(item.price * item.quantity).toFixed(2)} ₽` : '—'}
+                                        </TableCell>
+                                        <TableCell className="text-center">
+                                          {item.available ? (
+                                            <CheckCircle2 className="h-4 w-4 text-green-600 mx-auto" />
+                                          ) : req.status === 'responded' || req.status === 'partial' ? (
+                                            <XCircle className="h-4 w-4 text-red-500 mx-auto" />
+                                          ) : (
+                                            <Clock className="h-4 w-4 text-muted-foreground mx-auto" />
+                                          )}
+                                        </TableCell>
+                                        <TableCell className="text-center">
+                                          {item.availableQty > 0 ? item.availableQty : '—'}
+                                        </TableCell>
+                                        <TableCell className="text-center">
+                                          {item.deliveryDays > 0 ? item.deliveryDays : '—'}
+                                        </TableCell>
+                                      </TableRow>
+                                    ))}
+                                  </TableBody>
+                                </Table>
+                              </div>
+                              {/* Items total */}
+                              <div className="flex justify-end mt-2">
+                                <p className="text-sm font-semibold">
+                                  Итого: {req.items.reduce((sum, i) => sum + (i.price * i.quantity), 0).toFixed(2)} ₽
+                                </p>
+                              </div>
                             </div>
-                            {/* Email preview */}
+
+                            {/* Email preview (expandable) */}
                             {req.emailTo && (
                               <>
                                 <Separator />
@@ -743,21 +1088,25 @@ export function Requests() {
                                     Email
                                   </h4>
                                   <div className="text-sm space-y-1 bg-background rounded-xl p-4 border shadow-sm">
-                                    <p><span className="text-muted-foreground">Кому:</span> {req.emailTo}</p>
-                                    <p><span className="text-muted-foreground">Тема:</span> {req.emailSubject}</p>
-                                    <div className="mt-2 whitespace-pre-wrap text-muted-foreground text-xs max-h-40 overflow-y-auto">
+                                    <div className="flex items-center gap-2 flex-wrap">
+                                      <p><span className="text-muted-foreground">Кому:</span> <span className="font-medium">{req.emailTo}</span></p>
+                                      <p className="text-muted-foreground">•</p>
+                                      <p><span className="text-muted-foreground">Тема:</span> <span className="font-medium">{req.emailSubject}</span></p>
+                                    </div>
+                                    <div className="mt-2 whitespace-pre-wrap text-muted-foreground text-xs max-h-40 overflow-y-auto bg-muted/30 rounded-lg p-3">
                                       {req.emailBody}
                                     </div>
                                   </div>
                                 </div>
                               </>
                             )}
-                          </div>
+                          </motion.div>
                         </TableCell>
                       </TableRow>
                     )}
                   </Fragment>
                 ))}
+                </AnimatePresence>
               </TableBody>
             </Table>
             </div>
@@ -813,7 +1162,7 @@ export function Requests() {
             {stepLabels.map((label, i) => (
               <div key={i} className="flex items-center">
                 <div
-                  className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-medium ${
+                  className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-medium transition-colors duration-200 ${
                     i + 1 <= step
                       ? 'bg-primary text-primary-foreground'
                       : 'bg-muted text-muted-foreground'
@@ -823,7 +1172,7 @@ export function Requests() {
                 </div>
                 {i < stepLabels.length - 1 && (
                   <div
-                    className={`h-0.5 w-6 ${
+                    className={`h-0.5 w-6 transition-colors duration-200 ${
                       i + 1 < step ? 'bg-primary' : 'bg-muted'
                     }`}
                   />
@@ -1157,7 +1506,7 @@ export function Requests() {
           <AlertDialogHeader>
             <AlertDialogTitle>Отменить запрос?</AlertDialogTitle>
             <AlertDialogDescription>
-              Запрос будет помечен как отменённый. Это действие нельзя отменить.
+              Вы уверены, что хотите отменить этот запрос? Это действие нельзя отменить.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

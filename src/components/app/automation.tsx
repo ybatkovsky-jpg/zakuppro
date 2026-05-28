@@ -139,7 +139,7 @@ function getDefinitionForType(type: string, definitions: RuleDefinition[]): Rule
 function QuickStats({ rules }: { rules: AutomationRuleData[] }) {
   const activeCount = rules.filter(r => r.enabled).length
   const todayExecutions = rules.reduce((sum, r) => sum + r.runCount, 0)
-  const lastRunTimes = rules.filter(r => r.lastRunAt).map(r => new Date(r.lastRun!))
+  const lastRunTimes = rules.filter(r => r.lastRunAt).map(r => new Date(r.lastRun!)).filter(d => !isNaN(d.getTime()))
   const lastExecution = lastRunTimes.length > 0
     ? new Date(Math.max(...lastRunTimes.map(d => d.getTime())))
     : null
@@ -168,7 +168,7 @@ function QuickStats({ rules }: { rules: AutomationRuleData[] }) {
       icon: Clock,
       color: 'text-sky-600 dark:text-sky-400',
       bgColor: 'bg-sky-500/10',
-      textValue: lastExecution ? formatLastRun(lastExecution.toISOString()) : 'Никогда',
+      textValue: lastExecution && !isNaN(lastExecution.getTime()) ? formatLastRun(lastExecution.toISOString()) : 'Никогда',
     },
   ]
 
@@ -475,7 +475,7 @@ export function Automation() {
               definition={getDefinitionForType(rule.type, definitions)}
               onToggle={(id, enabled) => toggleMutation.mutate({ id, enabled })}
               onRun={(id) => executeMutation.mutate({ ruleId: id })}
-              isRunning={runningRuleId === id}
+              isRunning={runningRuleId === rule.id}
             />
           ))}
         </div>

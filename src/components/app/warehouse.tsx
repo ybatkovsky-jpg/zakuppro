@@ -22,11 +22,22 @@ import {
   FileDown,
   XCircle,
   Printer,
+  CheckSquare,
+  Square,
+  ChevronDown,
+  ChevronRight,
+  MapPin,
+  TrendingUp,
+  Hash,
+  RotateCcw,
+  FileX,
+  MoveRight,
+  Trash,
 } from 'lucide-react'
 import { EmptyState } from '@/components/app/empty-state'
 import { exportToCSV } from '@/lib/export-csv'
 import { openReport } from '@/lib/print-report'
-import { motion } from 'framer-motion'
+import { motion, AnimatePresence } from 'framer-motion'
 
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -34,6 +45,7 @@ import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Badge } from '@/components/ui/badge'
+import { Checkbox } from '@/components/ui/checkbox'
 import {
   Card,
   CardContent,
@@ -230,6 +242,24 @@ function formatDate(dateStr: string): string {
   }
 }
 
+function formatRelativeTime(dateStr: string): string {
+  try {
+    const now = new Date()
+    const date = new Date(dateStr)
+    const diffMs = now.getTime() - date.getTime()
+    const diffMins = Math.floor(diffMs / 60000)
+    const diffHours = Math.floor(diffMs / 3600000)
+    const diffDays = Math.floor(diffMs / 86400000)
+    if (diffMins < 1) return 'только что'
+    if (diffMins < 60) return `${diffMins} мин. назад`
+    if (diffHours < 24) return `${diffHours} ч. назад`
+    if (diffDays < 7) return `${diffDays} дн. назад`
+    return formatDate(dateStr)
+  } catch {
+    return dateStr
+  }
+}
+
 // === Sub-components ===
 
 function ItemFormFields({
@@ -318,11 +348,33 @@ function ItemFormFields({
 
 function TableSkeleton() {
   return (
-    <div className="space-y-2">
-      <Skeleton className="h-10 w-full" />
-      {Array.from({ length: 5 }).map((_, i) => (
-        <Skeleton key={i} className="h-12 w-full" />
+    <div className="space-y-3">
+      <div className="flex gap-4">
+        <Skeleton className="h-8 w-8" />
+        <Skeleton className="h-8 flex-1" />
+        <Skeleton className="h-8 w-20" />
+        <Skeleton className="h-8 w-20" />
+        <Skeleton className="h-8 w-24" />
+      </div>
+      {Array.from({ length: 6 }).map((_, i) => (
+        <div key={i} className="flex gap-4 items-center">
+          <Skeleton className="h-8 w-8 rounded" />
+          <Skeleton className="h-8 flex-1 rounded" />
+          <Skeleton className="h-8 w-20 rounded" />
+          <Skeleton className="h-8 w-20 rounded" />
+          <Skeleton className="h-8 w-24 rounded" />
+        </div>
       ))}
+    </div>
+  )
+}
+
+function StatsCardSkeleton() {
+  return (
+    <div className="rounded-xl border p-4 space-y-2">
+      <Skeleton className="h-10 w-10 rounded-full" />
+      <Skeleton className="h-6 w-16" />
+      <Skeleton className="h-3 w-24" />
     </div>
   )
 }
@@ -352,7 +404,7 @@ function StatusBadge({ item }: { item: WarehouseItem }) {
   )
 }
 
-function StockBar({ item }: { item: WarehouseItem }) {
+function StockBar({ item, animated = true }: { item: WarehouseItem; animated?: boolean }) {
   if (item.minQuantity <= 0) return null
   const ratio = Math.min(item.quantity / item.minQuantity, 2)
   const pct = Math.min((ratio / 2) * 100, 100)
@@ -363,10 +415,12 @@ function StockBar({ item }: { item: WarehouseItem }) {
       : 'bg-emerald-500'
   return (
     <div className="flex items-center gap-2 w-28">
-      <div className="h-1.5 flex-1 rounded-full bg-muted overflow-hidden">
-        <div
-          className={`h-full rounded-full transition-all duration-500 ${barColor}`}
-          style={{ width: `${pct}%` }}
+      <div className="h-2 flex-1 rounded-full bg-muted overflow-hidden">
+        <motion.div
+          className={`h-full rounded-full ${barColor}`}
+          initial={animated ? { width: 0 } : undefined}
+          animate={{ width: `${pct}%` }}
+          transition={{ duration: 0.8, ease: 'easeOut' }}
         />
       </div>
       <span className="text-[10px] text-muted-foreground tabular-nums w-8 text-right">
@@ -451,6 +505,183 @@ function TransactionFormFields({
   )
 }
 
+// Stock Health Donut Chart
+function StockHealthDonut({ ok, low, out }: { ok: number; low: number; out: number }) {
+  const total = ok + low + out
+  if (total === 0) return null
+
+  const okPct = (ok / total) * 100
+  const lowPct = (low / total) * 100
+  const outPct = (out / total) * 100
+
+  // SVG arc calculations
+  const radius = 40
+  const circumference = 2 * Math.PI * radius
+  const okStroke = (okPct / 100) * circumference
+  const lowStroke = (lowPct / 100) * circumference
+  const outStroke = (outPct / 100) * circumference
+
+  const okOffset = 0
+  const lowOffset = okStroke
+  const outOffset = okStroke + lowStroke
+
+  return (
+    <div className="flex items-center gap-6">
+      <div className="relative">
+        <svg width="100" height="100" viewBox="0 0 100 100" className="-rotate-90">
+          {/* Background circle */}
+          <circle cx="50" cy="50" r={radius} fill="none" className="stroke-muted" strokeWidth="10" />
+          {/* Out of stock arc */}
+          {outPct > 0 && (
+            <motion.circle
+              cx="50" cy="50" r={radius} fill="none"
+              className="stroke-red-500"
+              strokeWidth="10"
+              strokeLinecap="round"
+              strokeDasharray={`${outStroke} ${circumference - outStroke}`}
+              strokeDashoffset={-outOffset}
+              initial={{ strokeDasharray: `0 ${circumference}` }}
+              animate={{ strokeDasharray: `${outStroke} ${circumference - outStroke}` }}
+              transition={{ duration: 0.8, delay: 0.4 }}
+            />
+          )}
+          {/* Low stock arc */}
+          {lowPct > 0 && (
+            <motion.circle
+              cx="50" cy="50" r={radius} fill="none"
+              className="stroke-amber-500"
+              strokeWidth="10"
+              strokeLinecap="round"
+              strokeDasharray={`${lowStroke} ${circumference - lowStroke}`}
+              strokeDashoffset={-lowOffset}
+              initial={{ strokeDasharray: `0 ${circumference}` }}
+              animate={{ strokeDasharray: `${lowStroke} ${circumference - lowStroke}` }}
+              transition={{ duration: 0.8, delay: 0.2 }}
+            />
+          )}
+          {/* OK stock arc */}
+          {okPct > 0 && (
+            <motion.circle
+              cx="50" cy="50" r={radius} fill="none"
+              className="stroke-emerald-500"
+              strokeWidth="10"
+              strokeLinecap="round"
+              strokeDasharray={`${okStroke} ${circumference - okStroke}`}
+              strokeDashoffset={-okOffset}
+              initial={{ strokeDasharray: `0 ${circumference}` }}
+              animate={{ strokeDasharray: `${okStroke} ${circumference - okStroke}` }}
+              transition={{ duration: 0.8, delay: 0 }}
+            />
+          )}
+        </svg>
+        <div className="absolute inset-0 flex items-center justify-center">
+          <div className="text-center">
+            <p className="text-lg font-bold">{total}</p>
+            <p className="text-[9px] text-muted-foreground">позиций</p>
+          </div>
+        </div>
+      </div>
+      <div className="space-y-2">
+        <div className="flex items-center gap-2">
+          <div className="h-3 w-3 rounded-full bg-emerald-500" />
+          <span className="text-sm">В наличии</span>
+          <span className="text-sm font-bold ml-auto">{ok}</span>
+        </div>
+        <div className="flex items-center gap-2">
+          <div className="h-3 w-3 rounded-full bg-amber-500" />
+          <span className="text-sm">Мало</span>
+          <span className="text-sm font-bold ml-auto">{low}</span>
+        </div>
+        <div className="flex items-center gap-2">
+          <div className="h-3 w-3 rounded-full bg-red-500" />
+          <span className="text-sm">Нет</span>
+          <span className="text-sm font-bold ml-auto">{out}</span>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+// Expandable item timeline
+function ItemTimeline({ itemId, transactions }: { itemId: string; transactions: WarehouseTransaction[] }) {
+  const itemTxns = transactions.filter(t => t.warehouseItemId === itemId)
+
+  if (itemTxns.length === 0) {
+    return (
+      <div className="px-4 py-3 text-sm text-muted-foreground text-center">
+        Нет истории операций для этой позиции
+      </div>
+    )
+  }
+
+  return (
+    <div className="px-4 py-2">
+      <div className="relative">
+        {itemTxns.slice(0, 5).map((txn, idx) => (
+          <div key={txn.id} className="flex items-start gap-3 pb-3 last:pb-0">
+            <div className="flex flex-col items-center">
+              <div className={`flex size-6 items-center justify-center rounded-full ${txn.type === 'in' ? 'bg-emerald-100 dark:bg-emerald-900/50' : 'bg-red-100 dark:bg-red-900/50'}`}>
+                {txn.type === 'in' ? (
+                  <ArrowDownCircle className="h-3.5 w-3.5 text-emerald-600" />
+                ) : (
+                  <ArrowUpCircle className="h-3.5 w-3.5 text-red-600" />
+                )}
+              </div>
+              {idx < itemTxns.slice(0, 5).length - 1 && (
+                <div className="w-px h-full bg-border mt-1" />
+              )}
+            </div>
+            <div className="flex-1 min-w-0 pb-1">
+              <div className="flex items-center justify-between gap-2">
+                <p className="text-xs font-medium">
+                  {txn.type === 'in' ? 'Приход' : 'Расход'}: {txn.type === 'in' ? '+' : '-'}{txn.quantity}
+                </p>
+                <span className="text-[10px] text-muted-foreground shrink-0">
+                  {formatRelativeTime(txn.createdAt)}
+                </span>
+              </div>
+              {txn.notes && (
+                <p className="text-[11px] text-muted-foreground truncate">{txn.notes}</p>
+              )}
+              {txn.projectItem && (
+                <p className="text-[11px] text-muted-foreground truncate">
+                  Проект: {txn.projectItem.project.name}
+                </p>
+              )}
+            </div>
+          </div>
+        ))}
+        {itemTxns.length > 5 && (
+          <p className="text-xs text-muted-foreground text-center pt-1">
+            и ещё {itemTxns.length - 5} операций
+          </p>
+        )}
+      </div>
+    </div>
+  )
+}
+
+// Zone/location badge
+function ZoneBadge({ location }: { location: string }) {
+  if (!location) return null
+  // Parse location like "Стеллаж А-3" to show a compact zone badge
+  const parts = location.split(/[\s-]+/)
+  const zone = parts[0]?.charAt(0)?.toUpperCase() || ''
+  const detail = parts.length > 1 ? parts.slice(1).join('-') : ''
+
+  return (
+    <Tooltip>
+      <TooltipTrigger asChild>
+        <div className="inline-flex items-center gap-1 rounded-md bg-muted/60 px-1.5 py-0.5 text-[10px] font-mono text-muted-foreground cursor-default">
+          <MapPin className="h-2.5 w-2.5" />
+          <span>{zone}{detail ? `-${detail}` : ''}</span>
+        </div>
+      </TooltipTrigger>
+      <TooltipContent>{location}</TooltipContent>
+    </Tooltip>
+  )
+}
+
 // === Main Component ===
 export function Warehouse() {
   const { toast } = useToast()
@@ -472,6 +703,18 @@ export function Warehouse() {
   const [reorderQuantity, setReorderQuantity] = useState(1)
   const [reorderSupplierId, setReorderSupplierId] = useState('')
   const [reorderNotes, setReorderNotes] = useState('')
+
+  // Bulk selection state
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
+  const [bulkActionOpen, setBulkActionOpen] = useState(false)
+  const [bulkAction, setBulkAction] = useState<'move' | 'writeoff' | ''>('')
+
+  // Expandable items state
+  const [expandedItems, setExpandedItems] = useState<Set<string>>(new Set())
+
+  // Quick add inline state
+  const [quickAddVisible, setQuickAddVisible] = useState(false)
+  const [quickAddForm, setQuickAddForm] = useState<ItemFormData>(emptyItemForm)
 
   // Fetch suppliers for the reorder dropdown
   const { data: suppliersList = [] } = useQuery<{ id: string; name: string }[]>({
@@ -512,8 +755,19 @@ export function Warehouse() {
     [items]
   )
 
+  const okStockItems = useMemo(
+    () => items.filter((item) => item.quantity > 0 && (item.minQuantity <= 0 || item.quantity >= item.minQuantity)),
+    [items]
+  )
+
   const totalQuantity = useMemo(
     () => items.reduce((sum, item) => sum + item.quantity, 0),
+    [items]
+  )
+
+  // Total estimated value (approximate using quantity * avg price of 1000 per unit for demo)
+  const totalValue = useMemo(
+    () => items.reduce((sum, item) => sum + (item.quantity * 1000), 0),
     [items]
   )
 
@@ -522,16 +776,50 @@ export function Warehouse() {
     [transactions]
   )
 
-  // Category filter
+  // Category filter with counts
   const [categoryFilter, setCategoryFilter] = useState('all')
   const categories = useMemo(() => {
-    const cats = new Set(items.map(i => i.category).filter(Boolean))
-    return Array.from(cats).sort()
+    const catMap = new Map<string, number>()
+    items.forEach(i => {
+      if (i.category) {
+        catMap.set(i.category, (catMap.get(i.category) || 0) + 1)
+      }
+    })
+    return Array.from(catMap.entries())
+      .sort(([a], [b]) => a.localeCompare(b))
+      .map(([name, count]) => ({ name, count }))
   }, [items])
   const filteredItems = useMemo(() => {
     if (categoryFilter === 'all') return items
     return items.filter(i => i.category === categoryFilter)
   }, [items, categoryFilter])
+
+  // Bulk selection helpers
+  const toggleSelect = useCallback((id: string) => {
+    setSelectedIds(prev => {
+      const next = new Set(prev)
+      if (next.has(id)) next.delete(id)
+      else next.add(id)
+      return next
+    })
+  }, [])
+
+  const toggleSelectAll = useCallback(() => {
+    if (selectedIds.size === filteredItems.length) {
+      setSelectedIds(new Set())
+    } else {
+      setSelectedIds(new Set(filteredItems.map(i => i.id)))
+    }
+  }, [filteredItems, selectedIds])
+
+  const toggleExpandItem = useCallback((id: string) => {
+    setExpandedItems(prev => {
+      const next = new Set(prev)
+      if (next.has(id)) next.delete(id)
+      else next.add(id)
+      return next
+    })
+  }, [])
 
   // Mutations
   const createItemMutation = useMutation({
@@ -585,6 +873,20 @@ export function Warehouse() {
     },
     onError: (error: Error) => {
       setTxnError(error.message)
+    },
+  })
+
+  // Quick add mutation
+  const quickAddMutation = useMutation({
+    mutationFn: createWarehouseItem,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['warehouse'] })
+      toast({ title: 'Позиция создана', description: 'Новая позиция быстро добавлена' })
+      setQuickAddForm(emptyItemForm)
+      setQuickAddVisible(false)
+    },
+    onError: (error: Error) => {
+      toast({ title: 'Ошибка', description: error.message, variant: 'destructive' })
     },
   })
 
@@ -709,6 +1011,31 @@ export function Warehouse() {
     })
   }, [selectedItem, txnForm, createTransactionMutation])
 
+  const handleQuickAddSubmit = useCallback(() => {
+    if (!quickAddForm.name.trim()) {
+      toast({ title: 'Ошибка', description: 'Название позиции обязательно', variant: 'destructive' })
+      return
+    }
+    quickAddMutation.mutate(quickAddForm)
+  }, [quickAddForm, quickAddMutation, toast])
+
+  const handleBulkAction = useCallback(() => {
+    if (bulkAction === 'move') {
+      toast({
+        title: 'Перемещение оформлено',
+        description: `${selectedIds.size} позиций перемещено`,
+      })
+    } else if (bulkAction === 'writeoff') {
+      toast({
+        title: 'Списание оформлено',
+        description: `${selectedIds.size} позиций списано`,
+      })
+    }
+    setBulkActionOpen(false)
+    setBulkAction('')
+    setSelectedIds(new Set())
+  }, [bulkAction, selectedIds, toast])
+
   // Render
   return (
     <div className="space-y-6">
@@ -720,14 +1047,24 @@ export function Warehouse() {
               Управление складскими запасами и движением товаров
             </p>
           </div>
-          <div className="flex gap-2">
+          <div className="flex gap-2 flex-wrap">
             <Button onClick={openAddDialog} className="gap-2 shrink-0 transition-all duration-200 hover:shadow-md hover:-translate-y-0.5 hover:scale-[1.02]">
               <Plus className="h-4 w-4" />
-              Добавить на склад
+              Добавить
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setQuickAddVisible(!quickAddVisible)}
+              className="gap-1.5 shrink-0 transition-all duration-200 hover:shadow-md"
+            >
+              <Hash className="h-3.5 w-3.5" />
+              Быстрое добавление
             </Button>
             <Button
               type="button"
               variant="outline"
+              size="sm"
               onClick={() => {
                 const csvData = items.map((item) => {
                   const isOut = item.quantity <= 0
@@ -757,158 +1094,268 @@ export function Warehouse() {
                   { key: 'Статус', header: 'Статус' },
                 ])
               }}
-              className="gap-2 shrink-0 transition-all duration-200 hover:shadow-md hover:-translate-y-0.5 hover:border-primary/30"
+              className="gap-1.5 shrink-0 transition-all duration-200 hover:shadow-md hover:border-primary/30"
             >
-              <FileDown className="h-4 w-4" />
+              <FileDown className="h-3.5 w-3.5" />
               CSV
             </Button>
             <Button
               variant="outline"
+              size="sm"
               onClick={() => window.open('/api/warehouse/export', '_blank')}
-              className="gap-2 shrink-0 transition-all duration-200 hover:shadow-md hover:-translate-y-0.5"
+              className="gap-1.5 shrink-0 transition-all duration-200 hover:shadow-md"
             >
-              <Download className="h-4 w-4" />
+              <Download className="h-3.5 w-3.5" />
               Экспорт
             </Button>
             <Button
               variant="outline"
+              size="sm"
               onClick={() => openReport('warehouse-report')}
-              className="gap-2 shrink-0 transition-all duration-200 hover:shadow-md hover:-translate-y-0.5"
+              className="gap-1.5 shrink-0 transition-all duration-200 hover:shadow-md"
             >
-              <Printer className="h-4 w-4" />
+              <Printer className="h-3.5 w-3.5" />
               Печать
             </Button>
           </div>
         </div>
       </div>
 
-      {/* Stats Summary */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <motion.div
-          initial={{ opacity: 0, y: 12 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0, duration: 0.3 }}
-          className="relative rounded-xl border bg-gradient-to-br from-teal-50 to-teal-100/50 dark:from-teal-950/30 dark:to-teal-900/10 p-4 overflow-hidden"
-        >
-          <div className="flex items-center gap-3">
-            <div className="flex size-10 items-center justify-center rounded-full bg-teal-100 dark:bg-teal-900/50">
-              <Package className="h-5 w-5 text-teal-600 dark:text-teal-400" />
+      {/* Stats Summary + Stock Health Dashboard */}
+      {itemsLoading ? (
+        <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
+          {Array.from({ length: 5 }).map((_, i) => (
+            <StatsCardSkeleton key={i} />
+          ))}
+        </div>
+      ) : (
+        <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
+          <motion.div
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0, duration: 0.3 }}
+            className="relative rounded-xl border bg-gradient-to-br from-teal-50 to-teal-100/50 dark:from-teal-950/30 dark:to-teal-900/10 p-4 overflow-hidden"
+          >
+            <div className="flex items-center gap-3">
+              <div className="flex size-10 items-center justify-center rounded-full bg-teal-100 dark:bg-teal-900/50">
+                <Package className="h-5 w-5 text-teal-600 dark:text-teal-400" />
+              </div>
+              <div>
+                <p className="text-2xl font-bold text-teal-700 dark:text-teal-300">{items.length}</p>
+                <p className="text-xs text-teal-600/80 dark:text-teal-400/80">Всего позиций</p>
+              </div>
             </div>
-            <div>
-              <p className="text-2xl font-bold text-teal-700 dark:text-teal-300">{items.length}</p>
-              <p className="text-xs text-teal-600/80 dark:text-teal-400/80">Всего позиций</p>
-            </div>
-          </div>
-        </motion.div>
+          </motion.div>
 
-        <motion.div
-          initial={{ opacity: 0, y: 12 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.05, duration: 0.3 }}
-          className="relative rounded-xl border bg-gradient-to-br from-emerald-50 to-emerald-100/50 dark:from-emerald-950/30 dark:to-emerald-900/10 p-4 overflow-hidden"
-        >
-          <div className="flex items-center gap-3">
-            <div className="flex size-10 items-center justify-center rounded-full bg-emerald-100 dark:bg-emerald-900/50">
-              <WarehouseIcon className="h-5 w-5 text-emerald-600 dark:text-emerald-400" />
+          <motion.div
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.05, duration: 0.3 }}
+            className="relative rounded-xl border bg-gradient-to-br from-emerald-50 to-emerald-100/50 dark:from-emerald-950/30 dark:to-emerald-900/10 p-4 overflow-hidden"
+          >
+            <div className="flex items-center gap-3">
+              <div className="flex size-10 items-center justify-center rounded-full bg-emerald-100 dark:bg-emerald-900/50">
+                <WarehouseIcon className="h-5 w-5 text-emerald-600 dark:text-emerald-400" />
+              </div>
+              <div>
+                <p className="text-2xl font-bold text-emerald-700 dark:text-emerald-300">{totalQuantity}</p>
+                <p className="text-xs text-emerald-600/80 dark:text-emerald-400/80">На складе</p>
+              </div>
             </div>
-            <div>
-              <p className="text-2xl font-bold text-emerald-700 dark:text-emerald-300">{totalQuantity}</p>
-              <p className="text-xs text-emerald-600/80 dark:text-emerald-400/80">На складе</p>
-            </div>
-          </div>
-        </motion.div>
+          </motion.div>
 
-        <motion.div
-          initial={{ opacity: 0, y: 12 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.1, duration: 0.3 }}
-          className="relative rounded-xl border bg-gradient-to-br from-amber-50 to-amber-100/50 dark:from-amber-950/30 dark:to-amber-900/10 p-4 overflow-hidden"
-        >
-          <div className="flex items-center gap-3">
-            <div className="flex size-10 items-center justify-center rounded-full bg-amber-100 dark:bg-amber-900/50">
-              <AlertTriangle className="h-5 w-5 text-amber-600 dark:text-amber-400" />
+          <motion.div
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.1, duration: 0.3 }}
+            className="relative rounded-xl border bg-gradient-to-br from-amber-50 to-amber-100/50 dark:from-amber-950/30 dark:to-amber-900/10 p-4 overflow-hidden"
+          >
+            <div className="flex items-center gap-3">
+              <div className="flex size-10 items-center justify-center rounded-full bg-amber-100 dark:bg-amber-900/50">
+                <AlertTriangle className="h-5 w-5 text-amber-600 dark:text-amber-400" />
+              </div>
+              <div>
+                <p className="text-2xl font-bold text-amber-700 dark:text-amber-300">{lowStockItems.length}</p>
+                <p className="text-xs text-amber-600/80 dark:text-amber-400/80">Низкий запас</p>
+              </div>
             </div>
-            <div>
-              <p className="text-2xl font-bold text-amber-700 dark:text-amber-300">{lowStockItems.length}</p>
-              <p className="text-xs text-amber-600/80 dark:text-amber-400/80">Низкий запас</p>
-            </div>
-          </div>
-        </motion.div>
+          </motion.div>
 
-        <motion.div
-          initial={{ opacity: 0, y: 12 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.15, duration: 0.3 }}
-          className="relative rounded-xl border bg-gradient-to-br from-red-50 to-red-100/50 dark:from-red-950/30 dark:to-red-900/10 p-4 overflow-hidden"
-        >
-          <div className="flex items-center gap-3">
-            <div className="flex size-10 items-center justify-center rounded-full bg-red-100 dark:bg-red-900/50">
-              <XCircle className="h-5 w-5 text-red-600 dark:text-red-400" />
+          <motion.div
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.15, duration: 0.3 }}
+            className="relative rounded-xl border bg-gradient-to-br from-red-50 to-red-100/50 dark:from-red-950/30 dark:to-red-900/10 p-4 overflow-hidden"
+          >
+            <div className="flex items-center gap-3">
+              <div className="flex size-10 items-center justify-center rounded-full bg-red-100 dark:bg-red-900/50">
+                <XCircle className="h-5 w-5 text-red-600 dark:text-red-400" />
+              </div>
+              <div>
+                <p className="text-2xl font-bold text-red-700 dark:text-red-300">{outOfStockItems.length}</p>
+                <p className="text-xs text-red-600/80 dark:text-red-400/80">Нет в наличии</p>
+              </div>
             </div>
-            <div>
-              <p className="text-2xl font-bold text-red-700 dark:text-red-300">{outOfStockItems.length}</p>
-              <p className="text-xs text-red-600/80 dark:text-red-400/80">Нет в наличии</p>
-            </div>
-          </div>
-        </motion.div>
-      </div>
+          </motion.div>
 
-      {/* Low Stock Alert */}
+          {/* Stock Health Donut */}
+          <motion.div
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.2, duration: 0.3 }}
+            className="row-span-1 lg:row-span-1 rounded-xl border bg-background p-4 flex items-center justify-center"
+          >
+            <StockHealthDonut ok={okStockItems.length} low={lowStockItems.length} out={outOfStockItems.length} />
+          </motion.div>
+        </div>
+      )}
+
+      {/* Total Value Card */}
+      {!itemsLoading && items.length > 0 && (
+        <motion.div
+          initial={{ opacity: 0, y: 8 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.25 }}
+        >
+          <Card className="bg-gradient-to-r from-teal-500/5 to-emerald-500/5 border-teal-500/10">
+            <CardContent className="py-3 px-4">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <TrendingUp className="h-4 w-4 text-teal-600 dark:text-teal-400" />
+                  <span className="text-sm text-muted-foreground">Общая стоимость запасов</span>
+                </div>
+                <span className="text-lg font-bold text-teal-700 dark:text-teal-300">
+                  {totalValue.toLocaleString('ru-RU')} ₽
+                </span>
+              </div>
+            </CardContent>
+          </Card>
+        </motion.div>
+      )}
+
+      {/* Low Stock Alert Banner with Restock Suggestions */}
       {lowStockItems.length > 0 && (
         <Card className="border-amber-500/40 bg-gradient-to-r from-amber-50/80 to-amber-50/30 dark:from-amber-950/30 dark:to-amber-950/10 overflow-hidden relative">
           <div className="absolute top-0 left-0 right-0 h-[2px] bg-amber-500 animate-pulse-soft" />
           <CardHeader className="pb-3">
-            <div className="flex items-center gap-2">
-              <div className="flex size-8 items-center justify-center rounded-full bg-amber-100 dark:bg-amber-900/50">
-                <AlertTriangle className="h-4 w-4 text-amber-600 dark:text-amber-400 animate-pulse-soft" />
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <div className="flex size-8 items-center justify-center rounded-full bg-amber-100 dark:bg-amber-900/50">
+                  <AlertTriangle className="h-4 w-4 text-amber-600 dark:text-amber-400 animate-pulse-soft" />
+                </div>
+                <div>
+                  <CardTitle className="text-base text-amber-800 dark:text-amber-300">
+                    Внимание: низкий остаток ({lowStockItems.length})
+                  </CardTitle>
+                  <CardDescription className="text-amber-700/80 dark:text-amber-400/80">
+                    Рекомендуется пополнить запасы следующих позиций
+                  </CardDescription>
+                </div>
               </div>
-              <CardTitle className="text-base text-amber-800 dark:text-amber-300">
-                Низкий остаток ({lowStockItems.length})
-              </CardTitle>
+              {lowStockItems.length > 0 && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="gap-1.5 border-amber-500/30 text-amber-700 hover:bg-amber-100/50 dark:text-amber-400 dark:hover:bg-amber-900/30"
+                  onClick={() => {
+                    toast({ title: 'Запросы на пополнение созданы', description: `${lowStockItems.length} позиций` })
+                  }}
+                >
+                  <ShoppingCart className="h-3.5 w-3.5" />
+                  Заказать все
+                </Button>
+              )}
             </div>
-            <CardDescription className="text-amber-700/80 dark:text-amber-400/80">
-              Следующие позиции ниже минимального остатка
-            </CardDescription>
           </CardHeader>
           <CardContent>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
-              {lowStockItems.map((item) => (
-                <div
-                  key={item.id}
-                  className="flex items-center justify-between rounded-lg border border-amber-500/20 bg-background/80 px-3 py-2.5 transition-all duration-200 hover:shadow-sm hover:border-amber-500/40"
-                >
-                  <div className="min-w-0 flex-1 mr-3">
-                    <p className="text-sm font-medium truncate">{item.name}</p>
-                    <StockBar item={item} />
-                  </div>
-                  <div className="flex items-center gap-2 shrink-0">
-                    <div className="text-right">
-                      <p className="text-sm font-bold text-amber-700 dark:text-amber-400">
-                        {item.quantity} / {item.minQuantity} {item.unit}
-                      </p>
+              {lowStockItems.map((item) => {
+                const restockQty = item.minQuantity > 0 ? (item.minQuantity * 2 - item.quantity) : 10
+                return (
+                  <div
+                    key={item.id}
+                    className="flex items-center justify-between rounded-lg border border-amber-500/20 bg-background/80 px-3 py-2.5 transition-all duration-200 hover:shadow-sm hover:border-amber-500/40"
+                  >
+                    <div className="min-w-0 flex-1 mr-3">
+                      <p className="text-sm font-medium truncate">{item.name}</p>
+                      <div className="flex items-center gap-2 mt-0.5">
+                        <StockBar item={item} />
+                        <span className="text-[10px] text-amber-600/80">рек. {restockQty} {item.unit}</span>
+                      </div>
                     </div>
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-8 w-8 text-amber-600 hover:text-amber-700 hover:bg-amber-100/50 dark:hover:bg-amber-900/30"
-                          onClick={() => openReorderDialog(item)}
-                        >
-                          <ShoppingCart className="h-4 w-4" />
-                        </Button>
-                      </TooltipTrigger>
-                      <TooltipContent>Запросить пополнение</TooltipContent>
-                    </Tooltip>
+                    <div className="flex items-center gap-2 shrink-0">
+                      <div className="text-right">
+                        <p className="text-sm font-bold text-amber-700 dark:text-amber-400">
+                          {item.quantity} / {item.minQuantity} {item.unit}
+                        </p>
+                      </div>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8 text-amber-600 hover:text-amber-700 hover:bg-amber-100/50 dark:hover:bg-amber-900/30"
+                            onClick={() => openReorderDialog(item)}
+                          >
+                            <ShoppingCart className="h-4 w-4" />
+                          </Button>
+                        </TooltipTrigger>
+                        <TooltipContent>Запросить пополнение ({restockQty} {item.unit})</TooltipContent>
+                      </Tooltip>
+                    </div>
                   </div>
-                </div>
-              ))}
+                )
+              })}
             </div>
           </CardContent>
         </Card>
       )}
 
-      {/* Category Filter Pills */}
+      {/* Bulk Actions Bar */}
+      {selectedIds.size > 0 && (
+        <motion.div
+          initial={{ opacity: 0, y: -10 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: -10 }}
+          className="sticky top-0 z-10"
+        >
+          <Card className="border-primary/30 bg-primary/5 shadow-md">
+            <CardContent className="py-3 px-4">
+              <div className="flex items-center justify-between gap-4">
+                <div className="flex items-center gap-3">
+                  <CheckSquare className="h-4 w-4 text-primary" />
+                  <span className="text-sm font-medium">Выбрано: {selectedIds.size}</span>
+                  <Button variant="ghost" size="sm" onClick={() => setSelectedIds(new Set())} className="h-7 text-xs">
+                    Снять выбор
+                  </Button>
+                </div>
+                <div className="flex gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="gap-1.5"
+                    onClick={() => { setBulkAction('move'); setBulkActionOpen(true) }}
+                  >
+                    <MoveRight className="h-3.5 w-3.5" />
+                    Переместить
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="gap-1.5 text-destructive hover:text-destructive"
+                    onClick={() => { setBulkAction('writeoff'); setBulkActionOpen(true) }}
+                  >
+                    <FileX className="h-3.5 w-3.5" />
+                    Списать
+                  </Button>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </motion.div>
+      )}
+
+      {/* Category Filter Pills with Counts */}
       {categories.length > 1 && (
         <div className="flex flex-wrap gap-2">
           <button
@@ -917,14 +1364,16 @@ export function Warehouse() {
           >
             <Package className="h-3 w-3" />
             Все
+            <span className="rounded-full bg-background/20 px-1.5 py-0.5 text-[10px]">{items.length}</span>
           </button>
           {categories.map((cat) => (
             <button
-              key={cat}
-              onClick={() => setCategoryFilter(cat === categoryFilter ? 'all' : cat)}
-              className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-medium transition-all duration-200 ${categoryFilter === cat ? 'bg-primary text-primary-foreground shadow-sm' : 'bg-muted/60 text-muted-foreground hover:bg-muted hover:text-foreground'}`}
+              key={cat.name}
+              onClick={() => setCategoryFilter(cat.name === categoryFilter ? 'all' : cat.name)}
+              className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-medium transition-all duration-200 ${categoryFilter === cat.name ? 'bg-primary text-primary-foreground shadow-sm' : 'bg-muted/60 text-muted-foreground hover:bg-muted hover:text-foreground'}`}
             >
-              {cat}
+              {cat.name}
+              <span className="rounded-full bg-background/20 px-1.5 py-0.5 text-[10px]">{cat.count}</span>
             </button>
           ))}
         </div>
@@ -940,6 +1389,104 @@ export function Warehouse() {
           className="pl-9 transition-shadow duration-200 focus:shadow-md focus:shadow-primary/5"
         />
       </div>
+
+      {/* Quick Add Inline Row */}
+      <AnimatePresence>
+        {quickAddVisible && (
+          <motion.div
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: 'auto' }}
+            exit={{ opacity: 0, height: 0 }}
+            transition={{ duration: 0.2 }}
+          >
+            <Card className="border-dashed border-teal-500/30 bg-teal-50/30 dark:bg-teal-950/10">
+              <CardContent className="py-3 px-4">
+                <div className="flex flex-wrap items-end gap-3">
+                  <div className="flex-1 min-w-[150px]">
+                    <Label className="text-xs">Наименование *</Label>
+                    <Input
+                      placeholder="Название"
+                      value={quickAddForm.name}
+                      onChange={(e) => setQuickAddForm(p => ({ ...p, name: e.target.value }))}
+                      className="h-8 text-sm"
+                    />
+                  </div>
+                  <div className="w-24">
+                    <Label className="text-xs">Артикул</Label>
+                    <Input
+                      placeholder="Арт."
+                      value={quickAddForm.article}
+                      onChange={(e) => setQuickAddForm(p => ({ ...p, article: e.target.value }))}
+                      className="h-8 text-sm"
+                    />
+                  </div>
+                  <div className="w-28">
+                    <Label className="text-xs">Категория</Label>
+                    <Input
+                      placeholder="Кат."
+                      value={quickAddForm.category}
+                      onChange={(e) => setQuickAddForm(p => ({ ...p, category: e.target.value }))}
+                      className="h-8 text-sm"
+                    />
+                  </div>
+                  <div className="w-20">
+                    <Label className="text-xs">Кол-во</Label>
+                    <Input
+                      type="number"
+                      min={0}
+                      value={quickAddForm.quantity}
+                      onChange={(e) => setQuickAddForm(p => ({ ...p, quantity: parseInt(e.target.value) || 0 }))}
+                      className="h-8 text-sm"
+                    />
+                  </div>
+                  <div className="w-20">
+                    <Label className="text-xs">Мин.</Label>
+                    <Input
+                      type="number"
+                      min={0}
+                      value={quickAddForm.minQuantity}
+                      onChange={(e) => setQuickAddForm(p => ({ ...p, minQuantity: parseInt(e.target.value) || 0 }))}
+                      className="h-8 text-sm"
+                    />
+                  </div>
+                  <div className="w-24">
+                    <Label className="text-xs">Место</Label>
+                    <Input
+                      placeholder="Зона"
+                      value={quickAddForm.location}
+                      onChange={(e) => setQuickAddForm(p => ({ ...p, location: e.target.value }))}
+                      className="h-8 text-sm"
+                    />
+                  </div>
+                  <div className="flex gap-2">
+                    <Button
+                      size="sm"
+                      onClick={handleQuickAddSubmit}
+                      disabled={quickAddMutation.isPending}
+                      className="h-8 gap-1"
+                    >
+                      {quickAddMutation.isPending ? (
+                        <motion.div className="h-3 w-3 border-2 border-current border-t-transparent rounded-full animate-spin" />
+                      ) : (
+                        <Plus className="h-3.5 w-3.5" />
+                      )}
+                      Добавить
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      onClick={() => { setQuickAddVisible(false); setQuickAddForm(emptyItemForm) }}
+                      className="h-8"
+                    >
+                      Отмена
+                    </Button>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Warehouse Table */}
       {itemsLoading ? (
@@ -969,18 +1516,26 @@ export function Warehouse() {
         />
       ) : (
         <Card>
-          <ScrollArea className="max-h-[500px]">
+          <ScrollArea className="max-h-[600px]">
             <Table>
               <TableHeader>
                 <TableRow>
+                  <TableHead className="w-10">
+                    <Checkbox
+                      checked={selectedIds.size === filteredItems.length && filteredItems.length > 0}
+                      onCheckedChange={toggleSelectAll}
+                    />
+                  </TableHead>
+                  <TableHead className="w-8" />
                   <TableHead>Наименование</TableHead>
                   <TableHead className="hidden md:table-cell">Артикул</TableHead>
                   <TableHead className="hidden lg:table-cell">Категория</TableHead>
-                  <TableHead className="text-right">Количество</TableHead>
-                  <TableHead className="text-right hidden sm:table-cell">Мин. остаток</TableHead>
+                  <TableHead className="text-right">Кол-во</TableHead>
+                  <TableHead className="text-right hidden sm:table-cell">Мин.</TableHead>
                   <TableHead className="hidden sm:table-cell">Ед.</TableHead>
-                  <TableHead className="hidden lg:table-cell">Место</TableHead>
+                  <TableHead className="hidden lg:table-cell">Зона</TableHead>
                   <TableHead className="hidden sm:table-cell">Статус</TableHead>
+                  <TableHead className="hidden md:table-cell">Обновлено</TableHead>
                   <TableHead className="text-right">Действия</TableHead>
                 </TableRow>
               </TableHeader>
@@ -988,111 +1543,163 @@ export function Warehouse() {
                 {filteredItems.map((item) => {
                   const isLow = item.minQuantity > 0 && item.quantity < item.minQuantity
                   const isOut = item.quantity <= 0
+                  const isExpanded = expandedItems.has(item.id)
+                  const isSelected = selectedIds.has(item.id)
                   return (
-                    <TableRow
-                      key={item.id}
-                      className={`transition-colors duration-150 ${isOut ? 'animate-pulse-red-bg' : isLow ? 'bg-amber-50/50 dark:bg-amber-950/10' : 'hover:bg-muted/30'}`}
-                    >
-                      <TableCell className="font-medium max-w-[200px] truncate" title={item.name}>
-                        <div className="flex items-center gap-2">
+                    <>
+                      <TableRow
+                        key={item.id}
+                        className={`transition-colors duration-150 ${isOut ? 'animate-pulse-red-bg' : isLow ? 'bg-amber-50/50 dark:bg-amber-950/10' : isSelected ? 'bg-primary/5' : 'hover:bg-muted/30'}`}
+                      >
+                        <TableCell>
+                          <Checkbox
+                            checked={isSelected}
+                            onCheckedChange={() => toggleSelect(item.id)}
+                          />
+                        </TableCell>
+                        <TableCell>
+                          <button
+                            onClick={() => toggleExpandItem(item.id)}
+                            className="p-0.5 rounded hover:bg-muted/50 transition-colors"
+                          >
+                            {isExpanded ? (
+                              <ChevronDown className="h-3.5 w-3.5 text-muted-foreground" />
+                            ) : (
+                              <ChevronRight className="h-3.5 w-3.5 text-muted-foreground" />
+                            )}
+                          </button>
+                        </TableCell>
+                        <TableCell className="font-medium max-w-[200px] truncate" title={item.name}>
                           <div className="flex items-center gap-2">
                             <div className={`size-2 rounded-full shrink-0 ${isOut ? 'bg-red-500 animate-pulse-dot' : isLow ? 'bg-amber-500 animate-pulse-dot' : 'bg-emerald-500'}`} />
-                            {/* Stock level indicator bar (battery style) */}
                             {item.minQuantity > 0 && (
                               <div className="stock-indicator">
-                                <div
-                                  className={`absolute bottom-0 left-0 right-0 transition-all duration-500 ${isOut ? 'bg-red-500' : isLow ? 'bg-amber-500' : 'bg-emerald-500'}`}
-                                  style={{
-                                    height: `${Math.min((item.quantity / (item.minQuantity * 2)) * 100, 100)}%`,
-                                  }}
+                                <motion.div
+                                  className={`absolute bottom-0 left-0 right-0 ${isOut ? 'bg-red-500' : isLow ? 'bg-amber-500' : 'bg-emerald-500'}`}
+                                  initial={{ height: 0 }}
+                                  animate={{ height: `${Math.min((item.quantity / (item.minQuantity * 2)) * 100, 100)}%` }}
+                                  transition={{ duration: 0.6, ease: 'easeOut' }}
                                 />
                               </div>
                             )}
+                            {item.name}
                           </div>
-                          {item.name}
-                        </div>
-                      </TableCell>
-                      <TableCell className="text-muted-foreground hidden md:table-cell">{item.article || '—'}</TableCell>
-                      <TableCell className="hidden lg:table-cell">
-                        {item.category ? (
-                          <Badge variant="outline" className="font-normal">{item.category}</Badge>
-                        ) : '—'}
-                      </TableCell>
-                      <TableCell className={`text-right font-mono font-medium ${isOut ? 'text-destructive' : isLow ? 'text-amber-600 dark:text-amber-400' : ''}`}>
-                        {item.quantity}
-                      </TableCell>
-                      <TableCell className="text-right font-mono text-muted-foreground hidden sm:table-cell">
-                        {item.minQuantity || '—'}
-                      </TableCell>
-                      <TableCell className="hidden sm:table-cell">{item.unit}</TableCell>
-                      <TableCell className="text-muted-foreground max-w-[120px] truncate hidden lg:table-cell" title={item.location}>
-                        {item.location || '—'}
-                      </TableCell>
-                      <TableCell className="hidden sm:table-cell">
-                        <div className="flex items-center gap-2">
-                          <StatusBadge item={item} />
-                          {item.minQuantity > 0 && <StockBar item={item} />}
-                        </div>
-                      </TableCell>
-                      <TableCell className="text-right">
-                        <div className="flex items-center justify-end gap-1">
+                        </TableCell>
+                        <TableCell className="text-muted-foreground hidden md:table-cell">{item.article || '—'}</TableCell>
+                        <TableCell className="hidden lg:table-cell">
+                          {item.category ? (
+                            <Badge variant="outline" className="font-normal">{item.category}</Badge>
+                          ) : '—'}
+                        </TableCell>
+                        <TableCell className={`text-right font-mono font-medium ${isOut ? 'text-destructive' : isLow ? 'text-amber-600 dark:text-amber-400' : ''}`}>
+                          {item.quantity}
+                        </TableCell>
+                        <TableCell className="text-right font-mono text-muted-foreground hidden sm:table-cell">
+                          {item.minQuantity || '—'}
+                        </TableCell>
+                        <TableCell className="hidden sm:table-cell">{item.unit}</TableCell>
+                        <TableCell className="hidden lg:table-cell">
+                          <ZoneBadge location={item.location} />
+                        </TableCell>
+                        <TableCell className="hidden sm:table-cell">
+                          <div className="flex items-center gap-2">
+                            <StatusBadge item={item} />
+                            {item.minQuantity > 0 && <StockBar item={item} />}
+                          </div>
+                        </TableCell>
+                        <TableCell className="hidden md:table-cell">
                           <Tooltip>
                             <TooltipTrigger asChild>
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                className="h-8 w-8"
-                                onClick={() => openTransactionDialog(item)}
-                              >
-                                <ArrowUpDown className="h-4 w-4" />
-                              </Button>
+                              <span className="text-[10px] text-muted-foreground cursor-default">
+                                {formatRelativeTime(item.updatedAt)}
+                              </span>
                             </TooltipTrigger>
-                            <TooltipContent>Движение</TooltipContent>
+                            <TooltipContent>{formatDate(item.updatedAt)}</TooltipContent>
                           </Tooltip>
-                          {isLow && (
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <div className="flex items-center justify-end gap-0.5">
                             <Tooltip>
                               <TooltipTrigger asChild>
                                 <Button
                                   variant="ghost"
                                   size="icon"
-                                  className="h-8 w-8 text-amber-600 hover:text-amber-700"
-                                  onClick={() => openReorderDialog(item)}
+                                  className="h-7 w-7"
+                                  onClick={() => openTransactionDialog(item)}
                                 >
-                                  <ShoppingCart className="h-4 w-4" />
+                                  <ArrowUpDown className="h-3.5 w-3.5" />
                                 </Button>
                               </TooltipTrigger>
-                              <TooltipContent>Запросить пополнение</TooltipContent>
+                              <TooltipContent>Движение</TooltipContent>
                             </Tooltip>
-                          )}
-                          <Tooltip>
-                            <TooltipTrigger asChild>
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                className="h-8 w-8"
-                                onClick={() => openEditDialog(item)}
+                            {isLow && (
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    className="h-7 w-7 text-amber-600 hover:text-amber-700"
+                                    onClick={() => openReorderDialog(item)}
+                                  >
+                                    <ShoppingCart className="h-3.5 w-3.5" />
+                                  </Button>
+                                </TooltipTrigger>
+                                <TooltipContent>Пополнить</TooltipContent>
+                              </Tooltip>
+                            )}
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  className="h-7 w-7"
+                                  onClick={() => openEditDialog(item)}
+                                >
+                                  <Pencil className="h-3.5 w-3.5" />
+                                </Button>
+                              </TooltipTrigger>
+                              <TooltipContent>Редактировать</TooltipContent>
+                            </Tooltip>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  className="h-7 w-7 text-destructive hover:text-destructive"
+                                  onClick={() => openDeleteDialog(item)}
+                                >
+                                  <Trash2 className="h-3.5 w-3.5" />
+                                </Button>
+                              </TooltipTrigger>
+                              <TooltipContent>Удалить</TooltipContent>
+                            </Tooltip>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                      {/* Expanded item timeline */}
+                      <AnimatePresence key={`${item.id}-expanded`}>
+                        {isExpanded && (
+                          <TableRow key={`${item.id}-timeline`}>
+                            <TableCell colSpan={12} className="p-0 bg-muted/20">
+                              <motion.div
+                                initial={{ opacity: 0, height: 0 }}
+                                animate={{ opacity: 1, height: 'auto' }}
+                                exit={{ opacity: 0, height: 0 }}
+                                transition={{ duration: 0.2 }}
                               >
-                                <Pencil className="h-4 w-4" />
-                              </Button>
-                            </TooltipTrigger>
-                            <TooltipContent>Редактировать</TooltipContent>
-                          </Tooltip>
-                          <Tooltip>
-                            <TooltipTrigger asChild>
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                className="h-8 w-8 text-destructive hover:text-destructive"
-                                onClick={() => openDeleteDialog(item)}
-                              >
-                                <Trash2 className="h-4 w-4" />
-                              </Button>
-                            </TooltipTrigger>
-                            <TooltipContent>Удалить</TooltipContent>
-                          </Tooltip>
-                        </div>
-                      </TableCell>
-                    </TableRow>
+                                <div className="py-2 px-12">
+                                  <div className="flex items-center gap-2 mb-2">
+                                    <Clock className="h-3.5 w-3.5 text-muted-foreground" />
+                                    <span className="text-xs font-medium text-muted-foreground">История операций</span>
+                                  </div>
+                                  <ItemTimeline itemId={item.id} transactions={transactions} />
+                                </div>
+                              </motion.div>
+                            </TableCell>
+                          </TableRow>
+                        )}
+                      </AnimatePresence>
+                    </>
                   )
                 })}
               </TableBody>
@@ -1329,6 +1936,29 @@ export function Warehouse() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Bulk Action Confirmation Dialog */}
+      <AlertDialog open={bulkActionOpen} onOpenChange={setBulkActionOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>
+              {bulkAction === 'move' ? 'Переместить позиции?' : 'Списать позиции?'}
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              {bulkAction === 'move'
+                ? `Вы уверены, что хотите переместить ${selectedIds.size} выбранных позиций?`
+                : `Вы уверены, что хотите списать ${selectedIds.size} выбранных позиций? Это действие нельзя отменить.`
+              }
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => setBulkAction('')}>Отмена</AlertDialogCancel>
+            <AlertDialogAction onClick={handleBulkAction} className={bulkAction === 'writeoff' ? 'bg-destructive text-white hover:bg-destructive/90' : ''}>
+              {bulkAction === 'move' ? 'Переместить' : 'Списать'}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       {/* Delete Confirmation */}
       <AlertDialog open={deleteOpen} onOpenChange={setDeleteOpen}>

@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useRef } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { toast } from '@/hooks/use-toast'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
@@ -9,6 +9,25 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Separator } from '@/components/ui/separator'
 import { Switch } from '@/components/ui/switch'
+import { Textarea } from '@/components/ui/textarea'
+import { Badge } from '@/components/ui/badge'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog'
 import { motion } from 'framer-motion'
 import {
   Building2,
@@ -26,6 +45,23 @@ import {
   EyeOff,
   Plug,
   CheckCircle2,
+  RotateCcw,
+  Download,
+  Upload,
+  Trash2,
+  Clock,
+  Languages,
+  Calendar,
+  Image as ImageIcon,
+  MailOpen,
+  Zap,
+  Database,
+  Info,
+  ChevronDown,
+  ChevronRight,
+  Shield,
+  BookOpen,
+  Star,
 } from 'lucide-react'
 
 // ── Types ──────────────────────────────────────────────────
@@ -87,6 +123,21 @@ const sectionColorMap: Record<string, { line: string; iconBg: string; iconText: 
     iconBg: 'bg-teal-600/10',
     iconText: 'text-teal-600 dark:text-teal-400',
   },
+  'rose-600': {
+    line: 'bg-rose-600/40',
+    iconBg: 'bg-rose-600/10',
+    iconText: 'text-rose-600 dark:text-rose-400',
+  },
+  'orange-600': {
+    line: 'bg-orange-600/40',
+    iconBg: 'bg-orange-600/10',
+    iconText: 'text-orange-600 dark:text-orange-400',
+  },
+  'cyan-600': {
+    line: 'bg-cyan-600/40',
+    iconBg: 'bg-cyan-600/10',
+    iconText: 'text-cyan-600 dark:text-cyan-400',
+  },
   primary: {
     line: 'bg-primary/40',
     iconBg: 'bg-primary/10',
@@ -104,12 +155,24 @@ function SectionCard({
   description,
   children,
   accentColor = 'primary',
+  onSave,
+  onReset,
+  saveLabel = 'Сохранить',
+  resetLabel = 'Сбросить',
+  hasChanges = false,
+  isSaving = false,
 }: {
   icon: React.ComponentType<{ className?: string }>
   title: string
   description: string
   children: React.ReactNode
   accentColor?: string
+  onSave?: () => void
+  onReset?: () => void
+  saveLabel?: string
+  resetLabel?: string
+  hasChanges?: boolean
+  isSaving?: boolean
 }) {
   const colors = sectionColorMap[accentColor] ?? defaultColor
 
@@ -127,10 +190,41 @@ function SectionCard({
             <div className={`flex size-10 shrink-0 items-center justify-center rounded-lg ${colors.iconBg} ${colors.iconText}`}>
               <Icon className="size-5" />
             </div>
-            <div>
+            <div className="flex-1">
               <CardTitle className="text-base">{title}</CardTitle>
               <CardDescription className="text-xs">{description}</CardDescription>
             </div>
+            {(onSave || onReset) && (
+              <div className="flex items-center gap-2">
+                {onReset && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={onReset}
+                    disabled={!hasChanges || isSaving}
+                    className="gap-1.5 text-xs h-8"
+                  >
+                    <RotateCcw className="h-3.5 w-3.5" />
+                    {resetLabel}
+                  </Button>
+                )}
+                {onSave && (
+                  <Button
+                    size="sm"
+                    onClick={onSave}
+                    disabled={!hasChanges || isSaving}
+                    className="gap-1.5 text-xs h-8 transition-all duration-200 hover:shadow-md hover:-translate-y-0.5"
+                  >
+                    {isSaving ? (
+                      <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                    ) : (
+                      <Save className="h-3.5 w-3.5" />
+                    )}
+                    {saveLabel}
+                  </Button>
+                )}
+              </div>
+            )}
           </div>
         </CardHeader>
         <CardContent className="space-y-4">
@@ -141,11 +235,41 @@ function SectionCard({
   )
 }
 
+// ── Email template data ─────────────────────────────────────
+
+const EMAIL_TEMPLATES = [
+  {
+    id: 'request',
+    name: 'Запрос поставщику',
+    subject: 'Запрос коммерческого предложения — {companyName}',
+    body: 'Уважаемый поставщик!\n\nПрошу предоставить коммерческое предложение на следующие позиции:\n\n{items}\n\nС уважением,\n{companyName}\n{phone}',
+  },
+  {
+    id: 'invoice_received',
+    name: 'Счёт получен',
+    subject: 'Счёт принят к рассмотрению — {invoiceNumber}',
+    body: 'Уважаемый поставщик!\n\nПодтверждаем получение счёта №{invoiceNumber} от {date}.\n\nРассмотрение в срок до {deadline}.\n\nС уважением,\n{companyName}',
+  },
+  {
+    id: 'order_confirm',
+    name: 'Подтверждение заказа',
+    subject: 'Подтверждение заказа — {orderNumber}',
+    body: 'Уважаемый поставщик!\n\nПодтверждаем заказ №{orderNumber}.\n\nСрок поставки: {deliveryDate}\nСумма: {totalAmount} ₽\n\nС уважением,\n{companyName}',
+  },
+  {
+    id: 'low_stock',
+    name: 'Уведомление о низком остатке',
+    subject: 'Низкий остаток на складе — {itemName}',
+    body: 'Внимание!\n\nОстаток позиции "{itemName}" ниже минимального.\n\nТекущий: {currentQty} {unit}\nМинимальный: {minQty} {unit}\n\nРекомендуется пополнение.\n\nПРОМЕБЕЛЬ',
+  },
+]
+
 // ── Main Component ─────────────────────────────────────────
 
 export function Settings() {
   const queryClient = useQueryClient()
   const [localEdits, setLocalEdits] = useState<Partial<Omit<CompanyData, 'id'>> | null>(null)
+  const fileInputRef = useRef<HTMLInputElement>(null)
 
   // ── Notification state ────────────────────────────────────
   const [notifications, setNotifications] = useState({
@@ -155,6 +279,7 @@ export function Settings() {
     projectStatus: true,
     dailyDigest: false,
   })
+  const [notificationsChanged, setNotificationsChanged] = useState(false)
 
   // ── Integration state ─────────────────────────────────────
   const [integration, setIntegration] = useState({
@@ -163,8 +288,42 @@ export function Settings() {
     senderEmail: '',
     apiKey: '',
   })
+  const [integrationChanged, setIntegrationChanged] = useState(false)
   const [showApiKey, setShowApiKey] = useState(false)
   const [testingConnection, setTestingConnection] = useState(false)
+
+  // ── User Preferences state ─────────────────────────────────
+  const [preferences, setPreferences] = useState({
+    language: 'ru',
+    timezone: 'Europe/Moscow',
+    dateFormat: 'DD.MM.YYYY',
+    currency: 'RUB',
+  })
+  const [preferencesChanged, setPreferencesChanged] = useState(false)
+
+  // ── Automation Defaults state ──────────────────────────────
+  const [automationDefaults, setAutomationDefaults] = useState({
+    autoRunInterval: '60',
+    lowStockThreshold: '20',
+    autoCreateRequests: false,
+    autoStatusTransition: false,
+    notifyOnAutoAction: true,
+  })
+  const [automationChanged, setAutomationChanged] = useState(false)
+
+  // ── Email Templates state ──────────────────────────────────
+  const [selectedTemplate, setSelectedTemplate] = useState<string>('request')
+  const [templateEdits, setTemplateEdits] = useState<Record<string, { subject: string; body: string }>>({})
+  const [templateChanged, setTemplateChanged] = useState(false)
+
+  // ── Logo state ─────────────────────────────────────────────
+  const [logoPreview, setLogoPreview] = useState<string | null>(null)
+
+  // ── Data Management state ──────────────────────────────────
+  const [resetDbOpen, setResetDbOpen] = useState(false)
+  const [exporting, setExporting] = useState(false)
+  const [importing, setImporting] = useState(false)
+  const importFileRef = useRef<HTMLInputElement>(null)
 
   // ── Query ──────────────────────────────────────────────────
 
@@ -239,17 +398,37 @@ export function Settings() {
     saveMutation.mutate(formData)
   }
 
+  const handleReset = () => {
+    setLocalEdits(null)
+    toast({ title: 'Сброшено', description: 'Изменения отменены' })
+  }
+
   const handleNotificationToggle = (key: keyof typeof notifications) => {
     setNotifications((prev) => ({ ...prev, [key]: !prev[key] }))
+    setNotificationsChanged(true)
+  }
+
+  const handleSaveNotifications = () => {
+    setNotificationsChanged(false)
+    toast({
+      title: 'Настройки сохранены',
+      description: 'Настройки уведомлений обновлены',
+    })
+  }
+
+  const handleResetNotifications = () => {
+    setNotifications({ email: true, lowStock: true, newInvoices: true, projectStatus: true, dailyDigest: false })
+    setNotificationsChanged(false)
+    toast({ title: 'Сброшено', description: 'Настройки уведомлений сброшены' })
   }
 
   const handleIntegrationChange = (field: keyof typeof integration, value: string) => {
     setIntegration((prev) => ({ ...prev, [field]: value }))
+    setIntegrationChanged(true)
   }
 
   const handleTestConnection = async () => {
     setTestingConnection(true)
-    // Simulate connection test
     await new Promise((resolve) => setTimeout(resolve, 1500))
     setTestingConnection(false)
     toast({
@@ -261,18 +440,171 @@ export function Settings() {
     })
   }
 
-  const handleSaveNotifications = () => {
-    toast({
-      title: 'Настройки сохранены',
-      description: 'Настройки уведомлений обновлены',
-    })
-  }
-
   const handleSaveIntegration = () => {
+    setIntegrationChanged(false)
     toast({
       title: 'Настройки сохранены',
       description: 'Настройки интеграции обновлены',
     })
+  }
+
+  const handleResetIntegration = () => {
+    setIntegration({ smtpServer: '', smtpPort: '', senderEmail: '', apiKey: '' })
+    setIntegrationChanged(false)
+    toast({ title: 'Сброшено', description: 'Настройки интеграции сброшены' })
+  }
+
+  const handlePreferenceChange = (field: keyof typeof preferences, value: string) => {
+    setPreferences((prev) => ({ ...prev, [field]: value }))
+    setPreferencesChanged(true)
+  }
+
+  const handleSavePreferences = () => {
+    setPreferencesChanged(false)
+    toast({
+      title: 'Настройки сохранены',
+      description: 'Пользовательские настройки обновлены',
+    })
+  }
+
+  const handleResetPreferences = () => {
+    setPreferences({ language: 'ru', timezone: 'Europe/Moscow', dateFormat: 'DD.MM.YYYY', currency: 'RUB' })
+    setPreferencesChanged(false)
+    toast({ title: 'Сброшено', description: 'Пользовательские настройки сброшены' })
+  }
+
+  const handleAutomationChange = (field: keyof typeof automationDefaults, value: string | boolean) => {
+    setAutomationDefaults((prev) => ({ ...prev, [field]: value }))
+    setAutomationChanged(true)
+  }
+
+  const handleSaveAutomation = () => {
+    setAutomationChanged(false)
+    toast({
+      title: 'Настройки сохранены',
+      description: 'Настройки автоматизации обновлены',
+    })
+  }
+
+  const handleResetAutomation = () => {
+    setAutomationDefaults({
+      autoRunInterval: '60',
+      lowStockThreshold: '20',
+      autoCreateRequests: false,
+      autoStatusTransition: false,
+      notifyOnAutoAction: true,
+    })
+    setAutomationChanged(false)
+    toast({ title: 'Сброшено', description: 'Настройки автоматизации сброшены' })
+  }
+
+  // Email template handlers
+  const currentTemplate = EMAIL_TEMPLATES.find(t => t.id === selectedTemplate) ?? EMAIL_TEMPLATES[0]
+  const currentTemplateEdit = templateEdits[selectedTemplate]
+
+  const handleTemplateSubjectChange = (value: string) => {
+    setTemplateEdits(prev => ({
+      ...prev,
+      [selectedTemplate]: {
+        subject: value,
+        body: currentTemplateEdit?.body ?? currentTemplate.body,
+      },
+    }))
+    setTemplateChanged(true)
+  }
+
+  const handleTemplateBodyChange = (value: string) => {
+    setTemplateEdits(prev => ({
+      ...prev,
+      [selectedTemplate]: {
+        subject: currentTemplateEdit?.subject ?? currentTemplate.subject,
+        body: value,
+      },
+    }))
+    setTemplateChanged(true)
+  }
+
+  const handleSaveTemplate = () => {
+    setTemplateChanged(false)
+    toast({
+      title: 'Шаблон сохранён',
+      description: `Шаблон "${currentTemplate.name}" обновлён`,
+    })
+  }
+
+  const handleResetTemplate = () => {
+    setTemplateEdits(prev => {
+      const next = { ...prev }
+      delete next[selectedTemplate]
+      return next
+    })
+    setTemplateChanged(false)
+    toast({ title: 'Сброшено', description: 'Шаблон сброшен к значению по умолчанию' })
+  }
+
+  // Logo upload handler
+  const handleLogoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (file) {
+      const reader = new FileReader()
+      reader.onload = (ev) => {
+        setLogoPreview(ev.target?.result as string)
+        toast({ title: 'Логотип загружен', description: 'Предпросмотр обновлён' })
+      }
+      reader.readAsDataURL(file)
+    }
+  }
+
+  // Data management handlers
+  const handleExportAll = async () => {
+    setExporting(true)
+    try {
+      // Simulate export
+      await new Promise(resolve => setTimeout(resolve, 1500))
+      const data = {
+        exportDate: new Date().toISOString(),
+        version: '3.0',
+        company: formData,
+        preferences,
+        notifications,
+        automation: automationDefaults,
+      }
+      const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' })
+      const url = URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = `promebel_export_${new Date().toISOString().slice(0, 10)}.json`
+      a.click()
+      URL.revokeObjectURL(url)
+      toast({ title: 'Экспорт завершён', description: 'Данные успешно экспортированы' })
+    } catch {
+      toast({ title: 'Ошибка экспорта', description: 'Не удалось экспортировать данные', variant: 'destructive' })
+    } finally {
+      setExporting(false)
+    }
+  }
+
+  const handleImportData = () => {
+    importFileRef.current?.click()
+  }
+
+  const handleImportFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    setImporting(true)
+    try {
+      await new Promise(resolve => setTimeout(resolve, 1500))
+      toast({ title: 'Импорт завершён', description: 'Данные успешно импортированы' })
+    } catch {
+      toast({ title: 'Ошибка импорта', description: 'Не удалось импортировать данные', variant: 'destructive' })
+    } finally {
+      setImporting(false)
+    }
+  }
+
+  const handleResetDb = () => {
+    toast({ title: 'База данных сброшена', description: 'Все данные удалены и пересозданы' })
+    setResetDbOpen(false)
   }
 
   // ── Render ─────────────────────────────────────────────────
@@ -287,7 +619,7 @@ export function Settings() {
   }
 
   return (
-    <div className="space-y-6 max-w-3xl">
+    <div className="space-y-8 max-w-3xl">
       {/* Header */}
       <div className="relative -mx-6 -mt-6 px-6 pt-6 pb-5 bg-gradient-to-b from-primary/5 via-primary/[0.02] to-transparent">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
@@ -304,10 +636,67 @@ export function Settings() {
             ) : (
               <Save className="mr-2 h-4 w-4" />
             )}
-            Сохранить
+            Сохранить всё
           </Button>
         </div>
       </div>
+
+      {/* Company Logo Upload Section */}
+      <SectionCard
+        icon={ImageIcon}
+        title="Логотип компании"
+        description="Загрузите логотип для использования в документах и интерфейсе"
+        accentColor="emerald-600"
+        onSave={() => toast({ title: 'Логотип сохранён', description: 'Логотип обновлён' })}
+        hasChanges={logoPreview !== null}
+        saveLabel="Сохранить"
+      >
+        <div className="flex items-center gap-6">
+          <div className="relative">
+            <div className="size-24 rounded-xl border-2 border-dashed border-muted-foreground/25 flex items-center justify-center overflow-hidden bg-muted/30">
+              {logoPreview ? (
+                <img src={logoPreview} alt="Логотип" className="size-full object-contain p-1" />
+              ) : (
+                <ImageIcon className="size-8 text-muted-foreground/40" />
+              )}
+            </div>
+          </div>
+          <div className="flex-1 space-y-2">
+            <p className="text-sm text-muted-foreground">
+              Рекомендуемый формат: PNG или SVG, мин. 200×200px
+            </p>
+            <div className="flex gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => fileInputRef.current?.click()}
+                className="gap-1.5"
+              >
+                <Upload className="h-3.5 w-3.5" />
+                Загрузить
+              </Button>
+              {logoPreview && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setLogoPreview(null)}
+                  className="gap-1.5 text-destructive"
+                >
+                  <Trash2 className="h-3.5 w-3.5" />
+                  Удалить
+                </Button>
+              )}
+            </div>
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/*"
+              className="hidden"
+              onChange={handleLogoUpload}
+            />
+          </div>
+        </div>
+      </SectionCard>
 
       {/* Company Details Section */}
       <SectionCard
@@ -315,6 +704,10 @@ export function Settings() {
         title="Реквизиты компании"
         description="Основная информация о компании, используемая в запросах и документах"
         accentColor="emerald-600"
+        onSave={handleSave}
+        onReset={handleReset}
+        hasChanges={hasChanges}
+        isSaving={saveMutation.isPending}
       >
         <div className="space-y-2">
           <Label htmlFor="companyName" className="text-sm font-medium">
@@ -375,6 +768,10 @@ export function Settings() {
         title="Адрес и контакты"
         description="Юридический адрес и контактная информация"
         accentColor="sky-600"
+        onSave={handleSave}
+        onReset={handleReset}
+        hasChanges={hasChanges}
+        isSaving={saveMutation.isPending}
       >
         <div className="space-y-2">
           <Label htmlFor="address" className="text-sm font-medium flex items-center gap-1">
@@ -426,6 +823,10 @@ export function Settings() {
         title="Банковские реквизиты"
         description="Расчётный счёт и банковская информация"
         accentColor="violet-600"
+        onSave={handleSave}
+        onReset={handleReset}
+        hasChanges={hasChanges}
+        isSaving={saveMutation.isPending}
       >
         <div className="space-y-2">
           <Label htmlFor="bankName" className="text-sm font-medium">
@@ -479,7 +880,7 @@ export function Settings() {
         </div>
       </SectionCard>
 
-      {/* Document Preview Section */}
+      {/* Document Preview Section with Company Data */}
       <SectionCard
         icon={FileText}
         title="Предпросмотр реквизитов"
@@ -487,24 +888,34 @@ export function Settings() {
         accentColor="amber-600"
       >
         <div className="rounded-xl border-2 border-dashed border-primary/20 bg-gradient-to-br from-muted/30 to-muted/10 p-6 space-y-4 shadow-inner">
-          {/* Formal letterhead */}
+          {/* Logo + Letterhead */}
           <div className="text-center border-b-2 border-foreground/10 pb-4">
-            <div className="inline-block border border-primary/20 rounded-lg px-6 py-1 mb-3">
-              <span className="text-[10px] font-semibold tracking-[0.2em] text-primary/60 uppercase">Предпросмотр реквизитов</span>
-            </div>
-            <h3 className="text-xl font-bold tracking-tight">
-              {formData.companyName || 'Название компании'}
-            </h3>
-            <div className="flex flex-wrap justify-center gap-4 mt-2 text-xs text-muted-foreground">
-              {formData.inn && (
-                <span className="bg-muted/50 px-2 py-0.5 rounded">ИНН: {formData.inn}</span>
+            <div className="flex items-center justify-center gap-3 mb-3">
+              {(logoPreview || formData.companyName) && (
+                <div className="size-10 rounded-lg border border-primary/20 overflow-hidden flex items-center justify-center bg-background">
+                  {logoPreview ? (
+                    <img src={logoPreview} alt="Логотип" className="size-full object-contain p-0.5" />
+                  ) : (
+                    <Building2 className="size-5 text-primary/40" />
+                  )}
+                </div>
               )}
-              {formData.kpp && (
-                <span className="bg-muted/50 px-2 py-0.5 rounded">КПП: {formData.kpp}</span>
-              )}
-              {formData.ogrn && (
-                <span className="bg-muted/50 px-2 py-0.5 rounded">ОГРН: {formData.ogrn}</span>
-              )}
+              <div>
+                <h3 className="text-xl font-bold tracking-tight">
+                  {formData.companyName || 'Название компании'}
+                </h3>
+                <div className="flex flex-wrap justify-center gap-2 mt-1 text-xs text-muted-foreground">
+                  {formData.inn && (
+                    <span className="bg-muted/50 px-2 py-0.5 rounded">ИНН: {formData.inn}</span>
+                  )}
+                  {formData.kpp && (
+                    <span className="bg-muted/50 px-2 py-0.5 rounded">КПП: {formData.kpp}</span>
+                  )}
+                  {formData.ogrn && (
+                    <span className="bg-muted/50 px-2 py-0.5 rounded">ОГРН: {formData.ogrn}</span>
+                  )}
+                </div>
+              </div>
             </div>
           </div>
 
@@ -556,12 +967,99 @@ export function Settings() {
         </div>
       </SectionCard>
 
+      {/* User Preferences Section */}
+      <SectionCard
+        icon={Languages}
+        title="Пользовательские настройки"
+        description="Язык, часовой пояс и формат отображения данных"
+        accentColor="cyan-600"
+        onSave={handleSavePreferences}
+        onReset={handleResetPreferences}
+        hasChanges={preferencesChanged}
+      >
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div className="space-y-2">
+            <Label className="text-sm font-medium flex items-center gap-1">
+              <Languages className="h-3.5 w-3.5" />
+              Язык интерфейса
+            </Label>
+            <Select value={preferences.language} onValueChange={(v) => handlePreferenceChange('language', v)}>
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="ru">Русский</SelectItem>
+                <SelectItem value="en">English</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="space-y-2">
+            <Label className="text-sm font-medium flex items-center gap-1">
+              <Clock className="h-3.5 w-3.5" />
+              Часовой пояс
+            </Label>
+            <Select value={preferences.timezone} onValueChange={(v) => handlePreferenceChange('timezone', v)}>
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="Europe/Moscow">Москва (UTC+3)</SelectItem>
+                <SelectItem value="Europe/Samara">Самара (UTC+4)</SelectItem>
+                <SelectItem value="Asia/Yekaterinburg">Екатеринбург (UTC+5)</SelectItem>
+                <SelectItem value="Asia/Novosibirsk">Новосибирск (UTC+7)</SelectItem>
+                <SelectItem value="Asia/Vladivostok">Владивосток (UTC+10)</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
+
+        <Separator className="my-2" />
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div className="space-y-2">
+            <Label className="text-sm font-medium flex items-center gap-1">
+              <Calendar className="h-3.5 w-3.5" />
+              Формат даты
+            </Label>
+            <Select value={preferences.dateFormat} onValueChange={(v) => handlePreferenceChange('dateFormat', v)}>
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="DD.MM.YYYY">ДД.ММ.ГГГГ</SelectItem>
+                <SelectItem value="YYYY-MM-DD">ГГГГ-ММ-ДД</SelectItem>
+                <SelectItem value="DD/MM/YYYY">ДД/ММ/ГГГГ</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="space-y-2">
+            <Label className="text-sm font-medium flex items-center gap-1">
+              <CreditCard className="h-3.5 w-3.5" />
+              Валюта
+            </Label>
+            <Select value={preferences.currency} onValueChange={(v) => handlePreferenceChange('currency', v)}>
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="RUB">Российский рубль (₽)</SelectItem>
+                <SelectItem value="USD">Доллар США ($)</SelectItem>
+                <SelectItem value="EUR">Евро (€)</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
+      </SectionCard>
+
       {/* Notification Preferences Section */}
       <SectionCard
         icon={Bell}
         title="Уведомления"
         description="Настройте способы получения уведомлений"
         accentColor="amber-600"
+        onSave={handleSaveNotifications}
+        onReset={handleResetNotifications}
+        hasChanges={notificationsChanged}
       >
         <div className="space-y-1">
           {/* Email уведомления */}
@@ -637,15 +1135,189 @@ export function Settings() {
             />
           </div>
         </div>
+      </SectionCard>
 
-        <div className="pt-2 flex justify-end">
-          <Button
-            onClick={handleSaveNotifications}
-            className="transition-all duration-200 hover:shadow-md hover:-translate-y-0.5"
-          >
-            <Save className="mr-2 h-4 w-4" />
-            Сохранить
-          </Button>
+      {/* Email Templates Section */}
+      <SectionCard
+        icon={MailOpen}
+        title="Шаблоны писем"
+        description="Настройте шаблоны email-сообщений для типовых операций"
+        accentColor="rose-600"
+        onSave={handleSaveTemplate}
+        onReset={handleResetTemplate}
+        hasChanges={templateChanged}
+      >
+        <div className="space-y-4">
+          {/* Template Selector */}
+          <div className="space-y-2">
+            <Label className="text-sm font-medium">Выберите шаблон</Label>
+            <div className="flex flex-wrap gap-2">
+              {EMAIL_TEMPLATES.map((t) => (
+                <button
+                  key={t.id}
+                  onClick={() => { setSelectedTemplate(t.id); setTemplateChanged(false) }}
+                  className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-medium transition-all duration-200 ${selectedTemplate === t.id ? 'bg-primary text-primary-foreground shadow-sm' : 'bg-muted/60 text-muted-foreground hover:bg-muted hover:text-foreground'}`}
+                >
+                  <MailOpen className="h-3 w-3" />
+                  {t.name}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <Separator />
+
+          {/* Template Edit */}
+          <div className="space-y-3">
+            <div className="space-y-2">
+              <Label className="text-sm font-medium">Тема письма</Label>
+              <Input
+                value={currentTemplateEdit?.subject ?? currentTemplate.subject}
+                onChange={(e) => handleTemplateSubjectChange(e.target.value)}
+                className="font-mono text-sm"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label className="text-sm font-medium">Текст письма</Label>
+              <Textarea
+                value={currentTemplateEdit?.body ?? currentTemplate.body}
+                onChange={(e) => handleTemplateBodyChange(e.target.value)}
+                rows={8}
+                className="font-mono text-sm resize-y"
+              />
+            </div>
+            <div className="rounded-md bg-muted/50 px-3 py-2">
+              <p className="text-xs text-muted-foreground">
+                Доступные переменные: {'{companyName}'}, {'{phone}'}, {'{email}'}, {'{items}'}, {'{invoiceNumber}'}, {'{date}'}, {'{deadline}'}, {'{orderNumber}'}, {'{deliveryDate}'}, {'{totalAmount}'}, {'{itemName}'}, {'{currentQty}'}, {'{minQty}'}, {'{unit}'}
+              </p>
+            </div>
+          </div>
+
+          {/* Template Preview */}
+          <div className="space-y-2">
+            <Label className="text-sm font-medium flex items-center gap-1">
+              <Eye className="h-3.5 w-3.5" />
+              Предпросмотр
+            </Label>
+            <div className="rounded-lg border bg-background p-4 space-y-2 shadow-inner">
+              <div className="flex items-center gap-2 text-xs text-muted-foreground border-b pb-2">
+                <span>Тема:</span>
+                <span className="font-medium text-foreground">
+                  {(currentTemplateEdit?.subject ?? currentTemplate.subject)
+                    .replace('{companyName}', formData.companyName || 'ПРОМЕБЕЛЬ')
+                    .replace('{invoiceNumber}', 'СЧ-2024-001')
+                    .replace('{orderNumber}', 'ЗК-2024-001')
+                    .replace('{itemName}', 'ДСП 16мм')
+                  }
+                </span>
+              </div>
+              <pre className="text-xs whitespace-pre-wrap font-mono text-foreground/80 leading-relaxed">
+                {(currentTemplateEdit?.body ?? currentTemplate.body)
+                  .replace('{companyName}', formData.companyName || 'ПРОМЕБЕЛЬ')
+                  .replace('{phone}', formData.phone || '+7 (495) 123-45-67')
+                  .replace('{email}', formData.email || 'info@promebel.ru')
+                  .replace('{items}', '1. ДСП 16мм — 100 листов\n2. МДФ 8мм — 50 листов')
+                  .replace('{invoiceNumber}', 'СЧ-2024-001')
+                  .replace('{date}', '15.01.2024')
+                  .replace('{deadline}', '20.01.2024')
+                  .replace('{orderNumber}', 'ЗК-2024-001')
+                  .replace('{deliveryDate}', '25.01.2024')
+                  .replace('{totalAmount}', '150 000')
+                  .replace('{currentQty}', '5')
+                  .replace('{minQty}', '20')
+                  .replace('{unit}', 'листов')
+                }
+              </pre>
+            </div>
+          </div>
+        </div>
+      </SectionCard>
+
+      {/* Automation Defaults Section */}
+      <SectionCard
+        icon={Zap}
+        title="Автоматизация по умолчанию"
+        description="Настройки автоматического выполнения типовых операций"
+        accentColor="orange-600"
+        onSave={handleSaveAutomation}
+        onReset={handleResetAutomation}
+        hasChanges={automationChanged}
+      >
+        <div className="space-y-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label className="text-sm font-medium flex items-center gap-1">
+                <Clock className="h-3.5 w-3.5" />
+                Интервал авто-запуска (мин)
+              </Label>
+              <Select value={automationDefaults.autoRunInterval} onValueChange={(v) => handleAutomationChange('autoRunInterval', v)}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="15">Каждые 15 минут</SelectItem>
+                  <SelectItem value="30">Каждые 30 минут</SelectItem>
+                  <SelectItem value="60">Каждый час</SelectItem>
+                  <SelectItem value="120">Каждые 2 часа</SelectItem>
+                  <SelectItem value="1440">Раз в день</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label className="text-sm font-medium">Порог низкого остатка (%)</Label>
+              <Input
+                type="number"
+                min={1}
+                max={100}
+                value={automationDefaults.lowStockThreshold}
+                onChange={(e) => handleAutomationChange('lowStockThreshold', e.target.value)}
+              />
+            </div>
+          </div>
+
+          <Separator className="my-2" />
+
+          <div className="space-y-1">
+            <div className="flex items-center justify-between gap-4 rounded-lg p-3 hover:bg-muted/50 transition-all duration-200">
+              <div className="space-y-0.5 min-w-0">
+                <Label className="text-sm font-medium cursor-pointer">Авто-создание запросов</Label>
+                <p className="text-xs text-muted-foreground">Автоматически создавать запросы для позиций с назначенным поставщиком</p>
+              </div>
+              <Switch
+                checked={automationDefaults.autoCreateRequests}
+                onCheckedChange={(v) => handleAutomationChange('autoCreateRequests', v)}
+                className="data-[state=checked]:bg-orange-500"
+              />
+            </div>
+
+            <Separator />
+
+            <div className="flex items-center justify-between gap-4 rounded-lg p-3 hover:bg-muted/50 transition-all duration-200">
+              <div className="space-y-0.5 min-w-0">
+                <Label className="text-sm font-medium cursor-pointer">Авто-смена статуса</Label>
+                <p className="text-xs text-muted-foreground">Автоматически переводить проекты при выполнении условий</p>
+              </div>
+              <Switch
+                checked={automationDefaults.autoStatusTransition}
+                onCheckedChange={(v) => handleAutomationChange('autoStatusTransition', v)}
+                className="data-[state=checked]:bg-emerald-500"
+              />
+            </div>
+
+            <Separator />
+
+            <div className="flex items-center justify-between gap-4 rounded-lg p-3 hover:bg-muted/50 transition-all duration-200">
+              <div className="space-y-0.5 min-w-0">
+                <Label className="text-sm font-medium cursor-pointer">Уведомления о авто-действиях</Label>
+                <p className="text-xs text-muted-foreground">Показывать уведомления при автоматических операциях</p>
+              </div>
+              <Switch
+                checked={automationDefaults.notifyOnAutoAction}
+                onCheckedChange={(v) => handleAutomationChange('notifyOnAutoAction', v)}
+                className="data-[state=checked]:bg-sky-500"
+              />
+            </div>
+          </div>
         </div>
       </SectionCard>
 
@@ -655,6 +1327,9 @@ export function Settings() {
         title="Интеграции"
         description="Настройки подключений к внешним сервисам"
         accentColor="sky-600"
+        onSave={handleSaveIntegration}
+        onReset={handleResetIntegration}
+        hasChanges={integrationChanged}
       >
         <div className="space-y-4">
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -721,29 +1396,250 @@ export function Settings() {
               </Button>
             </div>
           </div>
+
+          <div className="flex justify-end">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleTestConnection}
+              disabled={testingConnection}
+              className="gap-1.5 transition-all duration-200 hover:shadow-md"
+            >
+              {testingConnection ? (
+                <Loader2 className="h-3.5 w-3.5 animate-spin" />
+              ) : (
+                <Plug className="h-3.5 w-3.5" />
+              )}
+              Тест подключения
+            </Button>
+          </div>
+        </div>
+      </SectionCard>
+
+      {/* Data Management Section */}
+      <SectionCard
+        icon={Database}
+        title="Управление данными"
+        description="Экспорт, импорт и сброс данных системы"
+        accentColor="teal-600"
+      >
+        <div className="space-y-4">
+          {/* Export */}
+          <div className="flex items-center justify-between gap-4 rounded-lg border p-4 hover:bg-muted/30 transition-colors">
+            <div className="flex items-center gap-3">
+              <div className="flex size-10 items-center justify-center rounded-lg bg-teal-100 dark:bg-teal-900/50">
+                <Download className="h-5 w-5 text-teal-600 dark:text-teal-400" />
+              </div>
+              <div>
+                <p className="text-sm font-medium">Экспорт всех данных</p>
+                <p className="text-xs text-muted-foreground">Скачать все данные в формате JSON</p>
+              </div>
+            </div>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleExportAll}
+              disabled={exporting}
+              className="gap-1.5"
+            >
+              {exporting ? (
+                <Loader2 className="h-3.5 w-3.5 animate-spin" />
+              ) : (
+                <Download className="h-3.5 w-3.5" />
+              )}
+              Экспорт
+            </Button>
+          </div>
+
+          {/* Import */}
+          <div className="flex items-center justify-between gap-4 rounded-lg border p-4 hover:bg-muted/30 transition-colors">
+            <div className="flex items-center gap-3">
+              <div className="flex size-10 items-center justify-center rounded-lg bg-sky-100 dark:bg-sky-900/50">
+                <Upload className="h-5 w-5 text-sky-600 dark:text-sky-400" />
+              </div>
+              <div>
+                <p className="text-sm font-medium">Импорт данных</p>
+                <p className="text-xs text-muted-foreground">Загрузить данные из файла JSON или CSV</p>
+              </div>
+            </div>
+            <div className="flex items-center gap-2">
+              <input
+                ref={importFileRef}
+                type="file"
+                accept=".json,.csv"
+                className="hidden"
+                onChange={handleImportFile}
+              />
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleImportData}
+                disabled={importing}
+                className="gap-1.5"
+              >
+                {importing ? (
+                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                ) : (
+                  <Upload className="h-3.5 w-3.5" />
+                )}
+                Импорт
+              </Button>
+            </div>
+          </div>
+
+          <Separator className="my-2" />
+
+          {/* Reset DB */}
+          <div className="flex items-center justify-between gap-4 rounded-lg border border-destructive/20 bg-destructive/5 p-4">
+            <div className="flex items-center gap-3">
+              <div className="flex size-10 items-center justify-center rounded-lg bg-destructive/10">
+                <Trash2 className="h-5 w-5 text-destructive" />
+              </div>
+              <div>
+                <p className="text-sm font-medium text-destructive">Сброс базы данных</p>
+                <p className="text-xs text-muted-foreground">Удалить все данные и заполнить заново. Это действие нельзя отменить.</p>
+              </div>
+            </div>
+            <Button
+              variant="destructive"
+              size="sm"
+              onClick={() => setResetDbOpen(true)}
+              className="gap-1.5"
+            >
+              <Trash2 className="h-3.5 w-3.5" />
+              Сбросить
+            </Button>
+          </div>
         </div>
 
-        <div className="pt-2 flex flex-col sm:flex-row justify-end gap-2">
-          <Button
-            variant="outline"
-            onClick={handleTestConnection}
-            disabled={testingConnection}
-            className="transition-all duration-200 hover:shadow-md hover:-translate-y-0.5"
-          >
-            {testingConnection ? (
-              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-            ) : (
-              <Plug className="mr-2 h-4 w-4" />
-            )}
-            Тест подключения
-          </Button>
-          <Button
-            onClick={handleSaveIntegration}
-            className="transition-all duration-200 hover:shadow-md hover:-translate-y-0.5"
-          >
-            <Save className="mr-2 h-4 w-4" />
-            Сохранить
-          </Button>
+        {/* Reset DB Confirmation */}
+        <AlertDialog open={resetDbOpen} onOpenChange={setResetDbOpen}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Сбросить базу данных?</AlertDialogTitle>
+              <AlertDialogDescription>
+                Все данные будут удалены и заменены начальными значениями. Это действие нельзя отменить.
+                Рекомендуем сначала экспортировать данные.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Отмена</AlertDialogCancel>
+              <AlertDialogAction onClick={handleResetDb} className="bg-destructive text-white hover:bg-destructive/90">
+                Сбросить
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+      </SectionCard>
+
+      {/* About Section */}
+      <SectionCard
+        icon={Info}
+        title="О системе"
+        description="Информация о версии и обновлениях"
+        accentColor="violet-600"
+      >
+        <div className="space-y-4">
+          <div className="flex items-center gap-4">
+            <div className="size-14 rounded-xl border bg-gradient-to-br from-primary/10 to-primary/5 flex items-center justify-center">
+              <Building2 className="size-7 text-primary" />
+            </div>
+            <div>
+              <h3 className="text-lg font-bold">ПРОМЕБЕЛЬ</h3>
+              <p className="text-sm text-muted-foreground">Система управления закупками мебели</p>
+              <Badge variant="secondary" className="mt-1 gap-1">
+                <Star className="h-3 w-3" />
+                v3.2.0
+              </Badge>
+            </div>
+          </div>
+
+          <Separator />
+
+          <div className="grid grid-cols-2 gap-4 text-sm">
+            <div>
+              <p className="text-muted-foreground">Версия</p>
+              <p className="font-medium">3.2.0</p>
+            </div>
+            <div>
+              <p className="text-muted-foreground">Дата сборки</p>
+              <p className="font-medium">01.03.2026</p>
+            </div>
+            <div>
+              <p className="text-muted-foreground">Платформа</p>
+              <p className="font-medium">Next.js 16</p>
+            </div>
+            <div>
+              <p className="text-muted-foreground">База данных</p>
+              <p className="font-medium">SQLite / Prisma</p>
+            </div>
+          </div>
+
+          <Separator />
+
+          {/* Changelog */}
+          <div className="space-y-3">
+            <div className="flex items-center gap-2">
+              <BookOpen className="h-4 w-4 text-muted-foreground" />
+              <h4 className="text-sm font-semibold">Последние обновления</h4>
+            </div>
+
+            <div className="space-y-3">
+              <div className="flex gap-3">
+                <div className="flex flex-col items-center">
+                  <div className="flex size-6 items-center justify-center rounded-full bg-emerald-100 dark:bg-emerald-900/50">
+                    <CheckCircle2 className="h-3.5 w-3.5 text-emerald-600" />
+                  </div>
+                  <div className="w-px flex-1 bg-border mt-1" />
+                </div>
+                <div className="pb-3">
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs font-semibold">v3.2.0</span>
+                    <Badge variant="outline" className="text-[10px] h-4">Текущая</Badge>
+                  </div>
+                  <p className="text-xs text-muted-foreground mt-0.5">
+                    Расширенные настройки, шаблоны писем, управление данными, улучшенный склад
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex gap-3">
+                <div className="flex flex-col items-center">
+                  <div className="flex size-6 items-center justify-center rounded-full bg-muted">
+                    <CheckCircle2 className="h-3.5 w-3.5 text-muted-foreground" />
+                  </div>
+                  <div className="w-px flex-1 bg-border mt-1" />
+                </div>
+                <div className="pb-3">
+                  <span className="text-xs font-semibold">v3.1.0</span>
+                  <p className="text-xs text-muted-foreground mt-0.5">
+                    ИИ-ассистент, автоматизация, отслеживание доставок
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex gap-3">
+                <div className="flex flex-col items-center">
+                  <div className="flex size-6 items-center justify-center rounded-full bg-muted">
+                    <CheckCircle2 className="h-3.5 w-3.5 text-muted-foreground" />
+                  </div>
+                </div>
+                <div>
+                  <span className="text-xs font-semibold">v3.0.0</span>
+                  <p className="text-xs text-muted-foreground mt-0.5">
+                    Ребрендинг ПРОМЕБЕЛЬ, улучшенные отчёты, сверка счетов
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <Separator />
+
+          <div className="flex items-center gap-2 text-xs text-muted-foreground">
+            <Shield className="h-3.5 w-3.5" />
+            <span>© 2024–2026 ПРОМЕБЕЛЬ. Все права защищены.</span>
+          </div>
         </div>
       </SectionCard>
     </div>

@@ -1,5 +1,202 @@
 # ПРОМЕБЕЛЬ — Project Worklog
 
+## Session 10: Critical Bug Fixes, Massive Styling & Feature Improvements
+
+### Current Project Status Assessment
+
+The app has gone through 9+ development sessions and is a comprehensive procurement management system for furniture company ПРОМЕБЕЛЬ. Quality rating was 7/10 average (Dashboard 6/10, Invoices 6/10, Automation was broken with ReferenceError).
+
+### QA Findings (Session 10 Start)
+
+**Agent-Browser + VLM QA Results:**
+- **CRITICAL BUG**: Automation page had `ReferenceError: id is not defined` on line 478 — `isRunning={runningRuleId === id}` should be `runningRuleId === rule.id`
+- **CRITICAL BUG**: Automation page had `RangeError: Invalid time value` in `formatLastRun()` due to invalid Date objects
+- **STYLING**: Dashboard rated 6/10 — broken blue placeholder rectangles in header, missing stat card subtexts
+- **STYLING**: Invoices rated 6/10 — sparse content, minimal detail
+- **STYLING**: Suppliers rated 7/10, Warehouse 9/10, Settings 8/10, Analytics 8/10
+- All API endpoints returning 200
+- Lint passes clean
+
+### Completed Work
+
+#### 1. Critical Bug Fixes
+- **Fixed**: `ReferenceError: id is not defined` in automation.tsx line 478 — changed `id` to `rule.id`
+- **Fixed**: `RangeError: Invalid time value` in automation.tsx — added `.filter(d => !isNaN(d.getTime()))` to lastRunTimes and safety check on toISOString call
+- **Fixed**: `TruckAlert` import error in notification-center.tsx (doesn't exist in lucide-react)
+
+#### 2. Dashboard Styling Overhaul (Task 1)
+- Replaced broken `animate-dots` CSS pattern (causing blue rectangular artifacts) with reliable inline SVG dot pattern
+- Added company logo in glass-effect container with backdrop-blur
+- Professional multi-layer gradient background with decorative orbs
+- ALL stat cards now have meaningful Russian subtexts
+- Added `AnimatedCounter` component with framer-motion for smooth number counting
+- Enhanced gradient backgrounds with 3-stop gradients per card color
+- Added `whileHover` micro-interaction (y: -3 lift + shadow-xl)
+- New Budget Comparison Bar with animated segments
+- Enhanced "Требуют внимания" section with red accent bar and urgency badges
+
+#### 3. Notification System Enhancement (Task 2)
+- New API: `/api/notifications` — GET (7 notification sources, category/priority filters), PATCH (mark read/clear)
+- New API: `/api/notifications/[id]` — PATCH (mark read), DELETE
+- Complete rewrite of NotificationCenter component
+- Category filter pills (Проект, Счёт, Склад, Запрос)
+- Mark as read (individual + all), clear all
+- Sound toggle, empty state illustration, priority indicators
+- Click-to-navigate to related entities
+
+#### 4. Invoices Page Enhancement (Task 3)
+- 4 summary cards (total invoices, total amount, paid amount, pending amount)
+- Status Breakdown Bar with clickable filter pills
+- Visual processing pipeline: Получен → Проверен → Утверждён → Оплачен
+- Date range filter, supplier filter, status filter
+- Inline status update actions with colored buttons
+- Bottom totals summary with Russian pluralization
+- Enhanced reconciliation sheet with 3-column comparison
+
+#### 5. Suppliers & Requests Enhancement (Task 4)
+- Suppliers: 5-star rating system, Top Suppliers leaderboard, category filter pills, location indicator, contact quick-actions, total spent per supplier, last activity date, gradient borders
+- Requests: Summary cards, visual pipeline, overdue alert banner, project filter, "Напомнить" resend button, response time tracking, inline status updates, email preview
+
+#### 6. Global Search & Theme Improvements (Task 5)
+- New API: `/api/search` — unified search across 5 categories with fuzzy search
+- Complete rewrite of GlobalSearch: 5 color-coded categories, category filter pills, Ctrl+K shortcut, search result preview with context, recent searches history, no results state with suggestions, navigate-to-result
+- Enhanced globals.css: Better light/dark transitions, card hover variants, focus rings, scrollbars, glass-morphism, gradient text, skeleton animations, page transitions
+- Enhanced ThemeToggle: improved dropdown with descriptions, active indicator, resolved theme footer
+
+#### 7. Warehouse & Settings Enhancement (Task 6)
+- Warehouse: Stock health donut chart, category filter with counts, bulk actions, quick add inline row, stock movement history timeline, low stock alert with restock suggestions, warehouse zone indicator, total value calculation
+- Settings: Email templates with preview, automation defaults, data management (export/import/reset), user preferences, about section with changelog, save/reset per section, toast notifications
+
+### VLM Quality Ratings (After Session 10)
+- Dashboard: 8/10 (was 6/10)
+- Invoices: 8/10 (was 6/10)
+- Automation: 8/10 (was broken)
+- Warehouse: 8/10
+- Settings: 7/10
+- Notifications: 8/10
+- Search: 6/10 (functional but query-dependent)
+
+### Verification
+- `bun run lint`: Clean pass
+- Dev server: Running with no runtime errors
+- All API endpoints returning 200
+- Total views: 13+ (Dashboard, Projects, Project Detail, Suppliers, Supplier Detail, Requests, Invoices, Warehouse, Analytics, Settings, Automation, + AI Assistant floating, + Global Search)
+
+### Unresolved Issues / Next Phase Recommendations
+- Email integration is template-only (no actual SMTP sending)
+- Could add user authentication via NextAuth.js
+- Could add real-time notifications (WebSocket)
+- AI assistant could be enhanced with tool calling (actually query the database)
+- Could add Telegram Bot integration for mobile notifications
+- Could add data import from 1C/SAP
+- Search could be improved with more context-aware results
+- Light mode could use more refinement
+
+---
+
+Task ID: 5
+Agent: Global Search & Theme Improvements Agent
+Task: Enhance the global search component and improve the overall theme/light mode styling
+
+Work Log:
+- Read worklog.md for project context — app is a comprehensive procurement management system (ПРОМЕБЕЛЬ) with 12+ views, AI assistant, delivery tracking, automation
+- Read current global-search.tsx — basic CommandDialog with 3 search sources (projects, suppliers, warehouse), simple result display with just name + extra
+- Read all related API routes: projects (has search param), suppliers (has search param), warehouse (has search param), invoices (no search), requests (no search)
+- Read Prisma schema to understand all entity fields and relationships
+- Read globals.css — already had extensive styling from previous sessions
+
+**Part A: Global Search Enhancement**
+
+Created unified search API endpoint `/api/search/route.ts`:
+- Single GET endpoint with `q` (query) and `category` (optional filter) params
+- Searches across all 5 categories: Проекты, Поставщики, Счета, Склад, Запросы
+- Each result includes: id, name, type, extra (subtitle), context (preview), status
+- Context previews: project status + item count, supplier items count + phone, invoice status + items + amount, warehouse stock status + quantity, request status + items
+- Fuzzy search support: character-by-character subsequence matching for partial name/article matching
+- Falls back to fuzzy search when exact substring match finds no results for invoices, warehouse, and requests
+- Russian status labels mapping for all entity statuses
+- Category filter via `?category=project|supplier|invoice|warehouse|request`
+
+Completely rewrote `/src/components/app/global-search.tsx` with:
+- **5 search result categories** with color-coded icons and badges:
+  - Проекты (emerald, FolderKanban)
+  - Поставщики (amber, Truck)
+  - Счета (violet, Receipt)
+  - Склад (sky, Package)
+  - Запросы (rose, FileText)
+- **Category filter pills** in dialog header — clickable pills with "Все" + 5 categories, each showing result count badges
+- **Keyboard shortcut hint** — Ctrl+K (not just ⌘K) displayed in trigger button
+- **Search result preview with context** — each result shows: category icon in colored circle, name, extra line (customer/article), context line (status + items + amount)
+- **Recent searches history** — stored in localStorage (key: `promebel-recent-searches`), max 8 entries, shown when no query, each with relative timestamp, "Очистить" clear button
+- **"No results" state with suggestions** — empty Search icon, message with quoted query, 3 clickable suggestion buttons (ДСП 16мм, МДФ профиль, Фурнитура)
+- **Search result icons per category** — unique Lucide icon + colored background circle for each category
+- **Navigate-to-result on click** — projects → project detail, suppliers → supplier detail, invoices → invoices page, warehouse → warehouse page, requests → requests page
+- **Fuzzy search** — handled server-side in the unified search API
+- **Loading state** — spinning loader with "Поиск..." text
+- **Footer keyboard hints** — ↑↓ навигация, ↵ выбрать, Esc закрыть, Ctrl+K поиск
+- **framer-motion AnimatePresence** — for smooth transitions between recent/suggestions/results
+- **Clear button** — X button to clear query text
+- Recent searches saved on result selection
+
+**Part B: Theme & Global Styling Improvements**
+
+Enhanced `/src/app/globals.css` with:
+- **Better light/dark mode transitions** — extended transition duration from 0.3s to 0.4s, added border-color transition, added smooth theme transition rules for data-slot elements (card, popover, sheet, dialog-content, dropdown-menu-content, command, sidebar, header, nav, footer)
+- **Improved card hover effects** — updated card-hover-elevate with cubic-bezier easing, added subtle border glow. NEW: card-hover-lift (subtle -1px lift + border color change), card-hover-glow (border glow effect without lift)
+- **Better focus ring styles** — enhanced input/textarea/select focus-visible with double ring shadow (inner 2px + outer 4px), theme-aware colors for dark/light modes
+- **Improved scrollbar styling** — global scrollbar reduced from 5px to 4px, reduced opacity from 15%/20% to 10%/15%, custom-scrollbar utility also refined
+- **Glass-morphism utility classes** — enhanced glass-card with saturate(180%) and inset shadow. NEW: glass-panel (lighter, 85% opacity, for overlays), glass-toolbar (90% opacity, for floating bars)
+- **Gradient text utility classes** — kept gradient-text, NEW: gradient-text-warm (orange/amber), gradient-text-emerald (teal/emerald)
+- **Better skeleton/placeholder animations** — NEW: skeleton-line (shimmer strip), skeleton-circle (circular shimmer), skeleton-card (pulsing card placeholder), all with dark mode variants. Added skeleton-pulse keyframe
+- **Smooth page transition keyframes** — NEW: page-slide keyframe (horizontal slide + fade), animate-page-slide utility class. Added page-slide to theme animate tokens
+- **Left accent border** — enhanced with width transition on hover (3px → 4px)
+- **Floating shadow** — updated with cubic-bezier easing
+
+**Part B Continued: ThemeToggle Enhancement**
+
+Enhanced `/src/components/app/theme-toggle.tsx`:
+- Improved dropdown with theme items showing: colored icon container (primary/10 when active, muted/50 when not), label + description, check icon for active theme
+- Added DropdownMenuLabel "Внешний вид" header
+- Added footer showing resolved theme with color indicator dot (amber-400 for light, slate-700 for dark)
+- Sun/Moon icon transitions with duration-300 for smoother theme switching
+- Added size-8 overflow-hidden on trigger button for better animation
+- All text in Russian
+
+**Bug Fix**
+- Fixed pre-existing lint error in warehouse.tsx: added `toast` to handleQuickAddSubmit useCallback dependency array
+
+### Verification
+- `bun run lint`: Clean pass (0 errors, 0 warnings)
+- Dev server: Running with no runtime errors
+- Search API tested: GET /api/search?q=Закупка returns 3 results across project/invoice/request categories
+- Search API category filter works: GET /api/search?q=ДСП&category=invoice returns only invoice results
+
+Stage Summary:
+- New API endpoint: `/api/search/route.ts` — unified search across 5 categories with fuzzy search support
+- Enhanced component: `/src/components/app/global-search.tsx` — Complete rewrite with:
+  - 5 color-coded search categories with icons
+  - Category filter pills with result count badges
+  - Ctrl+K keyboard shortcut hint
+  - Search result preview with context (status, items, amounts)
+  - Recent searches history (localStorage, max 8)
+  - No results state with suggestion buttons
+  - Navigate-to-result on click
+  - Fuzzy search support
+  - Loading state
+  - Footer keyboard hints
+- Enhanced: `/src/app/globals.css` — Theme transitions, card hover variants, focus rings, scrollbars, glass-morphism, gradient text, skeleton animations, page transitions
+- Enhanced: `/src/components/app/theme-toggle.tsx` — Improved dropdown with descriptions, active indicator, resolved theme footer
+- Fixed: `/src/components/app/warehouse.tsx` — useCallback dependency fix
+
+Files created:
+- `/home/z/my-project/src/app/api/search/route.ts`
+
+Files modified:
+- `/home/z/my-project/src/components/app/global-search.tsx` — Complete rewrite
+- `/home/z/my-project/src/app/globals.css` — Major enhancements
+- `/home/z/my-project/src/components/app/theme-toggle.tsx` — Enhanced UI
+- `/home/z/my-project/src/components/app/warehouse.tsx` — Dependency fix
+
 ## Session 9: ПРОМЕБЕЛЬ Rebrand, AI Assistant, Automation, Delivery Tracking, Reports, Styling
 
 ### Current Project Status Assessment
@@ -94,6 +291,94 @@ The app has gone through 8+ development sessions. Previously branded as "Зак�
 - Caddy proxy 502 issue needs investigation (dev server keeps dying between requests)
 - AI assistant could be enhanced with tool calling (actually query the database)
 - Could add Telegram Bot integration for mobile notifications
+
+---
+
+Task ID: 2
+Agent: Notification System & Activity Feed Enhancement Agent
+Task: Enhance the notification center and add a real-time activity feed
+
+Work Log:
+- Read worklog.md for project context — app is a comprehensive procurement management system (ПРОМЕБЕЛЬ) with 11+ views, AI assistant, delivery tracking, automation
+- Read current notification-center.tsx — basic DropdownMenu with 10 activities from /api/activity endpoint, simple read state tracking via local Set
+- Read /api/activity endpoint — queries 5 types (projects, status changes, requests, invoices, warehouse transactions), returns sorted list
+- Created `/api/notifications/route.ts` with comprehensive notification generation:
+  - GET: Generates notifications from 7 data sources:
+    1. Low stock warehouse items (quantity ≤ 0) — priority: high, category: Склад
+    2. Below minimum stock items (quantity ≤ minQuantity but > 0) — priority: medium, category: Склад
+    3. Pending invoices (received/discrepancy status) — priority: medium/high, category: Счёт
+    4. Project status changes — priority: low/high, category: Проект
+    5. Overdue deliveries (estimated date passed, still pending/shipped/in_transit) — priority: high, category: Проект
+    6. Unanswered requests (sent 2+ days ago, no response) — priority: medium/high, category: Запрос
+    7. Recently created projects (within 72h) — priority: low, category: Проект
+    8. Draft requests (awaiting send) — priority: low, category: Запрос
+  - Each notification includes: id, type, category, title, description, timestamp, read, priority, entityId, entityType
+  - Categories: Проект, Счёт, Склад, Запрос (color-coded)
+  - Priority levels: high, medium, low (sorted by priority then timestamp)
+  - Supports category filter via ?category= query param
+  - Supports priority filter via ?priority= query param
+  - In-memory read/clear state tracking (Map/Set for demo)
+  - PATCH endpoint: mark as read (ids array), mark all read, clear all
+  - Returns unreadCount, totalCount, categories array
+- Created `/api/notifications/[id]/route.ts` for individual notification operations:
+  - PATCH: Mark individual notification as read
+  - DELETE: Remove individual notification
+- Completely rewrote `/src/components/app/notification-center.tsx` with enhanced features:
+  - Switched from DropdownMenu to Popover for better positioning and control
+  - **Category filter pills**: "Все" + 4 category pills (Проект, Счёт, Склад, Запрос) with unread counts and color-coded styling
+    - Проект: emerald (green)
+    - Счёт: violet
+    - Склад: amber
+    - Запрос: sky (blue)
+  - **Notification categories with color-coded badges**: Each notification shows a category Badge with matching colors
+  - **Mark as read on individual items**: Click the checkmark button that appears on hover, or click the notification itself
+  - **Mark all read button**: "Прочитать все (N)" button with CheckCheck icon
+  - **Clear all button**: Trash2 icon in header, clears all notifications via PATCH {clearAll: true}
+  - **Notification sound toggle**: Volume2/VolumeX icon, visual indicator only (animated pulse ring on bell when sound enabled and unread > 0)
+  - **Prominent relative timestamps**: Clock icon + formatRelativeTime with font-medium styling, displayed below description
+  - **"View all" link**: Footer with ExternalLink icon, navigates to dashboard
+  - **Empty state with illustration**: Custom SVG EmptyBellIllustration (bell with happy face), BellOff icon, descriptive text "Все в порядке! Новые уведомления появятся здесь автоматически."
+  - **Loading state**: Three animated dots with "Загрузка..." text
+  - **Priority indicators**: "Важно" label with AlertTriangle for high-priority notifications
+  - **Type-specific icons**: PackageX (low stock), AlertTriangle (below min, discrepancy), Receipt (invoice), ArrowRightLeft (status change), Truck (overdue delivery), MailQuestion (unanswered request), FilePlus (new project), Send (draft request)
+  - **Click-to-navigate**: Clicking a notification navigates to the relevant page (project detail, warehouse, invoices, requests)
+  - **Unread badge**: Animated badge on bell icon with count (9+ for overflow)
+  - **framer-motion animations**: Entrance animations for notifications, badge scale animation, pulse ring on bell
+  - **useMutation for state changes**: Mark read, mark all read, clear all with automatic query invalidation
+  - **Responsive**: 380px wide popover, ScrollArea with max-h-400px, text truncation
+- All text in Russian throughout
+- `bun run lint`: Clean pass
+- Dev server: Notifications API returning 200 with proper data structure
+- Tested API endpoints:
+  - GET /api/notifications — returns ~15 notifications across all categories
+  - GET /api/notifications?category=Склад — returns 4 warehouse notifications
+  - PATCH /api/notifications with {ids: [...]} — marks as read successfully
+  - PATCH /api/notifications with {clearAll: true} — clears all successfully
+
+Stage Summary:
+- New API endpoint: `/api/notifications/route.ts` — GET (list with category/priority filters, 7 notification sources), PATCH (mark read, mark all read, clear all)
+- New API endpoint: `/api/notifications/[id]/route.ts` — PATCH (mark individual as read), DELETE (remove)
+- Enhanced component: `/src/components/app/notification-center.tsx` — Complete rewrite with:
+  - Category filter pills (4 categories with unread counts)
+  - Color-coded category badges on each notification
+  - Mark as read (individual + all)
+  - Clear all button
+  - Sound toggle (visual indicator)
+  - Prominent timestamps with Clock icon
+  - "View all" footer link
+  - Custom SVG empty state illustration
+  - Loading state with animated dots
+  - Priority indicators ("Важно")
+  - Type-specific notification icons
+  - Click-to-navigate to related entities
+  - framer-motion animations throughout
+
+Files created:
+- `/home/z/my-project/src/app/api/notifications/route.ts`
+- `/home/z/my-project/src/app/api/notifications/[id]/route.ts`
+
+Files modified:
+- `/home/z/my-project/src/components/app/notification-center.tsx` — Complete rewrite
 
 ---
 
@@ -1482,3 +1767,452 @@ Polished the Kanban board cards and columns in the Projects page, improved the R
 - `/home/z/my-project/src/components/app/projects.tsx` — Kanban board polish
 - `/home/z/my-project/src/components/app/requests.tsx` — Stats summary + table row styling
 - `/home/z/my-project/src/components/app/suppliers.tsx` — Stats summary + card improvements
+
+---
+
+Task ID: 1
+Agent: Dashboard Styling & Feature Enhancement Agent
+Task: Massively improve Dashboard component styling and features
+
+Work Log:
+- Read worklog.md for project context — app is a comprehensive procurement management system (ПРОМЕБЕЛЬ) with 12+ views, at quality rating ~8.5/10
+- Read current dashboard.tsx (1767 lines) and /api/stats endpoint to understand available data
+- Identified QA issues: blue rectangular placeholders in header (broken `animate-dots` CSS), "На складе" card lacking descriptive subtext, inconsistent icon colors, missing visual hierarchy
+- Fixed blocking bug in notification-center.tsx: `TruckAlert` export doesn't exist in lucide-react (replaced with `Truck`) — this was causing 500 errors on all pages
+- Rewrote dashboard.tsx with comprehensive improvements:
+
+**1. Welcome Header Section — Complete Overhaul:**
+- Replaced broken `animate-dots` CSS pattern with reliable inline SVG dot pattern
+- Added company logo (next/image from /logo.png) in a rounded-xl container with backdrop-blur
+- Professional multi-layer gradient background (from-primary/10 via-primary/4 to-emerald-500/3)
+- Decorative gradient orbs with blur-3xl for depth
+- Added "ПРОМЕБЕЛЬ" branding separator line with gradient text
+- Removed emoji wave (👋) for professional look
+- Improved active projects badge with border and better styling
+
+**2. Stat Cards — Enhanced Descriptions & Animations:**
+- Added `AnimatedCounter` component using framer-motion `useMotionValue` + `useTransform` for number counting animations
+- ALL stat cards now use `animateValue` prop for smooth number counter animation
+- Added descriptive subtexts to ALL cards:
+  - "Всего проектов": "5 завершено · всего в системе"
+  - "Поставщиков": "Всего контрагентов в базе"
+  - "Запросов в процессе": "2 черновиков · ожидает отправки"
+  - "Неоплаченных счетов": "на сумму X ₽ · требует внимания" / "Нет неоплаченных счетов"
+  - "Активных проектов": "В работе прямо сейчас · не завершены"
+  - "На складе": "Всего товаров на учёте · доступно"
+  - "Низкий запас": "Требуется пополнение · критично" / "Все позиции в норме"
+- Enhanced gradient backgrounds per card with 3-stop gradients (color/60 → color/30 → transparent)
+- Added `STAT_ICON_COLOR_MAP` for consistent icon coloring per border color
+- Added `whileHover` micro-interaction (y: -3 lift) on stat cards
+- Improved hover shadow (hover:shadow-xl) and active press (active:scale-[0.98])
+
+**3. Budget Comparison Bar — New Component:**
+- New `BudgetComparisonBar` component showing budget execution as a horizontal stacked bar
+- Animated bar segments: emerald (spent), amber (pending), sky (remaining)
+- Percentage label inside bar when spentPercent > 15%
+- 3-column legend grid with colored dots, labels, and formatted amounts
+- Staggered animation with delays for each segment
+
+**4. Urgent Items Section — Enhanced Visual Prominence:**
+- Increased top accent bar from h-[2px] to h-[3px] with red gradient
+- Added red circular icon background (size-8 bg-red-500/10) around AlertTriangle
+- Added task count badge (destructive variant) in header: "X задач/задачи"
+- Added urgency badges per item: "Срочно" (destructive) or "Ожидает" (amber outline)
+- Wider left indicator bar (w-1.5) with shadow-glow on urgent items
+- Stronger hover effect (hover:shadow-lg)
+
+**5. Activity Feed — Improved Timeline:**
+- Replaced Clock icon with Activity icon in header
+- Smaller icon circles (size-8 instead of size-9) for better proportions
+- Increased max-height from max-h-80 to max-h-96 for more items visible
+
+**6. Skeleton Loader — Comprehensive Overhaul:**
+- Added header skeleton with greeting and date placeholders
+- Added colored top accent bar on skeleton cards (h-1 w-full bg-muted/50)
+- Added description line skeleton on stat cards
+- Added budget comparison bar skeleton
+- Added KPI row skeleton
+- Added urgent items skeleton
+
+**7. Code Quality Improvements:**
+- Used `useMemo` for MiniSparkline heights to avoid re-randomization on re-renders
+- Used `useMemo` for `getGreeting` and `getRussianFullDate` (already existed)
+- Added `Activity`, `BarChart3`, `Timer` icon imports
+- Added `useState`, `useEffect`, `useRef` imports
+- Added `useMotionValue`, `useTransform`, `animate` from framer-motion
+- Added `Image` from next/image for logo
+- Consistent icon colors via `STAT_ICON_COLOR_MAP`
+
+**8. Bug Fix — notification-center.tsx:**
+- Replaced `TruckAlert` (doesn't exist in lucide-react) with `Truck`
+- This was causing all API routes to return 500 errors
+
+Verification:
+- `bun run lint`: Clean pass
+- Dev server: No 500 errors, all APIs returning 200
+- Page loads correctly with all new components
+
+Stage Summary:
+- Dashboard received comprehensive visual and functional upgrade
+- Fixed broken `animate-dots` header pattern with reliable SVG pattern
+- Added animated number counters on all stat cards
+- Added new Budget Comparison Bar component
+- Enhanced all stat card descriptions with meaningful Russian subtexts
+- Made "Требуют внимания" section more visually prominent with urgency badges
+- Added company logo to welcome header
+- Improved skeleton loader for better loading experience
+- Fixed blocking bug in notification-center.tsx (TruckAlert export)
+
+Files modified:
+- `/home/z/my-project/src/components/app/dashboard.tsx` — Complete rewrite with improvements
+- `/home/z/my-project/src/components/app/notification-center.tsx` — Fixed TruckAlert → Truck import
+
+---
+
+Task ID: 3
+Agent: Invoices Page Enhancement Agent
+Task: Massively improve the Invoices page (VLM QA gave 6/10 for sparse/minimal content)
+
+Work Log:
+- Read worklog.md for project context — app is ПРОМЕБЕЛЬ procurement management system with 11+ views
+- Read current invoices.tsx (1653 lines) — existing features: invoice CRUD, reconciliation, workflow pipeline, basic filters
+- Read API endpoints: /api/invoices (GET+POST), /api/invoices/[id] (GET+PATCH), /api/invoices/[id]/reconcile (GET)
+- Checked available shadcn/ui components: Skeleton, Calendar, Popover, etc. all available
+- Massively rewrote /src/components/app/invoices.tsx with the following improvements:
+
+1. **Summary section at the top** — 4 cards showing: total invoices, total amount, paid amount, pending amount (with colored icons and amounts)
+2. **Status breakdown bar** — clickable colored status pills showing count + amount per status (received, verified, discrepancy, approved, paid, cancelled); clicking filters by status
+3. **Improved invoice processing pipeline** — now shows step icons (FileText → CheckCircle2 → CheckCheck → Wallet) instead of just numbers; count shown below label; active steps show icon instead of number
+4. **Date range filter** — calendar popovers for "from date" and "to date" with X button to clear; uses date-fns format with Russian locale
+5. **Supplier filter dropdown** — filter invoices by supplier
+6. **Status filter dropdown** — filter invoices by status with colored dots
+7. **"Export to CSV"** — already existed, now includes "Дата оплаты" column in export
+8. **Inline status update actions** — color-coded quick action buttons (Проверить=sky, Утвердить=emerald, Оплатить=green, Сверить=amber) with smaller size (h-7)
+9. **Colored left borders** — already existed, kept intact
+10. **Amount formatting with currency** — already existed, kept intact
+11. **"Recently updated" indicator** — new "Обновлено" column showing relative time ("только что", "5 мин назад", "2 ч назад", "3 дн назад") with amber CircleDot icon for recent updates
+12. **Improved reconciliation sheet UI** — 3-column layout (request | status icon | invoice) with colored backgrounds; summary cards now have icons; totals in colored rounded boxes
+13. **Skeleton loading states** — full InvoicePageSkeleton component replacing spinner: skeleton for header, summary cards, pipeline, filter bar, and table rows
+14. **Empty state** — already existed, now also shows for filtered results (search type) with proper filter awareness
+15. **Total amounts summary at bottom** — amber-tinted card showing: total count with Russian pluralization ("счёт/счёта/счетов"), filtered count note, total amount, paid amount, pending amount with vertical separators
+16. **Enhanced header** — now includes Receipt icon, "Счета" title, and descriptive subtitle
+17. **"Сбросить" (Clear all) button** — appears when any filter is active, resets all filters
+18. **Search input clear button** — X button inside search input
+19. **Invoice number display** — monospace font in muted background pill
+20. **AnimatePresence with mode="popLayout"** — smooth row entry/exit animations
+21. **Project name on mobile** — supplier shown below project name on small screens
+22. **Status label changes** — "Одобрен" → "Утверждён" (matching task spec pipeline: Получен → Проверен → Утверждён → Оплачен)
+
+- Fixed pre-existing compilation error: notification-center.tsx had stale `TruckAlert` import from lucide-react (not found in installed version) — touched file to force recompilation; the file had already been fixed to use `Truck` but Next.js was caching the old error
+- `bun run lint`: Clean pass
+- Dev server: Running with no runtime errors, all API endpoints returning 200
+
+Stage Summary:
+- File modified: /home/z/my-project/src/components/app/invoices.tsx — complete rewrite with 12+ new features
+- Key new features: summary cards, status breakdown, date range filter, supplier/status filters, skeleton loading, recently updated indicator, bottom totals, improved reconciliation UI
+- All text in Russian, responsive design, framer-motion animations
+- No new API routes needed — all data comes from existing /api/invoices endpoint
+- No other components modified (only invoices.tsx)
+
+Files modified:
+- `/home/z/my-project/src/components/app/invoices.tsx` — Massively enhanced with 12+ improvements
+
+
+---
+
+Task ID: 4
+Agent: Supplier & Requests Page Enhancement Agent
+Task: Enhance both the Suppliers page and the Requests page with more details, better styling, and more functionality
+
+Work Log:
+- Read worklog.md for project context — app is ПРОМЕБЕЛЬ procurement management system with 12+ views, AI assistant, automation, delivery tracking
+- Read current suppliers.tsx (803 lines) — already had rating system (3 stars), basic cards, search, CRUD, stats summary
+- Read current requests.tsx (~1150 lines) — had status filters, table with expandable rows, 5-step create dialog, response dialog
+- Read empty-state.tsx and supplier-rating.ts for context on existing components and rating logic
+
+### Part A: Suppliers Page Enhancements
+
+Completely rewrote `/src/components/app/suppliers.tsx` with the following improvements:
+
+1. **5-Star Rating System**: Enhanced from 3-star to 5-star rating display using `StarRating` component with half-fill support and score label
+2. **"Top Suppliers" Leaderboard**: New `TopSuppliersLeaderboard` component at the top of the page showing top 3 suppliers ranked by score with:
+   - Gold/Silver/Bronze medal indicators
+   - Reliability and delivery speed badges
+   - Item count and total spent per supplier
+   - Click to navigate to supplier detail
+   - Gradient border backgrounds matching medal colors
+3. **Category Filter**: New `CategoryFilter` component with pill-style buttons filtering suppliers by supply categories (ДСП/МДФ, Фурнитура, Ткани, etc.)
+   - Category mapping based on supplier name patterns
+   - "Все" button to clear filter
+4. **Map/Location Indicator**: New `LocationIndicator` component showing:
+   - City extraction from address using regex
+   - Globe icon with green dot for known locations
+   - Tooltip showing city name, coordinates, and full address
+   - Mock coordinates for common Russian cities
+5. **Supplier Contact Quick-Actions**: Email and phone lines now have hover-reveal action buttons:
+   - Email: "Написать email" opens mailto: link
+   - Phone: "Позвонить" opens tel: link
+6. **Total Spent Amount per Supplier**: New badge showing total spent in supplier card (format: "Xк ₽" or "XМ ₽")
+7. **Last Activity Date**: Added "Обновлено: X дн. назад" at bottom of each supplier card
+8. **Improved Supplier Cards**: 
+   - Gradient border bar at top (h-1.5 with gradient colors based on reliability)
+   - Hover glow effect (colored box-shadow matching reliability)
+   - `AnimatePresence` + `motion.div` layout animations
+   - Completion rate progress bar in card
+   - Category tags display (up to 3, with "+N" overflow)
+   - Better visual hierarchy with grouped contact info and stats
+9. **Enhanced Skeleton Loading**: Improved `SupplierCardSkeleton` with more detailed placeholders matching new card structure
+10. **Stats Summary Enhancement**: Added 5th card for "Всего потрачено" (total spent across all suppliers) with DollarSign icon and rose color scheme
+
+### Part B: Requests Page Enhancements
+
+Completely rewrote `/src/components/app/requests.tsx` with the following improvements:
+
+1. **Summary Bar Enhancement**: Added 5th card for "Общая сумма" (total value of all requests) with DollarSign icon and rose color scheme
+2. **Visual Pipeline**: New `RequestPipeline` component showing flow: Черновик → Отправлен → Ответ получен
+   - Circle nodes with count numbers and color coding
+   - Percentage labels below each step
+   - Arrow connectors between steps
+   - Gradient background card with dashed border
+3. **Overdue Alert Banner**: New alert card showing when requests are without response for 3+ days
+   - Red-themed card with AlertTriangle icon
+   - Pluralized count text in Russian
+   - Suggestion to use "Напомнить" button
+4. **Search/Filter Enhancement**:
+   - Added project filter (Select dropdown) alongside existing supplier filter
+   - Status filter pills now show count numbers
+   - Search now also matches email addresses
+5. **"Resend" Button**: New "Напомнить" (Remind) button for sent requests without response for 3+ days
+   - Amber-colored outline button with RefreshCw icon
+   - Appears only when `needsResend()` returns true (3+ days since sent, no response)
+   - Resets sentAt timestamp and re-sends
+   - Tooltip explaining the action
+6. **Colored Status Indicators with Icons**: Enhanced `REQUEST_STATUS_MAP` with `icon` field per status
+   - draft: FileText icon, slate colors
+   - sent: Send icon, sky colors
+   - responded: CheckCircle2 icon, emerald colors
+   - partial: AlertTriangle icon, amber colors
+   - cancelled: XCircle icon, red colors
+   - StatusBadge now renders icon alongside label
+7. **Response Time Tracking**: New `ResponseTimeTracker` component showing:
+   - For responded requests: green/amber/red time display (Xд Xч) with fast/medium/slow tooltip
+   - For sent requests still waiting: days counter with pulsing red for overdue (3+ days)
+   - Tooltip with detailed time information
+   - New "Время" column in the table
+8. **Inline Status Update Actions**: Expanded row now shows quick status change buttons:
+   - Draft → "Отправлен" button
+   - Sent/Partial → "Записать ответ" + "Ответ получен" buttons
+   - Any → "Отменить" button
+9. **Enhanced Skeleton Loading**: New `RequestsTableSkeleton` component with realistic table row placeholders
+10. **Email Preview Enhancement**: Email section in expanded row now shows "Кому" and "Тема" inline with bullet separator, body in muted background
+11. **Items Total Row**: Added "Итого" sum at bottom of items table in expanded row, plus "Сумма" column
+12. **Animated Expand/Collapse**: ChevronDown icon now rotates 180° on expand via motion animation, expand section uses framer-motion height/opacity animation
+
+### Verification
+- `npx eslint src/components/app/suppliers.tsx src/components/app/requests.tsx`: Clean pass (no errors in modified files)
+- Pre-existing lint error in warehouse.tsx is unrelated to this task
+- Dev server: Running with no runtime errors in modified files
+
+Stage Summary:
+- Enhanced: `/src/components/app/suppliers.tsx` — Complete rewrite with 5-star rating, leaderboard, category filter, location indicator, contact quick-actions, total spent, last activity, gradient borders, enhanced skeleton
+- Enhanced: `/src/components/app/requests.tsx` — Complete rewrite with visual pipeline, overdue alerts, resend button, response time tracking, inline status actions, colored status icons, project filter, enhanced skeleton, email preview improvements, items totals
+
+Files modified:
+- `/home/z/my-project/src/components/app/suppliers.tsx` — Complete rewrite
+- `/home/z/my-project/src/components/app/requests.tsx` — Complete rewrite
+
+---
+
+Task ID: 6
+Agent: Warehouse & Settings Page Enhancement Agent
+Task: Enhance both the Warehouse page and the Settings page with more details, better styling, and more functionality
+
+Work Log:
+- Read worklog.md for project context — app is a comprehensive procurement management system (ПРОМЕБЕЛЬ) with 12+ views, AI assistant, delivery tracking, automation
+- Read current warehouse.tsx (1360 lines) — already had basic table, stats cards, category filter, low stock alert, transactions list, add/edit/delete/reorder dialogs
+- Read current settings.tsx (752 lines) — already had company details, address/contacts, bank details, document preview, notification preferences, integration settings
+- Read empty-state.tsx and available UI components for reference
+
+**Part A: Warehouse Page Enhancements**
+
+Completely rewrote `/src/components/app/warehouse.tsx` with the following enhancements:
+
+1. **Stock Health Donut Chart** — SVG-based donut visualization at the top showing OK/Low/Out of stock distribution:
+   - Animated SVG circles with framer-motion (staggered entrance: OK first, then Low, then Out)
+   - Center text showing total item count
+   - Color legend with counts (emerald/amber/red)
+   - Responsive layout with 5-column grid (4 stats + 1 donut)
+
+2. **Category Filter with Item Counts** — Enhanced category pills to show item counts:
+   - Each pill now has a badge showing number of items in that category
+   - "Все" pill shows total items count
+   - Categories sorted alphabetically
+
+3. **Bulk Actions** — Multi-select functionality for items:
+   - Checkbox column in table header and each row
+   - "Select All" checkbox in header
+   - Sticky bulk action bar appears when items are selected (shows count)
+   - "Переместить" (Move) and "Списать" (Write off) bulk actions
+   - Confirmation dialog for bulk actions
+   - "Снять выбор" (Clear selection) button
+
+4. **Quick Add Inline Row** — Rapid item addition without dialog:
+   - Toggle button "Быстрое добавление" in header
+   - Expandable card with inline form fields (name, article, category, qty, min, location)
+   - AnimatePresence for smooth show/hide
+   - Dashed border styling with teal accent
+   - Direct submit via quickAddMutation
+
+5. **Stock Movement History Timeline per Item** — Expandable timeline:
+   - Chevron button in each table row to expand/collapse
+   - ItemTimeline component showing transaction history
+   - Vertical timeline with colored icons (green for in, red for out)
+   - Shows: type, quantity, relative time, notes, project name
+   - Limited to 5 most recent with "and N more" indicator
+   - AnimatePresence for smooth expand/collapse animation
+
+6. **Low Stock Alert Banner with Restock Suggestions** — Enhanced alert:
+   - Added "Заказать все" (Order all) button to batch-order low stock items
+   - Each item shows recommended restock quantity (minQty * 2 - currentQty)
+   - Restock suggestion shown next to stock bar
+
+7. **Warehouse Location/Zone Indicator** — Compact zone badge:
+   - ZoneBadge component with MapPin icon and compact location text
+   - Tooltip showing full location name
+   - Monospace font for location codes
+   - Visible in table's "Зона" column
+
+8. **Last Updated Timestamp per Item** — Relative time display:
+   - Shows relative time (e.g. "2 ч. назад", "3 дн. назад") in table
+   - Tooltip with full date/time on hover
+   - formatRelativeTime utility function
+   - Hidden on mobile, visible on md+ screens
+
+9. **Total Value Calculation** — Estimated warehouse value:
+   - Gradient card below stats showing total estimated value
+   - TrendingUp icon with teal color scheme
+   - Formatted with locale-specific number formatting and ₽ symbol
+   - Formula: sum of (quantity * 1000) per item (demo estimate)
+
+10. **Improved Stock Indicator Bars with Animated Fills** — Enhanced StockBar:
+    - Uses framer-motion for animated width transitions (0.8s easeOut)
+    - Animated battery-style indicators with motion.div height animation
+    - Initial animation from 0 to actual value on mount
+
+11. **Enhanced Skeleton Loading States** — Better loading UX:
+    - StatsCardSkeleton component for stat cards
+    - Enhanced TableSkeleton with checkbox and more realistic layout
+    - Separate skeleton patterns for different sections
+
+12. **Empty State** — Already existed from empty-state.tsx, verified working
+
+Additional improvements:
+- Added Checkbox, AnimatePresence imports
+- Compact button sizes (sm) for header actions
+- Better column layout with checkbox + expand columns
+- Selected row highlighting (bg-primary/5)
+- formatRelativeTime utility for timestamps
+- okStockItems derived data for donut chart
+
+**Part B: Settings Page Enhancements**
+
+Completely rewrote `/src/components/app/settings.tsx` with the following enhancements:
+
+1. **Company Logo Upload Preview** — New section at top:
+   - SectionCard with ImageIcon icon and emerald accent
+   - 96x96px preview area with dashed border
+   - Upload button with hidden file input (fileInputRef)
+   - FileReader for instant preview on upload
+   - Delete button to remove logo preview
+   - Format recommendation text (PNG/SVG, min 200x200px)
+
+2. **Email Templates Section** — New section with preview:
+   - 4 email templates: Запрос поставщику, Счёт получен, Подтверждение заказа, Уведомление о низком остатке
+   - Template selector pills with MailOpen icon
+   - Editable subject line and body textarea (monospace font)
+   - Available variables documentation panel ({companyName}, {phone}, {items}, etc.)
+   - Live preview panel showing template with actual company data substituted
+   - Save/Reset buttons with change tracking (templateChanged state)
+
+3. **Automation Defaults Section** — New section:
+   - Auto-run interval selector (15/30/60/120/1440 minutes)
+   - Low stock threshold percentage input
+   - Toggle switches for:
+     - Авто-создание запросов (auto-create requests)
+     - Авто-смена статуса (auto-status transition)
+     - Уведомления о авто-действиях (notify on auto actions)
+   - Save/Reset with change tracking
+
+4. **Data Management Section** — New section:
+   - Export all data: Creates JSON file with company data, preferences, notifications, automation settings
+   - Import data: File picker for JSON/CSV import with loading state
+   - Reset database: Destructive action with AlertDialog confirmation
+   - Each action in a bordered card with icon, description, and button
+   - Reset DB card has destructive styling (red border, red button)
+
+5. **User Preferences Section** — New section:
+   - Language selector (Русский/English)
+   - Timezone selector (5 Russian timezones from Moscow to Vladivostok)
+   - Date format selector (DD.MM.YYYY / YYYY-MM-DD / DD/MM/YYYY)
+   - Currency selector (RUB/USD/EUR)
+   - Icons: Languages, Clock, Calendar, CreditCard
+   - Save/Reset with change tracking
+
+6. **About Section** — New section:
+   - App logo and name with gradient background
+   - Version badge (v3.2.0) with Star icon
+   - Build info grid: version, build date, platform, database
+   - Changelog timeline with 3 entries (v3.2.0, v3.1.0, v3.0.0)
+   - Current version highlighted with emerald badge
+   - Copyright line with Shield icon
+
+7. **Visual Separators Between Sections** — Enhanced SectionCard:
+   - Added SectionCard wrapper with onSave, onReset, hasChanges, isSaving props
+   - Save and Reset buttons in section header (right side)
+   - Conditional rendering based on hasChanges (disabled state when no changes)
+   - Spinner on Save button during save
+   - Each section has unique accentColor
+
+8. **Save and Reset Buttons Per Section** — All sections now have:
+   - Save button (primary, with Save icon)
+   - Reset button (ghost, with RotateCcw icon)
+   - Change tracking state for each section
+   - Toast notifications on save/reset
+   - Disabled state when no changes or saving
+
+9. **Toast Notifications for Save Actions** — All sections:
+   - Success toast on save with descriptive message
+   - Reset toast on cancel with confirmation
+   - Error toast for failed operations
+   - All text in Russian
+
+10. **Improved Document Preview with Actual Company Data**:
+    - Logo preview integrated into document preview
+    - Building2 icon fallback when no logo uploaded
+    - Company name, INN, KPP, OGRN badges
+    - Phone and email with icons
+    - Bank details with CreditCard icon
+    - Full address with MapPin icon
+    - Dashed border with gradient background
+
+Additional imports added:
+- Textarea, Badge, Select/SelectContent/SelectItem/SelectTrigger/SelectValue
+- AlertDialog components for destructive actions
+- Additional Lucide icons: Upload, Trash2, Clock, Languages, Calendar, MailOpen, Zap, Database, Info, ChevronDown, ChevronRight, Shield, BookOpen, Star
+- useRef for file inputs and DOM references
+
+**Verification:**
+- `bun run lint`: Clean pass (0 errors, 0 warnings)
+- Dev server: Running with no runtime errors
+- No new API routes created (all functionality uses existing endpoints or local state)
+
+Stage Summary:
+- Enhanced warehouse.tsx: 12 major new features (donut chart, bulk actions, quick add, expandable timeline, zone badges, timestamps, total value, animated bars, enhanced skeletons, enhanced category filters, restock suggestions, better loading states)
+- Enhanced settings.tsx: 10 major new features (logo upload, email templates, automation defaults, data management, user preferences, about section, save/reset per section, visual separators, toast notifications, improved document preview)
+- All text in Russian
+- No new API routes created
+- Both files completely rewritten with comprehensive enhancements
+
+Files modified:
+- `/home/z/my-project/src/components/app/warehouse.tsx` — Complete rewrite with 12 major enhancements
+- `/home/z/my-project/src/components/app/settings.tsx` — Complete rewrite with 10 major enhancements
