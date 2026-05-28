@@ -71,9 +71,11 @@ import {
   Package,
   DollarSign,
   ShieldCheck,
+  Printer,
 } from 'lucide-react'
 import { EmptyState } from '@/components/app/empty-state'
 import { exportToCSV } from '@/lib/export-csv'
+import { openReport } from '@/lib/print-report'
 import { motion, AnimatePresence } from 'framer-motion'
 
 // ── Types ──────────────────────────────────────────────────
@@ -191,18 +193,25 @@ interface ReconciliationResult {
 
 // ── Status helpers ─────────────────────────────────────────
 
-const INVOICE_STATUS_MAP: Record<string, { label: string; variant: 'default' | 'secondary' | 'destructive' | 'outline'; className?: string }> = {
-  received: { label: 'Получен', variant: 'secondary', className: 'rounded-full' },
-  verified: { label: 'Проверен', variant: 'default', className: 'rounded-full bg-sky-100 text-sky-800 dark:bg-sky-950/30 dark:text-sky-400 border-sky-200 dark:border-sky-800' },
-  discrepancy: { label: 'Расхождение', variant: 'destructive', className: 'rounded-full' },
-  approved: { label: 'Одобрен', variant: 'default', className: 'rounded-full bg-emerald-100 text-emerald-800 dark:bg-emerald-950/30 dark:text-emerald-400 border-emerald-200 dark:border-emerald-800' },
-  paid: { label: 'Оплачен', variant: 'default', className: 'rounded-full bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400 border-green-200 dark:border-green-800' },
-  cancelled: { label: 'Отменён', variant: 'destructive', className: 'rounded-full' },
+const INVOICE_STATUS_MAP: Record<string, { label: string; variant: 'default' | 'secondary' | 'destructive' | 'outline'; className?: string; leftBorder?: string; animatedIcon?: string }> = {
+  received: { label: 'Получен', variant: 'secondary', className: 'rounded-full', leftBorder: 'border-l-slate-400', animatedIcon: 'text-slate-500' },
+  verified: { label: 'Проверен', variant: 'default', className: 'rounded-full bg-sky-100 text-sky-800 dark:bg-sky-950/30 dark:text-sky-400 border-sky-200 dark:border-sky-800', leftBorder: 'border-l-sky-500', animatedIcon: 'text-sky-500' },
+  discrepancy: { label: 'Расхождение', variant: 'destructive', className: 'rounded-full', leftBorder: 'border-l-red-500', animatedIcon: 'text-red-500' },
+  approved: { label: 'Одобрен', variant: 'default', className: 'rounded-full bg-emerald-100 text-emerald-800 dark:bg-emerald-950/30 dark:text-emerald-400 border-emerald-200 dark:border-emerald-800', leftBorder: 'border-l-emerald-500', animatedIcon: 'text-emerald-500' },
+  paid: { label: 'Оплачен', variant: 'default', className: 'rounded-full bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400 border-green-200 dark:border-green-800', leftBorder: 'border-l-green-500', animatedIcon: 'text-green-500' },
+  cancelled: { label: 'Отменён', variant: 'destructive', className: 'rounded-full', leftBorder: 'border-l-red-400', animatedIcon: 'text-red-400' },
 }
 
 function StatusBadge({ status }: { status: string }) {
-  const info = INVOICE_STATUS_MAP[status] || { label: status, variant: 'outline' as const, className: 'rounded-full' }
-  return <Badge variant={info.variant} className={info.className}>{info.label}</Badge>
+  const info = INVOICE_STATUS_MAP[status] || { label: status, variant: 'outline' as const, className: 'rounded-full', animatedIcon: '' }
+  return (
+    <div className="flex items-center gap-1.5">
+      {info.animatedIcon && (
+        <FileText className={`h-3.5 w-3.5 animate-status-icon ${info.animatedIcon}`} />
+      )}
+      <Badge variant={info.variant} className={info.className}>{info.label}</Badge>
+    </div>
+  )
 }
 
 // ── Invoice Workflow Visualization ──────────────────────────
@@ -1013,6 +1022,15 @@ export function Invoices() {
               <FileDown className="h-4 w-4" />
               CSV
             </Button>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => openReport('invoice-report')}
+              className="transition-all duration-200 hover:shadow-md hover:-translate-y-0.5 hover:border-primary/30"
+            >
+              <Printer className="h-4 w-4" />
+              Печать
+            </Button>
             <Button onClick={() => setCreateOpen(true)} className="transition-all duration-200 hover:shadow-md hover:-translate-y-0.5 hover:scale-[1.02]">
               <Plus className="mr-2 h-4 w-4" />
               Новый счёт
@@ -1059,9 +1077,32 @@ export function Invoices() {
       {/* Invoice Workflow Visualization */}
       <Card>
         <CardHeader className="pb-3">
-          <CardTitle className="text-base">Процесс обработки счетов</CardTitle>
+          <CardTitle className="text-base flex items-center gap-2">
+            <ArrowRight className="h-4 w-4 text-amber-500" />
+            Процесс обработки счетов
+          </CardTitle>
         </CardHeader>
         <CardContent>
+          {/* Processing Timeline Bar */}
+          <div className="mb-4 flex items-center gap-1">
+            {WORKFLOW_STEPS.map((step, idx) => (
+              <div key={step.status} className="flex items-center flex-1 last:flex-initial">
+                <div className="flex-1 h-2 rounded-full overflow-hidden bg-muted">
+                  <motion.div
+                    className={`h-full rounded-full ${step.activeBg}`}
+                    initial={{ width: '0%' }}
+                    animate={{ width: '100%' }}
+                    transition={{ delay: idx * 0.15 + 0.3, duration: 0.5, ease: 'easeOut' }}
+                  />
+                </div>
+                {idx < WORKFLOW_STEPS.length - 1 && (
+                  <div className="w-2 shrink-0">
+                    <div className="h-px bg-muted-foreground/20" />
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
           <InvoiceWorkflow invoices={invoicesList} />
         </CardContent>
       </Card>
@@ -1103,10 +1144,12 @@ export function Invoices() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {filteredInvoices.map((inv) => (
+                {filteredInvoices.map((inv) => {
+                  const statusInfo = INVOICE_STATUS_MAP[inv.status]
+                  return (
                   <TableRow
                     key={inv.id}
-                    className="cursor-pointer hover:bg-muted/50 transition-colors duration-150"
+                    className={`cursor-pointer hover:bg-muted/50 transition-colors duration-150 border-l-3 ${statusInfo?.leftBorder ?? 'border-l-transparent'}`}
                     onClick={() => openDetail(inv)}
                   >
                     <TableCell>
@@ -1183,7 +1226,8 @@ export function Invoices() {
                       </div>
                     </TableCell>
                   </TableRow>
-                ))}
+                  )
+                })}
               </TableBody>
             </Table>
             </div>

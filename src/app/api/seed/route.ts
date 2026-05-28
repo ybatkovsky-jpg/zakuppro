@@ -11,6 +11,8 @@ export async function GET() {
       purchaseRequests: [] as string[],
       invoices: [] as string[],
       stockMovements: [] as string[],
+      automationRules: [] as string[],
+      deliveries: [] as string[],
     }
 
     // ── Company Details ────────────────────────────────────────────────
@@ -626,6 +628,111 @@ export async function GET() {
           })
         }
       }
+    }
+
+    // ── Automation Rules ────────────────────────────────────────────────
+    const existingRules = await db.automationRule.findMany()
+    const existingRuleTypes = new Set(existingRules.map(r => r.type))
+
+    const automationRulesData = [
+      {
+        type: 'auto_create_requests',
+        name: 'Автосоздание запросов',
+        enabled: false,
+        config: JSON.stringify({ createDraft: true, assignSupplier: true }),
+      },
+      {
+        type: 'auto_status_transition',
+        name: 'Автопереход статуса',
+        enabled: false,
+        config: JSON.stringify({ checkInterval: 'daily' }),
+      },
+      {
+        type: 'auto_warehouse_check',
+        name: 'Проверка склада',
+        enabled: false,
+        config: JSON.stringify({ matchByArticle: true, matchByName: true }),
+      },
+      {
+        type: 'low_stock_alert',
+        name: 'Уведомление о низком запасе',
+        enabled: false,
+        config: JSON.stringify({ threshold: 0.5, notifyEmail: true }),
+      },
+      {
+        type: 'invoice_auto_reconcile',
+        name: 'Автосверка счетов',
+        enabled: false,
+        config: JSON.stringify({ autoVerify: false, notifyDiscrepancy: true }),
+      },
+    ]
+
+    for (const rule of automationRulesData) {
+      if (!existingRuleTypes.has(rule.type)) {
+        await db.automationRule.create({ data: rule })
+        result.automationRules.push(rule.name)
+      } else {
+        result.automationRules.push(`${rule.name} (already exists)`)
+      }
+    }
+
+    // ── Deliveries ────────────────────────────────────────────────────
+    const existingDeliveries = await db.delivery.findMany()
+    if (existingDeliveries.length === 0) {
+      const allProjects = await db.project.findMany()
+      const projectMap = new Map(allProjects.map(p => [p.name, p.id]))
+
+      const project4Id = projectMap.get('Закупка оборудования - СПб')
+      const project5Id = projectMap.get('Монтаж вентиляции - Казань')
+      const project1Id = projectMap.get('Ремонт офиса - Москва')
+      const project3Id = projectMap.get('Оснащение производства - Тула')
+
+      const deliveriesData = [
+        {
+          projectId: project4Id!,
+          supplierId: technoId,
+          status: 'in_transit',
+          trackingNumber: 'ДЛ-2026-44871',
+          carrier: 'Деловые Линии',
+          estimatedDate: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000),
+          notes: 'Кондиционеры и щиты распределительные',
+        },
+        {
+          projectId: project5Id!,
+          supplierId: technoId,
+          status: 'delivered',
+          trackingNumber: 'ПЭК-987654',
+          carrier: 'ПЭК',
+          estimatedDate: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000),
+          actualDate: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000),
+          notes: 'Вентиляторы и воздуховоды',
+        },
+        {
+          projectId: project1Id!,
+          supplierId: stroyId,
+          status: 'shipped',
+          trackingNumber: 'СДЭК-1203456',
+          carrier: 'СДЭК',
+          estimatedDate: new Date(Date.now() + 5 * 24 * 60 * 60 * 1000),
+          notes: 'Гипсокартон и профиль',
+        },
+        {
+          projectId: project3Id!,
+          supplierId: metizId,
+          status: 'pending',
+          trackingNumber: '',
+          carrier: 'Байкал Сервис',
+          estimatedDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+          notes: 'Крепёж и метизы для производства',
+        },
+      ].filter(d => d.projectId)
+
+      for (const d of deliveriesData) {
+        await db.delivery.create({ data: d })
+        result.deliveries.push(`${d.carrier} (${d.status})`)
+      }
+    } else {
+      result.deliveries = ['skipped (deliveries already exist)']
     }
 
     return NextResponse.json({ success: true, seeded: result })

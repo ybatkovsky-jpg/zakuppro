@@ -429,3 +429,231 @@
     animation: count-up 0.6s ease-out;
   }
 }
+
+/* ── Glow Primary ──────────────────────────────────────────── */
+
+.glow-primary {
+  box-shadow: 0 0 15px -3px oklch(0.5 0.15 270 / 15%), 0 0 6px -2px oklch(0.5 0.15 270 / 10%);
+}
+.dark .glow-primary {
+  box-shadow: 0 0 20px -3px oklch(0.6 0.2 270 / 12%), 0 0 8px -2px oklch(0.6 0.2 270 / 8%);
+}
+
+/* ── Gradient Border ───────────────────────────────────────── */
+
+.gradient-border {
+  position: relative;
+  border: none !important;
+}
+.gradient-border::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  padding: 1.5px;
+  border-radius: inherit;
+  background: linear-gradient(135deg, oklch(0.5 0.2 270), oklch(0.6 0.15 180), oklch(0.5 0.2 45));
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+.gradient-border:hover::before {
+  opacity: 1;
+}
+
+/* ── Floating Shadow ───────────────────────────────────────── */
+
+.floating-shadow {
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+.floating-shadow:hover {
+  transform: translateY(-3px);
+  box-shadow:
+    0 12px 28px -8px oklch(0 0 0 / 12%),
+    0 4px 10px -6px oklch(0 0 0 / 6%);
+}
+.dark .floating-shadow:hover {
+  box-shadow:
+    0 12px 28px -8px oklch(0 0 0 / 35%),
+    0 4px 10px -6px oklch(0 0 0 / 20%);
+}
+
+/* ── Wave Typing Animation ─────────────────────────────────── */
+
+@keyframes wave-bounce {
+  0%, 60%, 100% { transform: translateY(0); }
+  30% { transform: translateY(-4px); }
+}
+
+.typing-dot {
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: currentColor;
+  opacity: 0.5;
+  animation: wave-bounce 1.4s ease-in-out infinite;
+}
+.typing-dot:nth-child(1) { animation-delay: 0s; }
+.typing-dot:nth-child(2) { animation-delay: 0.15s; }
+.typing-dot:nth-child(3) { animation-delay: 0.3s; }
+
+/* ── Pulse Glow for Unread ─────────────────────────────────── */
+
+@keyframes pulse-glow {
+  0%, 100% { box-shadow: 0 0 0 0 oklch(0.5 0.2 270 / 30%); }
+  50% { box-shadow: 0 0 16px 4px oklch(0.5 0.2 270 / 20%); }
+}
+
+.animate-pulse-glow {
+  animation: pulse-glow 2s ease-in-out infinite;
+}
+
+/* ── Animated Workflow Line ─────────────────────────────────── */
+
+@keyframes flow-line {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+.animate-flow-line {
+  background: linear-gradient(
+    90deg,
+    oklch(0.7 0 0 / 10%) 0%,
+    oklch(0.5 0.15 270 / 60%) 50%,
+    oklch(0.7 0 0 / 10%) 100%
+  );
+  background-size: 200% 100%;
+  animation: flow-line 2s linear infinite;
+}
+
+.dark .animate-flow-line {
+  background: linear-gradient(
+    90deg,
+    oklch(0.4 0 0 / 10%) 0%,
+    oklch(0.6 0.2 270 / 60%) 50%,
+    oklch(0.4 0 0 / 10%) 100%
+  );
+  background-size: 200% 100%;
+  animation: flow-line 2s linear infinite;
+}
+
+/* ── Pulse Button Animation ────────────────────────────────── */
+
+@keyframes pulse-button {
+  0%, 100% { box-shadow: 0 0 0 0 oklch(0.5 0.2 270 / 40%); }
+  50% { box-shadow: 0 0 0 6px oklch(0.5 0.2 270 / 0%); }
+}
+
+.animate-pulse-button {
+  animation: pulse-button 2s ease-in-out infinite;
+}
+
+/* ── Active Rule Glow ──────────────────────────────────────── */
+
+.active-rule-glow {
+  position: relative;
+}
+.active-rule-glow::after {
+  content: '';
+  position: absolute;
+  inset: -1px;
+  border-radius: inherit;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  pointer-events: none;
+  z-index: -1;
+}
+.active-rule-glow:hover::after {
+  opacity: 1;
+}
+
+/* ── Dot Pattern Animation ─────────────────────────────────── */
+
+@keyframes drift-dots {
+  0% { background-position: 0 0; }
+  100% { background-position: 24px 24px; }
+}
+
+.animate-dots {
+  background-image:
+    radial-gradient(circle, oklch(0.5 0 0 / 6%) 1px, transparent 1px);
+  background-size: 24px 24px;
+  animation: drift-dots 30s linear infinite;
+}
+
+.dark .animate-dots {
+  background-image:
+    radial-gradient(circle, oklch(0.7 0 0 / 8%) 1px, transparent 1px);
+  background-size: 24px 24px;
+}
+
+/* ── Status Animated Icon ──────────────────────────────────── */
+
+@keyframes status-icon-wiggle {
+  0%, 100% { transform: rotate(0deg); }
+  25% { transform: rotate(-5deg); }
+  75% { transform: rotate(5deg); }
+}
+
+.animate-status-icon {
+  animation: status-icon-wiggle 3s ease-in-out infinite;
+}
+
+/* ── Pulsing Red Background ────────────────────────────────── */
+
+@keyframes pulse-red-bg {
+  0%, 100% { background-color: oklch(0.95 0.05 25 / 30%); }
+  50% { background-color: oklch(0.92 0.08 25 / 50%); }
+}
+
+@keyframes pulse-red-bg-dark {
+  0%, 100% { background-color: oklch(0.2 0.05 25 / 20%); }
+  50% { background-color: oklch(0.18 0.08 25 / 35%); }
+}
+
+.animate-pulse-red-bg {
+  animation: pulse-red-bg 2s ease-in-out infinite;
+}
+
+.dark .animate-pulse-red-bg {
+  animation: pulse-red-bg-dark 2s ease-in-out infinite;
+}
+
+/* ── Smoother Global Transitions ───────────────────────────── */
+
+a, button, [role="button"], input, select, textarea {
+  transition: all 0.15s ease;
+}
+
+/* ── Better Focus Visible ──────────────────────────────────── */
+
+*:focus-visible {
+  outline: 2px solid oklch(0.5 0.15 270 / 50%);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+/* ── Stock Level Indicator ─────────────────────────────────── */
+
+.stock-indicator {
+  position: relative;
+  width: 32px;
+  height: 14px;
+  border: 1.5px solid oklch(0.7 0 0 / 30%);
+  border-radius: 2px 2px 3px 3px;
+  overflow: hidden;
+}
+.stock-indicator::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 4px;
+  height: 2px;
+  background: oklch(0.7 0 0 / 30%);
+  border-radius: 0 0 1px 1px;
+}

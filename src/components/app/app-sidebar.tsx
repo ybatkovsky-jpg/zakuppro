@@ -15,6 +15,7 @@ import {
   SidebarSeparator,
 } from '@/components/ui/sidebar'
 import { useAppStore, type ViewType } from '@/store/app-store'
+import Image from 'next/image'
 import {
   LayoutDashboard,
   FolderKanban,
@@ -24,7 +25,7 @@ import {
   FileText,
   BarChart3,
   Settings,
-  Package,
+  Zap,
 } from 'lucide-react'
 
 interface StatsData {
@@ -41,6 +42,7 @@ const mainNavItems: { label: string; icon: React.ElementType; view: ViewType }[]
   { label: 'Счета', icon: FileText, view: 'invoices' },
   { label: 'Склад', icon: Warehouse, view: 'warehouse' },
   { label: 'Аналитика', icon: BarChart3, view: 'analytics' },
+  { label: 'Автоматизация', icon: Zap, view: 'automation' },
 ]
 
 const settingsNavItem: { label: string; icon: React.ElementType; view: ViewType } = {
@@ -151,13 +153,13 @@ export function AppSidebar() {
     <Sidebar collapsible="icon">
       <SidebarHeader className="border-b border-sidebar-border bg-gradient-to-b from-primary/10 via-primary/5 to-transparent">
         <div className="flex items-center gap-2 px-2 py-1">
-          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-primary text-primary-foreground shadow-sm">
-            <Package className="h-4 w-4" />
+          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-white shadow-sm overflow-hidden">
+            <Image src="/logo.png" alt="ПРОМЕБЕЛЬ" width={32} height={32} className="h-8 w-8 object-contain rounded-lg" />
           </div>
           <div className="flex flex-col group-data-[collapsible=icon]:hidden">
-            <span className="text-sm font-bold tracking-tight gradient-text">ЗакупПро</span>
+            <span className="text-sm font-bold tracking-tight gradient-text">ПРОМЕБЕЛЬ</span>
             <span className="text-[10px] text-sidebar-foreground/60">
-              Управление закупками
+              Управление закупками мебели
             </span>
           </div>
         </div>
@@ -189,7 +191,7 @@ export function AppSidebar() {
         <div className="px-2 py-1.5 group-data-[collapsible=icon]:hidden">
           <div className="flex items-center gap-2 mb-1">
             <span className="inline-flex items-center rounded-md bg-primary/10 px-2 py-0.5 text-[10px] font-semibold text-primary tracking-wide">
-              ЗакупПро v2.0
+              ПРОМЕБЕЛЬ v3.0
             </span>
           </div>
           <p className="text-[10px] text-sidebar-foreground/40">

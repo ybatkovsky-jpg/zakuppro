@@ -16,16 +16,16 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "ЗакупПро — Управление закупками",
-  description: "Система управления закупками: проекты, поставщики, склад, счета и запросы",
+  title: "ПРОМЕБЕЛЬ — Управление закупками мебели",
+  description: "Система управления закупками мебели: проекты, поставщики, склад, счета и запросы",
   keywords: ["закупки", "управление", "поставщики", "склад", "счета"],
-  authors: [{ name: "ЗакупПро" }],
+  authors: [{ name: "ПРОМЕБЕЛЬ" }],
   icons: {
-    icon: "https://z-cdn.chatglm.cn/z-ai/static/logo.svg",
+    icon: "/logo.png",
   },
   openGraph: {
-    title: "ЗакупПро",
-    description: "Система управления закупками",
+    title: "ПРОМЕБЕЛЬ",
+    description: "Система управления закупками мебели",
     type: "website",
   },
 };

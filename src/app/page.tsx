@@ -12,10 +12,12 @@ import { Warehouse } from '@/components/app/warehouse'
 import { Requests } from '@/components/app/requests'
 import { Invoices } from '@/components/app/invoices'
 import { Analytics } from '@/components/app/analytics'
+import { Automation } from '@/components/app/automation'
 import { Settings } from '@/components/app/settings'
 import { GlobalSearch } from '@/components/app/global-search'
 import { ThemeToggle } from '@/components/app/theme-toggle'
 import { NotificationCenter } from '@/components/app/notification-center'
+import { AIAssistant } from '@/components/app/ai-assistant'
 import { motion, AnimatePresence } from 'framer-motion'
 
 const pageTitles: Record<string, string> = {
@@ -27,6 +29,7 @@ const pageTitles: Record<string, string> = {
   requests: 'Запросы поставщикам',
   invoices: 'Счета',
   analytics: 'Аналитика',
+  automation: 'Автоматизация',
   warehouse: 'Склад',
   settings: 'Настройки',
 }
@@ -34,7 +37,7 @@ const pageTitles: Record<string, string> = {
 function AppContent() {
   const { currentView } = useAppStore()
 
-  const pageTitle = pageTitles[currentView] ?? 'ЗакупПро'
+  const pageTitle = pageTitles[currentView] ?? 'ПРОМЕБЕЛЬ'
   const hasOwnHeader = currentView === 'project-detail' || currentView === 'supplier-detail'
 
   // Breadcrumb section
@@ -91,10 +94,12 @@ function AppContent() {
           {currentView === 'requests' && <Requests />}
           {currentView === 'invoices' && <Invoices />}
           {currentView === 'analytics' && <Analytics />}
+          {currentView === 'automation' && <Automation />}
           {currentView === 'warehouse' && <Warehouse />}
           {currentView === 'settings' && <Settings />}
         </div>
       </main>
+      <AIAssistant />
     </SidebarProvider>
   )
 }

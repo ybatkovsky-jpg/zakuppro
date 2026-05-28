@@ -42,6 +42,7 @@ model Supplier {
   purchaseRequests PurchaseRequest[]
   invoices      Invoice[]
   emailLogs     EmailLog[]
+  deliveries    Delivery[]
 }
 
 // === PROJECTS ===
@@ -60,6 +61,7 @@ model Project {
   invoices       Invoice[]
   emailLogs      EmailLog[]
   statusHistory  ProjectStatusHistory[]
+  deliveries     Delivery[]
 }
 
 // === PROJECT ITEMS (positions from Excel) ===
@@ -140,6 +142,7 @@ model Invoice {
   project       Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
   supplier      Supplier @relation(fields: [supplierId], references: [id])
   items         InvoiceItem[]
+  delivery      Delivery?
 }
 
 // === INVOICE ITEMS ===
@@ -217,4 +220,37 @@ model ProjectStatusHistory {
   createdAt  DateTime @default(now())
 
   project   Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+}
+
+// === AUTOMATION RULES ===
+model AutomationRule {
+  id          String @id @default(cuid())
+  name        String
+  type        String  // auto_create_requests, auto_status_transition, etc.
+  enabled     Boolean @default(false)
+  config      String  @default("{}") // JSON config
+  lastRunAt   DateTime?
+  runCount    Int     @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+// === DELIVERIES ===
+model Delivery {
+  id             String @id @default(cuid())
+  projectId      String
+  supplierId     String
+  invoiceId      String? @unique
+  status         String @default("pending") // pending, shipped, in_transit, delivered, cancelled
+  trackingNumber String @default("")
+  carrier        String @default("")  // ТК: Деловые Линии, ПЭК, СДЭК, etc.
+  estimatedDate  DateTime?
+  actualDate     DateTime?
+  notes          String @default("")
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  project        Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  supplier       Supplier @relation(fields: [supplierId], references: [id])
+  invoice        Invoice? @relation(fields: [invoiceId], references: [id])
 }

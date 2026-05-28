@@ -89,23 +89,26 @@ interface Project {
 
 // --- Status helpers ---
 
-const STATUS_MAP: Record<string, { label: string; variant: 'default' | 'secondary' | 'outline' | 'destructive'; className?: string }> = {
-  new: { label: 'Новый', variant: 'secondary', className: 'rounded-full px-2.5' },
-  processing: { label: 'В обработке', variant: 'default', className: 'rounded-full px-2.5' },
-  requested: { label: 'Запрошено', variant: 'outline', className: 'rounded-full px-2.5 border-primary/30 text-primary' },
-  invoiced: { label: 'Счёт выставлен', variant: 'outline', className: 'rounded-full px-2.5 border-amber-500 text-amber-700 bg-amber-50 dark:text-amber-400 dark:bg-amber-950/30' },
-  paid: { label: 'Оплачено', variant: 'outline', className: 'rounded-full px-2.5 border-green-500 text-green-700 bg-green-50 dark:text-green-400 dark:bg-green-950/30' },
-  delivered: { label: 'Доставлено', variant: 'outline', className: 'rounded-full px-2.5 border-green-600 text-green-800 bg-green-50 dark:text-green-400 dark:bg-green-950/30' },
-  completed: { label: 'Завершено', variant: 'outline', className: 'rounded-full px-2.5 border-green-700 text-green-900 bg-green-100 dark:text-green-300 dark:bg-green-950/40' },
-  cancelled: { label: 'Отменено', variant: 'destructive', className: 'rounded-full px-2.5' },
+const STATUS_MAP: Record<string, { label: string; variant: 'default' | 'secondary' | 'outline' | 'destructive'; className?: string; dotColor: string }> = {
+  new: { label: 'Новый', variant: 'secondary', className: 'rounded-full px-2.5', dotColor: 'bg-slate-400' },
+  processing: { label: 'В обработке', variant: 'default', className: 'rounded-full px-2.5', dotColor: 'bg-primary' },
+  requested: { label: 'Запрошено', variant: 'outline', className: 'rounded-full px-2.5 border-primary/30 text-primary', dotColor: 'bg-violet-500' },
+  invoiced: { label: 'Счёт выставлен', variant: 'outline', className: 'rounded-full px-2.5 border-amber-500 text-amber-700 bg-amber-50 dark:text-amber-400 dark:bg-amber-950/30', dotColor: 'bg-amber-500' },
+  paid: { label: 'Оплачено', variant: 'outline', className: 'rounded-full px-2.5 border-green-500 text-green-700 bg-green-50 dark:text-green-400 dark:bg-green-950/30', dotColor: 'bg-emerald-500' },
+  delivered: { label: 'Доставлено', variant: 'outline', className: 'rounded-full px-2.5 border-green-600 text-green-800 bg-green-50 dark:text-green-400 dark:bg-green-950/30', dotColor: 'bg-sky-500' },
+  completed: { label: 'Завершено', variant: 'outline', className: 'rounded-full px-2.5 border-green-700 text-green-900 bg-green-100 dark:text-green-300 dark:bg-green-950/40', dotColor: 'bg-emerald-600' },
+  cancelled: { label: 'Отменено', variant: 'destructive', className: 'rounded-full px-2.5', dotColor: 'bg-red-500' },
 }
 
 function StatusBadge({ status }: { status: string }) {
-  const config = STATUS_MAP[status] ?? { label: status, variant: 'secondary' as const, className: 'rounded-full px-2.5' }
+  const config = STATUS_MAP[status] ?? { label: status, variant: 'secondary' as const, className: 'rounded-full px-2.5', dotColor: 'bg-slate-400' }
   return (
-    <Badge variant={config.variant} className={`${config.className} transition-all duration-200 hover:shadow-sm`}>
-      {config.label}
-    </Badge>
+    <div className="flex items-center gap-1.5">
+      <span className={`size-2 rounded-full shrink-0 ${config.dotColor}`} />
+      <Badge variant={config.variant} className={`${config.className} transition-all duration-200 hover:shadow-sm`}>
+        {config.label}
+      </Badge>
+    </div>
   )
 }
 
@@ -524,7 +527,7 @@ export function Projects() {
             {/* Create Project Dialog */}
             <Dialog open={createOpen} onOpenChange={(open) => { setCreateOpen(open); if (!open) resetCreateForm() }}>
               <DialogTrigger asChild>
-                <Button className="transition-all duration-200 hover:shadow-md hover:-translate-y-0.5 hover:scale-[1.02]">
+                <Button className="bg-gradient-to-r from-primary to-primary/80 text-primary-foreground transition-all duration-200 hover:shadow-lg hover:-translate-y-0.5 hover:scale-[1.02] hover:brightness-110">
                   <Plus className="h-4 w-4" />
                   Новый проект
                 </Button>
@@ -749,7 +752,7 @@ export function Projects() {
                     initial={{ opacity: 0, y: 8 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: idx * 0.03, duration: 0.3 }}
-                    className="cursor-pointer group relative transition-all duration-200 hover:bg-primary/[0.03] border-l-2 border-l-transparent hover:border-l-primary/40 hover:shadow-sm"
+                    className={`cursor-pointer group relative transition-all duration-200 hover:bg-primary/[0.04] hover:shadow-sm border-l-2 border-l-transparent hover:border-l-primary/40 ${idx % 2 === 1 ? 'bg-muted/[0.02]' : ''}`}
                     onClick={() => navigateToProject(project.id)}
                   >
                     <TableCell className="font-medium">

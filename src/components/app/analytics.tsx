@@ -18,6 +18,7 @@ import {
   AlertTriangle,
   Inbox,
   ChevronRight,
+  Printer,
 } from 'lucide-react'
 import {
   Card,
@@ -36,6 +37,8 @@ import {
 } from '@/components/ui/table'
 import { Badge } from '@/components/ui/badge'
 import { Skeleton } from '@/components/ui/skeleton'
+import { Button } from '@/components/ui/button'
+import { openReport } from '@/lib/print-report'
 
 // ── Types ──────────────────────────────────────────────────
 
@@ -958,10 +961,21 @@ export function Analytics() {
     >
       {/* Gradient Header */}
       <div className="relative -mx-6 -mt-6 px-6 pt-6 pb-5 bg-gradient-to-b from-violet-500/5 via-violet-500/[0.02] to-transparent">
-        <div>
-          <p className="text-muted-foreground text-sm">
-            Глубокий анализ закупочной деятельности
-          </p>
+        <div className="flex items-center justify-between">
+          <div>
+            <p className="text-muted-foreground text-sm">
+              Глубокий анализ закупочной деятельности
+            </p>
+          </div>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => openReport('procurement-report')}
+            className="gap-1.5 transition-all duration-200 hover:shadow-md hover:-translate-y-0.5"
+          >
+            <Printer className="h-4 w-4" />
+            Печать отчёта
+          </Button>
         </div>
       </div>
 

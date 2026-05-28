@@ -21,9 +21,11 @@ import {
   PlusCircle,
   FileDown,
   XCircle,
+  Printer,
 } from 'lucide-react'
 import { EmptyState } from '@/components/app/empty-state'
 import { exportToCSV } from '@/lib/export-csv'
+import { openReport } from '@/lib/print-report'
 import { motion } from 'framer-motion'
 
 import { Button } from '@/components/ui/button'
@@ -520,6 +522,17 @@ export function Warehouse() {
     [transactions]
   )
 
+  // Category filter
+  const [categoryFilter, setCategoryFilter] = useState('all')
+  const categories = useMemo(() => {
+    const cats = new Set(items.map(i => i.category).filter(Boolean))
+    return Array.from(cats).sort()
+  }, [items])
+  const filteredItems = useMemo(() => {
+    if (categoryFilter === 'all') return items
+    return items.filter(i => i.category === categoryFilter)
+  }, [items, categoryFilter])
+
   // Mutations
   const createItemMutation = useMutation({
     mutationFn: createWarehouseItem,
@@ -757,6 +770,14 @@ export function Warehouse() {
               <Download className="h-4 w-4" />
               Экспорт
             </Button>
+            <Button
+              variant="outline"
+              onClick={() => openReport('warehouse-report')}
+              className="gap-2 shrink-0 transition-all duration-200 hover:shadow-md hover:-translate-y-0.5"
+            >
+              <Printer className="h-4 w-4" />
+              Печать
+            </Button>
           </div>
         </div>
       </div>
@@ -887,6 +908,28 @@ export function Warehouse() {
         </Card>
       )}
 
+      {/* Category Filter Pills */}
+      {categories.length > 1 && (
+        <div className="flex flex-wrap gap-2">
+          <button
+            onClick={() => setCategoryFilter('all')}
+            className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-medium transition-all duration-200 ${categoryFilter === 'all' ? 'bg-primary text-primary-foreground shadow-sm' : 'bg-muted/60 text-muted-foreground hover:bg-muted hover:text-foreground'}`}
+          >
+            <Package className="h-3 w-3" />
+            Все
+          </button>
+          {categories.map((cat) => (
+            <button
+              key={cat}
+              onClick={() => setCategoryFilter(cat === categoryFilter ? 'all' : cat)}
+              className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-medium transition-all duration-200 ${categoryFilter === cat ? 'bg-primary text-primary-foreground shadow-sm' : 'bg-muted/60 text-muted-foreground hover:bg-muted hover:text-foreground'}`}
+            >
+              {cat}
+            </button>
+          ))}
+        </div>
+      )}
+
       {/* Search */}
       <div className="relative max-w-md">
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -942,17 +985,30 @@ export function Warehouse() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {items.map((item) => {
+                {filteredItems.map((item) => {
                   const isLow = item.minQuantity > 0 && item.quantity < item.minQuantity
                   const isOut = item.quantity <= 0
                   return (
                     <TableRow
                       key={item.id}
-                      className={`transition-colors duration-150 ${isOut ? 'bg-red-50/50 dark:bg-red-950/10' : isLow ? 'bg-amber-50/50 dark:bg-amber-950/10' : 'hover:bg-muted/30'}`}
+                      className={`transition-colors duration-150 ${isOut ? 'animate-pulse-red-bg' : isLow ? 'bg-amber-50/50 dark:bg-amber-950/10' : 'hover:bg-muted/30'}`}
                     >
                       <TableCell className="font-medium max-w-[200px] truncate" title={item.name}>
                         <div className="flex items-center gap-2">
-                          <div className={`size-2 rounded-full shrink-0 ${isOut ? 'bg-red-500 animate-pulse-dot' : isLow ? 'bg-amber-500 animate-pulse-dot' : 'bg-emerald-500'}`} />
+                          <div className="flex items-center gap-2">
+                            <div className={`size-2 rounded-full shrink-0 ${isOut ? 'bg-red-500 animate-pulse-dot' : isLow ? 'bg-amber-500 animate-pulse-dot' : 'bg-emerald-500'}`} />
+                            {/* Stock level indicator bar (battery style) */}
+                            {item.minQuantity > 0 && (
+                              <div className="stock-indicator">
+                                <div
+                                  className={`absolute bottom-0 left-0 right-0 transition-all duration-500 ${isOut ? 'bg-red-500' : isLow ? 'bg-amber-500' : 'bg-emerald-500'}`}
+                                  style={{
+                                    height: `${Math.min((item.quantity / (item.minQuantity * 2)) * 100, 100)}%`,
+                                  }}
+                                />
+                              </div>
+                            )}
+                          </div>
                           {item.name}
                         </div>
                       </TableCell>

@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useCallback } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useAppStore } from '@/store/app-store'
 import { useToast } from '@/hooks/use-toast'
@@ -9,6 +9,9 @@ import { Badge } from '@/components/ui/badge'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Textarea } from '@/components/ui/textarea'
 import { Label } from '@/components/ui/label'
+import { Input } from '@/components/ui/input'
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
+import { Progress } from '@/components/ui/progress'
 import {
   Table,
   TableBody,
@@ -86,9 +89,13 @@ import {
   Receipt,
   CreditCard,
   Truck,
+  Printer,
+  MapPin,
+  Navigation,
 } from 'lucide-react'
 import { ProjectTimeline } from '@/components/app/project-timeline'
 import { EmptyState } from '@/components/app/empty-state'
+import { openReport } from '@/lib/print-report'
 
 // --- Types ---
 
@@ -172,6 +179,24 @@ interface StatusHistoryEntry {
   changedBy: string
   notes: string
   createdAt: string
+}
+
+interface Delivery {
+  id: string
+  projectId: string
+  supplierId: string
+  invoiceId: string | null
+  status: string
+  trackingNumber: string
+  carrier: string
+  estimatedDate: string | null
+  actualDate: string | null
+  notes: string
+  createdAt: string
+  updatedAt: string
+  project: { id: string; name: string; status: string }
+  supplier: { id: string; name: string; email: string; phone: string }
+  invoice: { id: string; invoiceNumber: string; totalAmount: number } | null
 }
 
 interface ProjectDetail {
@@ -273,6 +298,16 @@ const INVOICE_STATUS_MAP: Record<string, { label: string; variant: 'default' | '
   paid: { label: 'Оплачен', variant: 'outline', className: 'border-green-700 text-green-900 bg-green-100 dark:text-green-300 dark:bg-green-950/40' },
   cancelled: { label: 'Отменён', variant: 'destructive' },
 }
+
+const DELIVERY_STATUS_MAP: Record<string, { label: string; color: string; bgColor: string; borderColor: string; progress: number }> = {
+  pending: { label: 'Ожидание', color: 'text-slate-600 dark:text-slate-400', bgColor: 'bg-slate-100 dark:bg-slate-900/40', borderColor: 'border-slate-300 dark:border-slate-700', progress: 0 },
+  shipped: { label: 'Отправлено', color: 'text-sky-600 dark:text-sky-400', bgColor: 'bg-sky-100 dark:bg-sky-900/40', borderColor: 'border-sky-300 dark:border-sky-700', progress: 33 },
+  in_transit: { label: 'В пути', color: 'text-amber-600 dark:text-amber-400', bgColor: 'bg-amber-100 dark:bg-amber-900/40', borderColor: 'border-amber-300 dark:border-amber-700', progress: 66 },
+  delivered: { label: 'Доставлено', color: 'text-emerald-600 dark:text-emerald-400', bgColor: 'bg-emerald-100 dark:bg-emerald-900/40', borderColor: 'border-emerald-300 dark:border-emerald-700', progress: 100 },
+  cancelled: { label: 'Отменено', color: 'text-red-600 dark:text-red-400', bgColor: 'bg-red-100 dark:bg-red-900/40', borderColor: 'border-red-300 dark:border-red-700', progress: 0 },
+}
+
+const CARRIERS = ['Деловые Линии', 'ПЭК', 'СДЭК', 'Байкал Сервис', 'КИТ', 'ЖелДорЭкспедиция', 'Энергия', 'Другое']
 
 // --- Status flow diagram config ---
 
@@ -932,6 +967,15 @@ export function ProjectDetail() {
   const [expandedRequests, setExpandedRequests] = useState<Record<string, boolean>>({})
   const [expandedInvoices, setExpandedInvoices] = useState<Record<string, boolean>>({})
   const [statusModalOpen, setStatusModalOpen] = useState(false)
+  const [addDeliveryOpen, setAddDeliveryOpen] = useState(false)
+  const [editDeliveryId, setEditDeliveryId] = useState<string | null>(null)
+
+  // --- Delivery form state ---
+  const [deliverySupplierId, setDeliverySupplierId] = useState('')
+  const [deliveryCarrier, setDeliveryCarrier] = useState('')
+  const [deliveryTrackingNumber, setDeliveryTrackingNumber] = useState('')
+  const [deliveryEstimatedDate, setDeliveryEstimatedDate] = useState('')
+  const [deliveryNotes, setDeliveryNotes] = useState('')
 
   // --- Queries ---
 
@@ -959,6 +1003,25 @@ export function ProjectDetail() {
       return res.json()
     },
     enabled: !!selectedProjectId,
+  })
+
+  const { data: deliveries = [] } = useQuery<Delivery[]>({
+    queryKey: ['project-deliveries', selectedProjectId],
+    queryFn: async () => {
+      const res = await fetch(`/api/deliveries?projectId=${selectedProjectId}`)
+      if (!res.ok) return []
+      return res.json()
+    },
+    enabled: !!selectedProjectId,
+  })
+
+  const { data: suppliers = [] } = useQuery<{ id: string; name: string; email: string }[]>({
+    queryKey: ['suppliers-list'],
+    queryFn: async () => {
+      const res = await fetch('/api/suppliers')
+      if (!res.ok) return []
+      return res.json()
+    },
   })
 
   // --- Mutations ---
@@ -1159,6 +1222,70 @@ export function ProjectDetail() {
     }
   }
 
+  // --- Delivery mutations ---
+
+  const createDeliveryMutation = useMutation({
+    mutationFn: async () => {
+      const res = await fetch('/api/deliveries', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          projectId: selectedProjectId,
+          supplierId: deliverySupplierId,
+          carrier: deliveryCarrier,
+          trackingNumber: deliveryTrackingNumber,
+          estimatedDate: deliveryEstimatedDate || null,
+          notes: deliveryNotes,
+        }),
+      })
+      if (!res.ok) {
+        const err = await res.json()
+        throw new Error(err.error || 'Ошибка создания доставки')
+      }
+      return res.json()
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['project-deliveries', selectedProjectId] })
+      setAddDeliveryOpen(false)
+      resetDeliveryForm()
+      toast({ title: 'Доставка создана' })
+    },
+    onError: (err: Error) => {
+      toast({ title: 'Ошибка', description: err.message, variant: 'destructive' })
+    },
+  })
+
+  const updateDeliveryMutation = useMutation({
+    mutationFn: async ({ id, data }: { id: string; data: Record<string, unknown> }) => {
+      const res = await fetch(`/api/deliveries/${id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data),
+      })
+      if (!res.ok) {
+        const err = await res.json()
+        throw new Error(err.error || 'Ошибка обновления доставки')
+      }
+      return res.json()
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['project-deliveries', selectedProjectId] })
+      toast({ title: 'Доставка обновлена' })
+    },
+    onError: (err: Error) => {
+      toast({ title: 'Ошибка', description: err.message, variant: 'destructive' })
+    },
+  })
+
+  const resetDeliveryForm = useCallback(() => {
+    setDeliverySupplierId('')
+    setDeliveryCarrier('')
+    setDeliveryTrackingNumber('')
+    setDeliveryEstimatedDate('')
+    setDeliveryNotes('')
+    setEditDeliveryId(null)
+  }, [])
+
   // --- Budget summary computations (must be before early returns) ---
   const budgetSummary = useMemo(() => {
     if (!project) return { totalBudget: 0, totalItems: 0, uniqueSuppliers: 0, requestCount: 0 }
@@ -1317,6 +1444,14 @@ export function ProjectDetail() {
         <div className="flex items-center gap-2">
           <Button
             variant="outline"
+            onClick={() => openReport('project-summary', project.id)}
+            className="gap-2 transition-all duration-200 hover:shadow-md hover:-translate-y-0.5"
+          >
+            <Printer className="h-4 w-4" />
+            Печать отчёта
+          </Button>
+          <Button
+            variant="outline"
             onClick={() => window.open(`/api/projects/${project.id}/export`, '_blank')}
             className="gap-2 transition-all duration-200 hover:shadow-md hover:-translate-y-0.5"
           >
@@ -1445,6 +1580,13 @@ export function ProjectDetail() {
             Счета
             <Badge variant="secondary" className="ml-1 h-5 px-1.5 text-[10px] rounded-full">
               {project.invoices.length}
+            </Badge>
+          </TabsTrigger>
+          <TabsTrigger value="deliveries" className="gap-1.5 data-[state=active]:bg-background data-[state=active]:shadow-sm data-[state=active]:border-b-2 data-[state=active]:border-primary">
+            <Truck className="h-4 w-4" />
+            Доставка
+            <Badge variant="secondary" className="ml-1 h-5 px-1.5 text-[10px] rounded-full">
+              {deliveries.length}
             </Badge>
           </TabsTrigger>
           <TabsTrigger value="history" className="gap-1.5 data-[state=active]:bg-background data-[state=active]:shadow-sm data-[state=active]:border-b-2 data-[state=active]:border-primary">
@@ -1817,6 +1959,197 @@ export function ProjectDetail() {
                       </div>
                     </CollapsibleContent>
                   </Collapsible>
+                )
+              })}
+            </div>
+          )}
+        </TabsContent>
+
+        {/* ===== Tab: Доставка ===== */}
+        <TabsContent value="deliveries" className="space-y-4">
+          <div className="flex flex-wrap items-center gap-2">
+            <Button onClick={() => { resetDeliveryForm(); setAddDeliveryOpen(true) }}>
+              <Truck className="h-4 w-4" />
+              Новая доставка
+            </Button>
+            <Button variant="outline" onClick={() => window.open(`/api/reports?type=project-summary&projectId=${project.id}`, '_blank')}>
+              <Printer className="h-4 w-4" />
+              Печать отчёта
+            </Button>
+          </div>
+
+          {/* Add/Edit delivery dialog */}
+          <Dialog open={addDeliveryOpen} onOpenChange={setAddDeliveryOpen}>
+            <DialogContent className="sm:max-w-lg">
+              <DialogHeader>
+                <DialogTitle className="flex items-center gap-2">
+                  <Truck className="h-5 w-5 text-primary" />
+                  Новая доставка
+                </DialogTitle>
+                <DialogDescription>Добавить отслеживание доставки для проекта</DialogDescription>
+              </DialogHeader>
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <Label>Поставщик *</Label>
+                  <Select value={deliverySupplierId} onValueChange={setDeliverySupplierId}>
+                    <SelectTrigger><SelectValue placeholder="Выберите поставщика" /></SelectTrigger>
+                    <SelectContent>
+                      {suppliers.map(s => <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>)}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label>Перевозчик (ТК)</Label>
+                    <Select value={deliveryCarrier} onValueChange={setDeliveryCarrier}>
+                      <SelectTrigger><SelectValue placeholder="Выберите ТК" /></SelectTrigger>
+                      <SelectContent>
+                        {CARRIERS.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Трек-номер</Label>
+                    <Input placeholder="XXX-123456789" value={deliveryTrackingNumber} onChange={e => setDeliveryTrackingNumber(e.target.value)} />
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <Label>Ожидаемая дата доставки</Label>
+                  <input type="date" value={deliveryEstimatedDate} onChange={e => setDeliveryEstimatedDate(e.target.value)} className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-xs transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring" />
+                </div>
+                <div className="space-y-2">
+                  <Label>Примечания</Label>
+                  <Textarea placeholder="Комментарий к доставке..." value={deliveryNotes} onChange={e => setDeliveryNotes(e.target.value)} className="min-h-[60px] resize-none" />
+                </div>
+              </div>
+              <DialogFooter>
+                <Button variant="outline" onClick={() => setAddDeliveryOpen(false)}>Отмена</Button>
+                <Button disabled={!deliverySupplierId || createDeliveryMutation.isPending} onClick={() => createDeliveryMutation.mutate()}>
+                  {createDeliveryMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : <Truck className="h-4 w-4 mr-1" />}
+                  Создать
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
+
+          {/* Delivery cards */}
+          {deliveries.length === 0 ? (
+            <div className="text-center py-12 text-muted-foreground">
+              <Truck className="h-12 w-12 mx-auto mb-3 opacity-30" />
+              <p className="text-sm font-medium">Нет доставок</p>
+              <p className="text-xs mt-1">Создайте доставку для отслеживания</p>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {deliveries.map((delivery, idx) => {
+                const statusConfig = DELIVERY_STATUS_MAP[delivery.status] ?? DELIVERY_STATUS_MAP.pending
+                return (
+                  <motion.div
+                    key={delivery.id}
+                    initial={{ opacity: 0, y: 12 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: idx * 0.06 }}
+                  >
+                    <Card className={`border-l-4 ${statusConfig.borderColor} overflow-hidden`}>
+                      <CardContent className="p-4 sm:p-5">
+                        <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
+                          <div className="flex-1 min-w-0">
+                            {/* Header */}
+                            <div className="flex items-center gap-2 mb-2">
+                              <div className={`flex size-8 items-center justify-center rounded-full ${statusConfig.bgColor}`}>
+                                <Truck className={`size-4 ${statusConfig.color}`} />
+                              </div>
+                              <div>
+                                <p className="font-semibold text-sm">{delivery.carrier || 'Не указан'}</p>
+                                <p className="text-xs text-muted-foreground">{delivery.supplier.name}</p>
+                              </div>
+                              <Badge className={`ml-auto ${statusConfig.bgColor} ${statusConfig.color} border ${statusConfig.borderColor}`}>
+                                {statusConfig.label}
+                              </Badge>
+                            </div>
+
+                            {/* Progress bar */}
+                            <div className="mb-3">
+                              <div className="flex items-center justify-between text-[10px] text-muted-foreground mb-1">
+                                <span>Ожидание</span><span>Отправлено</span><span>В пути</span><span>Доставлено</span>
+                              </div>
+                              <Progress value={statusConfig.progress} className="h-2" />
+                            </div>
+
+                            {/* Details grid */}
+                            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 text-xs">
+                              {delivery.trackingNumber && (
+                                <div className="flex items-center gap-1.5">
+                                  <Navigation className="h-3 w-3 text-muted-foreground" />
+                                  <span className="text-muted-foreground">Трек:</span>
+                                  <span className="font-mono font-medium">{delivery.trackingNumber}</span>
+                                </div>
+                              )}
+                              {delivery.estimatedDate && (
+                                <div className="flex items-center gap-1.5">
+                                  <Clock className="h-3 w-3 text-muted-foreground" />
+                                  <span className="text-muted-foreground">Ожид.:</span>
+                                  <span>{new Date(delivery.estimatedDate).toLocaleDateString('ru-RU')}</span>
+                                </div>
+                              )}
+                              {delivery.actualDate && (
+                                <div className="flex items-center gap-1.5">
+                                  <CheckCircle2 className="h-3 w-3 text-emerald-500" />
+                                  <span className="text-muted-foreground">Факт.:</span>
+                                  <span>{new Date(delivery.actualDate).toLocaleDateString('ru-RU')}</span>
+                                </div>
+                              )}
+                              {delivery.invoice && (
+                                <div className="flex items-center gap-1.5">
+                                  <Receipt className="h-3 w-3 text-muted-foreground" />
+                                  <span className="text-muted-foreground">Счёт:</span>
+                                  <span>{delivery.invoice.invoiceNumber || delivery.invoice.id.slice(0, 8)}</span>
+                                </div>
+                              )}
+                            </div>
+
+                            {delivery.notes && (
+                              <div className="mt-2 text-xs text-muted-foreground bg-muted/30 rounded-md px-2 py-1.5">
+                                {delivery.notes}
+                              </div>
+                            )}
+                          </div>
+                        </div>
+
+                        {/* Actions */}
+                        <div className="flex items-center gap-2 mt-3 pt-3 border-t">
+                          {delivery.status === 'pending' && (
+                            <Button size="sm" variant="outline" className="h-7 text-xs gap-1" onClick={() => updateDeliveryMutation.mutate({ id: delivery.id, data: { status: 'shipped' } })}>
+                              <Navigation className="h-3 w-3" /> Отправлено
+                            </Button>
+                          )}
+                          {delivery.status === 'shipped' && (
+                            <Button size="sm" variant="outline" className="h-7 text-xs gap-1" onClick={() => updateDeliveryMutation.mutate({ id: delivery.id, data: { status: 'in_transit' } })}>
+                              <Truck className="h-3 w-3" /> В пути
+                            </Button>
+                          )}
+                          {delivery.status === 'in_transit' && (
+                            <Button size="sm" className="h-7 text-xs gap-1" onClick={() => updateDeliveryMutation.mutate({ id: delivery.id, data: { status: 'delivered' } })}>
+                              <CheckCircle2 className="h-3 w-3" /> Доставлено
+                            </Button>
+                          )}
+                          {!['delivered', 'cancelled'].includes(delivery.status) && (
+                            <Button size="sm" variant="ghost" className="h-7 text-xs gap-1 text-red-500" onClick={() => updateDeliveryMutation.mutate({ id: delivery.id, data: { status: 'cancelled' } })}>
+                              <Ban className="h-3 w-3" /> Отменить
+                            </Button>
+                          )}
+                          {delivery.status !== 'cancelled' && delivery.status !== 'delivered' && (
+                            <Button size="sm" variant="ghost" className="h-7 text-xs gap-1 ml-auto" onClick={() => {
+                              const newTracking = prompt('Введите трек-номер:', delivery.trackingNumber)
+                              if (newTracking !== null) updateDeliveryMutation.mutate({ id: delivery.id, data: { trackingNumber: newTracking } })
+                            }}>
+                              <Navigation className="h-3 w-3" /> Трек-номер
+                            </Button>
+                          )}
+                        </div>
+                      </CardContent>
+                    </Card>
+                  </motion.div>
                 )
               })}
             </div>

@@ -55,6 +55,7 @@ import {
   CircleDollarSign,
   ChevronRight,
   ShieldCheck,
+  Navigation,
 } from 'lucide-react'
 import { formatRelativeTime } from '@/lib/utils'
 import { useMemo } from 'react'
@@ -346,21 +347,23 @@ function StatCard({
   return (
     <motion.div variants={itemVariants} className="h-full">
       <Card
-        className={`relative overflow-hidden transition-all duration-300 ${borderColor ? `border-l-4 ${borderColor}` : ''} ${cardClassName ?? ''} ${isClickable ? 'cursor-pointer hover:shadow-lg hover:-translate-y-0.5 active:scale-[0.98]' : 'hover:shadow-md'}`}
+        className={`relative overflow-hidden transition-all duration-300 group ${borderColor ? `border-l-4 ${borderColor}` : ''} ${cardClassName ?? ''} ${isClickable ? 'cursor-pointer hover:shadow-lg hover:-translate-y-0.5 active:scale-[0.98]' : 'hover:shadow-md'}`}
         onClick={onClick}
       >
         {/* Gradient background */}
         <div className={`absolute inset-0 bg-gradient-to-br ${gradientBg} pointer-events-none`} />
         {/* Subtle inner shadow for depth */}
         <div className="absolute inset-0 shadow-[inset_0_1px_0_oklch(1_0_0/0.05)] dark:shadow-[inset_0_1px_0_oklch(1_0_0/0.03)] pointer-events-none" />
+        {/* Inner glow on hover */}
+        <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none shadow-[inset_0_0_20px_oklch(0.5_0.15_270/0.06)] dark:shadow-[inset_0_0_20px_oklch(0.6_0.2_270/0.05)]" />
         <CardHeader className="relative flex flex-row items-center justify-between pb-2">
           <CardDescription className="text-sm font-medium">
             {title}
           </CardDescription>
           <div className="flex items-center gap-2">
             {sparkColor && <MiniSparkline color={sparkColor} />}
-            <div className={`flex size-9 items-center justify-center rounded-full ${iconBg}`}>
-              <Icon className={`size-[18px] shrink-0 ${iconClassName ?? 'text-muted-foreground'}`} />
+            <div className={`flex size-9 items-center justify-center rounded-full ${iconBg} transition-transform duration-300 group-hover:rotate-6 group-hover:scale-110`}>
+              <Icon className={`size-[18px] shrink-0 ${iconClassName ?? 'text-muted-foreground'} transition-transform duration-200`} />
             </div>
           </div>
         </CardHeader>
@@ -745,6 +748,104 @@ function UrgentItemsSection({ items }: { items: UrgentItem[] }) {
 
 // ── Skeleton Loader ─────────────────────────────────────────────────────────
 
+// ── Delivery Tracking Widget ────────────────────────────────────────────────
+
+interface DashboardDelivery {
+  id: string
+  status: string
+  trackingNumber: string
+  carrier: string
+  estimatedDate: string | null
+  actualDate: string | null
+  project: { id: string; name: string }
+  supplier: { id: string; name: string }
+}
+
+function DeliveryTrackingWidget() {
+  const { navigateToProject } = useAppStore()
+
+  const { data: deliveries = [], isLoading } = useQuery<DashboardDelivery[]>({
+    queryKey: ['dashboard-deliveries'],
+    queryFn: async () => {
+      const res = await fetch('/api/deliveries')
+      if (!res.ok) return []
+      return res.json()
+    },
+    refetchInterval: 60_000,
+  })
+
+  const activeDeliveries = deliveries.filter(d => ['pending', 'shipped', 'in_transit'].includes(d.status))
+
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'pending': return 'bg-slate-100 dark:bg-slate-900/40 text-slate-600 dark:text-slate-400 border-slate-300 dark:border-slate-700'
+      case 'shipped': return 'bg-sky-100 dark:bg-sky-900/40 text-sky-600 dark:text-sky-400 border-sky-300 dark:border-sky-700'
+      case 'in_transit': return 'bg-amber-100 dark:bg-amber-900/40 text-amber-600 dark:text-amber-400 border-amber-300 dark:border-amber-700'
+      case 'delivered': return 'bg-emerald-100 dark:bg-emerald-900/40 text-emerald-600 dark:text-emerald-400 border-emerald-300 dark:border-emerald-700'
+      default: return 'bg-red-100 dark:bg-red-900/40 text-red-600 dark:text-red-400 border-red-300 dark:border-red-700'
+    }
+  }
+
+  const getStatusLabel = (status: string) => {
+    switch (status) {
+      case 'pending': return 'Ожидание'
+      case 'shipped': return 'Отправлено'
+      case 'in_transit': return 'В пути'
+      case 'delivered': return 'Доставлено'
+      case 'cancelled': return 'Отменено'
+      default: return status
+    }
+  }
+
+  if (isLoading) return null
+  if (activeDeliveries.length === 0) return null
+
+  return (
+    <motion.div variants={itemVariants}>
+      <Card className="relative overflow-hidden">
+        <div className="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-transparent via-teal-500/60 to-transparent" />
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Truck className="size-5 text-teal-500" />
+            Ожидание доставки
+          </CardTitle>
+          <CardDescription>Активные доставки в пути</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-3 max-h-72 overflow-y-auto custom-scrollbar">
+            {activeDeliveries.map((delivery, idx) => (
+              <motion.button
+                key={delivery.id}
+                initial={{ opacity: 0, x: -8 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ delay: idx * 0.05 }}
+                onClick={() => navigateToProject(delivery.project.id)}
+                className="group flex w-full items-center gap-3 rounded-xl border p-3 text-left transition-all duration-200 hover:shadow-md hover:-translate-y-0.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+              >
+                <div className={`flex size-9 shrink-0 items-center justify-center rounded-full border ${getStatusColor(delivery.status)}`}>
+                  <Navigation className="size-4" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2">
+                    <p className="text-sm font-medium truncate">{delivery.project.name}</p>
+                    <Badge variant="outline" className={`shrink-0 text-[10px] px-1.5 border ${getStatusColor(delivery.status)}`}>
+                      {getStatusLabel(delivery.status)}
+                    </Badge>
+                  </div>
+                  <p className="text-xs text-muted-foreground mt-0.5">
+                    {delivery.carrier}{delivery.trackingNumber ? ` • ${delivery.trackingNumber}` : ''} • {delivery.supplier.name}
+                  </p>
+                </div>
+                <ChevronRight className="size-4 text-muted-foreground group-hover:translate-x-0.5 transition-transform" />
+              </motion.button>
+            ))}
+          </div>
+        </CardContent>
+      </Card>
+    </motion.div>
+  )
+}
+
 function DashboardSkeleton() {
   return (
     <div className="space-y-6">
@@ -829,7 +930,7 @@ function QuickActionCard({
       whileHover={{ y: -4, scale: 1.02 }}
       whileTap={{ scale: 0.98 }}
       onClick={onClick}
-      className="group flex flex-col items-center gap-2.5 rounded-xl border bg-card p-4 text-center transition-all duration-200 hover:shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+      className="group gradient-border flex flex-col items-center gap-2.5 rounded-xl border bg-card p-4 text-center transition-all duration-200 hover:shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
     >
       <div className={`flex size-12 items-center justify-center rounded-full ${iconBg} transition-transform duration-200 group-hover:scale-110`}>
         <Icon className={`size-6 ${iconColor}`} />
@@ -931,6 +1032,8 @@ export function Dashboard() {
         variants={itemVariants}
         className="relative -mx-6 -mt-6 px-6 pt-6 pb-5 bg-gradient-to-b from-primary/8 via-primary/[0.03] to-transparent overflow-hidden"
       >
+        {/* Animated dot pattern background */}
+        <div className="absolute inset-0 animate-dots opacity-60" />
         {/* Animated gradient background accent */}
         <div className="absolute inset-0 opacity-30 dark:opacity-20">
           <div className="absolute top-0 right-0 w-64 h-64 rounded-full bg-gradient-to-br from-primary/20 to-transparent blur-3xl animate-pulse-soft" />
@@ -958,7 +1061,7 @@ export function Dashboard() {
         </div>
         <div className="mt-3">
           <h3 className="text-lg font-semibold tracking-tight">
-            <span className="gradient-text">ЗакупПро</span>
+            <span className="gradient-text">ПРОМЕБЕЛЬ</span>
             <span className="text-muted-foreground font-normal text-base ml-2">— обзор</span>
           </h3>
         </div>
@@ -1017,6 +1120,7 @@ export function Dashboard() {
       </div>
 
       {/* ── Stats Row 2 (3 cards) ─────────────────────────────────────── */}
+      <div className="h-px bg-gradient-to-r from-transparent via-border to-transparent" />
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
         <StatCard
           title="Активных проектов"
@@ -1103,6 +1207,9 @@ export function Dashboard() {
 
       {/* ── Urgent Items / Pending Actions ────────────────────────────── */}
       <UrgentItemsSection items={urgentItems} />
+
+      {/* ── Ожидание доставки ──────────────────────────────────────────── */}
+      <DeliveryTrackingWidget />
 
       {/* ── Budget Overview Section (full width, improved) ───────────── */}
       <motion.div variants={itemVariants}>
