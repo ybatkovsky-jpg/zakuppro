@@ -217,6 +217,95 @@ export async function GET() {
       }
     })
 
+    // ── Urgent Items Data ───────────────────────────────────────────────────
+    const urgentItems: Array<{
+      type: 'create_request' | 'check_invoice' | 'restock' | 'await_delivery'
+      label: string
+      targetId: string
+      urgency: 'pending' | 'urgent'
+    }> = []
+
+    // Projects with status "new" that have no requests yet
+    const newProjectsWithoutRequests = await db.project.findMany({
+      where: { status: 'new' },
+      select: {
+        id: true,
+        name: true,
+        items: {
+          select: { id: true },
+        },
+      },
+      take: 5,
+    })
+
+    for (const project of newProjectsWithoutRequests) {
+      if (project.items.length > 0) {
+        const hasRequests = await db.purchaseRequestItem.findFirst({
+          where: { projectItemId: { in: project.items.map((i) => i.id) } },
+        })
+        if (!hasRequests) {
+          urgentItems.push({
+            type: 'create_request',
+            label: `Создать запросы: ${project.name}`,
+            targetId: project.id,
+            urgency: 'pending',
+          })
+        }
+      }
+    }
+
+    // Invoices with status "received"
+    const receivedInvoices = await db.invoice.findMany({
+      where: { status: 'received' },
+      select: { id: true, invoiceNumber: true },
+      take: 5,
+    })
+
+    for (const invoice of receivedInvoices) {
+      urgentItems.push({
+        type: 'check_invoice',
+        label: `Проверить счёт: ${invoice.invoiceNumber}`,
+        targetId: invoice.id,
+        urgency: 'urgent',
+      })
+    }
+
+    // Warehouse items with low stock
+    const allWarehouseItemsForUrgent = await db.warehouseItem.findMany({
+      select: { id: true, name: true, quantity: true, minQuantity: true },
+    })
+    const lowStockWarehouseItems = allWarehouseItemsForUrgent
+      .filter((i) => i.quantity < i.minQuantity)
+      .slice(0, 5)
+
+    for (const item of lowStockWarehouseItems) {
+      urgentItems.push({
+        type: 'restock',
+        label: `Пополнить: ${item.name}`,
+        targetId: item.id,
+        urgency: 'urgent',
+      })
+    }
+
+    // Projects with status "paid" (awaiting delivery)
+    const paidProjects = await db.project.findMany({
+      where: { status: 'paid' },
+      select: { id: true, name: true },
+      take: 5,
+    })
+
+    for (const project of paidProjects) {
+      urgentItems.push({
+        type: 'await_delivery',
+        label: `Ожидание доставки: ${project.name}`,
+        targetId: project.id,
+        urgency: 'pending',
+      })
+    }
+
+    // Limit to 5 most urgent items
+    const limitedUrgentItems = urgentItems.slice(0, 5)
+
     return NextResponse.json({
       totalProjects,
       activeProjects,
@@ -234,6 +323,7 @@ export async function GET() {
       warehouseStockData,
       budgetData,
       projectCostData,
+      urgentItems: limitedUrgentItems,
     })
   } catch (error) {
     console.error('Stats error:', error)

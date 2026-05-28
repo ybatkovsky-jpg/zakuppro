@@ -1,5 +1,314 @@
 # ЗакупПро — Project Worklog
 
+## Session 7: QA Review, Rich Seed Data, Project Detail & Settings Improvements
+
+### Current Project Status Assessment
+
+The app has gone through 6 development rounds with 10 navigable views. The previous session (6) focused on dashboard styling overhaul, Kanban board, analytics improvements, and page-level stats cards. Quality rating was 8/10 overall.
+
+### QA Findings (Session 7 Start)
+
+**Agent-Browser + VLM Assessment:**
+- All pages load correctly, no console errors, lint passes clean
+- All API endpoints returning 200
+- Main issue: Many pages looked empty (Invoices, Requests, Analytics) due to insufficient seed data
+- Settings page lacked notification/integration sections
+- Project Detail page lacked budget summary cards
+- Dashboard needed urgent items/pending actions section
+
+**VLM Quality Ratings (Before Session 7):**
+- Dashboard: 9/10 (visual), but data was sparse
+- Invoices: 8/10 (workflow visualization good), but empty data
+- Suppliers: 7/10
+- Settings: 8/10 but missing features
+- Project Detail: needed budget breakdown
+
+### Changes Made in Session 7
+
+#### 1. Rich Seed Data (Task 2+3)
+- Enhanced `/api/seed` endpoint with 5 projects across all statuses
+- Added 4 purchase requests (draft, sent, responded)
+- Added 4 invoices (received, verified, approved, paid)
+- Added 10 warehouse items across 5 categories
+- Added 8 stock movements
+- Added status history for each project
+- Result: All pages now show real data instead of empty states
+
+#### 2. Project Detail Budget Cards (Task 2+3)
+- Added 4 budget summary cards (Бюджет, Позиций, Поставщиков, Запросов)
+- Added budget breakdown by category with animated horizontal bars
+- Enhanced status banner with "Следующий шаг" suggestions per status
+- Staggered framer-motion entrance animations
+
+#### 3. Settings Page — Notification Preferences (Task 4+5)
+- Added 5 notification toggle switches (email, low stock, new invoices, project status, daily summary)
+- Switch component with local state persistence
+
+#### 4. Settings Page — Integration Settings (Task 4+5)
+- SMTP server + port fields in 2-column grid
+- Email sender and API key with show/hide toggle
+- "Тест подключения" button with simulated test
+
+#### 5. Settings — Company Details Layout (Task 4+5)
+- 2-column grid for INN+KPP and BIK+account fields
+- Separator components between field groups
+- Enhanced document preview with dashed border and formal letterhead styling
+
+#### 6. Dashboard — Urgent Items Section (Task 4+5)
+- "Требуют внимания" section with actionable items
+- Items: create requests, check invoices, restock items, await delivery
+- Green "Всё под контролем ✓" when no urgent items
+- Navigation to relevant pages on click
+- Added urgentItems to /api/stats response
+
+#### 7. Dashboard — Quick Actions Improvement (Task 4+5)
+- Replaced flat buttons with interactive card grid
+- 4 action cards: Новый проект, Добавить поставщика, Записать на склад, Создать запрос
+- framer-motion hover/tap animations
+
+### VLM Quality Ratings (After Session 7)
+- Dashboard: 9/10
+- Invoices: 8/10 (now with real data)
+- Project Detail: 9/10 (budget cards excellent)
+- Settings: 8/10 (new sections good)
+- Overall: 8.5/10
+
+### Verification
+- `bun run lint`: Clean pass
+- Dev server: No runtime errors
+- Agent-browser: No console errors
+- Seed data: All entities created successfully
+
+### Unresolved Issues / Next Phase Recommendations
+- Email integration is template-only (no actual email sending via SMTP)
+- Could add PDF generation for invoices/reports
+- Could add user authentication via NextAuth.js
+- Could add bulk operations (multi-select, batch status changes)
+- Could add procurement approval workflow with role-based access
+- Could add delivery tracking integration
+- Could add data import from other sources (1C, SAP)
+- Could add project comparison view (side-by-side)
+- Light mode could use more refinement (some gradient backgrounds designed for dark theme)
+
+---
+
+## Subagent Task Logs (Session 7)
+
+## Task 2+3: Seed Data & Project Detail Agent
+
+### Summary
+Created rich seed data so all pages look populated (Projects, Requests, Invoices, Warehouse, Analytics), and improved the Project Detail page with budget summary cards, budget breakdown by category, and enhanced status banner with next-step suggestions.
+
+### 1. Enhanced Seed Data
+
+**File**: `/home/z/my-project/src/app/api/seed/route.ts`
+
+Completely rewrote the seed endpoint with much richer data:
+
+**Projects (5 projects with different statuses):**
+- "Ремонт офиса - Москва" (processing) — 8 items, 3 suppliers
+- "Строительство склада - Подольск" (requested) — 6 items, 3 suppliers
+- "Оснащение производства - Тула" (invoiced) — 7 items with mixed statuses (invoiced/requested)
+- "Закупка оборудования - СПб" (paid) — 8 items with mixed statuses (delivered/invoiced)
+- "Монтаж вентиляции - Казань" (delivered) — 8 items, all delivered
+
+**Purchase Requests (4 requests with different statuses):**
+- Draft request to ТехноПром for Оснащение производства project
+- Sent request to ЭлектроПоставка for Закупка оборудования project (3 days ago)
+- Responded request to ТехноПром for Монтаж вентиляции project (7 days ago, responded 2 days ago)
+- Sent request to СтройМатериалы for Строительство склада project (2 days ago)
+
+**Invoices (4 invoices with different statuses):**
+- Approved invoice СЧ-2026-001 from ТехноПром for Монтаж вентиляции project
+- Verified invoice СЧ-2026-002 from ЭлектроПоставка for Закупка оборудования project (with price mismatch on 1 item)
+- Paid invoice СЧ-2026-003 from Сидоров for Монтаж вентиляции project
+- Received invoice СЧ-2026-004 from МетизГрупп for Оснащение производства project
+
+**Warehouse Items (10 items in different categories):**
+- 5 original items (Кабель, Саморез, Изолента, Дюбель, Грунтовка)
+- 5 new items (Труба ПП D20, Фильтр воздушный, Шайба плоская, Краска эмаль, Предохранитель)
+
+**Stock Movements (8 movements):**
+- Mix of in/out movements across different items and projects
+- Dated over the past 5 days
+
+**Status History:**
+- Auto-generated for each project that isn't "new" status
+- Creates "new" → current status transitions
+
+**Technical improvements:**
+- Warehouse items now use article-based deduplication instead of "skip all if any exist"
+- Individual items can be added without re-seeding the entire database
+- Company details has fallback error handling for read-only database scenarios
+
+### 2. Project Detail Page Improvements
+
+**File**: `/home/z/my-project/src/components/app/project-detail.tsx`
+
+**Budget Summary Cards (new section between header and tabs):**
+- 4 mini summary cards in a responsive grid (2 cols on mobile, 4 cols on lg):
+  - "Бюджет" — total budget (sum of item.price × item.quantity), DollarSign icon, emerald color
+  - "Позиций" — total items count, Package icon, sky color
+  - "Поставщиков" — unique supplier count, Building2 icon, violet color
+  - "Запросов" — purchase request count, Mail icon, amber color
+- Each card: colored icon in rounded-full bg (size-10), bold value (text-2xl), description text, gradient background
+- Staggered framer-motion entrance animations (0, 0.05, 0.1, 0.15s delay)
+- Hover shadow effect
+
+**Budget Breakdown by Category (new section in Items tab):**
+- Horizontal bar chart of budget by category
+- Each category shows: name, amount, and animated colored bar
+- Bars animate from width 0 to their percentage width using framer-motion
+- CATEGORY_COLORS array: emerald, sky, violet, amber, teal, rose, orange, cyan, pink, lime
+- Total budget summary at the bottom with separator
+- ShoppingCart icon header
+- Positioned above the supplier groups in the Items tab
+
+**Enhanced Status Banner:**
+- Increased padding from py-3 to py-4
+- Larger status indicator circle (size-8 with size-2.5 dot inside)
+- Bold status label
+- Added "Следующий шаг" suggestion with Lightbulb + ArrowRight icons
+- Status-dependent suggestions:
+  - new → "Создайте запросы поставщикам"
+  - processing → "Отправьте запросы и дождитесь ответа"
+  - requested → "Получите счета от поставщиков"
+  - invoiced → "Проверьте и оплатите счета"
+  - paid → "Ожидайте доставку"
+  - delivered → "Завершите проект"
+- Suggestion hidden for completed/cancelled projects
+- Responsive: wraps on mobile with flex-wrap
+
+**New imports added:**
+- `useMemo` from React (for budget computations)
+- `DollarSign`, `Building2`, `ArrowRight`, `Lightbulb` from lucide-react
+
+**New constants:**
+- `STATUS_NEXT_STEP` — maps project status to next step suggestion
+- `CATEGORY_COLORS` — 10-color palette for budget breakdown bars
+
+**Hook placement fix:**
+- Moved `budgetSummary` and `budgetByCategory` useMemo hooks before early return statements to comply with React hooks rules
+
+### Verification
+- `bun run lint`: Clean pass
+- Dev server: No runtime errors
+- All API endpoints returning 200
+- All data seeded successfully: 5 projects, 4 requests, 4 invoices, 10 warehouse items, 8 stock movements
+
+### Files Modified
+- `/home/z/my-project/src/app/api/seed/route.ts` — Complete rewrite with richer seed data
+- `/home/z/my-project/src/components/app/project-detail.tsx` — Budget summary cards, budget breakdown, enhanced status banner
+
+---
+
+## Task 4+5: Settings & Dashboard Improvement Agent
+
+### Summary
+Improved the Settings page with Notification Preferences, Integration Settings, enhanced Company Details layout, and better document preview. Added Urgent Items / Pending Actions section and improved Quick Actions on the Dashboard.
+
+### 1. Settings Page — Notification Preferences Section (New)
+**File**: `/home/z/my-project/src/components/app/settings.tsx`
+
+- Added new SectionCard with Bell icon, amber-600 accent color
+- Title: "Уведомления", Description: "Настройте способы получения уведомлений"
+- 5 toggle switches using the Switch component from shadcn/ui:
+  - "Email уведомления" — enabled by default, description: "Получать уведомления на email"
+  - "Уведомления о низком запасе" — enabled by default, description: "Предупреждения когда остаток ниже минимума"
+  - "Уведомления о новых счетах" — enabled by default, description: "Уведомлять при поступлении новых счетов"
+  - "Уведомления о статусе проектов" — enabled by default, description: "Оповещения при изменении статуса проекта"
+  - "Ежедневная сводка" — disabled by default, description: "Краткий отчёт каждый рабочий день"
+- Each toggle row: label, description, Switch component on the right
+- Rows have hover:bg-muted/50 transition, separated by Separator components
+- "Сохранить" button at the bottom with `hover:shadow-md hover:-translate-y-0.5` effects
+- State stored locally via useState (no API persistence)
+
+### 2. Settings Page — Integration Settings Section (New)
+- Added new SectionCard with Globe icon, sky-600 accent color
+- Title: "Интеграции", Description: "Настройки подключений к внешним сервисам"
+- Fields:
+  - "Email сервер (SMTP)" — Input with placeholder "smtp.example.com"
+  - "Порт" — Input with placeholder "587"
+  - Both in a 2-column grid (sm:grid-cols-2)
+  - "Email отправителя" — Input with placeholder "zakupki@company.ru"
+  - "API ключ" — Input with placeholder "sk-..." and show/hide toggle (Eye/EyeOff icons)
+- Separator between SMTP+Port and Email+API fields
+- "Тест подключения" button (Plug icon) with simulated test (1.5s delay, toast result)
+- "Сохранить" button with hover effects
+- State stored locally via useState
+
+### 3. Settings Page — Company Details Form Layout Improvements
+- Changed INN + KПП from 3-column grid to 2-column grid (`grid-cols-2`)
+- Changed BIK + Расчётный счёт to 2-column grid (was 3-column)
+- Added Separator components between field groups:
+  - After company name
+  - Between address and email/phone fields
+  - Between bank name and BIK/account fields
+- Added new icon imports: Bell, Globe, Eye, EyeOff, Plug, CheckCircle2
+- Added Switch import from shadcn/ui
+- Enhanced document preview:
+  - Added "Предпросмотр реквизитов" label badge with tracking-wider uppercase text
+  - Changed border to dashed style (`border-2 border-dashed border-primary/20`)
+  - INN/KPP/OGRN shown as rounded badges with `bg-muted/50` background
+  - Formal letterhead layout with thicker dividers (`border-b-2 border-foreground/10`)
+  - Bank section also uses thicker dividers
+- All save buttons now have `hover:shadow-md hover:-translate-y-0.5 transition-all duration-200`
+- Added teal-600 color to sectionColorMap
+
+### 4. Dashboard — Urgent Items / Pending Actions Section (New)
+**File**: `/home/z/my-project/src/components/app/dashboard.tsx`
+
+- Added `UrgentItem` interface with type, label, targetId, urgency fields
+- Added `urgentItems` to `StatsData` interface
+- Created `UrgentItemsSection` component:
+  - Card with AlertTriangle icon, amber accent top border
+  - Title: "Требуют внимания", Description: "Действия, которые необходимо выполнить"
+  - Each item: clickable card with:
+    - Left colored indicator bar (amber for pending, red for urgent)
+    - Icon in colored circle (violet for create_request, amber for check_invoice, red for restock, sky for await_delivery)
+    - Action description text
+    - "Перейти →" link with ChevronRight, hover:translate-x
+  - If no urgent items: green "Всё под контролем ✓" with ShieldCheck icon
+  - Navigation: create_request/await_delivery → navigateToProject, check_invoice → navigate('invoices'), restock → navigate('warehouse')
+  - Max 5 items from API
+- Added new imports: ChevronRight, ShieldCheck
+- Placed after KPI Summary Row, before Budget section
+
+### 5. Dashboard — Quick Actions Section Improvement
+- Replaced flat button row with improved QuickActionCard component:
+  - 4 action cards in a 2x2 / 4-col grid
+  - Each card: icon in colored circle, label, description, hover animation (y:-4, scale:1.02)
+  - "Новый проект" — FolderKanban icon, primary color, "Создать проект закупки"
+  - "Добавить поставщика" — Building2 icon, sky color, "Новый контрагент"
+  - "Записать на склад" — Warehouse icon, teal color, "Приёмка товаров"
+  - "Создать запрос" — Mail icon, violet color, "Запрос поставщикам"
+- glass-card style retained on the container Card
+- Added CardHeader with "Быстрые действия" title
+- framer-motion whileHover and whileTap animations on each card
+
+### 6. Stats API — Urgent Items Data
+**File**: `/home/z/my-project/src/app/api/stats/route.ts`
+
+- Added `urgentItems` array to the stats API response
+- Computes urgent items from 4 data sources:
+  - Projects with status "new" that have no purchase requests → "Создать запросы: {name}" (pending)
+  - Invoices with status "received" → "Проверить счёт: {number}" (urgent)
+  - Warehouse items with quantity < minQuantity → "Пополнить: {name}" (urgent)
+  - Projects with status "paid" → "Ожидание доставки: {name}" (pending)
+- Limited to 5 items max
+- Each item: { type, label, targetId, urgency }
+
+### Lint Check
+- `bun run lint` passed with no errors
+- Dev server running with no runtime errors
+
+### Files Modified
+- `/home/z/my-project/src/components/app/settings.tsx` — Notification Preferences, Integration Settings, form layout improvements
+- `/home/z/my-project/src/components/app/dashboard.tsx` — Urgent Items section, Quick Actions improvement
+- `/home/z/my-project/src/app/api/stats/route.ts` — Urgent items API data
+
+---
+
 ## Session 6: Comprehensive QA, Styling Overhaul, and Feature Additions
 
 ### Current Project Status Assessment (Start of Session 6)

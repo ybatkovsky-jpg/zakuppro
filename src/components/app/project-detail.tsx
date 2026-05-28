@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useMemo } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useAppStore } from '@/store/app-store'
 import { useToast } from '@/hooks/use-toast'
@@ -61,6 +61,10 @@ import {
   History,
   Package,
   Download,
+  DollarSign,
+  Building2,
+  ArrowRight,
+  Lightbulb,
 } from 'lucide-react'
 import { ProjectTimeline } from '@/components/app/project-timeline'
 import { EmptyState } from '@/components/app/empty-state'
@@ -159,6 +163,34 @@ interface ProjectDetail {
   invoices: Invoice[]
   statusHistory?: StatusHistoryEntry[]
 }
+
+// --- Next Step suggestions ---
+
+const STATUS_NEXT_STEP: Record<string, string> = {
+  new: 'Создайте запросы поставщикам',
+  processing: 'Отправьте запросы и дождитесь ответа',
+  requested: 'Получите счета от поставщиков',
+  invoiced: 'Проверьте и оплатите счета',
+  paid: 'Ожидайте доставку',
+  delivered: 'Завершите проект',
+  completed: 'Проект завершён',
+  cancelled: 'Проект отменён',
+}
+
+// --- Category color map ---
+
+const CATEGORY_COLORS = [
+  'bg-emerald-500',
+  'bg-sky-500',
+  'bg-violet-500',
+  'bg-amber-500',
+  'bg-teal-500',
+  'bg-rose-500',
+  'bg-orange-500',
+  'bg-cyan-500',
+  'bg-pink-500',
+  'bg-lime-500',
+]
 
 // --- Status helpers ---
 
@@ -456,6 +488,33 @@ export function ProjectDetail() {
     }
   }
 
+  // --- Budget summary computations (must be before early returns) ---
+  const budgetSummary = useMemo(() => {
+    if (!project) return { totalBudget: 0, totalItems: 0, uniqueSuppliers: 0, requestCount: 0 }
+    const totalBudget = project.items.reduce((sum, i) => sum + i.price * i.quantity, 0)
+    const totalItems = project.items.length
+    const uniqueSuppliers = new Set(project.items.filter(i => i.supplierId).map(i => i.supplierId)).size
+    const requestCount = project.purchaseRequests.length
+    return { totalBudget, totalItems, uniqueSuppliers, requestCount }
+  }, [project])
+
+  const budgetByCategory = useMemo(() => {
+    if (!project) return []
+    const catMap: Record<string, number> = {}
+    for (const item of project.items) {
+      const cat = item.category || 'Без категории'
+      catMap[cat] = (catMap[cat] || 0) + item.price * item.quantity
+    }
+    const entries = Object.entries(catMap).sort((a, b) => b[1] - a[1])
+    const maxAmount = entries.length > 0 ? entries[0][1] : 1
+    return entries.map(([category, amount], idx) => ({
+      category,
+      amount,
+      percent: (amount / maxAmount) * 100,
+      color: CATEGORY_COLORS[idx % CATEGORY_COLORS.length],
+    }))
+  }, [project])
+
   // --- Loading ---
 
   if (isLoading) {
@@ -496,6 +555,7 @@ export function ProjectDetail() {
 
   // --- Status banner color ---
   const statusBanner = PROJECT_STATUS_MAP[project?.status ?? 'new']
+  const nextStep = STATUS_NEXT_STEP[project?.status ?? 'new']
 
   return (
     <div className="space-y-4">
@@ -504,13 +564,26 @@ export function ProjectDetail() {
         <motion.div
           initial={{ opacity: 0, y: -8 }}
           animate={{ opacity: 1, y: 0 }}
-          className={`-mx-6 -mt-6 px-6 py-3 border-b ${statusBanner.bannerClass}`}
+          className={`-mx-6 -mt-6 px-6 py-4 border-b ${statusBanner.bannerClass}`}
         >
-          <div className="flex items-center gap-2 text-sm font-medium">
-            <div className="size-2 rounded-full bg-current opacity-60" />
-            Статус: {statusBanner.label}
-            {project.customerName && (
-              <span className="opacity-60">• Заказчик: {project.customerName}</span>
+          <div className="flex items-center justify-between flex-wrap gap-2">
+            <div className="flex items-center gap-3 text-sm font-medium">
+              <div className="flex size-8 items-center justify-center rounded-full bg-current/10">
+                <div className="size-2.5 rounded-full bg-current opacity-80" />
+              </div>
+              <div>
+                <span className="font-semibold">Статус: {statusBanner.label}</span>
+                {project.customerName && (
+                  <span className="opacity-60 ml-2">• Заказчик: {project.customerName}</span>
+                )}
+              </div>
+            </div>
+            {nextStep && project.status !== 'completed' && project.status !== 'cancelled' && (
+              <div className="flex items-center gap-1.5 text-xs opacity-80">
+                <Lightbulb className="h-3.5 w-3.5" />
+                <span>Следующий шаг: {nextStep}</span>
+                <ArrowRight className="h-3 w-3" />
+              </div>
             )}
           </div>
         </motion.div>
@@ -575,6 +648,85 @@ export function ProjectDetail() {
         </div>
       </div>
 
+      {/* Budget Summary Cards */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+        <motion.div
+          initial={{ opacity: 0, y: 12 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0 }}
+          className="rounded-xl border bg-gradient-to-br from-emerald-50/80 to-transparent dark:from-emerald-950/30 dark:to-transparent p-4 hover:shadow-md transition-all duration-300"
+        >
+          <div className="flex items-center gap-3">
+            <div className="flex size-10 items-center justify-center rounded-full bg-emerald-500/10">
+              <DollarSign className="h-5 w-5 text-emerald-600 dark:text-emerald-400" />
+            </div>
+            <div>
+              <p className="text-2xl font-bold text-emerald-700 dark:text-emerald-300">
+                {budgetSummary.totalBudget.toLocaleString('ru-RU')} ₽
+              </p>
+              <p className="text-xs text-muted-foreground">Бюджет</p>
+            </div>
+          </div>
+        </motion.div>
+
+        <motion.div
+          initial={{ opacity: 0, y: 12 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.05 }}
+          className="rounded-xl border bg-gradient-to-br from-sky-50/80 to-transparent dark:from-sky-950/30 dark:to-transparent p-4 hover:shadow-md transition-all duration-300"
+        >
+          <div className="flex items-center gap-3">
+            <div className="flex size-10 items-center justify-center rounded-full bg-sky-500/10">
+              <Package className="h-5 w-5 text-sky-600 dark:text-sky-400" />
+            </div>
+            <div>
+              <p className="text-2xl font-bold text-sky-700 dark:text-sky-300">
+                {budgetSummary.totalItems}
+              </p>
+              <p className="text-xs text-muted-foreground">Позиций</p>
+            </div>
+          </div>
+        </motion.div>
+
+        <motion.div
+          initial={{ opacity: 0, y: 12 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.1 }}
+          className="rounded-xl border bg-gradient-to-br from-violet-50/80 to-transparent dark:from-violet-950/30 dark:to-transparent p-4 hover:shadow-md transition-all duration-300"
+        >
+          <div className="flex items-center gap-3">
+            <div className="flex size-10 items-center justify-center rounded-full bg-violet-500/10">
+              <Building2 className="h-5 w-5 text-violet-600 dark:text-violet-400" />
+            </div>
+            <div>
+              <p className="text-2xl font-bold text-violet-700 dark:text-violet-300">
+                {budgetSummary.uniqueSuppliers}
+              </p>
+              <p className="text-xs text-muted-foreground">Поставщиков</p>
+            </div>
+          </div>
+        </motion.div>
+
+        <motion.div
+          initial={{ opacity: 0, y: 12 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.15 }}
+          className="rounded-xl border bg-gradient-to-br from-amber-50/80 to-transparent dark:from-amber-950/30 dark:to-transparent p-4 hover:shadow-md transition-all duration-300"
+        >
+          <div className="flex items-center gap-3">
+            <div className="flex size-10 items-center justify-center rounded-full bg-amber-500/10">
+              <Mail className="h-5 w-5 text-amber-600 dark:text-amber-400" />
+            </div>
+            <div>
+              <p className="text-2xl font-bold text-amber-700 dark:text-amber-300">
+                {budgetSummary.requestCount}
+              </p>
+              <p className="text-xs text-muted-foreground">Запросов</p>
+            </div>
+          </div>
+        </motion.div>
+      </div>
+
       {/* Tabs */}
       <Tabs defaultValue="items">
         <TabsList className="bg-muted/50 p-1">
@@ -630,7 +782,46 @@ export function ProjectDetail() {
           {project.items.length === 0 ? (
             <EmptyState type="items" />
           ) : (
-            <div className="space-y-2">
+            <div className="space-y-4">
+              {/* Budget Breakdown by Category */}
+              {budgetByCategory.length > 0 && (
+                <div className="rounded-xl border p-4 bg-gradient-to-br from-muted/30 to-transparent">
+                  <h3 className="text-sm font-semibold mb-3 flex items-center gap-2">
+                    <ShoppingCart className="h-4 w-4 text-primary" />
+                    Бюджет по категориям
+                  </h3>
+                  <div className="space-y-2.5">
+                    {budgetByCategory.map((cat, idx) => (
+                      <div key={cat.category} className="space-y-1">
+                        <div className="flex items-center justify-between text-xs">
+                          <span className="font-medium text-muted-foreground hover:text-foreground transition-colors">
+                            {cat.category}
+                          </span>
+                          <span className="font-semibold">
+                            {cat.amount.toLocaleString('ru-RU')} ₽
+                          </span>
+                        </div>
+                        <div className="h-2.5 rounded-full bg-muted/60 overflow-hidden">
+                          <motion.div
+                            initial={{ width: 0 }}
+                            animate={{ width: `${cat.percent}%` }}
+                            transition={{ duration: 0.6, delay: idx * 0.08, ease: 'easeOut' }}
+                            className={`h-full rounded-full ${cat.color} opacity-80`}
+                          />
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                  <div className="mt-3 pt-2 border-t flex items-center justify-between text-xs">
+                    <span className="font-medium">Итого</span>
+                    <span className="font-bold text-sm">
+                      {budgetSummary.totalBudget.toLocaleString('ru-RU')} ₽
+                    </span>
+                  </div>
+                </div>
+              )}
+
+              <div className="space-y-2">
               {itemsBySupplier.map(([key, group]) => {
                 const isOpen = expandedSuppliers[key] !== false
                 const supplierName = group.supplier?.name ?? 'Без поставщика'
@@ -735,6 +926,7 @@ export function ProjectDetail() {
                   </Collapsible>
                 )
               })}
+              </div>
             </div>
           )}
         </TabsContent>

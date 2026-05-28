@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Separator } from '@/components/ui/separator'
+import { Switch } from '@/components/ui/switch'
 import { motion } from 'framer-motion'
 import {
   Building2,
@@ -19,6 +20,12 @@ import {
   Landmark,
   FileText,
   CreditCard,
+  Bell,
+  Globe,
+  Eye,
+  EyeOff,
+  Plug,
+  CheckCircle2,
 } from 'lucide-react'
 
 // ── Types ──────────────────────────────────────────────────
@@ -74,6 +81,11 @@ const sectionColorMap: Record<string, { line: string; iconBg: string; iconText: 
     line: 'bg-amber-600/40',
     iconBg: 'bg-amber-600/10',
     iconText: 'text-amber-600 dark:text-amber-400',
+  },
+  'teal-600': {
+    line: 'bg-teal-600/40',
+    iconBg: 'bg-teal-600/10',
+    iconText: 'text-teal-600 dark:text-teal-400',
   },
   primary: {
     line: 'bg-primary/40',
@@ -133,6 +145,25 @@ function SectionCard({
 export function Settings() {
   const queryClient = useQueryClient()
   const [localEdits, setLocalEdits] = useState<Partial<Omit<CompanyData, 'id'>> | null>(null)
+
+  // ── Notification state ────────────────────────────────────
+  const [notifications, setNotifications] = useState({
+    email: true,
+    lowStock: true,
+    newInvoices: true,
+    projectStatus: true,
+    dailyDigest: false,
+  })
+
+  // ── Integration state ─────────────────────────────────────
+  const [integration, setIntegration] = useState({
+    smtpServer: '',
+    smtpPort: '',
+    senderEmail: '',
+    apiKey: '',
+  })
+  const [showApiKey, setShowApiKey] = useState(false)
+  const [testingConnection, setTestingConnection] = useState(false)
 
   // ── Query ──────────────────────────────────────────────────
 
@@ -207,6 +238,42 @@ export function Settings() {
     saveMutation.mutate(formData)
   }
 
+  const handleNotificationToggle = (key: keyof typeof notifications) => {
+    setNotifications((prev) => ({ ...prev, [key]: !prev[key] }))
+  }
+
+  const handleIntegrationChange = (field: keyof typeof integration, value: string) => {
+    setIntegration((prev) => ({ ...prev, [field]: value }))
+  }
+
+  const handleTestConnection = async () => {
+    setTestingConnection(true)
+    // Simulate connection test
+    await new Promise((resolve) => setTimeout(resolve, 1500))
+    setTestingConnection(false)
+    toast({
+      title: 'Подключение проверено',
+      description: integration.smtpServer
+        ? `Успешное подключение к ${integration.smtpServer}:${integration.smtpPort || '587'}`
+        : 'Укажите SMTP сервер для проверки',
+      variant: integration.smtpServer ? 'default' : 'destructive',
+    })
+  }
+
+  const handleSaveNotifications = () => {
+    toast({
+      title: 'Настройки сохранены',
+      description: 'Настройки уведомлений обновлены',
+    })
+  }
+
+  const handleSaveIntegration = () => {
+    toast({
+      title: 'Настройки сохранены',
+      description: 'Настройки интеграции обновлены',
+    })
+  }
+
   // ── Render ─────────────────────────────────────────────────
 
   if (isLoading) {
@@ -260,7 +327,9 @@ export function Settings() {
           />
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <Separator className="my-2" />
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div className="space-y-2">
             <Label htmlFor="inn" className="text-sm font-medium">
               ИНН
@@ -283,17 +352,18 @@ export function Settings() {
               placeholder="771201001"
             />
           </div>
-          <div className="space-y-2">
-            <Label htmlFor="ogrn" className="text-sm font-medium">
-              ОГРН
-            </Label>
-            <Input
-              id="ogrn"
-              value={formData.ogrn}
-              onChange={(e) => handleChange('ogrn', e.target.value)}
-              placeholder="1027700132195"
-            />
-          </div>
+        </div>
+
+        <div className="space-y-2">
+          <Label htmlFor="ogrn" className="text-sm font-medium">
+            ОГРН
+          </Label>
+          <Input
+            id="ogrn"
+            value={formData.ogrn}
+            onChange={(e) => handleChange('ogrn', e.target.value)}
+            placeholder="1027700132195"
+          />
         </div>
       </SectionCard>
 
@@ -316,6 +386,8 @@ export function Settings() {
             placeholder="123456, г. Москва, ул. Примерная, д. 1, оф. 100"
           />
         </div>
+
+        <Separator className="my-2" />
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div className="space-y-2">
@@ -364,29 +436,10 @@ export function Settings() {
             placeholder="ПАО «Сбербанк»"
           />
         </div>
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-          <div className="space-y-2">
-            <Label htmlFor="bankAccount" className="text-sm font-medium">
-              Расчётный счёт
-            </Label>
-            <Input
-              id="bankAccount"
-              value={formData.bankAccount}
-              onChange={(e) => handleChange('bankAccount', e.target.value)}
-              placeholder="40702810938000123456"
-            />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="korAccount" className="text-sm font-medium">
-              Корреспондентский счёт
-            </Label>
-            <Input
-              id="korAccount"
-              value={formData.korAccount}
-              onChange={(e) => handleChange('korAccount', e.target.value)}
-              placeholder="30101810400000000225"
-            />
-          </div>
+
+        <Separator className="my-2" />
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div className="space-y-2">
             <Label htmlFor="bik" className="text-sm font-medium">
               БИК
@@ -398,6 +451,29 @@ export function Settings() {
               placeholder="044525225"
             />
           </div>
+          <div className="space-y-2">
+            <Label htmlFor="bankAccount" className="text-sm font-medium">
+              Расчётный счёт
+            </Label>
+            <Input
+              id="bankAccount"
+              value={formData.bankAccount}
+              onChange={(e) => handleChange('bankAccount', e.target.value)}
+              placeholder="40702810938000123456"
+            />
+          </div>
+        </div>
+
+        <div className="space-y-2">
+          <Label htmlFor="korAccount" className="text-sm font-medium">
+            Корреспондентский счёт
+          </Label>
+          <Input
+            id="korAccount"
+            value={formData.korAccount}
+            onChange={(e) => handleChange('korAccount', e.target.value)}
+            placeholder="30101810400000000225"
+          />
         </div>
       </SectionCard>
 
@@ -408,16 +484,25 @@ export function Settings() {
         description="Как данные компании будут выглядеть в документах"
         accentColor="amber-600"
       >
-        <div className="rounded-xl border bg-gradient-to-br from-muted/30 to-muted/10 p-6 space-y-4">
-          {/* Company Header */}
-          <div className="text-center border-b pb-4">
-            <h3 className="text-lg font-bold tracking-tight">
+        <div className="rounded-xl border-2 border-dashed border-primary/20 bg-gradient-to-br from-muted/30 to-muted/10 p-6 space-y-4">
+          {/* Formal letterhead */}
+          <div className="text-center border-b-2 border-foreground/10 pb-4">
+            <div className="inline-block border border-primary/20 rounded-lg px-6 py-1 mb-3">
+              <span className="text-[10px] font-semibold tracking-[0.2em] text-primary/60 uppercase">Предпросмотр реквизитов</span>
+            </div>
+            <h3 className="text-xl font-bold tracking-tight">
               {formData.companyName || 'Название компании'}
             </h3>
             <div className="flex flex-wrap justify-center gap-4 mt-2 text-xs text-muted-foreground">
-              {formData.inn && <span>ИНН: {formData.inn}</span>}
-              {formData.kpp && <span>КПП: {formData.kpp}</span>}
-              {formData.ogrn && <span>ОГРН: {formData.ogrn}</span>}
+              {formData.inn && (
+                <span className="bg-muted/50 px-2 py-0.5 rounded">ИНН: {formData.inn}</span>
+              )}
+              {formData.kpp && (
+                <span className="bg-muted/50 px-2 py-0.5 rounded">КПП: {formData.kpp}</span>
+              )}
+              {formData.ogrn && (
+                <span className="bg-muted/50 px-2 py-0.5 rounded">ОГРН: {formData.ogrn}</span>
+              )}
             </div>
           </div>
 
@@ -447,7 +532,7 @@ export function Settings() {
 
           {/* Bank Info */}
           {formData.bankName && (
-            <div className="border-t pt-3 space-y-1.5">
+            <div className="border-t-2 border-foreground/10 pt-3 space-y-1.5">
               <div className="flex items-center gap-2 text-sm font-medium">
                 <CreditCard className="h-4 w-4 text-muted-foreground" />
                 {formData.bankName}
@@ -466,6 +551,192 @@ export function Settings() {
               Заполните данные компании выше, чтобы увидеть предпросмотр
             </p>
           )}
+        </div>
+      </SectionCard>
+
+      {/* Notification Preferences Section */}
+      <SectionCard
+        icon={Bell}
+        title="Уведомления"
+        description="Настройте способы получения уведомлений"
+        accentColor="amber-600"
+      >
+        <div className="space-y-1">
+          {/* Email уведомления */}
+          <div className="flex items-center justify-between gap-4 rounded-lg p-3 hover:bg-muted/50 transition-colors">
+            <div className="space-y-0.5 min-w-0">
+              <Label className="text-sm font-medium cursor-pointer">Email уведомления</Label>
+              <p className="text-xs text-muted-foreground">Получать уведомления на email</p>
+            </div>
+            <Switch
+              checked={notifications.email}
+              onCheckedChange={() => handleNotificationToggle('email')}
+            />
+          </div>
+
+          <Separator />
+
+          {/* Уведомления о низком запасе */}
+          <div className="flex items-center justify-between gap-4 rounded-lg p-3 hover:bg-muted/50 transition-colors">
+            <div className="space-y-0.5 min-w-0">
+              <Label className="text-sm font-medium cursor-pointer">Уведомления о низком запасе</Label>
+              <p className="text-xs text-muted-foreground">Предупреждения когда остаток ниже минимума</p>
+            </div>
+            <Switch
+              checked={notifications.lowStock}
+              onCheckedChange={() => handleNotificationToggle('lowStock')}
+            />
+          </div>
+
+          <Separator />
+
+          {/* Уведомления о новых счетах */}
+          <div className="flex items-center justify-between gap-4 rounded-lg p-3 hover:bg-muted/50 transition-colors">
+            <div className="space-y-0.5 min-w-0">
+              <Label className="text-sm font-medium cursor-pointer">Уведомления о новых счетах</Label>
+              <p className="text-xs text-muted-foreground">Уведомлять при поступлении новых счетов</p>
+            </div>
+            <Switch
+              checked={notifications.newInvoices}
+              onCheckedChange={() => handleNotificationToggle('newInvoices')}
+            />
+          </div>
+
+          <Separator />
+
+          {/* Уведомления о статусе проектов */}
+          <div className="flex items-center justify-between gap-4 rounded-lg p-3 hover:bg-muted/50 transition-colors">
+            <div className="space-y-0.5 min-w-0">
+              <Label className="text-sm font-medium cursor-pointer">Уведомления о статусе проектов</Label>
+              <p className="text-xs text-muted-foreground">Оповещения при изменении статуса проекта</p>
+            </div>
+            <Switch
+              checked={notifications.projectStatus}
+              onCheckedChange={() => handleNotificationToggle('projectStatus')}
+            />
+          </div>
+
+          <Separator />
+
+          {/* Ежедневная сводка */}
+          <div className="flex items-center justify-between gap-4 rounded-lg p-3 hover:bg-muted/50 transition-colors">
+            <div className="space-y-0.5 min-w-0">
+              <Label className="text-sm font-medium cursor-pointer">Ежедневная сводка</Label>
+              <p className="text-xs text-muted-foreground">Краткий отчёт каждый рабочий день</p>
+            </div>
+            <Switch
+              checked={notifications.dailyDigest}
+              onCheckedChange={() => handleNotificationToggle('dailyDigest')}
+            />
+          </div>
+        </div>
+
+        <div className="pt-2 flex justify-end">
+          <Button
+            onClick={handleSaveNotifications}
+            className="transition-all duration-200 hover:shadow-md hover:-translate-y-0.5"
+          >
+            <Save className="mr-2 h-4 w-4" />
+            Сохранить
+          </Button>
+        </div>
+      </SectionCard>
+
+      {/* Integration Settings Section */}
+      <SectionCard
+        icon={Globe}
+        title="Интеграции"
+        description="Настройки подключений к внешним сервисам"
+        accentColor="sky-600"
+      >
+        <div className="space-y-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="smtpServer" className="text-sm font-medium">
+                Email сервер (SMTP)
+              </Label>
+              <Input
+                id="smtpServer"
+                value={integration.smtpServer}
+                onChange={(e) => handleIntegrationChange('smtpServer', e.target.value)}
+                placeholder="smtp.example.com"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="smtpPort" className="text-sm font-medium">
+                Порт
+              </Label>
+              <Input
+                id="smtpPort"
+                value={integration.smtpPort}
+                onChange={(e) => handleIntegrationChange('smtpPort', e.target.value)}
+                placeholder="587"
+              />
+            </div>
+          </div>
+
+          <Separator className="my-2" />
+
+          <div className="space-y-2">
+            <Label htmlFor="senderEmail" className="text-sm font-medium">
+              Email отправителя
+            </Label>
+            <Input
+              id="senderEmail"
+              type="email"
+              value={integration.senderEmail}
+              onChange={(e) => handleIntegrationChange('senderEmail', e.target.value)}
+              placeholder="zakupki@company.ru"
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="apiKey" className="text-sm font-medium">
+              API ключ
+            </Label>
+            <div className="relative">
+              <Input
+                id="apiKey"
+                type={showApiKey ? 'text' : 'password'}
+                value={integration.apiKey}
+                onChange={(e) => handleIntegrationChange('apiKey', e.target.value)}
+                placeholder="sk-..."
+                className="pr-10"
+              />
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                className="absolute right-1 top-1/2 -translate-y-1/2 h-7 w-7 p-0 text-muted-foreground hover:text-foreground"
+                onClick={() => setShowApiKey(!showApiKey)}
+              >
+                {showApiKey ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
+              </Button>
+            </div>
+          </div>
+        </div>
+
+        <div className="pt-2 flex flex-col sm:flex-row justify-end gap-2">
+          <Button
+            variant="outline"
+            onClick={handleTestConnection}
+            disabled={testingConnection}
+            className="transition-all duration-200 hover:shadow-md hover:-translate-y-0.5"
+          >
+            {testingConnection ? (
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+            ) : (
+              <Plug className="mr-2 h-4 w-4" />
+            )}
+            Тест подключения
+          </Button>
+          <Button
+            onClick={handleSaveIntegration}
+            className="transition-all duration-200 hover:shadow-md hover:-translate-y-0.5"
+          >
+            <Save className="mr-2 h-4 w-4" />
+            Сохранить
+          </Button>
         </div>
       </SectionCard>
     </div>

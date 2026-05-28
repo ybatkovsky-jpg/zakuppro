@@ -53,6 +53,8 @@ import {
   Calculator,
   ShoppingCart,
   CircleDollarSign,
+  ChevronRight,
+  ShieldCheck,
 } from 'lucide-react'
 import { formatRelativeTime } from '@/lib/utils'
 import { useMemo } from 'react'
@@ -91,6 +93,13 @@ interface ProjectCostItem {
   status: string
 }
 
+interface UrgentItem {
+  type: 'create_request' | 'check_invoice' | 'restock' | 'await_delivery'
+  label: string
+  targetId: string
+  urgency: 'pending' | 'urgent'
+}
+
 interface StatsData {
   totalProjects: number
   activeProjects: number
@@ -108,6 +117,7 @@ interface StatsData {
   projectStatusData: Array<{ name: string; value: number; color: string }>
   monthlyProjectsData: Array<{ month: string; count: number }>
   warehouseStockData: Array<{ name: string; quantity: number; minQuantity: number; status: 'ok' | 'warning' | 'low' }>
+  urgentItems: UrgentItem[]
 }
 
 interface ActivityItem {
@@ -438,11 +448,6 @@ function CircularProgressRing({
   const circumference = radius * 2 * Math.PI
   const offset = circumference - (percent / 100) * circumference
 
-  // Multi-color ring segments
-  const spentRadius = radius
-  const pendingRadius = radius - strokeWidth - 4
-  const remainingRadius = radius - (strokeWidth + 4) * 2
-
   return (
     <div className="relative" style={{ width: size, height: size }}>
       <svg width={size} height={size} className="-rotate-90">
@@ -450,7 +455,7 @@ function CircularProgressRing({
         <circle
           cx={size / 2}
           cy={size / 2}
-          r={spentRadius}
+          r={radius}
           fill="none"
           stroke="currentColor"
           strokeWidth={strokeWidth}
@@ -459,7 +464,7 @@ function CircularProgressRing({
         <circle
           cx={size / 2}
           cy={size / 2}
-          r={spentRadius}
+          r={radius}
           fill="none"
           stroke="currentColor"
           strokeWidth={strokeWidth}
@@ -620,6 +625,122 @@ function ActivityFeed() {
   )
 }
 
+// ── Urgent Items Section Component ──────────────────────────────────────────
+
+function UrgentItemsSection({ items }: { items: UrgentItem[] }) {
+  const { navigate, navigateToProject } = useAppStore()
+
+  const getUrgentItemIcon = (type: UrgentItem['type']) => {
+    switch (type) {
+      case 'create_request':
+        return <Mail className="size-4" />
+      case 'check_invoice':
+        return <FileText className="size-4" />
+      case 'restock':
+        return <Warehouse className="size-4" />
+      case 'await_delivery':
+        return <Truck className="size-4" />
+    }
+  }
+
+  const getUrgentItemBg = (type: UrgentItem['type']) => {
+    switch (type) {
+      case 'create_request':
+        return 'bg-violet-50 text-violet-600 dark:bg-violet-950/50 dark:text-violet-400'
+      case 'check_invoice':
+        return 'bg-amber-50 text-amber-600 dark:bg-amber-950/50 dark:text-amber-400'
+      case 'restock':
+        return 'bg-red-50 text-red-600 dark:bg-red-950/50 dark:text-red-400'
+      case 'await_delivery':
+        return 'bg-sky-50 text-sky-600 dark:bg-sky-950/50 dark:text-sky-400'
+    }
+  }
+
+  const handleUrgentItemClick = (item: UrgentItem) => {
+    switch (item.type) {
+      case 'create_request':
+        navigateToProject(item.targetId)
+        break
+      case 'check_invoice':
+        navigate('invoices')
+        break
+      case 'restock':
+        navigate('warehouse')
+        break
+      case 'await_delivery':
+        navigateToProject(item.targetId)
+        break
+    }
+  }
+
+  return (
+    <motion.div variants={itemVariants}>
+      <Card className="relative overflow-hidden">
+        <div className="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-transparent via-amber-500/60 to-transparent" />
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <AlertTriangle className="size-5 text-amber-500" />
+            Требуют внимания
+          </CardTitle>
+          <CardDescription>Действия, которые необходимо выполнить</CardDescription>
+        </CardHeader>
+        <CardContent>
+          {items.length === 0 ? (
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              className="flex flex-col items-center justify-center py-8 text-center"
+            >
+              <div className="flex size-14 items-center justify-center rounded-full bg-emerald-50 dark:bg-emerald-950/50 mb-3">
+                <ShieldCheck className="size-7 text-emerald-600 dark:text-emerald-400" />
+              </div>
+              <p className="text-sm font-medium text-emerald-600 dark:text-emerald-400">
+                Всё под контролем ✓
+              </p>
+              <p className="text-xs text-muted-foreground mt-1">
+                Нет срочных действий, требующих внимания
+              </p>
+            </motion.div>
+          ) : (
+            <div className="space-y-2">
+              {items.map((item, idx) => (
+                <motion.button
+                  key={`${item.type}-${item.targetId}-${idx}`}
+                  initial={{ opacity: 0, x: -8 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ delay: idx * 0.06, duration: 0.3 }}
+                  onClick={() => handleUrgentItemClick(item)}
+                  className="group flex w-full items-center gap-3 rounded-xl border bg-card p-3 text-left transition-all duration-200 hover:shadow-md hover:-translate-y-0.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                >
+                  {/* Left colored indicator */}
+                  <div className={`shrink-0 w-1 h-10 rounded-full ${
+                    item.urgency === 'urgent'
+                      ? 'bg-red-500'
+                      : 'bg-amber-500'
+                  }`} />
+                  {/* Icon */}
+                  <div className={`flex size-9 shrink-0 items-center justify-center rounded-full ${getUrgentItemBg(item.type)} transition-transform duration-200 group-hover:scale-110`}>
+                    {getUrgentItemIcon(item.type)}
+                  </div>
+                  {/* Label */}
+                  <span className="flex-1 text-sm font-medium truncate group-hover:text-primary transition-colors">
+                    {item.label}
+                  </span>
+                  {/* Navigate link */}
+                  <span className="shrink-0 flex items-center gap-1 text-xs text-muted-foreground group-hover:text-primary transition-colors">
+                    Перейти
+                    <ChevronRight className="size-3 transition-transform duration-200 group-hover:translate-x-0.5" />
+                  </span>
+                </motion.button>
+              ))}
+            </div>
+          )}
+        </CardContent>
+      </Card>
+    </motion.div>
+  )
+}
+
 // ── Skeleton Loader ─────────────────────────────────────────────────────────
 
 function DashboardSkeleton() {
@@ -681,6 +802,41 @@ function CategoryTooltip({ active, payload, label }: { active?: boolean; payload
         </p>
       ))}
     </div>
+  )
+}
+
+// ── Quick Action Card Component ─────────────────────────────────────────────
+
+function QuickActionCard({
+  icon: Icon,
+  label,
+  description,
+  iconBg,
+  iconColor,
+  onClick,
+}: {
+  icon: React.ComponentType<{ className?: string }>
+  label: string
+  description: string
+  iconBg: string
+  iconColor: string
+  onClick: () => void
+}) {
+  return (
+    <motion.button
+      whileHover={{ y: -4, scale: 1.02 }}
+      whileTap={{ scale: 0.98 }}
+      onClick={onClick}
+      className="group flex flex-col items-center gap-2.5 rounded-xl border bg-card p-4 text-center transition-all duration-200 hover:shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+    >
+      <div className={`flex size-12 items-center justify-center rounded-full ${iconBg} transition-transform duration-200 group-hover:scale-110`}>
+        <Icon className={`size-6 ${iconColor}`} />
+      </div>
+      <div>
+        <p className="text-sm font-medium group-hover:text-primary transition-colors">{label}</p>
+        <p className="text-[11px] text-muted-foreground mt-0.5">{description}</p>
+      </div>
+    </motion.button>
   )
 }
 
@@ -747,6 +903,7 @@ export function Dashboard() {
     : 0
 
   const projectCostData = data.projectCostData || []
+  const urgentItems = data.urgentItems || []
 
   // KPI calculations
   const avgProjectBudget = data.totalProjects > 0
@@ -936,6 +1093,9 @@ export function Dashboard() {
           iconColor="text-amber-600 dark:text-amber-400"
         />
       </div>
+
+      {/* ── Urgent Items / Pending Actions ────────────────────────────── */}
+      <UrgentItemsSection items={urgentItems} />
 
       {/* ── Budget Overview Section (full width, improved) ───────────── */}
       <motion.div variants={itemVariants}>
@@ -1444,46 +1604,47 @@ export function Dashboard() {
         </motion.div>
       </div>
 
-      {/* ── Quick Actions (compact) ───────────────────────────────────── */}
+      {/* ── Quick Actions (improved with icons and descriptions) ────── */}
       <motion.div variants={itemVariants}>
         <Card className="glass-card">
-          <CardContent className="flex flex-wrap items-center gap-3 py-4">
-            <span className="text-sm font-medium text-muted-foreground mr-2">Быстрые действия:</span>
-            <Button
-              size="sm"
-              className="transition-all duration-200 hover:shadow-md hover:-translate-y-0.5"
-              onClick={() => navigate('projects')}
-            >
-              <Plus className="size-4" />
-              Новый проект
-            </Button>
-            <Button
-              size="sm"
-              variant="outline"
-              className="transition-all duration-200 hover:shadow-md hover:-translate-y-0.5 hover:border-primary/30"
-              onClick={() => navigate('suppliers')}
-            >
-              <Users className="size-4" />
-              Поставщик
-            </Button>
-            <Button
-              size="sm"
-              variant="outline"
-              className="transition-all duration-200 hover:shadow-md hover:-translate-y-0.5 hover:border-primary/30"
-              onClick={() => navigate('warehouse')}
-            >
-              <Warehouse className="size-4" />
-              Склад
-            </Button>
-            <Button
-              size="sm"
-              variant="outline"
-              className="transition-all duration-200 hover:shadow-md hover:-translate-y-0.5 hover:border-primary/30"
-              onClick={() => navigate('requests')}
-            >
-              <Mail className="size-4" />
-              Запрос
-            </Button>
+          <CardHeader className="pb-3">
+            <CardTitle className="text-sm font-medium text-muted-foreground">Быстрые действия</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+              <QuickActionCard
+                icon={FolderKanban}
+                label="Новый проект"
+                description="Создать проект закупки"
+                iconBg="bg-primary/10"
+                iconColor="text-primary"
+                onClick={() => navigate('projects')}
+              />
+              <QuickActionCard
+                icon={Building2}
+                label="Добавить поставщика"
+                description="Новый контрагент"
+                iconBg="bg-sky-500/10"
+                iconColor="text-sky-600 dark:text-sky-400"
+                onClick={() => navigate('suppliers')}
+              />
+              <QuickActionCard
+                icon={Warehouse}
+                label="Записать на склад"
+                description="Приёмка товаров"
+                iconBg="bg-teal-500/10"
+                iconColor="text-teal-600 dark:text-teal-400"
+                onClick={() => navigate('warehouse')}
+              />
+              <QuickActionCard
+                icon={Mail}
+                label="Создать запрос"
+                description="Запрос поставщикам"
+                iconBg="bg-violet-500/10"
+                iconColor="text-violet-600 dark:text-violet-400"
+                onClick={() => navigate('requests')}
+              />
+            </div>
           </CardContent>
         </Card>
       </motion.div>
