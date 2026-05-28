@@ -174,7 +174,7 @@ function reportHeader(title: string): string {
   <div class="report-header">
     <div>
       <div class="brand">ПРОМЕБЕЛЬ</div>
-      <div class="brand-sub">Управление закупками мебели</div>
+      <div class="brand-sub">Управление закупками ПРОМЕБЕЛЬ</div>
     </div>
     <div class="gen-date">
       <div>${title}</div>

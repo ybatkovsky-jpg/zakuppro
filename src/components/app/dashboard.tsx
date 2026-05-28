@@ -1264,16 +1264,11 @@ export function Dashboard() {
         {/* Professional gradient background */}
         <div className="absolute inset-0 bg-gradient-to-br from-primary/10 via-primary/[0.04] to-emerald-500/[0.03] dark:from-primary/15 dark:via-primary/[0.06] dark:to-emerald-500/[0.04]" />
 
-        {/* Decorative SVG pattern (replaces broken animate-dots) */}
-        <svg className="absolute inset-0 w-full h-full opacity-[0.03] dark:opacity-[0.05]" xmlns="http://www.w3.org/2000/svg">
-          <defs>
-            <pattern id="header-pattern" x="0" y="0" width="40" height="40" patternUnits="userSpaceOnUse">
-              <circle cx="2" cy="2" r="1" fill="currentColor" />
-              <circle cx="22" cy="22" r="1" fill="currentColor" />
-            </pattern>
-          </defs>
-          <rect width="100%" height="100%" fill="url(#header-pattern)" />
-        </svg>
+        {/* Decorative subtle grid lines (replaces broken SVG dot pattern) */}
+        <div className="absolute inset-0 opacity-[0.02] dark:opacity-[0.04]" style={{
+          backgroundImage: 'radial-gradient(circle, currentColor 1px, transparent 1px)',
+          backgroundSize: '24px 24px',
+        }} />
 
         {/* Decorative gradient orbs */}
         <div className="absolute inset-0 overflow-hidden pointer-events-none">

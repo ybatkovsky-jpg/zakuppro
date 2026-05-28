@@ -62,6 +62,13 @@ import {
   Shield,
   BookOpen,
   Star,
+  Server,
+  Bot,
+  Brain,
+  Send,
+  Key,
+  Thermometer,
+  MessageSquare,
 } from 'lucide-react'
 
 // ── Types ──────────────────────────────────────────────────
@@ -281,16 +288,54 @@ export function Settings() {
   })
   const [notificationsChanged, setNotificationsChanged] = useState(false)
 
-  // ── Integration state ─────────────────────────────────────
-  const [integration, setIntegration] = useState({
-    smtpServer: '',
-    smtpPort: '',
+  // ── Email Settings (SMTP/IMAP) state ──────────────────────
+  const [emailSettings, setEmailSettings] = useState({
+    smtpHost: '',
+    smtpPort: '587',
+    smtpUser: '',
+    smtpPassword: '',
+    smtpEncryption: 'tls',
+    senderName: '',
     senderEmail: '',
-    apiKey: '',
+    emailSignature: '',
+    imapHost: '',
+    imapPort: '993',
+    imapUser: '',
+    imapPassword: '',
+    imapEncryption: 'ssl',
+    imapCheckInterval: '15',
+    imapEnabled: false,
   })
-  const [integrationChanged, setIntegrationChanged] = useState(false)
-  const [showApiKey, setShowApiKey] = useState(false)
-  const [testingConnection, setTestingConnection] = useState(false)
+  const [emailSettingsChanged, setEmailSettingsChanged] = useState(false)
+  const [showSmtpPassword, setShowSmtpPassword] = useState(false)
+  const [showImapPassword, setShowImapPassword] = useState(false)
+  const [testingSmtp, setTestingSmtp] = useState(false)
+  const [testingImap, setTestingImap] = useState(false)
+
+  // ── AI Settings state ──────────────────────────────────────
+  const [aiSettings, setAiSettings] = useState({
+    provider: 'z-ai',
+    model: 'glm-4',
+    apiKey: '',
+    apiEndpoint: '',
+    temperature: '0.7',
+    maxTokens: '4096',
+    systemPrompt: '',
+  })
+  const [aiSettingsChanged, setAiSettingsChanged] = useState(false)
+  const [showAiApiKey, setShowAiApiKey] = useState(false)
+  const [testingAi, setTestingAi] = useState(false)
+
+  // ── Telegram Settings state ────────────────────────────────
+  const [telegramSettings, setTelegramSettings] = useState({
+    botToken: '',
+    webhookUrl: '',
+    chatId: '',
+    isEnabled: false,
+  })
+  const [telegramSettingsChanged, setTelegramSettingsChanged] = useState(false)
+  const [showBotToken, setShowBotToken] = useState(false)
+  const [testingTelegram, setTestingTelegram] = useState(false)
 
   // ── User Preferences state ─────────────────────────────────
   const [preferences, setPreferences] = useState({
@@ -333,6 +378,36 @@ export function Settings() {
       const res = await fetch('/api/company')
       if (!res.ok) throw new Error('Failed to fetch company details')
       return res.json() as Promise<CompanyData>
+    },
+  })
+
+  // ── Email Settings Query ───────────────────────────────────
+  const { data: emailData } = useQuery({
+    queryKey: ['email-settings'],
+    queryFn: async () => {
+      const res = await fetch('/api/settings/email')
+      if (!res.ok) return null
+      return res.json()
+    },
+  })
+
+  // ── AI Settings Query ──────────────────────────────────────
+  const { data: aiData } = useQuery({
+    queryKey: ['ai-settings'],
+    queryFn: async () => {
+      const res = await fetch('/api/settings/ai')
+      if (!res.ok) return null
+      return res.json()
+    },
+  })
+
+  // ── Telegram Settings Query ────────────────────────────────
+  const { data: telegramData } = useQuery({
+    queryKey: ['telegram-settings'],
+    queryFn: async () => {
+      const res = await fetch('/api/settings/telegram')
+      if (!res.ok) return null
+      return res.json()
     },
   })
 
@@ -388,6 +463,54 @@ export function Settings() {
   const formData = localEdits ? { ...serverData, ...localEdits } : serverData
   const hasChanges = localEdits !== null && Object.keys(localEdits).length > 0
 
+  // ── Initialize settings from server data ───────────────────
+  useMemo(() => {
+    if (emailData) {
+      setEmailSettings({
+        smtpHost: emailData.smtpHost ?? '',
+        smtpPort: String(emailData.smtpPort ?? 587),
+        smtpUser: emailData.smtpUser ?? '',
+        smtpPassword: emailData.smtpPassword ?? '',
+        smtpEncryption: emailData.smtpEncryption ?? 'tls',
+        senderName: emailData.senderName ?? '',
+        senderEmail: emailData.senderEmail ?? '',
+        emailSignature: emailData.emailSignature ?? '',
+        imapHost: emailData.imapHost ?? '',
+        imapPort: String(emailData.imapPort ?? 993),
+        imapUser: emailData.imapUser ?? '',
+        imapPassword: emailData.imapPassword ?? '',
+        imapEncryption: emailData.imapEncryption ?? 'ssl',
+        imapCheckInterval: String(emailData.imapCheckInterval ?? 15),
+        imapEnabled: emailData.imapEnabled ?? false,
+      })
+    }
+  }, [emailData])
+
+  useMemo(() => {
+    if (aiData) {
+      setAiSettings({
+        provider: aiData.provider ?? 'z-ai',
+        model: aiData.model ?? 'glm-4',
+        apiKey: aiData.apiKey ?? '',
+        apiEndpoint: aiData.apiEndpoint ?? '',
+        temperature: String(aiData.temperature ?? 0.7),
+        maxTokens: String(aiData.maxTokens ?? 4096),
+        systemPrompt: aiData.systemPrompt ?? '',
+      })
+    }
+  }, [aiData])
+
+  useMemo(() => {
+    if (telegramData) {
+      setTelegramSettings({
+        botToken: telegramData.botToken ?? '',
+        webhookUrl: telegramData.webhookUrl ?? '',
+        chatId: telegramData.chatId ?? '',
+        isEnabled: telegramData.isEnabled ?? false,
+      })
+    }
+  }, [telegramData])
+
   // ── Handlers ───────────────────────────────────────────────
 
   const handleChange = (field: keyof typeof serverData, value: string) => {
@@ -422,36 +545,208 @@ export function Settings() {
     toast({ title: 'Сброшено', description: 'Настройки уведомлений сброшены' })
   }
 
-  const handleIntegrationChange = (field: keyof typeof integration, value: string) => {
-    setIntegration((prev) => ({ ...prev, [field]: value }))
-    setIntegrationChanged(true)
+  // ── Email Settings Handlers ────────────────────────────────
+  const handleEmailChange = (field: keyof typeof emailSettings, value: string | boolean) => {
+    setEmailSettings((prev) => ({ ...prev, [field]: value }))
+    setEmailSettingsChanged(true)
   }
 
-  const handleTestConnection = async () => {
-    setTestingConnection(true)
-    await new Promise((resolve) => setTimeout(resolve, 1500))
-    setTestingConnection(false)
-    toast({
-      title: 'Подключение проверено',
-      description: integration.smtpServer
-        ? `Успешное подключение к ${integration.smtpServer}:${integration.smtpPort || '587'}`
-        : 'Укажите SMTP сервер для проверки',
-      variant: integration.smtpServer ? 'default' : 'destructive',
-    })
+  const handleSaveEmail = async () => {
+    try {
+      const res = await fetch('/api/settings/email', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          ...emailSettings,
+          smtpPort: parseInt(emailSettings.smtpPort) || 587,
+          imapPort: parseInt(emailSettings.imapPort) || 993,
+          imapCheckInterval: parseInt(emailSettings.imapCheckInterval) || 15,
+        }),
+      })
+      if (!res.ok) throw new Error('Ошибка сохранения')
+      setEmailSettingsChanged(false)
+      queryClient.invalidateQueries({ queryKey: ['email-settings'] })
+      toast({ title: 'Настройки почты сохранены', description: 'SMTP/IMAP настройки обновлены' })
+    } catch (error) {
+      toast({ title: 'Ошибка', description: 'Не удалось сохранить настройки почты', variant: 'destructive' })
+    }
   }
 
-  const handleSaveIntegration = () => {
-    setIntegrationChanged(false)
-    toast({
-      title: 'Настройки сохранены',
-      description: 'Настройки интеграции обновлены',
-    })
+  const handleResetEmail = () => {
+    if (emailData) {
+      setEmailSettings({
+        smtpHost: emailData.smtpHost ?? '',
+        smtpPort: String(emailData.smtpPort ?? 587),
+        smtpUser: emailData.smtpUser ?? '',
+        smtpPassword: emailData.smtpPassword ?? '',
+        smtpEncryption: emailData.smtpEncryption ?? 'tls',
+        senderName: emailData.senderName ?? '',
+        senderEmail: emailData.senderEmail ?? '',
+        emailSignature: emailData.emailSignature ?? '',
+        imapHost: emailData.imapHost ?? '',
+        imapPort: String(emailData.imapPort ?? 993),
+        imapUser: emailData.imapUser ?? '',
+        imapPassword: emailData.imapPassword ?? '',
+        imapEncryption: emailData.imapEncryption ?? 'ssl',
+        imapCheckInterval: String(emailData.imapCheckInterval ?? 15),
+        imapEnabled: emailData.imapEnabled ?? false,
+      })
+    }
+    setEmailSettingsChanged(false)
+    toast({ title: 'Сброшено', description: 'Изменения отменены' })
   }
 
-  const handleResetIntegration = () => {
-    setIntegration({ smtpServer: '', smtpPort: '', senderEmail: '', apiKey: '' })
-    setIntegrationChanged(false)
-    toast({ title: 'Сброшено', description: 'Настройки интеграции сброшены' })
+  const handleTestSmtp = async () => {
+    setTestingSmtp(true)
+    try {
+      const res = await fetch('/api/settings/email', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ testType: 'smtp', ...emailSettings }),
+      })
+      const data = await res.json()
+      toast({
+        title: data.success ? 'SMTP подключение' : 'Ошибка SMTP',
+        description: data.message || data.error,
+        variant: data.success ? 'default' : 'destructive',
+      })
+    } catch {
+      toast({ title: 'Ошибка', description: 'Не удалось проверить SMTP', variant: 'destructive' })
+    } finally {
+      setTestingSmtp(false)
+    }
+  }
+
+  const handleTestImap = async () => {
+    setTestingImap(true)
+    try {
+      const res = await fetch('/api/settings/email', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ testType: 'imap', ...emailSettings }),
+      })
+      const data = await res.json()
+      toast({
+        title: data.success ? 'IMAP подключение' : 'Ошибка IMAP',
+        description: data.message || data.error,
+        variant: data.success ? 'default' : 'destructive',
+      })
+    } catch {
+      toast({ title: 'Ошибка', description: 'Не удалось проверить IMAP', variant: 'destructive' })
+    } finally {
+      setTestingImap(false)
+    }
+  }
+
+  // ── AI Settings Handlers ───────────────────────────────────
+  const handleAiChange = (field: keyof typeof aiSettings, value: string) => {
+    setAiSettings((prev) => ({ ...prev, [field]: value }))
+    setAiSettingsChanged(true)
+  }
+
+  const handleSaveAi = async () => {
+    try {
+      const res = await fetch('/api/settings/ai', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          ...aiSettings,
+          temperature: parseFloat(aiSettings.temperature) || 0.7,
+          maxTokens: parseInt(aiSettings.maxTokens) || 4096,
+        }),
+      })
+      if (!res.ok) throw new Error('Ошибка сохранения')
+      setAiSettingsChanged(false)
+      queryClient.invalidateQueries({ queryKey: ['ai-settings'] })
+      toast({ title: 'Настройки ИИ сохранены', description: 'Провайдер и модель обновлены' })
+    } catch (error) {
+      toast({ title: 'Ошибка', description: 'Не удалось сохранить настройки ИИ', variant: 'destructive' })
+    }
+  }
+
+  const handleResetAi = () => {
+    if (aiData) {
+      setAiSettings({
+        provider: aiData.provider ?? 'z-ai',
+        model: aiData.model ?? 'glm-4',
+        apiKey: aiData.apiKey ?? '',
+        apiEndpoint: aiData.apiEndpoint ?? '',
+        temperature: String(aiData.temperature ?? 0.7),
+        maxTokens: String(aiData.maxTokens ?? 4096),
+        systemPrompt: aiData.systemPrompt ?? '',
+      })
+    }
+    setAiSettingsChanged(false)
+    toast({ title: 'Сброшено', description: 'Изменения отменены' })
+  }
+
+  const handleTestAi = async () => {
+    setTestingAi(true)
+    try {
+      const res = await fetch('/api/settings/ai', { method: 'POST' })
+      const data = await res.json()
+      toast({
+        title: data.success ? 'ИИ подключение' : 'Ошибка ИИ',
+        description: data.message || data.error,
+        variant: data.success ? 'default' : 'destructive',
+      })
+    } catch {
+      toast({ title: 'Ошибка', description: 'Не удалось проверить подключение', variant: 'destructive' })
+    } finally {
+      setTestingAi(false)
+    }
+  }
+
+  // ── Telegram Settings Handlers ─────────────────────────────
+  const handleTelegramChange = (field: keyof typeof telegramSettings, value: string | boolean) => {
+    setTelegramSettings((prev) => ({ ...prev, [field]: value }))
+    setTelegramSettingsChanged(true)
+  }
+
+  const handleSaveTelegram = async () => {
+    try {
+      const res = await fetch('/api/settings/telegram', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(telegramSettings),
+      })
+      if (!res.ok) throw new Error('Ошибка сохранения')
+      setTelegramSettingsChanged(false)
+      queryClient.invalidateQueries({ queryKey: ['telegram-settings'] })
+      toast({ title: 'Настройки Telegram сохранены', description: 'Бот настроен' })
+    } catch (error) {
+      toast({ title: 'Ошибка', description: 'Не удалось сохранить настройки Telegram', variant: 'destructive' })
+    }
+  }
+
+  const handleResetTelegram = () => {
+    if (telegramData) {
+      setTelegramSettings({
+        botToken: telegramData.botToken ?? '',
+        webhookUrl: telegramData.webhookUrl ?? '',
+        chatId: telegramData.chatId ?? '',
+        isEnabled: telegramData.isEnabled ?? false,
+      })
+    }
+    setTelegramSettingsChanged(false)
+    toast({ title: 'Сброшено', description: 'Изменения отменены' })
+  }
+
+  const handleTestTelegram = async () => {
+    setTestingTelegram(true)
+    try {
+      const res = await fetch('/api/settings/telegram', { method: 'POST' })
+      const data = await res.json()
+      toast({
+        title: data.success ? 'Telegram подключение' : 'Ошибка Telegram',
+        description: data.message || data.error,
+        variant: data.success ? 'default' : 'destructive',
+      })
+    } catch {
+      toast({ title: 'Ошибка', description: 'Не удалось проверить подключение', variant: 'destructive' })
+    } finally {
+      setTestingTelegram(false)
+    }
   }
 
   const handlePreferenceChange = (field: keyof typeof preferences, value: string) => {
@@ -1321,79 +1616,131 @@ export function Settings() {
         </div>
       </SectionCard>
 
-      {/* Integration Settings Section */}
+      {/* SMTP Email Settings Section */}
       <SectionCard
-        icon={Globe}
-        title="Интеграции"
-        description="Настройки подключений к внешним сервисам"
+        icon={Send}
+        title="Почтовый клиент — SMTP (Отправка)"
+        description="Настройка сервера для отправки писем поставщикам"
         accentColor="sky-600"
-        onSave={handleSaveIntegration}
-        onReset={handleResetIntegration}
-        hasChanges={integrationChanged}
+        onSave={handleSaveEmail}
+        onReset={handleResetEmail}
+        hasChanges={emailSettingsChanged}
       >
         <div className="space-y-4">
+          {/* Status indicator */}
+          <div className={`flex items-center gap-2 rounded-lg p-3 ${emailSettings.smtpHost ? 'bg-emerald-50 dark:bg-emerald-950/30' : 'bg-amber-50 dark:bg-amber-950/30'}`}>
+            {emailSettings.smtpHost ? (
+              <CheckCircle2 className="size-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
+            ) : (
+              <Plug className="size-4 text-amber-600 dark:text-amber-400 shrink-0" />
+            )}
+            <span className="text-sm font-medium">
+              {emailSettings.smtpHost ? `Настроен: ${emailSettings.smtpHost}:${emailSettings.smtpPort}` : 'SMTP не настроен — письма не отправляются'}
+            </span>
+          </div>
+
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="smtpServer" className="text-sm font-medium">
-                Email сервер (SMTP)
+              <Label className="text-sm font-medium flex items-center gap-1">
+                <Server className="h-3.5 w-3.5" />
+                SMTP сервер
               </Label>
               <Input
-                id="smtpServer"
-                value={integration.smtpServer}
-                onChange={(e) => handleIntegrationChange('smtpServer', e.target.value)}
-                placeholder="smtp.example.com"
+                value={emailSettings.smtpHost}
+                onChange={(e) => handleEmailChange('smtpHost', e.target.value)}
+                placeholder="smtp.yandex.ru"
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="smtpPort" className="text-sm font-medium">
-                Порт
-              </Label>
+              <Label className="text-sm font-medium">Порт</Label>
               <Input
-                id="smtpPort"
-                value={integration.smtpPort}
-                onChange={(e) => handleIntegrationChange('smtpPort', e.target.value)}
+                value={emailSettings.smtpPort}
+                onChange={(e) => handleEmailChange('smtpPort', e.target.value)}
                 placeholder="587"
               />
             </div>
           </div>
 
-          <Separator className="my-2" />
-
-          <div className="space-y-2">
-            <Label htmlFor="senderEmail" className="text-sm font-medium">
-              Email отправителя
-            </Label>
-            <Input
-              id="senderEmail"
-              type="email"
-              value={integration.senderEmail}
-              onChange={(e) => handleIntegrationChange('senderEmail', e.target.value)}
-              placeholder="zakupki@company.ru"
-            />
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label className="text-sm font-medium flex items-center gap-1">
+                <Mail className="h-3.5 w-3.5" />
+                Логин (email)
+              </Label>
+              <Input
+                value={emailSettings.smtpUser}
+                onChange={(e) => handleEmailChange('smtpUser', e.target.value)}
+                placeholder="zakupki@promebel.ru"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label className="text-sm font-medium flex items-center gap-1">
+                <Key className="h-3.5 w-3.5" />
+                Пароль
+              </Label>
+              <div className="relative">
+                <Input
+                  type={showSmtpPassword ? 'text' : 'password'}
+                  value={emailSettings.smtpPassword}
+                  onChange={(e) => handleEmailChange('smtpPassword', e.target.value)}
+                  placeholder="Пароль приложения"
+                  className="pr-10"
+                />
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  className="absolute right-1 top-1/2 -translate-y-1/2 h-7 w-7 p-0"
+                  onClick={() => setShowSmtpPassword(!showSmtpPassword)}
+                >
+                  {showSmtpPassword ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
+                </Button>
+              </div>
+            </div>
           </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="apiKey" className="text-sm font-medium">
-              API ключ
-            </Label>
-            <div className="relative">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label className="text-sm font-medium">Шифрование</Label>
+              <Select value={emailSettings.smtpEncryption} onValueChange={(v) => handleEmailChange('smtpEncryption', v)}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="tls">TLS (порт 587)</SelectItem>
+                  <SelectItem value="ssl">SSL (порт 465)</SelectItem>
+                  <SelectItem value="none">Без шифрования</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label className="text-sm font-medium flex items-center gap-1">
+                <Send className="h-3.5 w-3.5" />
+                Email отправителя
+              </Label>
               <Input
-                id="apiKey"
-                type={showApiKey ? 'text' : 'password'}
-                value={integration.apiKey}
-                onChange={(e) => handleIntegrationChange('apiKey', e.target.value)}
-                placeholder="sk-..."
-                className="pr-10"
+                type="email"
+                value={emailSettings.senderEmail}
+                onChange={(e) => handleEmailChange('senderEmail', e.target.value)}
+                placeholder="zakupki@promebel.ru"
               />
-              <Button
-                type="button"
-                variant="ghost"
-                size="sm"
-                className="absolute right-1 top-1/2 -translate-y-1/2 h-7 w-7 p-0 text-muted-foreground hover:text-foreground"
-                onClick={() => setShowApiKey(!showApiKey)}
-              >
-                {showApiKey ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
-              </Button>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label className="text-sm font-medium">Имя отправителя</Label>
+              <Input
+                value={emailSettings.senderName}
+                onChange={(e) => handleEmailChange('senderName', e.target.value)}
+                placeholder="ПРОМЕБЕЛЬ Закупки"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label className="text-sm font-medium">Подпись в письмах</Label>
+              <Input
+                value={emailSettings.emailSignature}
+                onChange={(e) => handleEmailChange('emailSignature', e.target.value)}
+                placeholder="С уважением, отдел закупок ПРОМЕБЕЛЬ"
+              />
             </div>
           </div>
 
@@ -1401,17 +1748,455 @@ export function Settings() {
             <Button
               variant="outline"
               size="sm"
-              onClick={handleTestConnection}
-              disabled={testingConnection}
-              className="gap-1.5 transition-all duration-200 hover:shadow-md"
+              onClick={handleTestSmtp}
+              disabled={testingSmtp || !emailSettings.smtpHost}
+              className="gap-1.5"
             >
-              {testingConnection ? (
-                <Loader2 className="h-3.5 w-3.5 animate-spin" />
-              ) : (
-                <Plug className="h-3.5 w-3.5" />
-              )}
-              Тест подключения
+              {testingSmtp ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Plug className="h-3.5 w-3.5" />}
+              Тест SMTP
             </Button>
+          </div>
+
+          <div className="rounded-md bg-muted/50 px-3 py-2">
+            <p className="text-xs text-muted-foreground">
+              💡 Популярные SMTP: Yandex (smtp.yandex.ru:587), Gmail (smtp.gmail.com:587), Mail.ru (smtp.mail.ru:587).
+              Для Gmail и Yandex используйте пароль приложения, а не основной пароль.
+            </p>
+          </div>
+        </div>
+      </SectionCard>
+
+      {/* IMAP Email Settings Section */}
+      <SectionCard
+        icon={MailOpen}
+        title="Почтовый клиент — IMAP (Получение)"
+        description="Настройка сервера для чтения ответов от поставщиков"
+        accentColor="teal-600"
+        onSave={handleSaveEmail}
+        onReset={handleResetEmail}
+        hasChanges={emailSettingsChanged}
+      >
+        <div className="space-y-4">
+          {/* Enable/Disable IMAP */}
+          <div className="flex items-center justify-between gap-4 rounded-lg p-3 hover:bg-muted/50">
+            <div className="space-y-0.5 min-w-0">
+              <Label className="text-sm font-medium cursor-pointer">Включить проверку почты</Label>
+              <p className="text-xs text-muted-foreground">Автоматически проверять входящие письма</p>
+            </div>
+            <Switch
+              checked={emailSettings.imapEnabled}
+              onCheckedChange={(v) => handleEmailChange('imapEnabled', v)}
+              className="data-[state=checked]:bg-teal-500"
+            />
+          </div>
+
+          <Separator />
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label className="text-sm font-medium flex items-center gap-1">
+                <Server className="h-3.5 w-3.5" />
+                IMAP сервер
+              </Label>
+              <Input
+                value={emailSettings.imapHost}
+                onChange={(e) => handleEmailChange('imapHost', e.target.value)}
+                placeholder="imap.yandex.ru"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label className="text-sm font-medium">Порт</Label>
+              <Input
+                value={emailSettings.imapPort}
+                onChange={(e) => handleEmailChange('imapPort', e.target.value)}
+                placeholder="993"
+              />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label className="text-sm font-medium flex items-center gap-1">
+                <Mail className="h-3.5 w-3.5" />
+                Логин (email)
+              </Label>
+              <Input
+                value={emailSettings.imapUser}
+                onChange={(e) => handleEmailChange('imapUser', e.target.value)}
+                placeholder="zakupki@promebel.ru"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label className="text-sm font-medium flex items-center gap-1">
+                <Key className="h-3.5 w-3.5" />
+                Пароль
+              </Label>
+              <div className="relative">
+                <Input
+                  type={showImapPassword ? 'text' : 'password'}
+                  value={emailSettings.imapPassword}
+                  onChange={(e) => handleEmailChange('imapPassword', e.target.value)}
+                  placeholder="Пароль приложения"
+                  className="pr-10"
+                />
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  className="absolute right-1 top-1/2 -translate-y-1/2 h-7 w-7 p-0"
+                  onClick={() => setShowImapPassword(!showImapPassword)}
+                >
+                  {showImapPassword ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
+                </Button>
+              </div>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label className="text-sm font-medium">Шифрование</Label>
+              <Select value={emailSettings.imapEncryption} onValueChange={(v) => handleEmailChange('imapEncryption', v)}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="ssl">SSL (порт 993)</SelectItem>
+                  <SelectItem value="tls">STARTTLS</SelectItem>
+                  <SelectItem value="none">Без шифрования</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label className="text-sm font-medium flex items-center gap-1">
+                <Clock className="h-3.5 w-3.5" />
+                Интервал проверки
+              </Label>
+              <Select value={emailSettings.imapCheckInterval} onValueChange={(v) => handleEmailChange('imapCheckInterval', v)}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="5">Каждые 5 минут</SelectItem>
+                  <SelectItem value="15">Каждые 15 минут</SelectItem>
+                  <SelectItem value="30">Каждые 30 минут</SelectItem>
+                  <SelectItem value="60">Каждый час</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+
+          <div className="flex justify-end">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleTestImap}
+              disabled={testingImap || !emailSettings.imapHost}
+              className="gap-1.5"
+            >
+              {testingImap ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Plug className="h-3.5 w-3.5" />}
+              Тест IMAP
+            </Button>
+          </div>
+        </div>
+      </SectionCard>
+
+      {/* AI Provider Settings Section */}
+      <SectionCard
+        icon={Brain}
+        title="ИИ-провайдер и модель"
+        description="Настройка нейросети для работы агента-ассистента"
+        accentColor="violet-600"
+        onSave={handleSaveAi}
+        onReset={handleResetAi}
+        hasChanges={aiSettingsChanged}
+      >
+        <div className="space-y-4">
+          {/* Provider selector */}
+          <div className="space-y-2">
+            <Label className="text-sm font-medium">Провайдер ИИ</Label>
+            <div className="flex flex-wrap gap-2">
+              {[
+                { id: 'z-ai', label: 'Z-AI (по умолчанию)', desc: 'Встроенный' },
+                { id: 'openai', label: 'OpenAI', desc: 'GPT-4o' },
+                { id: 'anthropic', label: 'Anthropic', desc: 'Claude' },
+                { id: 'yandex', label: 'Yandex', desc: 'YandexGPT' },
+                { id: 'custom', label: 'Другой', desc: 'Custom API' },
+              ].map((p) => (
+                <button
+                  key={p.id}
+                  onClick={() => {
+                    handleAiChange('provider', p.id)
+                    // Set default model for provider
+                    const models: Record<string, string> = {
+                      'z-ai': 'glm-4',
+                      openai: 'gpt-4o',
+                      anthropic: 'claude-3.5-sonnet',
+                      yandex: 'yandexgpt-lite',
+                      custom: '',
+                    }
+                    handleAiChange('model', models[p.id] ?? '')
+                  }}
+                  className={`inline-flex flex-col items-start rounded-lg px-3 py-2 text-left transition-all duration-200 border ${
+                    aiSettings.provider === p.id
+                      ? 'border-primary bg-primary/5 shadow-sm'
+                      : 'border-transparent bg-muted/40 hover:bg-muted/60'
+                  }`}
+                >
+                  <span className="text-sm font-medium">{p.label}</span>
+                  <span className="text-[10px] text-muted-foreground">{p.desc}</span>
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <Separator />
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label className="text-sm font-medium">Модель</Label>
+              <Select value={aiSettings.model} onValueChange={(v) => handleAiChange('model', v)}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  {aiSettings.provider === 'z-ai' && (
+                    <>
+                      <SelectItem value="glm-4">GLM-4</SelectItem>
+                      <SelectItem value="glm-4-flash">GLM-4 Flash</SelectItem>
+                    </>
+                  )}
+                  {aiSettings.provider === 'openai' && (
+                    <>
+                      <SelectItem value="gpt-4o">GPT-4o</SelectItem>
+                      <SelectItem value="gpt-4o-mini">GPT-4o Mini</SelectItem>
+                      <SelectItem value="gpt-4-turbo">GPT-4 Turbo</SelectItem>
+                    </>
+                  )}
+                  {aiSettings.provider === 'anthropic' && (
+                    <>
+                      <SelectItem value="claude-3.5-sonnet">Claude 3.5 Sonnet</SelectItem>
+                      <SelectItem value="claude-3-haiku">Claude 3 Haiku</SelectItem>
+                    </>
+                  )}
+                  {aiSettings.provider === 'yandex' && (
+                    <>
+                      <SelectItem value="yandexgpt-lite">YandexGPT Lite</SelectItem>
+                      <SelectItem value="yandexgpt">YandexGPT Pro</SelectItem>
+                    </>
+                  )}
+                  {aiSettings.provider === 'custom' && (
+                    <SelectItem value="custom">Ввод вручную</SelectItem>
+                  )}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label className="text-sm font-medium flex items-center gap-1">
+                <Key className="h-3.5 w-3.5" />
+                API ключ
+              </Label>
+              <div className="relative">
+                <Input
+                  type={showAiApiKey ? 'text' : 'password'}
+                  value={aiSettings.apiKey}
+                  onChange={(e) => handleAiChange('apiKey', e.target.value)}
+                  placeholder={aiSettings.provider === 'z-ai' ? 'Встроенный (не требуется)' : 'sk-...'}
+                  className="pr-10"
+                  disabled={aiSettings.provider === 'z-ai'}
+                />
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  className="absolute right-1 top-1/2 -translate-y-1/2 h-7 w-7 p-0"
+                  onClick={() => setShowAiApiKey(!showAiApiKey)}
+                  disabled={aiSettings.provider === 'z-ai'}
+                >
+                  {showAiApiKey ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
+                </Button>
+              </div>
+            </div>
+          </div>
+
+          {aiSettings.provider === 'custom' && (
+            <div className="space-y-2">
+              <Label className="text-sm font-medium flex items-center gap-1">
+                <Globe className="h-3.5 w-3.5" />
+                API Endpoint
+              </Label>
+              <Input
+                value={aiSettings.apiEndpoint}
+                onChange={(e) => handleAiChange('apiEndpoint', e.target.value)}
+                placeholder="https://api.example.com/v1/chat/completions"
+              />
+            </div>
+          )}
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label className="text-sm font-medium flex items-center gap-1">
+                <Thermometer className="h-3.5 w-3.5" />
+                Температура (креативность)
+              </Label>
+              <div className="flex items-center gap-3">
+                <Input
+                  type="range"
+                  min={0}
+                  max={2}
+                  step={0.1}
+                  value={aiSettings.temperature}
+                  onChange={(e) => handleAiChange('temperature', e.target.value)}
+                  className="flex-1"
+                />
+                <span className="text-sm font-mono w-10 text-right">{aiSettings.temperature}</span>
+              </div>
+              <p className="text-[10px] text-muted-foreground">0 = точно, 1 = сбалансировано, 2 = креативно</p>
+            </div>
+            <div className="space-y-2">
+              <Label className="text-sm font-medium">Макс. токенов ответа</Label>
+              <Select value={aiSettings.maxTokens} onValueChange={(v) => handleAiChange('maxTokens', v)}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="1024">1 024</SelectItem>
+                  <SelectItem value="2048">2 048</SelectItem>
+                  <SelectItem value="4096">4 096</SelectItem>
+                  <SelectItem value="8192">8 192</SelectItem>
+                  <SelectItem value="16384">16 384</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+
+          <div className="space-y-2">
+            <Label className="text-sm font-medium flex items-center gap-1">
+              <MessageSquare className="h-3.5 w-3.5" />
+              Системный промпт
+            </Label>
+            <Textarea
+              value={aiSettings.systemPrompt}
+              onChange={(e) => handleAiChange('systemPrompt', e.target.value)}
+              rows={5}
+              className="font-mono text-sm resize-y"
+              placeholder="Опишите роль и поведение ИИ-ассистента..."
+            />
+            <p className="text-[10px] text-muted-foreground">Определяет, как ИИ будет отвечать на запросы. Измените под свои нужды.</p>
+          </div>
+
+          <div className="flex justify-end">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleTestAi}
+              disabled={testingAi}
+              className="gap-1.5"
+            >
+              {testingAi ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Brain className="h-3.5 w-3.5" />}
+              Тест ИИ
+            </Button>
+          </div>
+        </div>
+      </SectionCard>
+
+      {/* Telegram Bot Settings Section */}
+      <SectionCard
+        icon={Bot}
+        title="Telegram бот"
+        description="Настройка бота для приёма Excel и управления через Telegram"
+        accentColor="sky-600"
+        onSave={handleSaveTelegram}
+        onReset={handleResetTelegram}
+        hasChanges={telegramSettingsChanged}
+      >
+        <div className="space-y-4">
+          {/* Status indicator */}
+          <div className={`flex items-center gap-2 rounded-lg p-3 ${telegramSettings.botToken ? 'bg-emerald-50 dark:bg-emerald-950/30' : 'bg-amber-50 dark:bg-amber-950/30'}`}>
+            {telegramSettings.botToken ? (
+              <CheckCircle2 className="size-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
+            ) : (
+              <Bot className="size-4 text-amber-600 dark:text-amber-400 shrink-0" />
+            )}
+            <span className="text-sm font-medium">
+              {telegramSettings.botToken ? (telegramSettings.isEnabled ? 'Бот активен' : 'Бот настроен, но выключен') : 'Telegram бот не настроен'}
+            </span>
+            {telegramSettings.botToken && telegramSettings.isEnabled && (
+              <Badge className="ml-auto bg-emerald-600 text-white text-[10px]">Активен</Badge>
+            )}
+          </div>
+
+          {/* Enable/Disable */}
+          {telegramSettings.botToken && (
+            <div className="flex items-center justify-between gap-4 rounded-lg p-3 hover:bg-muted/50">
+              <div className="space-y-0.5 min-w-0">
+                <Label className="text-sm font-medium cursor-pointer">Включить бота</Label>
+                <p className="text-xs text-muted-foreground">Бот будет принимать сообщения и файлы</p>
+              </div>
+              <Switch
+                checked={telegramSettings.isEnabled}
+                onCheckedChange={(v) => handleTelegramChange('isEnabled', v)}
+                className="data-[state=checked]:bg-sky-500"
+              />
+            </div>
+          )}
+
+          <Separator />
+
+          <div className="space-y-2">
+            <Label className="text-sm font-medium flex items-center gap-1">
+              <Key className="h-3.5 w-3.5" />
+              Токен бота
+            </Label>
+            <div className="relative">
+              <Input
+                type={showBotToken ? 'text' : 'password'}
+                value={telegramSettings.botToken}
+                onChange={(e) => handleTelegramChange('botToken', e.target.value)}
+                placeholder="1234567890:ABCdefGHIjklMNOpqrsTUVwxyz"
+                className="pr-10"
+              />
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                className="absolute right-1 top-1/2 -translate-y-1/2 h-7 w-7 p-0"
+                onClick={() => setShowBotToken(!showBotToken)}
+              >
+                {showBotToken ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
+              </Button>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label className="text-sm font-medium">Webhook URL (опционально)</Label>
+              <Input
+                value={telegramSettings.webhookUrl}
+                onChange={(e) => handleTelegramChange('webhookUrl', e.target.value)}
+                placeholder="https://your-server.com/api/telegram/webhook"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label className="text-sm font-medium">Chat ID (для уведомлений)</Label>
+              <Input
+                value={telegramSettings.chatId}
+                onChange={(e) => handleTelegramChange('chatId', e.target.value)}
+                placeholder="123456789"
+              />
+            </div>
+          </div>
+
+          <div className="flex justify-end">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleTestTelegram}
+              disabled={testingTelegram || !telegramSettings.botToken}
+              className="gap-1.5"
+            >
+              {testingTelegram ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Bot className="h-3.5 w-3.5" />}
+              Тест бота
+            </Button>
+          </div>
+
+          <div className="rounded-md bg-muted/50 px-3 py-2">
+            <p className="text-xs text-muted-foreground">
+              🤖 Создайте бота через @BotFather в Telegram. Получите токен и вставьте выше.
+              После настройки отправляйте Excel-файлы боту — он автоматически создаст проект
+              и запустит процесс группировки позиций по поставщикам.
+            </p>
           </div>
         </div>
       </SectionCard>
@@ -1546,7 +2331,7 @@ export function Settings() {
             </div>
             <div>
               <h3 className="text-lg font-bold">ПРОМЕБЕЛЬ</h3>
-              <p className="text-sm text-muted-foreground">Система управления закупками мебели</p>
+              <p className="text-sm text-muted-foreground">Управление закупками ПРОМЕБЕЛЬ</p>
               <Badge variant="secondary" className="mt-1 gap-1">
                 <Star className="h-3 w-3" />
                 v3.2.0

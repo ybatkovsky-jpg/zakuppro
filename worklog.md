@@ -2216,3 +2216,64 @@ Stage Summary:
 Files modified:
 - `/home/z/my-project/src/components/app/warehouse.tsx` — Complete rewrite with 12 major enhancements
 - `/home/z/my-project/src/components/app/settings.tsx` — Complete rewrite with 10 major enhancements
+
+---
+
+## Session 11: Settings Foundation — SMTP/IMAP, AI Provider, Telegram Bot Configuration
+
+### Current Project Status Assessment
+
+The app has gone through 10+ development sessions and is a comprehensive procurement management system for furniture company ПРОМЕБЕЛЬ. Previous QA rated pages at 7/10 average. Key missing features identified by user: real email sending (SMTP), email receiving (IMAP), AI provider configuration, and Telegram bot integration.
+
+### QA Findings (Session 11 Start)
+- Dashboard had blue rectangular artifact from broken SVG dot pattern
+- "Управление закупками мебели" appeared in sidebar, reports, and metadata — should be "Управление закупками ПРОМЕБЕЛЬ"
+- Settings page had dummy integration section (SMTP/API key) with no real backend
+- No AI provider settings
+- No Telegram bot settings
+
+### Completed Work
+
+#### 1. Database Schema — 3 New Models
+- **EmailSettings** model: SMTP (host, port, user, password, encryption, sender name/email, signature) + IMAP (host, port, user, password, encryption, check interval, enabled flag) + isConfigured status
+- **AiSettings** model: Provider (z-ai, openai, anthropic, yandex, custom), model, API key, API endpoint, temperature, max tokens, system prompt, test status
+- **TelegramSettings** model: Bot token, webhook URL, chat ID, allowed users (JSON), isConfigured, isEnabled, last message timestamp
+- Ran `bun run db:push` and `bun run db:generate` to sync
+
+#### 2. API Routes — 3 New Endpoints
+- **`/api/settings/email`** — GET (fetch/create default), PUT (save with password masking), POST (test SMTP/IMAP connection)
+- **`/api/settings/ai`** — GET (fetch/create with default Russian system prompt), PUT (save with API key masking), POST (test AI connection)
+- **`/api/settings/telegram`** — GET (fetch/create default), PUT (save with bot token masking), POST (real test via Telegram Bot API getMe)
+
+#### 3. Settings Page — Major Rewrite
+- Replaced dummy "Интеграции" section with 4 new professional sections:
+  - **SMTP (Отправка)**: Server, port, login, password with show/hide, encryption selector, sender email/name, signature, test button, status indicator, helpful tips
+  - **IMAP (Получение)**: Enable/disable toggle, server, port, login, password, encryption, check interval, test button
+  - **ИИ-провайдер**: Provider selector (Z-AI, OpenAI, Anthropic, Yandex, Custom) with card-style buttons, model dropdown (context-aware per provider), API key with masking, custom endpoint for custom provider, temperature slider, max tokens selector, system prompt textarea, test button
+  - **Telegram бот**: Status indicator, enable/disable toggle, bot token with masking, webhook URL, chat ID, real test button, helpful instructions
+- All sections persist to database via API
+- All password/key fields use show/hide toggle
+- All sections have save/reset buttons with change tracking
+
+#### 4. Bug Fixes
+- **Fixed**: Blue rectangular artifact on Dashboard — replaced broken SVG `<pattern>` + `<rect>` with CSS `radial-gradient` dot pattern
+- **Fixed**: "Управление закупками мебели" → "Управление закупками ПРОМЕБЕЛЬ" in sidebar, layout metadata, reports, and About section
+
+### Verification
+- `bun run lint`: Clean pass
+- Dev server: Running with no errors
+- All 3 new API endpoints returning 200 (email, ai, telegram)
+- Email settings auto-create on first GET
+- AI settings auto-create with Russian system prompt
+- Telegram settings auto-create with empty defaults
+- Password/key masking works correctly (returns `••••••••`)
+- Test connection buttons functional
+
+### Unresolved Issues / Next Phase Recommendations
+- **Telegram Bot mini-service**: Need to create actual bot service that receives Excel files and processes them
+- **SMTP sending**: Need real email sending integration (nodemailer or similar)
+- **IMAP receiving**: Need real email reading integration
+- **AI provider switching**: Need to actually use configured provider/model in assistant API
+- Could add Kanban board view for Projects
+- Could add Russian pluralization fixes across all pages
+- Could add user authentication via NextAuth.js

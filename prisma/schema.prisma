@@ -235,6 +235,65 @@ model AutomationRule {
   updatedAt   DateTime @updatedAt
 }
 
+// === EMAIL SETTINGS (SMTP/IMAP) ===
+model EmailSettings {
+  id              String @id @default(cuid())
+  // SMTP (отправка)
+  smtpHost        String @default("")
+  smtpPort        Int    @default(587)
+  smtpUser        String @default("")
+  smtpPassword    String @default("")
+  smtpEncryption  String @default("tls") // tls, ssl, none
+  senderName      String @default("")
+  senderEmail     String @default("")
+  emailSignature  String @default("")
+  // IMAP (получение)
+  imapHost        String @default("")
+  imapPort        Int    @default(993)
+  imapUser        String @default("")
+  imapPassword    String @default("")
+  imapEncryption  String @default("ssl") // ssl, tls, none
+  imapCheckInterval Int  @default(15)    // минуты
+  imapEnabled     Boolean @default(false)
+  // Общие
+  isConfigured    Boolean @default(false)
+  lastCheckedAt   DateTime?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+}
+
+// === AI PROVIDER SETTINGS ===
+model AiSettings {
+  id              String @id @default(cuid())
+  provider        String @default("z-ai")     // z-ai, openai, anthropic, yandex, custom
+  model           String @default("glm-4")    // glm-4, gpt-4o, claude-3.5-sonnet, yandexgpt-lite
+  apiKey          String @default("")
+  apiEndpoint     String @default("")          // для custom провайдера
+  temperature     Float  @default(0.7)
+  maxTokens       Int    @default(4096)
+  systemPrompt    String @default("")
+  // Статус
+  isConfigured    Boolean @default(false)
+  lastTestedAt    DateTime?
+  testResult      String @default("")          // success, error message
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+}
+
+// === TELEGRAM BOT SETTINGS ===
+model TelegramSettings {
+  id              String @id @default(cuid())
+  botToken        String @default("")
+  webhookUrl      String @default("")
+  chatId          String @default("")           // ID чата с пользователем
+  allowedUsers    String @default("[]")         // JSON array of allowed Telegram user IDs
+  isConfigured    Boolean @default(false)
+  isEnabled       Boolean @default(false)
+  lastMessageAt   DateTime?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+}
+
 // === DELIVERIES ===
 model Delivery {
   id             String @id @default(cuid())

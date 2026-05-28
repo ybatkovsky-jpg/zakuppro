@@ -159,7 +159,7 @@ export function AppSidebar() {
           <div className="flex flex-col group-data-[collapsible=icon]:hidden">
             <span className="text-sm font-bold tracking-tight gradient-text">ПРОМЕБЕЛЬ</span>
             <span className="text-[10px] text-sidebar-foreground/60">
-              Управление закупками мебели
+              Управление закупками ПРОМЕБЕЛЬ
             </span>
           </div>
         </div>
