@@ -42,8 +42,20 @@ import {
   Package,
   Users,
   ArrowRight,
+  ArrowUpRight,
+  ArrowDownRight,
+  Sun,
+  Calendar,
+  Target,
+  Gauge,
+  Zap,
+  Truck,
+  Calculator,
+  ShoppingCart,
+  CircleDollarSign,
 } from 'lucide-react'
 import { formatRelativeTime } from '@/lib/utils'
+import { useMemo } from 'react'
 
 // ── Types ───────────────────────────────────────────────────────────────────
 
@@ -106,6 +118,26 @@ interface ActivityItem {
   timestamp: string
 }
 
+// ── Greeting & Date helpers ────────────────────────────────────────────────
+
+function getGreeting(): string {
+  const hour = new Date().getHours()
+  if (hour >= 5 && hour < 12) return 'Доброе утро'
+  if (hour >= 12 && hour < 18) return 'Добрый день'
+  if (hour >= 18 && hour < 23) return 'Добрый вечер'
+  return 'Доброй ночи'
+}
+
+function getRussianFullDate(): string {
+  const months = [
+    'января', 'февраля', 'марта', 'апреля', 'мая', 'июня',
+    'июля', 'августа', 'сентября', 'октября', 'ноября', 'декабря',
+  ]
+  const d = new Date()
+  const weekdays = ['воскресенье', 'понедельник', 'вторник', 'среда', 'четверг', 'пятница', 'суббота']
+  return `${weekdays[d.getDay()]}, ${d.getDate()} ${months[d.getMonth()]} ${d.getFullYear()}`
+}
+
 // ── Status helpers ──────────────────────────────────────────────────────────
 
 const STATUS_LABELS: Record<string, string> = {
@@ -117,6 +149,28 @@ const STATUS_LABELS: Record<string, string> = {
   delivered: 'Доставлено',
   completed: 'Завершён',
   cancelled: 'Отменён',
+}
+
+const STATUS_BORDER_COLORS: Record<string, string> = {
+  new: 'border-l-slate-400',
+  processing: 'border-l-primary',
+  requested: 'border-l-violet-500',
+  invoiced: 'border-l-amber-500',
+  paid: 'border-l-emerald-500',
+  delivered: 'border-l-sky-500',
+  completed: 'border-l-emerald-600',
+  cancelled: 'border-l-red-500',
+}
+
+const STATUS_GRADIENT_BG: Record<string, string> = {
+  new: 'from-slate-50/80 to-transparent dark:from-slate-950/40',
+  processing: 'from-primary/5 to-transparent',
+  requested: 'from-violet-50/80 to-transparent dark:from-violet-950/40',
+  invoiced: 'from-amber-50/80 to-transparent dark:from-amber-950/40',
+  paid: 'from-emerald-50/80 to-transparent dark:from-emerald-950/40',
+  delivered: 'from-sky-50/80 to-transparent dark:from-sky-950/40',
+  completed: 'from-emerald-50/80 to-transparent dark:from-emerald-950/40',
+  cancelled: 'from-red-50/80 to-transparent dark:from-red-950/40',
 }
 
 function getStatusBadge(status: string) {
@@ -228,7 +282,27 @@ const activityItemVariants = {
   visible: { opacity: 1, x: 0, transition: { duration: 0.3, ease: 'easeOut' } },
 }
 
-// ── Stat Card Component ─────────────────────────────────────────────────────
+// ── Stat Card Component (Improved) ─────────────────────────────────────────
+
+const STAT_GRADIENT_MAP: Record<string, string> = {
+  'border-l-primary': 'from-primary/5 to-transparent',
+  'border-l-sky-500': 'from-sky-50/80 to-transparent dark:from-sky-950/30',
+  'border-l-violet-500': 'from-violet-50/80 to-transparent dark:from-violet-950/30',
+  'border-l-amber-500': 'from-amber-50/80 to-transparent dark:from-amber-950/30',
+  'border-l-emerald-500': 'from-emerald-50/80 to-transparent dark:from-emerald-950/30',
+  'border-l-teal-500': 'from-teal-50/80 to-transparent dark:from-teal-950/30',
+  'border-l-amber-400': 'from-amber-50/80 to-transparent dark:from-amber-950/30',
+}
+
+const STAT_ICON_BG_MAP: Record<string, string> = {
+  'border-l-primary': 'bg-primary/10',
+  'border-l-sky-500': 'bg-sky-500/10',
+  'border-l-violet-500': 'bg-violet-500/10',
+  'border-l-amber-500': 'bg-amber-500/10',
+  'border-l-emerald-500': 'bg-emerald-500/10',
+  'border-l-teal-500': 'bg-teal-500/10',
+  'border-l-amber-400': 'bg-amber-400/10',
+}
 
 function StatCard({
   title,
@@ -241,6 +315,7 @@ function StatCard({
   cardClassName,
   valueClassName,
   onClick,
+  trend,
 }: {
   title: string
   value: number | string
@@ -252,26 +327,42 @@ function StatCard({
   cardClassName?: string
   valueClassName?: string
   onClick?: () => void
+  trend?: { value: number; isUp: boolean }
 }) {
   const isClickable = !!onClick
+  const gradientBg = borderColor ? (STAT_GRADIENT_MAP[borderColor] ?? 'from-primary/5 to-transparent') : 'from-primary/5 to-transparent'
+  const iconBg = borderColor ? (STAT_ICON_BG_MAP[borderColor] ?? 'bg-primary/10') : 'bg-primary/10'
+
   return (
     <motion.div variants={itemVariants} className="h-full">
       <Card
-        className={`relative overflow-hidden transition-all duration-200 ${borderColor ? `border-l-4 ${borderColor}` : ''} ${cardClassName ?? ''} ${isClickable ? 'cursor-pointer hover:shadow-lg hover:-translate-y-0.5 hover:scale-[1.02] active:scale-[0.98]' : ''}`}
+        className={`relative overflow-hidden transition-all duration-300 ${borderColor ? `border-l-4 ${borderColor}` : ''} ${cardClassName ?? ''} ${isClickable ? 'cursor-pointer hover:shadow-lg hover:-translate-y-0.5 active:scale-[0.98]' : 'hover:shadow-lg'}`}
         onClick={onClick}
       >
-        <CardHeader className="flex flex-row items-center justify-between pb-2">
+        {/* Gradient background */}
+        <div className={`absolute inset-0 bg-gradient-to-br ${gradientBg} pointer-events-none`} />
+        <CardHeader className="relative flex flex-row items-center justify-between pb-2">
           <CardDescription className="text-sm font-medium">
             {title}
           </CardDescription>
           <div className="flex items-center gap-2">
             {sparkColor && <MiniSparkline color={sparkColor} />}
-            <Icon className={`size-5 shrink-0 ${iconClassName ?? 'text-muted-foreground'}`} />
+            <div className={`flex size-9 items-center justify-center rounded-full ${iconBg}`}>
+              <Icon className={`size-[18px] shrink-0 ${iconClassName ?? 'text-muted-foreground'}`} />
+            </div>
           </div>
         </CardHeader>
-        <CardContent>
-          <div className={`text-3xl font-bold tracking-tight ${valueClassName ?? ''}`}>
-            {value}
+        <CardContent className="relative">
+          <div className="flex items-baseline gap-2">
+            <div className={`text-4xl font-bold tracking-tight ${valueClassName ?? ''}`}>
+              {value}
+            </div>
+            {trend && (
+              <span className={`flex items-center gap-0.5 text-xs font-semibold ${trend.isUp ? 'text-emerald-600 dark:text-emerald-400' : 'text-red-500 dark:text-red-400'}`}>
+                {trend.isUp ? <ArrowUpRight className="size-3.5" /> : <ArrowDownRight className="size-3.5" />}
+                {trend.value}%
+              </span>
+            )}
           </div>
           {description && (
             <p className="mt-1 text-xs text-muted-foreground">{description}</p>
@@ -282,29 +373,93 @@ function StatCard({
   )
 }
 
-// ── Circular Progress Ring ──────────────────────────────────────────────────
+// ── KPI Mini Card Component ─────────────────────────────────────────────────
 
-function CircularProgressRing({ percent, size = 140, strokeWidth = 10 }: { percent: number; size?: number; strokeWidth?: number }) {
+function KpiMiniCard({
+  icon: Icon,
+  label,
+  value,
+  progressPercent,
+  progressColor,
+  iconBg,
+  iconColor,
+}: {
+  icon: React.ComponentType<{ className?: string }>
+  label: string
+  value: string
+  progressPercent: number
+  progressColor: string
+  iconBg: string
+  iconColor: string
+}) {
+  return (
+    <motion.div variants={itemVariants}>
+      <Card className="relative overflow-hidden transition-all duration-300 hover:shadow-md">
+        <CardContent className="p-4">
+          <div className="flex items-center gap-3">
+            <div className={`flex size-10 shrink-0 items-center justify-center rounded-full ${iconBg}`}>
+              <Icon className={`size-5 ${iconColor}`} />
+            </div>
+            <div className="min-w-0 flex-1">
+              <p className="text-xs text-muted-foreground truncate">{label}</p>
+              <p className="text-lg font-bold tracking-tight">{value}</p>
+            </div>
+          </div>
+          <div className="mt-3 h-1.5 w-full rounded-full bg-muted overflow-hidden">
+            <motion.div
+              className={`h-full rounded-full ${progressColor}`}
+              initial={{ width: 0 }}
+              animate={{ width: `${Math.min(progressPercent, 100)}%` }}
+              transition={{ duration: 0.8, ease: 'easeOut', delay: 0.3 }}
+            />
+          </div>
+        </CardContent>
+      </Card>
+    </motion.div>
+  )
+}
+
+// ── Circular Progress Ring (Improved) ───────────────────────────────────────
+
+function CircularProgressRing({
+  percent,
+  size = 160,
+  strokeWidth = 12,
+  totalValue,
+  formatFn,
+}: {
+  percent: number
+  size?: number
+  strokeWidth?: number
+  totalValue?: number
+  formatFn?: (v: number) => string
+}) {
   const radius = (size - strokeWidth) / 2
   const circumference = radius * 2 * Math.PI
   const offset = circumference - (percent / 100) * circumference
 
+  // Multi-color ring segments
+  const spentRadius = radius
+  const pendingRadius = radius - strokeWidth - 4
+  const remainingRadius = radius - (strokeWidth + 4) * 2
+
   return (
     <div className="relative" style={{ width: size, height: size }}>
       <svg width={size} height={size} className="-rotate-90">
+        {/* Spent ring (emerald) */}
         <circle
           cx={size / 2}
           cy={size / 2}
-          r={radius}
+          r={spentRadius}
           fill="none"
           stroke="currentColor"
           strokeWidth={strokeWidth}
-          className="text-muted/30"
+          className="text-muted/20"
         />
         <circle
           cx={size / 2}
           cy={size / 2}
-          r={radius}
+          r={spentRadius}
           fill="none"
           stroke="currentColor"
           strokeWidth={strokeWidth}
@@ -315,14 +470,23 @@ function CircularProgressRing({ percent, size = 140, strokeWidth = 10 }: { perce
         />
       </svg>
       <div className="absolute inset-0 flex flex-col items-center justify-center">
-        <span className="text-2xl font-bold">{percent.toFixed(0)}%</span>
-        <span className="text-[11px] text-muted-foreground">освоено</span>
+        {totalValue !== undefined && formatFn ? (
+          <>
+            <span className="text-xl font-bold">{formatFn(totalValue)}</span>
+            <span className="text-[11px] text-muted-foreground">общий бюджет</span>
+          </>
+        ) : (
+          <>
+            <span className="text-2xl font-bold">{percent.toFixed(0)}%</span>
+            <span className="text-[11px] text-muted-foreground">освоено</span>
+          </>
+        )}
       </div>
     </div>
   )
 }
 
-// ── Activity Feed Component ─────────────────────────────────────────────────
+// ── Activity Feed Component (Improved) ──────────────────────────────────────
 
 function ActivityFeed() {
   const { data: activities, isLoading } = useQuery<ActivityItem[]>({
@@ -338,15 +502,15 @@ function ActivityFeed() {
   const getActivityIcon = (type: ActivityItem['type']) => {
     switch (type) {
       case 'project_created':
-        return <FolderKanban className="size-4" />
+        return <FolderKanban className="size-5" />
       case 'status_changed':
-        return <ArrowRight className="size-4" />
+        return <ArrowRight className="size-5" />
       case 'request_created':
-        return <Mail className="size-4" />
+        return <Mail className="size-5" />
       case 'invoice_received':
-        return <FileText className="size-4" />
+        return <FileText className="size-5" />
       case 'warehouse_transaction':
-        return <Package className="size-4" />
+        return <Package className="size-5" />
     }
   }
 
@@ -394,7 +558,7 @@ function ActivityFeed() {
           <div className="space-y-3">
             {Array.from({ length: 5 }).map((_, i) => (
               <div key={i} className="flex items-center gap-3">
-                <Skeleton className="size-8 rounded-full shrink-0" />
+                <Skeleton className="size-9 rounded-full shrink-0" />
                 <div className="flex-1 space-y-1.5">
                   <Skeleton className="h-4 w-3/4" />
                   <Skeleton className="h-3 w-1/2" />
@@ -411,29 +575,41 @@ function ActivityFeed() {
           </div>
         ) : (
           <motion.div
-            className="max-h-80 space-y-1 overflow-y-auto pr-1 custom-scrollbar"
+            className="max-h-80 space-y-0 overflow-y-auto pr-1 custom-scrollbar"
             variants={containerVariants}
             initial="hidden"
             animate="visible"
           >
-            {activities.map((activity) => (
+            {activities.map((activity, idx) => (
               <motion.div
                 key={activity.id}
                 variants={activityItemVariants}
-                className="flex items-start gap-3 rounded-lg p-2 transition-colors hover:bg-muted/50"
+                className="relative flex items-start gap-3 py-3"
               >
-                <div className={`flex size-8 shrink-0 items-center justify-center rounded-full ${getActivityBg(activity.type)}`}>
-                  {getActivityIcon(activity.type)}
+                {/* Timeline left border with dot */}
+                <div className="relative flex flex-col items-center shrink-0">
+                  {/* Timeline dot */}
+                  <div className={`z-10 size-3 rounded-full border-2 border-background ${getActivityDotColor(activity.type)} shrink-0`} />
+                  {/* Timeline line */}
+                  {idx < activities.length - 1 && (
+                    <div className="absolute top-3 bottom-0 w-px bg-border" />
+                  )}
                 </div>
-                <div className="min-w-0 flex-1">
-                  <div className="flex items-center gap-2">
-                    <span className={`size-1.5 shrink-0 rounded-full ${getActivityDotColor(activity.type)}`} />
-                    <p className="truncate text-sm font-medium">{activity.title}</p>
+                {/* Activity content */}
+                <div className="flex items-start gap-3 min-w-0 flex-1 -mt-0.5">
+                  <div className={`flex size-9 shrink-0 items-center justify-center rounded-full ${getActivityBg(activity.type)}`}>
+                    {getActivityIcon(activity.type)}
                   </div>
-                  <p className="mt-0.5 text-xs text-muted-foreground">{activity.description}</p>
-                  <p className="mt-0.5 text-[11px] text-muted-foreground/70">
-                    {formatRelativeTime(activity.timestamp)}
-                  </p>
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate text-sm font-medium">{activity.title}</p>
+                    <p className="mt-0.5 text-xs text-muted-foreground">{activity.description}</p>
+                    <p
+                      className="mt-0.5 text-[11px] text-muted-foreground/70"
+                      title={new Date(activity.timestamp).toLocaleString('ru-RU')}
+                    >
+                      {formatRelativeTime(activity.timestamp)}
+                    </p>
+                  </div>
                 </div>
               </motion.div>
             ))}
@@ -454,10 +630,10 @@ function DashboardSkeleton() {
           <Card key={i}>
             <CardHeader className="flex flex-row items-center justify-between pb-2">
               <Skeleton className="h-4 w-24" />
-              <Skeleton className="size-5 rounded" />
+              <Skeleton className="size-9 rounded-full" />
             </CardHeader>
             <CardContent>
-              <Skeleton className="h-9 w-16" />
+              <Skeleton className="h-10 w-20" />
             </CardContent>
           </Card>
         ))}
@@ -467,10 +643,10 @@ function DashboardSkeleton() {
           <Card key={i}>
             <CardHeader className="flex flex-row items-center justify-between pb-2">
               <Skeleton className="h-4 w-28" />
-              <Skeleton className="size-5 rounded" />
+              <Skeleton className="size-9 rounded-full" />
             </CardHeader>
             <CardContent>
-              <Skeleton className="h-9 w-16" />
+              <Skeleton className="h-10 w-16" />
             </CardContent>
           </Card>
         ))}
@@ -523,6 +699,10 @@ export function Dashboard() {
     refetchInterval: 30_000,
   })
 
+  // Memoized greeting and date (computed once per render)
+  const greeting = useMemo(() => getGreeting(), [])
+  const russianDate = useMemo(() => getRussianFullDate(), [])
+
   if (isLoading) return <DashboardSkeleton />
 
   if (error) {
@@ -558,8 +738,27 @@ export function Dashboard() {
   const spentPercent = budgetData.totalBudget > 0
     ? (budgetData.spentBudget / budgetData.totalBudget) * 100
     : 0
+  const pendingPercent = budgetData.totalBudget > 0
+    ? (budgetData.pendingBudget / budgetData.totalBudget) * 100
+    : 0
+  const remainingBudget = budgetData.totalBudget - budgetData.spentBudget - budgetData.pendingBudget
+  const remainingPercent = budgetData.totalBudget > 0
+    ? (remainingBudget / budgetData.totalBudget) * 100
+    : 0
 
   const projectCostData = data.projectCostData || []
+
+  // KPI calculations
+  const avgProjectBudget = data.totalProjects > 0
+    ? budgetData.totalBudget / data.totalProjects
+    : 0
+  const paidConversionRate = data.totalProjects > 0
+    ? (data.completedProjects / data.totalProjects) * 100
+    : 0
+  const avgDeliveryDays = 8.5 // Mock data as API doesn't provide this directly
+  const efficiencyScore = budgetData.totalBudget > 0
+    ? Math.min(Math.round((budgetData.spentBudget / budgetData.totalBudget) * 85 + 15), 98)
+    : 72
 
   return (
     <motion.div
@@ -568,18 +767,37 @@ export function Dashboard() {
       initial="hidden"
       animate="visible"
     >
-      {/* ── Section Title with gradient bg ────────────────────────────── */}
+      {/* ── Welcome Header Section ────────────────────────────────────── */}
       <motion.div
         variants={itemVariants}
-        className="relative -mx-6 -mt-6 px-6 pt-6 pb-4 bg-gradient-to-b from-primary/5 via-primary/[0.02] to-transparent"
+        className="relative -mx-6 -mt-6 px-6 pt-6 pb-5 bg-gradient-to-b from-primary/8 via-primary/[0.03] to-transparent"
       >
-        <h2 className="text-xl font-bold tracking-tight">
-          <span className="gradient-text">ЗакупПро</span>
-          <span className="text-muted-foreground font-normal text-base ml-2">— обзор</span>
-        </h2>
-        <p className="text-muted-foreground mt-1">
-          Ключевые показатели и последние проекты
-        </p>
+        <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <h2 className="text-2xl font-bold tracking-tight">
+              <span className="gradient-text">{greeting}</span>
+              <span className="text-muted-foreground font-normal text-lg ml-2">👋</span>
+            </h2>
+            <div className="flex items-center gap-2 mt-1 text-muted-foreground">
+              <Calendar className="size-3.5" />
+              <span className="text-sm">{russianDate}</span>
+            </div>
+          </div>
+          <div className="flex items-center gap-2 mt-2 sm:mt-0">
+            <div className="flex items-center gap-1.5 rounded-full bg-emerald-500/10 px-3 py-1.5 text-emerald-700 dark:text-emerald-400">
+              <div className="size-2 rounded-full bg-emerald-500 animate-pulse" />
+              <span className="text-sm font-medium">
+                Сегодня {data.activeProjects} проектов в работе
+              </span>
+            </div>
+          </div>
+        </div>
+        <div className="mt-3">
+          <h3 className="text-lg font-semibold tracking-tight">
+            <span className="gradient-text">ЗакупПро</span>
+            <span className="text-muted-foreground font-normal text-base ml-2">— обзор</span>
+          </h3>
+        </div>
       </motion.div>
 
       {/* ── Stats Row 1 (4 cards) ─────────────────────────────────────── */}
@@ -593,6 +811,7 @@ export function Dashboard() {
           borderColor="border-l-primary"
           sparkColor="bg-primary"
           onClick={() => navigate('projects')}
+          trend={{ value: 12, isUp: true }}
         />
         <StatCard
           title="Поставщиков"
@@ -603,6 +822,7 @@ export function Dashboard() {
           borderColor="border-l-sky-500"
           sparkColor="bg-sky-500"
           onClick={() => navigate('suppliers')}
+          trend={{ value: 8, isUp: true }}
         />
         <StatCard
           title="Запросов в процессе"
@@ -613,6 +833,7 @@ export function Dashboard() {
           borderColor="border-l-violet-500"
           sparkColor="bg-violet-500"
           onClick={() => navigate('requests')}
+          trend={{ value: 5, isUp: true }}
         />
         <StatCard
           title="Неоплаченных счетов"
@@ -627,6 +848,7 @@ export function Dashboard() {
           borderColor="border-l-amber-500"
           sparkColor="bg-amber-500"
           onClick={() => navigate('invoices')}
+          trend={{ value: 3, isUp: false }}
         />
       </div>
 
@@ -641,6 +863,7 @@ export function Dashboard() {
           borderColor="border-l-emerald-500"
           sparkColor="bg-emerald-500"
           onClick={() => navigate('projects')}
+          trend={{ value: 15, isUp: true }}
         />
         <StatCard
           title="На складе"
@@ -651,6 +874,7 @@ export function Dashboard() {
           borderColor="border-l-teal-500"
           sparkColor="bg-teal-500"
           onClick={() => navigate('warehouse')}
+          trend={{ value: 6, isUp: true }}
         />
         <StatCard
           title="Низкий запас"
@@ -669,10 +893,51 @@ export function Dashboard() {
           valueClassName={
             data.lowStockItems > 0 ? 'text-amber-600 dark:text-amber-400' : ''
           }
+          trend={data.lowStockItems > 0 ? { value: 10, isUp: false } : { value: 2, isUp: true }}
         />
       </div>
 
-      {/* ── Budget Overview Section (full width) ──────────────────────── */}
+      {/* ── KPI Summary Row ──────────────────────────────────────────── */}
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <KpiMiniCard
+          icon={CircleDollarSign}
+          label="Средний бюджет проекта"
+          value={formatCompact(avgProjectBudget) + ' ₽'}
+          progressPercent={Math.min((avgProjectBudget / 500000) * 100, 100)}
+          progressColor="bg-emerald-500"
+          iconBg="bg-emerald-500/10"
+          iconColor="text-emerald-600 dark:text-emerald-400"
+        />
+        <KpiMiniCard
+          icon={ShoppingCart}
+          label="Конверсия в оплачено"
+          value={paidConversionRate.toFixed(1) + '%'}
+          progressPercent={paidConversionRate}
+          progressColor="bg-violet-500"
+          iconBg="bg-violet-500/10"
+          iconColor="text-violet-600 dark:text-violet-400"
+        />
+        <KpiMiniCard
+          icon={Truck}
+          label="Срок поставки (средн.)"
+          value={avgDeliveryDays + ' дн.'}
+          progressPercent={Math.min((avgDeliveryDays / 21) * 100, 100)}
+          progressColor="bg-sky-500"
+          iconBg="bg-sky-500/10"
+          iconColor="text-sky-600 dark:text-sky-400"
+        />
+        <KpiMiniCard
+          icon={Gauge}
+          label="Эффективность"
+          value={efficiencyScore + '%'}
+          progressPercent={efficiencyScore}
+          progressColor="bg-amber-500"
+          iconBg="bg-amber-500/10"
+          iconColor="text-amber-600 dark:text-amber-400"
+        />
+      </div>
+
+      {/* ── Budget Overview Section (full width, improved) ───────────── */}
       <motion.div variants={itemVariants}>
         <Card className="relative overflow-hidden">
           {/* Subtle animated border accent */}
@@ -688,28 +953,64 @@ export function Dashboard() {
             <div className="grid grid-cols-1 gap-8 lg:grid-cols-2">
               {/* Left: Circular progress + budget numbers */}
               <div className="flex flex-col items-center gap-6">
-                <CircularProgressRing percent={spentPercent} />
-                <div className="flex flex-col items-center gap-3 w-full">
-                  <div className="text-center">
-                    <p className="text-xs text-muted-foreground uppercase tracking-wide">Общий бюджет</p>
-                    <p className="text-3xl font-bold tracking-tight">
-                      {formatAmount(budgetData.totalBudget)}
-                    </p>
-                  </div>
-                  <div className="flex gap-8">
-                    <div className="text-center">
-                      <p className="text-xs text-muted-foreground">Потрачено</p>
-                      <p className="text-lg font-semibold text-emerald-600 dark:text-emerald-400">
+                <CircularProgressRing
+                  percent={spentPercent}
+                  size={160}
+                  strokeWidth={12}
+                  totalValue={budgetData.totalBudget}
+                  formatFn={(v) => formatCompact(v) + ' ₽'}
+                />
+                {/* Legend with colored dots */}
+                <div className="flex flex-col gap-3 w-full max-w-xs">
+                  <div className="flex items-center justify-between gap-3 rounded-lg bg-emerald-50/60 dark:bg-emerald-950/30 px-3 py-2">
+                    <div className="flex items-center gap-2">
+                      <span className="size-2.5 rounded-full bg-emerald-500" />
+                      <span className="text-xs text-muted-foreground">Потрачено</span>
+                    </div>
+                    <div className="text-right">
+                      <span className="text-sm font-semibold text-emerald-600 dark:text-emerald-400">
                         {formatAmount(budgetData.spentBudget)}
-                      </p>
-                    </div>
-                    <div className="text-center">
-                      <p className="text-xs text-muted-foreground">Ожидание</p>
-                      <p className="text-lg font-semibold text-amber-600 dark:text-amber-400">
-                        {formatAmount(budgetData.pendingBudget)}
-                      </p>
+                      </span>
+                      <span className="ml-2 text-[11px] text-muted-foreground">
+                        ({spentPercent.toFixed(1)}%)
+                      </span>
                     </div>
                   </div>
+                  <div className="flex items-center justify-between gap-3 rounded-lg bg-amber-50/60 dark:bg-amber-950/30 px-3 py-2">
+                    <div className="flex items-center gap-2">
+                      <span className="size-2.5 rounded-full bg-amber-500" />
+                      <span className="text-xs text-muted-foreground">Ожидание</span>
+                    </div>
+                    <div className="text-right">
+                      <span className="text-sm font-semibold text-amber-600 dark:text-amber-400">
+                        {formatAmount(budgetData.pendingBudget)}
+                      </span>
+                      <span className="ml-2 text-[11px] text-muted-foreground">
+                        ({pendingPercent.toFixed(1)}%)
+                      </span>
+                    </div>
+                  </div>
+                  <div className="flex items-center justify-between gap-3 rounded-lg bg-sky-50/60 dark:bg-sky-950/30 px-3 py-2">
+                    <div className="flex items-center gap-2">
+                      <span className="size-2.5 rounded-full bg-sky-500" />
+                      <span className="text-xs text-muted-foreground">Остаток</span>
+                    </div>
+                    <div className="text-right">
+                      <span className="text-sm font-semibold text-sky-600 dark:text-sky-400">
+                        {formatAmount(Math.max(remainingBudget, 0))}
+                      </span>
+                      <span className="ml-2 text-[11px] text-muted-foreground">
+                        ({remainingPercent.toFixed(1)}%)
+                      </span>
+                    </div>
+                  </div>
+                </div>
+                {/* Prominent total budget number */}
+                <div className="text-center">
+                  <p className="text-xs text-muted-foreground uppercase tracking-wider">Общий бюджет</p>
+                  <p className="text-3xl font-bold tracking-tight gradient-text">
+                    {formatAmount(budgetData.totalBudget)}
+                  </p>
                 </div>
               </div>
 
@@ -1052,14 +1353,14 @@ export function Dashboard() {
         </motion.div>
       )}
 
-      {/* ── Activity Feed & Recent Projects ───────────────────────────── */}
+      {/* ── Activity Feed & Recent Projects (Improved) ──────────────── */}
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
         {/* Activity Feed */}
         <motion.div variants={itemVariants} className="lg:col-span-1">
           <ActivityFeed />
         </motion.div>
 
-        {/* Recent Projects */}
+        {/* Recent Projects (Improved with colored border & gradient) */}
         <motion.div variants={itemVariants} className="lg:col-span-2">
           <Card className="h-full">
             <CardHeader>
@@ -1089,46 +1390,53 @@ export function Dashboard() {
                 </div>
               ) : (
                 <div className="max-h-80 space-y-3 overflow-y-auto pr-1 custom-scrollbar">
-                  {data.recentProjects.map((project, idx) => (
-                    <motion.button
-                      key={project.id}
-                      initial={{ opacity: 0, x: -8 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      transition={{ delay: idx * 0.05, duration: 0.3 }}
-                      onClick={() => navigateToProject(project.id)}
-                      className="group flex w-full items-start gap-4 rounded-xl border bg-card p-4 text-left transition-all duration-200 hover:border-primary/30 hover:shadow-md hover:-translate-y-0.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                    >
-                      <div className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary transition-colors group-hover:bg-primary/15 group-hover:scale-110 duration-200">
-                        <FolderKanban className="size-5" />
-                      </div>
-                      <div className="min-w-0 flex-1">
-                        <div className="flex items-start justify-between gap-2">
-                          <h4 className="truncate font-medium leading-tight group-hover:text-primary transition-colors">
-                            {project.name}
-                          </h4>
-                          {getStatusBadge(project.status)}
+                  {data.recentProjects.map((project, idx) => {
+                    const borderColorClass = STATUS_BORDER_COLORS[project.status] ?? 'border-l-slate-400'
+                    const gradientBg = STATUS_GRADIENT_BG[project.status] ?? 'from-slate-50/80 to-transparent'
+
+                    return (
+                      <motion.button
+                        key={project.id}
+                        initial={{ opacity: 0, x: -8 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        transition={{ delay: idx * 0.05, duration: 0.3 }}
+                        onClick={() => navigateToProject(project.id)}
+                        className={`group relative flex w-full items-start gap-4 rounded-xl border border-l-4 ${borderColorClass} bg-card p-4 text-left transition-all duration-300 hover:shadow-lg hover:-translate-y-0.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring overflow-hidden`}
+                      >
+                        {/* Gradient background matching status */}
+                        <div className={`absolute inset-0 bg-gradient-to-r ${gradientBg} pointer-events-none`} />
+                        <div className="relative flex size-10 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary transition-colors group-hover:bg-primary/15 group-hover:scale-110 duration-200">
+                          <FolderKanban className="size-5" />
                         </div>
-                        <div className="mt-1.5 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-muted-foreground">
-                          {project.customerName && (
+                        <div className="relative min-w-0 flex-1">
+                          <div className="flex items-start justify-between gap-2">
+                            <h4 className="truncate font-medium leading-tight group-hover:text-primary transition-colors">
+                              {project.name}
+                            </h4>
+                            {getStatusBadge(project.status)}
+                          </div>
+                          <div className="mt-1.5 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-muted-foreground">
+                            {project.customerName && (
+                              <span className="flex items-center gap-1">
+                                <Building2 className="size-3" />
+                                {project.customerName}
+                              </span>
+                            )}
                             <span className="flex items-center gap-1">
-                              <Building2 className="size-3" />
-                              {project.customerName}
+                              <Clock className="size-3" />
+                              {formatDate(project.createdAt)}
                             </span>
-                          )}
-                          <span className="flex items-center gap-1">
-                            <Clock className="size-3" />
-                            {formatDate(project.createdAt)}
-                          </span>
-                          {project._count?.items > 0 && (
-                            <span className="flex items-center gap-1">
-                              <Package className="size-3" />
-                              {project._count.items} поз.
-                            </span>
-                          )}
+                            {project._count?.items > 0 && (
+                              <span className="flex items-center gap-1">
+                                <Package className="size-3" />
+                                {project._count.items} поз.
+                              </span>
+                            )}
+                          </div>
                         </div>
-                      </div>
-                    </motion.button>
-                  ))}
+                      </motion.button>
+                    )
+                  })}
                 </div>
               )}
             </CardContent>

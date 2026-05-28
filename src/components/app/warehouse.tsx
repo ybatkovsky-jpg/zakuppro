@@ -20,9 +20,11 @@ import {
   ShoppingCart,
   PlusCircle,
   FileDown,
+  XCircle,
 } from 'lucide-react'
 import { EmptyState } from '@/components/app/empty-state'
 import { exportToCSV } from '@/lib/export-csv'
+import { motion } from 'framer-motion'
 
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -503,6 +505,16 @@ export function Warehouse() {
     [items]
   )
 
+  const outOfStockItems = useMemo(
+    () => items.filter((item) => item.quantity <= 0),
+    [items]
+  )
+
+  const totalQuantity = useMemo(
+    () => items.reduce((sum, item) => sum + item.quantity, 0),
+    [items]
+  )
+
   const recentTransactions = useMemo(
     () => transactions.slice(0, 10),
     [transactions]
@@ -747,6 +759,77 @@ export function Warehouse() {
             </Button>
           </div>
         </div>
+      </div>
+
+      {/* Stats Summary */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        <motion.div
+          initial={{ opacity: 0, y: 12 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0, duration: 0.3 }}
+          className="relative rounded-xl border bg-gradient-to-br from-teal-50 to-teal-100/50 dark:from-teal-950/30 dark:to-teal-900/10 p-4 overflow-hidden"
+        >
+          <div className="flex items-center gap-3">
+            <div className="flex size-10 items-center justify-center rounded-full bg-teal-100 dark:bg-teal-900/50">
+              <Package className="h-5 w-5 text-teal-600 dark:text-teal-400" />
+            </div>
+            <div>
+              <p className="text-2xl font-bold text-teal-700 dark:text-teal-300">{items.length}</p>
+              <p className="text-xs text-teal-600/80 dark:text-teal-400/80">Всего позиций</p>
+            </div>
+          </div>
+        </motion.div>
+
+        <motion.div
+          initial={{ opacity: 0, y: 12 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.05, duration: 0.3 }}
+          className="relative rounded-xl border bg-gradient-to-br from-emerald-50 to-emerald-100/50 dark:from-emerald-950/30 dark:to-emerald-900/10 p-4 overflow-hidden"
+        >
+          <div className="flex items-center gap-3">
+            <div className="flex size-10 items-center justify-center rounded-full bg-emerald-100 dark:bg-emerald-900/50">
+              <WarehouseIcon className="h-5 w-5 text-emerald-600 dark:text-emerald-400" />
+            </div>
+            <div>
+              <p className="text-2xl font-bold text-emerald-700 dark:text-emerald-300">{totalQuantity}</p>
+              <p className="text-xs text-emerald-600/80 dark:text-emerald-400/80">На складе</p>
+            </div>
+          </div>
+        </motion.div>
+
+        <motion.div
+          initial={{ opacity: 0, y: 12 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.1, duration: 0.3 }}
+          className="relative rounded-xl border bg-gradient-to-br from-amber-50 to-amber-100/50 dark:from-amber-950/30 dark:to-amber-900/10 p-4 overflow-hidden"
+        >
+          <div className="flex items-center gap-3">
+            <div className="flex size-10 items-center justify-center rounded-full bg-amber-100 dark:bg-amber-900/50">
+              <AlertTriangle className="h-5 w-5 text-amber-600 dark:text-amber-400" />
+            </div>
+            <div>
+              <p className="text-2xl font-bold text-amber-700 dark:text-amber-300">{lowStockItems.length}</p>
+              <p className="text-xs text-amber-600/80 dark:text-amber-400/80">Низкий запас</p>
+            </div>
+          </div>
+        </motion.div>
+
+        <motion.div
+          initial={{ opacity: 0, y: 12 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.15, duration: 0.3 }}
+          className="relative rounded-xl border bg-gradient-to-br from-red-50 to-red-100/50 dark:from-red-950/30 dark:to-red-900/10 p-4 overflow-hidden"
+        >
+          <div className="flex items-center gap-3">
+            <div className="flex size-10 items-center justify-center rounded-full bg-red-100 dark:bg-red-900/50">
+              <XCircle className="h-5 w-5 text-red-600 dark:text-red-400" />
+            </div>
+            <div>
+              <p className="text-2xl font-bold text-red-700 dark:text-red-300">{outOfStockItems.length}</p>
+              <p className="text-xs text-red-600/80 dark:text-red-400/80">Нет в наличии</p>
+            </div>
+          </div>
+        </motion.div>
       </div>
 
       {/* Low Stock Alert */}

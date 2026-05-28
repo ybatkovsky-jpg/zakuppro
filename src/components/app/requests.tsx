@@ -60,6 +60,7 @@ import {
   Eye,
   PlusCircle,
 } from 'lucide-react'
+import { motion } from 'framer-motion'
 import { EmptyState } from '@/components/app/empty-state'
 
 // ── Types ──────────────────────────────────────────────────
@@ -125,11 +126,27 @@ interface PurchaseRequest {
 // ── Status helpers ─────────────────────────────────────────
 
 const REQUEST_STATUS_MAP: Record<string, { label: string; variant: 'default' | 'secondary' | 'destructive' | 'outline'; className?: string }> = {
-  draft: { label: 'Черновик', variant: 'secondary', className: 'rounded-full' },
-  sent: { label: 'Отправлен', variant: 'default', className: 'rounded-full bg-blue-100 text-blue-800 dark:bg-blue-950/30 dark:text-blue-400 border-blue-200 dark:border-blue-800' },
+  draft: { label: 'Черновик', variant: 'secondary', className: 'rounded-full bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300 border-slate-200 dark:border-slate-700' },
+  sent: { label: 'Отправлен', variant: 'default', className: 'rounded-full bg-sky-100 text-sky-800 dark:bg-sky-950/30 dark:text-sky-400 border-sky-200 dark:border-sky-800' },
   responded: { label: 'Ответ получен', variant: 'default', className: 'rounded-full bg-emerald-100 text-emerald-800 dark:bg-emerald-950/30 dark:text-emerald-400 border-emerald-200 dark:border-emerald-800' },
   partial: { label: 'Частичный ответ', variant: 'outline', className: 'rounded-full border-amber-400 text-amber-700 bg-amber-50 dark:text-amber-400 dark:bg-amber-950/30' },
   cancelled: { label: 'Отменён', variant: 'destructive', className: 'rounded-full' },
+}
+
+const REQUEST_ROW_BORDER: Record<string, string> = {
+  draft: 'border-l-slate-400',
+  sent: 'border-l-sky-500',
+  responded: 'border-l-emerald-500',
+  partial: 'border-l-amber-400',
+  cancelled: 'border-l-red-400',
+}
+
+const REQUEST_ROW_BG: Record<string, string> = {
+  draft: 'hover:bg-slate-50/50 dark:hover:bg-slate-950/20',
+  sent: 'hover:bg-sky-50/50 dark:hover:bg-sky-950/20',
+  responded: 'hover:bg-emerald-50/50 dark:hover:bg-emerald-950/20',
+  partial: 'hover:bg-amber-50/50 dark:hover:bg-amber-950/20',
+  cancelled: 'hover:bg-red-50/50 dark:hover:bg-red-950/20',
 }
 
 function StatusBadge({ status }: { status: string }) {
@@ -419,19 +436,93 @@ export function Requests() {
 
   // ── Render ─────────────────────────────────────────────────
 
+  // ── Statistics ────────────────────────────────────────────
+
+  const stats = useMemo(() => {
+    const total = requests.length
+    const sent = requests.filter((r) => r.status === 'sent').length
+    const drafts = requests.filter((r) => r.status === 'draft').length
+    const responded = requests.filter((r) => r.status === 'responded' || r.status === 'partial').length
+    return { total, sent, drafts, responded }
+  }, [requests])
+
   return (
     <div className="space-y-6">
       {/* Header */}
       <div className="relative -mx-6 -mt-6 px-6 pt-6 pb-5 bg-gradient-to-b from-violet-500/5 via-violet-500/[0.02] to-transparent">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
-            <p className="text-muted-foreground text-sm">Управление запросами на закупку</p>
+            <p className="text-muted-foreground text-sm">Управление запросами поставщикам</p>
           </div>
           <Button onClick={() => setCreateOpen(true)} className="transition-all duration-200 hover:shadow-md hover:-translate-y-0.5 hover:scale-[1.02]">
             <Plus className="mr-2 h-4 w-4" />
             Новый запрос
           </Button>
         </div>
+      </div>
+
+      {/* Request Statistics Summary */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+        <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0 }}>
+          <Card className="relative overflow-hidden border-l-[3px] border-l-violet-400">
+            <CardContent className="p-4">
+              <div className="flex items-center gap-3">
+                <div className="flex h-9 w-9 items-center justify-center rounded-full bg-violet-500/10">
+                  <Mail className="h-4.5 w-4.5 text-violet-600 dark:text-violet-400" />
+                </div>
+                <div>
+                  <p className="text-2xl font-bold">{stats.total}</p>
+                  <p className="text-xs text-muted-foreground">Всего запросов</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </motion.div>
+        <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.05 }}>
+          <Card className="relative overflow-hidden border-l-[3px] border-l-sky-400">
+            <CardContent className="p-4">
+              <div className="flex items-center gap-3">
+                <div className="flex h-9 w-9 items-center justify-center rounded-full bg-sky-500/10">
+                  <Send className="h-4.5 w-4.5 text-sky-600 dark:text-sky-400" />
+                </div>
+                <div>
+                  <p className="text-2xl font-bold">{stats.sent}</p>
+                  <p className="text-xs text-muted-foreground">Отправлено</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </motion.div>
+        <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
+          <Card className="relative overflow-hidden border-l-[3px] border-l-amber-400">
+            <CardContent className="p-4">
+              <div className="flex items-center gap-3">
+                <div className="flex h-9 w-9 items-center justify-center rounded-full bg-amber-500/10">
+                  <FileText className="h-4.5 w-4.5 text-amber-600 dark:text-amber-400" />
+                </div>
+                <div>
+                  <p className="text-2xl font-bold">{stats.drafts}</p>
+                  <p className="text-xs text-muted-foreground">Черновики</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </motion.div>
+        <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }}>
+          <Card className="relative overflow-hidden border-l-[3px] border-l-emerald-400">
+            <CardContent className="p-4">
+              <div className="flex items-center gap-3">
+                <div className="flex h-9 w-9 items-center justify-center rounded-full bg-emerald-500/10">
+                  <CheckCircle2 className="h-4.5 w-4.5 text-emerald-600 dark:text-emerald-400" />
+                </div>
+                <div>
+                  <p className="text-2xl font-bold">{stats.responded}</p>
+                  <p className="text-xs text-muted-foreground">Ответ получен</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </motion.div>
       </div>
 
       {/* Filter Bar */}
@@ -528,7 +619,7 @@ export function Requests() {
                   <>
                     <TableRow
                       key={req.id}
-                      className="cursor-pointer hover:bg-muted/50"
+                      className={`cursor-pointer border-l-[3px] ${REQUEST_ROW_BORDER[req.status] ?? 'border-l-muted'} ${REQUEST_ROW_BG[req.status] ?? 'hover:bg-muted/50'} transition-all duration-150 hover:shadow-sm`}
                       onClick={() => setExpandedId(expandedId === req.id ? null : req.id)}
                     >
                       <TableCell>

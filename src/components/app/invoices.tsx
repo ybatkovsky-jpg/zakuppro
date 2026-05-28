@@ -56,9 +56,11 @@ import {
   Receipt,
   PlusCircle,
   FileDown,
+  ArrowRight,
 } from 'lucide-react'
 import { EmptyState } from '@/components/app/empty-state'
 import { exportToCSV } from '@/lib/export-csv'
+import { motion } from 'framer-motion'
 
 // ── Types ──────────────────────────────────────────────────
 
@@ -143,6 +145,101 @@ const INVOICE_STATUS_MAP: Record<string, { label: string; variant: 'default' | '
 function StatusBadge({ status }: { status: string }) {
   const info = INVOICE_STATUS_MAP[status] || { label: status, variant: 'outline' as const, className: 'rounded-full' }
   return <Badge variant={info.variant} className={info.className}>{info.label}</Badge>
+}
+
+// ── Invoice Workflow Visualization ──────────────────────────
+
+const WORKFLOW_STEPS = [
+  { status: 'received', label: 'Получен', color: 'slate', circleBg: 'bg-slate-200 dark:bg-slate-700', circleText: 'text-slate-700 dark:text-slate-300', activeBg: 'bg-slate-500', glowColor: 'shadow-slate-400/50' },
+  { status: 'verified', label: 'Проверен', color: 'sky', circleBg: 'bg-sky-200 dark:bg-sky-700', circleText: 'text-sky-700 dark:text-sky-300', activeBg: 'bg-sky-500', glowColor: 'shadow-sky-400/50' },
+  { status: 'approved', label: 'Одобрен', color: 'emerald', circleBg: 'bg-emerald-200 dark:bg-emerald-700', circleText: 'text-emerald-700 dark:text-emerald-300', activeBg: 'bg-emerald-500', glowColor: 'shadow-emerald-400/50' },
+  { status: 'paid', label: 'Оплачен', color: 'green', circleBg: 'bg-green-200 dark:bg-green-700', circleText: 'text-green-700 dark:text-green-300', activeBg: 'bg-green-500', glowColor: 'shadow-green-400/50' },
+] as const
+
+function InvoiceWorkflow({ invoices }: { invoices: InvoiceListItem[] }) {
+  const statusCounts = useMemo(() => {
+    const counts: Record<string, number> = {}
+    WORKFLOW_STEPS.forEach((s) => { counts[s.status] = 0 })
+    invoices.forEach((inv) => {
+      if (counts[inv.status] !== undefined) {
+        counts[inv.status]++
+      }
+    })
+    return counts
+  }, [invoices])
+
+  // Find the highest active step (the furthest step with invoices)
+  const activeStepIndex = useMemo(() => {
+    let highest = -1
+    WORKFLOW_STEPS.forEach((step, idx) => {
+      if ((statusCounts[step.status] ?? 0) > 0) {
+        highest = idx
+      }
+    })
+    return highest
+  }, [statusCounts])
+
+  return (
+    <div className="flex items-center justify-between gap-2 py-2">
+      {WORKFLOW_STEPS.map((step, idx) => {
+        const count = statusCounts[step.status] ?? 0
+        const isActive = idx <= activeStepIndex
+        const isCurrentStep = idx === activeStepIndex
+
+        return (
+          <div key={step.status} className="flex items-center flex-1 last:flex-initial">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.8 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ delay: idx * 0.1, duration: 0.3 }}
+              className="flex flex-col items-center gap-2"
+            >
+              {/* Circle with count */}
+              <div
+                className={`
+                  relative flex size-12 items-center justify-center rounded-full transition-all duration-500
+                  ${isActive
+                    ? `${step.activeBg} text-white ${isCurrentStep ? `shadow-lg ${step.glowColor} ring-2 ring-offset-2 ring-offset-background ${step.activeBg.replace('bg-', 'ring-')}` : ''}`
+                    : `${step.circleBg} ${step.circleText}`
+                  }
+                `}
+              >
+                <span className="text-sm font-bold">{count}</span>
+                {isCurrentStep && (
+                  <motion.div
+                    className="absolute inset-0 rounded-full border-2 border-current"
+                    initial={{ scale: 1, opacity: 0.6 }}
+                    animate={{ scale: 1.3, opacity: 0 }}
+                    transition={{ duration: 1.5, repeat: Infinity, ease: 'easeOut' }}
+                  />
+                )}
+              </div>
+
+              {/* Label */}
+              <span className={`text-xs font-medium whitespace-nowrap ${isActive ? 'text-foreground' : 'text-muted-foreground'}`}>
+                {step.label}
+              </span>
+            </motion.div>
+
+            {/* Connector line */}
+            {idx < WORKFLOW_STEPS.length - 1 && (
+              <div className="flex-1 flex items-center justify-center px-1 -mt-5">
+                <div className="h-[2px] w-full rounded-full bg-muted relative overflow-hidden">
+                  <motion.div
+                    className={`absolute inset-y-0 left-0 rounded-full ${idx < activeStepIndex ? step.activeBg : 'bg-muted-foreground/30'}`}
+                    initial={{ width: '0%' }}
+                    animate={{ width: idx < activeStepIndex ? '100%' : '0%' }}
+                    transition={{ delay: idx * 0.1 + 0.2, duration: 0.4 }}
+                  />
+                </div>
+                <ArrowRight className="h-3.5 w-3.5 text-muted-foreground/50 shrink-0 -ml-0.5" />
+              </div>
+            )}
+          </div>
+        )
+      })}
+    </div>
+  )
 }
 
 // ── New invoice item type ──────────────────────────────────
@@ -460,6 +557,16 @@ export function Invoices() {
               />
             </div>
           </div>
+        </CardContent>
+      </Card>
+
+      {/* Invoice Workflow Visualization */}
+      <Card>
+        <CardHeader className="pb-3">
+          <CardTitle className="text-base">Процесс обработки счетов</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <InvoiceWorkflow invoices={invoicesList} />
         </CardContent>
       </Card>
 

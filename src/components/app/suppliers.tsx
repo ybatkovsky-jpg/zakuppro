@@ -17,7 +17,10 @@ import {
   Package,
   PlusCircle,
   Star,
+  ShoppingCart,
+  TrendingUp,
 } from 'lucide-react'
+import { motion } from 'framer-motion'
 import { EmptyState } from '@/components/app/empty-state'
 import { useAppStore } from '@/store/app-store'
 
@@ -260,7 +263,7 @@ function SupplierCard({
         totalSpent: analytics.totalSpent,
         avgDeliveryDays: analytics.avgDeliveryDays,
         completionRate: analytics.completionRate,
-        requestCount: 0, // Not available in list view
+        requestCount: 0,
       })
     : null
 
@@ -271,14 +274,31 @@ function SupplierCard({
       ? 'bg-amber-400'
       : 'bg-muted-foreground/30'
 
+  // Status bar color at top
+  const statusBarColor = rating
+    ? rating.reliability === 'excellent'
+      ? 'bg-emerald-500'
+      : rating.reliability === 'good'
+        ? 'bg-amber-500'
+        : 'bg-red-500'
+    : projectCount > 0
+      ? 'bg-sky-500'
+      : 'bg-muted-foreground/30'
+
   return (
-    <Card className="group relative overflow-hidden transition-all duration-200 hover:shadow-lg hover:-translate-y-1 border-l-4 border-l-sky-400 dark:border-l-sky-600 cursor-pointer" onClick={onClick}>
-      <CardHeader className="pb-3">
+    <Card className="group relative overflow-hidden transition-all duration-200 hover:shadow-lg hover:-translate-y-1 cursor-pointer" onClick={onClick}>
+      {/* Status indicator bar at top */}
+      <div className={`absolute top-0 left-0 right-0 h-[2px] ${statusBarColor}`} />
+
+      {/* Subtle gradient background */}
+      <div className="absolute inset-0 bg-gradient-to-br from-sky-50/30 via-transparent to-sky-100/10 dark:from-sky-950/20 dark:via-transparent dark:to-sky-950/10 pointer-events-none" />
+
+      <CardHeader className="pb-3 relative">
         <div className="flex items-start justify-between gap-2">
-          <div className="flex items-center gap-2 min-w-0">
-            <div className="relative flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-gradient-to-br from-sky-500/15 to-primary/10 text-sky-600 dark:text-sky-400">
-              <Building2 className="h-5 w-5" />
-              <span className={`absolute -top-1 -right-1 size-2.5 rounded-full border-2 border-background ${dotColor}`} />
+          <div className="flex items-center gap-3 min-w-0">
+            <div className="relative flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-sky-500/15 to-primary/10 text-sky-600 dark:text-sky-400">
+              <Building2 className="h-6 w-6" />
+              <span className={`absolute -top-0.5 -right-0.5 size-2.5 rounded-full border-2 border-background ${dotColor}`} />
             </div>
             <div className="min-w-0">
               <CardTitle className="text-base truncate" title={supplier.name}>
@@ -327,7 +347,7 @@ function SupplierCard({
           </div>
         </div>
       </CardHeader>
-      <CardContent className="space-y-2">
+      <CardContent className="space-y-2 relative">
         {supplier.email && (
           <div className="flex items-center gap-2 text-sm text-muted-foreground">
             <Mail className="h-3.5 w-3.5 shrink-0" />
@@ -338,12 +358,6 @@ function SupplierCard({
           <div className="flex items-center gap-2 text-sm text-muted-foreground">
             <Phone className="h-3.5 w-3.5 shrink-0" />
             <span className="truncate">{supplier.phone}</span>
-          </div>
-        )}
-        {supplier.contactPerson && (
-          <div className="flex items-center gap-2 text-sm text-muted-foreground">
-            <User className="h-3.5 w-3.5 shrink-0" />
-            <span className="truncate">{supplier.contactPerson}</span>
           </div>
         )}
         {supplier.address && (
@@ -363,20 +377,21 @@ function SupplierCard({
             <Package className="h-3 w-3" />
             {projectCount} {pluralize(projectCount, 'позиция', 'позиции', 'позиций')}
           </Badge>
-          {rating && (
-            <div className="flex items-center gap-0.5">
+          {rating ? (
+            <div className="flex items-center gap-1">
               {[1, 2, 3].map((star) => (
                 <Star
                   key={star}
-                  className={`h-3 w-3 ${
+                  className={`h-4 w-4 ${
                     star <= rating.stars
                       ? 'fill-amber-400 text-amber-400'
                       : 'text-muted-foreground/20'
                   }`}
                 />
               ))}
+              <span className="text-xs font-semibold text-amber-600 dark:text-amber-400 ml-0.5">{rating.score}</span>
             </div>
-          )}
+          ) : null}
         </div>
       </CardContent>
     </Card>
@@ -541,6 +556,29 @@ export function Suppliers() {
     deleteMutation.mutate(selectedSupplier.id)
   }, [selectedSupplier, deleteMutation])
 
+  // ── Supplier Stats ──────────────────────────────────────────
+
+  const supplierStats = useMemo(() => {
+    const total = suppliers.length
+    const activeOrders = suppliers.filter((s) => (s._count?.projectItems ?? 0) > 0).length
+    const avgRating = analyticsData.length > 0
+      ? analyticsData.reduce((sum, a) => {
+          const r = calculateSupplierRating({
+            totalItems: a.totalItems,
+            totalSpent: a.totalSpent,
+            avgDeliveryDays: a.avgDeliveryDays,
+            completionRate: a.completionRate,
+            requestCount: 0,
+          })
+          return sum + r.score
+        }, 0) / analyticsData.length
+      : 0
+    const now = new Date()
+    const oneMonthAgo = new Date(now.getFullYear(), now.getMonth() - 1, now.getDate())
+    const newThisMonth = suppliers.filter((s) => new Date(s.createdAt) >= oneMonthAgo).length
+    return { total, activeOrders, avgRating: Math.round(avgRating * 10) / 10, newThisMonth }
+  }, [suppliers, analyticsData])
+
   // Render
   return (
     <div className="space-y-6">
@@ -549,7 +587,7 @@ export function Suppliers() {
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
           <div>
             <p className="text-muted-foreground text-sm">
-              Управление списком поставщиков и подрядчиков
+              База поставщиков и контактов
             </p>
           </div>
           <Button onClick={openAddDialog} className="gap-2 shrink-0 transition-all duration-200 hover:shadow-md hover:-translate-y-0.5 hover:scale-[1.02]">
@@ -557,6 +595,70 @@ export function Suppliers() {
             Добавить поставщика
           </Button>
         </div>
+      </div>
+
+      {/* Supplier Stats Summary */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+        <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0 }}>
+          <Card className="relative overflow-hidden border-l-[3px] border-l-sky-400">
+            <CardContent className="p-4">
+              <div className="flex items-center gap-3">
+                <div className="flex h-9 w-9 items-center justify-center rounded-full bg-sky-500/10">
+                  <Building2 className="h-4.5 w-4.5 text-sky-600 dark:text-sky-400" />
+                </div>
+                <div>
+                  <p className="text-2xl font-bold">{supplierStats.total}</p>
+                  <p className="text-xs text-muted-foreground">Всего поставщиков</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </motion.div>
+        <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.05 }}>
+          <Card className="relative overflow-hidden border-l-[3px] border-l-emerald-400">
+            <CardContent className="p-4">
+              <div className="flex items-center gap-3">
+                <div className="flex h-9 w-9 items-center justify-center rounded-full bg-emerald-500/10">
+                  <ShoppingCart className="h-4.5 w-4.5 text-emerald-600 dark:text-emerald-400" />
+                </div>
+                <div>
+                  <p className="text-2xl font-bold">{supplierStats.activeOrders}</p>
+                  <p className="text-xs text-muted-foreground">С активными заказами</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </motion.div>
+        <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
+          <Card className="relative overflow-hidden border-l-[3px] border-l-amber-400">
+            <CardContent className="p-4">
+              <div className="flex items-center gap-3">
+                <div className="flex h-9 w-9 items-center justify-center rounded-full bg-amber-500/10">
+                  <Star className="h-4.5 w-4.5 text-amber-600 dark:text-amber-400" />
+                </div>
+                <div>
+                  <p className="text-2xl font-bold">{supplierStats.avgRating || '—'}</p>
+                  <p className="text-xs text-muted-foreground">Средний рейтинг</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </motion.div>
+        <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }}>
+          <Card className="relative overflow-hidden border-l-[3px] border-l-violet-400">
+            <CardContent className="p-4">
+              <div className="flex items-center gap-3">
+                <div className="flex h-9 w-9 items-center justify-center rounded-full bg-violet-500/10">
+                  <TrendingUp className="h-4.5 w-4.5 text-violet-600 dark:text-violet-400" />
+                </div>
+                <div>
+                  <p className="text-2xl font-bold">{supplierStats.newThisMonth}</p>
+                  <p className="text-xs text-muted-foreground">Новых за месяц</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </motion.div>
       </div>
 
       {/* Search */}
