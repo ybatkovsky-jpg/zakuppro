@@ -19,8 +19,10 @@ import {
   Download,
   ShoppingCart,
   PlusCircle,
+  FileDown,
 } from 'lucide-react'
 import { EmptyState } from '@/components/app/empty-state'
+import { exportToCSV } from '@/lib/export-csv'
 
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -697,6 +699,43 @@ export function Warehouse() {
             <Button onClick={openAddDialog} className="gap-2 shrink-0 transition-all duration-200 hover:shadow-md hover:-translate-y-0.5 hover:scale-[1.02]">
               <Plus className="h-4 w-4" />
               Добавить на склад
+            </Button>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => {
+                const csvData = items.map((item) => {
+                  const isOut = item.quantity <= 0
+                  const isLow = item.minQuantity > 0 && item.quantity < item.minQuantity
+                  let statusLabel = 'В наличии'
+                  if (isOut) statusLabel = 'Нет в наличии'
+                  else if (isLow) statusLabel = 'Мало'
+                  return {
+                    Наименование: item.name,
+                    Артикул: item.article || '',
+                    Категория: item.category || '',
+                    Количество: item.quantity,
+                    'Мин. остаток': item.minQuantity,
+                    'Ед.': item.unit,
+                    Место: item.location || '',
+                    Статус: statusLabel,
+                  }
+                })
+                exportToCSV(csvData, 'warehouse.csv', [
+                  { key: 'Наименование', header: 'Наименование' },
+                  { key: 'Артикул', header: 'Артикул' },
+                  { key: 'Категория', header: 'Категория' },
+                  { key: 'Количество', header: 'Количество' },
+                  { key: 'Мин. остаток', header: 'Мин. остаток' },
+                  { key: 'Ед.', header: 'Ед.' },
+                  { key: 'Место', header: 'Место' },
+                  { key: 'Статус', header: 'Статус' },
+                ])
+              }}
+              className="gap-2 shrink-0 transition-all duration-200 hover:shadow-md hover:-translate-y-0.5 hover:border-primary/30"
+            >
+              <FileDown className="h-4 w-4" />
+              CSV
             </Button>
             <Button
               variant="outline"

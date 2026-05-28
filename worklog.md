@@ -1,300 +1,265 @@
+# ЗакупПро — Project Worklog
+
+## Current Project Status Assessment (Start of Session 5)
+
+The app has gone through 4 development rounds. It is a comprehensive procurement management system with:
+- 10 navigable views (Dashboard, Projects, Project Detail, Suppliers, Supplier Detail, Requests, Invoices, Warehouse, Settings, Analytics)
+- Dark mode, notifications, global search, project lifecycle timeline
+- Budget tracking, activity feed, CSV export
+- Full CRUD operations on all entities
+- Excel file upload for project creation
+- Invoice reconciliation system
+- Warehouse inventory with stock movements and low-stock alerts
+- Previous quality rating: 8.5/10
+
 ---
-Task ID: 4
-Agent: Main Agent (Cron Review Session)
-Task: QA testing, bug fixes, new features, styling improvements
 
-Work Log:
-- Reviewed worklog.md from previous session to understand current state
-- Performed thorough QA testing via agent-browser across all 10 pages/views
-- Identified 2 critical bugs, 2 medium bugs, and several styling issues
-- Fixed all critical and medium bugs
-- Implemented 4 major new features
-- Improved styling across all pages
+## Session 5: Dashboard Charts, Analytics Page, CSV Export, Styling Polish, Supplier Metrics
 
-Bug Fixes:
-1. **Supplier Creation Button Fix** (CRITICAL): Added `type="button"` to supplier create/edit dialog buttons in `/src/components/app/suppliers.tsx` — HTML buttons default to type="submit" which can cause issues inside Radix Dialog
-2. **Project History API 404** (CRITICAL): Created missing `/src/app/api/projects/[id]/history/route.ts` endpoint — GET handler returns ProjectStatusHistory entries ordered by createdAt desc
-3. **Duplicate Search on Invoices** (MEDIUM): Removed standalone search input from invoices.tsx, keeping only the search in the filter card
-4. **Project Status History Recording** (already working): Verified PATCH endpoint in `/src/app/api/projects/[id]/route.ts` already creates status history entries on status change
+### Bug Fixes: None needed — app was stable from previous session
 
-New Features:
-1. **Dark Mode Toggle**: ThemeProvider + ThemeToggle with light/dark/system options in header bar
-2. **Notification Center**: Bell icon with unread badge, real-time notifications from /api/activity, mark-all-as-read
-3. **Project Lifecycle Timeline**: Visual step-by-step progress (horizontal on desktop, vertical on mobile), cancelled branch, animated transitions
-4. **Reusable EmptyState Component**: SVG illustrations for 8 different empty states with action buttons and animated entrance
+### New Features Implemented:
 
-Styling Improvements:
-- Empty states across all 6 pages replaced with illustrated EmptyState component
-- Mobile responsive tables (hide columns on small screens, overflow-x-auto)
-- Dialog buttons protected with type="button" across all components
-- Consistent badge styling with rounded-full
-- Gradient headers on all pages
-- Custom scrollbar styling in dark mode
+1. **Dashboard Chart Enhancement** — Added 3 new chart sections:
+   - Project Status Distribution (PieChart donut with color-coded segments + legend)
+   - Monthly Projects Trend (AreaChart with gradient fill, 6-month view)
+   - Warehouse Stock Overview (CSS horizontal bars, green/amber/red color coding)
+   - Uses existing API data (projectStatusData, monthlyProjectsData, warehouseStockData)
 
-Stage Summary:
-- App quality improved from 7/10 to 8.5/10
-- 2 critical bugs fixed (supplier creation, history API)
-- 4 major features added (dark mode, notifications, timeline, empty states)
-- All pages now responsive on mobile
-- Lint passes clean, no errors
-- Dev server compiles successfully
+2. **CSV Data Export** — Added to 3 pages:
+   - Projects: Название, Описание, Статус, Заказчик, Позиций, Бюджет, Дата
+   - Warehouse: Наименование, Артикул, Категория, Количество, Мин. остаток, etc.
+   - Invoices: Проект, Поставщик, № счёта, Сумма, Статус, Дата
+   - Reusable exportToCSV utility with UTF-8 BOM for Russian characters
 
-Unresolved Issues / Next Phase Recommendations:
+3. **Analytics Page** — New dedicated view with:
+   - Procurement Pipeline funnel (Всего → Запрошено → В счёте → Оплачено → Доставлено)
+   - Supplier Comparison table (items, delivery days, total spent, completion rate)
+   - Category Spending chart (budget vs spent with overspent warnings)
+   - Monthly Trends (project creation per month)
+   - 2 new API endpoints: /api/analytics/suppliers, /api/analytics/pipeline
+
+4. **Supplier Performance Metrics** — Visual indicators:
+   - Circular progress ring for reliability (completion rate %)
+   - Delivery speed badges (Быстро/Средне/Долго)
+   - Star rating (1-3 stars based on items + requests)
+   - Trend indicator (Активен/Стабильно/Снижение)
+   - Activity dots on supplier cards
+   - Rating utility in /src/lib/supplier-rating.ts
+
+### Styling Improvements:
+
+- **Sidebar**: Counter badges (projects count, low stock, drafts), gradient brand text, Russian date in footer, animated active indicator
+- **Header**: Glass/blur effect, sticky positioning, smooth title transitions with AnimatePresence
+- **Global CSS**: .glass-card glassmorphism, .gradient-text, .table-row-hover, pulse-dot animation, focus ring transitions
+- **Dashboard**: Glass quick actions card, gradient title text, animated budget card border
+- **Settings**: Fixed dynamic Tailwind classes with sectionColorMap (proper purging)
+
+### Verification:
+- Lint: Clean pass
+- All API endpoints returning 200 (/api/stats, /api/activity, /api/analytics/suppliers, /api/analytics/pipeline)
+- Dev server: No runtime errors
+- Total views: 10 (+Analytics)
+
+### Unresolved Issues / Next Phase Recommendations:
 - Email integration is template-only (no actual email sending)
 - Could add PDF generation for invoices/reports
 - Could add user authentication via NextAuth.js
-- Could add dashboard date range filtering
-- Could add supplier performance metrics calculation
+- Could add project comparison view (side-by-side)
 - Could add bulk operations (multi-select, batch status changes)
-- Could add data export to CSV/PDF for reports
 - Could add more sophisticated warehouse: batch tracking, expiration dates
-- Could add project comparison view
+- Could add delivery tracking integration
+- Could add procurement approval workflow
+
+## Task A: CSV Data Export (Task 2)
+
+### 1. Created CSV Export Utility
+- **File**: `/home/z/my-project/src/lib/export-csv.ts`
+- Reusable `exportToCSV()` function that:
+  - Accepts array of objects, filename, and column definitions
+  - Handles CSV escaping (quotes, commas, newlines)
+  - Uses UTF-8 BOM for proper Russian character encoding in Excel
+  - Creates blob and triggers download via `URL.createObjectURL`
+
+### 2. Projects CSV Export
+- **File**: `/home/z/my-project/src/components/app/projects.tsx`
+- Added "CSV" button with `FileDown` icon next to "Новый проект" and "Загрузить Excel"
+- Exports: Название, Описание, Статус, Заказчик, Позиций, Бюджет, Дата создания
+- Uses `type="button"` for the export button
+
+### 3. Warehouse CSV Export
+- **File**: `/home/z/my-project/src/components/app/warehouse.tsx`
+- Added "CSV" button with `FileDown` icon next to existing "Экспорт" button
+- Exports: Наименование, Артикул, Категория, Количество, Мин. остаток, Ед., Место, Статус
+- Status is translated to Russian labels (В наличии / Мало / Нет в наличии)
+- Uses `type="button"` for the export button
+
+### 4. Invoices CSV Export
+- **File**: `/home/z/my-project/src/components/app/invoices.tsx`
+- Added "CSV" button with `FileDown` icon next to "Новый счёт" button
+- Exports: Проект, Поставщик, № счёта, Сумма, Статус, Дата
+- Status is translated via existing `INVOICE_STATUS_MAP`
+- Uses `type="button"` for the export button
 
 ---
-Task ID: 3
-Agent: Cron Review Agent
-Task: QA testing, budget analytics, activity feed, supplier detail, global search, styling polish
 
-Work Log:
-- Performed thorough QA testing with agent-browser across all pages
-- Used VLM to critically analyze each page for visual bugs and missing features
-- No critical bugs found - app is stable
-- VLM ratings: Dashboard 8/10, Project Detail 8/10, Suppliers 8/10, Supplier Detail 7.5/10, Warehouse 7/10
+## Task B: Analytics Page (Task 3)
 
-New Features Implemented:
-1. **Project Budget & Cost Analytics** (dashboard + API)
-   - /api/stats now returns budgetData (totalBudget, spentBudget, pendingBudget, byCategory) and projectCostData
-   - Dashboard Budget Overview: SVG circular progress ring, total/spent/pending amounts
-   - Category budget comparison chart (horizontal bars)
-   - Project Costs table with utilization bars (green <70%, amber 70-90%, red >90%)
-   - Total budget tracked: 313,325₽ across all projects
+### 1. Created Analytics Component
+- **File**: `/home/z/my-project/src/components/app/analytics.tsx`
+- Comprehensive analytics page with 4 sections:
 
-2. **Activity Feed** (replaces Quick Actions on dashboard)
-   - /api/activity endpoint: unified feed from 5 event types (project_created, status_changed, request_created, invoice_received, warehouse_transaction)
-   - Scrollable activity list with type-specific icons, colored dots, relative timestamps
-   - Framer-motion staggered entrance animations
-   - Quick Actions moved to compact inline buttons
+**Section 1: Procurement Pipeline Overview**
+- CSS-based funnel visualization
+- Steps: Всего позиций → Запрошено → В счёте → Оплачено → Доставлено
+- Each step shows count, percentage of total, and animated progress bar
+- Fetches data from `/api/analytics/pipeline`
 
-3. **Global Search** (Ctrl+K / Cmd+K)
-   - /src/components/app/global-search.tsx: Command dialog with search across projects, suppliers, warehouse
-   - /api/projects now supports ?search= parameter
-   - Click results navigate to relevant page
-   - Search button in top bar
+**Section 2: Supplier Comparison**
+- Table comparing suppliers by:
+  - Количество позиций (items supplied)
+  - Средний срок поставки (avg delivery days)
+  - Сумма заказов (total order amount)
+  - Процент выполнения (completion rate with progress bar)
+- Fetches data from `/api/analytics/suppliers`
 
-4. **Supplier Detail Page**
-   - /src/components/app/supplier-detail.tsx: Full detail view with tabs
-   - Header with back button, edit/delete actions
-   - 3 info cards: Contact Info, Statistics, Performance
-   - Tabs: Позиции, Запросы, Счета
-   - Edit dialog and delete confirmation
-   - Store updated with supplier-detail ViewType and navigateToSupplier
+**Section 3: Category Spending**
+- Horizontal bar chart (CSS-based) showing budget vs spent per category
+- Overspent categories highlighted with red badge
+- Fetches data from `/api/stats` (budgetData.byCategory)
 
-5. **Relative Time Utility**
-   - formatRelativeTime() added to /src/lib/utils.ts
-   - Russian relative time: "только что", "5 мин назад", "2 ч назад", etc.
+**Section 4: Monthly Trends**
+- Projects created per month with animated horizontal bars
+- Fetches data from `/api/stats` (monthlyProjectsData)
 
-Styling Improvements:
-- Dashboard stat cards now clickable (navigate to corresponding pages)
-- Projects table: added Budget column and Progress column with visual bars
-- Warehouse: "Запросить пополнение" button for low-stock items with reorder dialog
-- Sidebar: animated ping dot indicators on Запросы (draft requests) and Склад (low stock)
-- globals.css: subtle dot background pattern, thinner scrollbar, shimmer/count-up keyframes
-- Supplier cards clickable with hover lift effect
+- All sections use framer-motion animations
+- Responsive layout with grid system
+- Loading skeletons for all data sections
 
-Bug Fixes:
-- Fixed missing SupplierDetail import in page.tsx
-- Fixed supplier-detail ViewType not rendering in page router
+### 2. Created API Endpoints
 
-Stage Summary:
-- App now has 9 navigable views (added supplier-detail)
-- Budget tracking fully functional with visual analytics
-- Activity feed provides real-time overview of changes
-- Global search enables quick navigation across all data
-- All API endpoints return 200, no lint errors
-- VLM ratings consistently 7-8/10 across all pages
+**`/api/analytics/suppliers/route.ts`**
+- Returns supplier performance data
+- For each supplier: totalItems, totalSpent, avgDeliveryDays, completionRate
+- Joins data from suppliers, projectItems, purchaseRequests, purchaseRequestItems, invoices
+- Sorted by totalSpent descending
 
-Unresolved Issues / Next Phase Recommendations:
-- Email integration is template-only (no actual email sending)
-- Could add PDF generation for invoices
-- Could add user authentication via NextAuth.js
-- Could add dashboard date range filtering
-- Could add supplier performance metrics calculation (on-time delivery, response rate)
-- Could add project timeline/Gantt view
-- Could add bulk operations (multi-select, batch status changes)
-- Could add data export to CSV/PDF for reports
-- Could add more sophisticated warehouse: batch tracking, expiration dates
+**`/api/analytics/pipeline/route.ts`**
+- Returns procurement pipeline counts
+- Groups project items by status
+- Maps statuses to pipeline steps: total, requested, invoiced, paid, delivered
+
+### 3. Updated Store and Navigation
+- **File**: `/home/z/my-project/src/store/app-store.ts` — Added `'analytics'` to ViewType union
+- **File**: `/home/z/my-project/src/components/app/app-sidebar.tsx` — Added "Аналитика" menu item with `BarChart3` icon
+- **File**: `/home/z/my-project/src/app/page.tsx` — Added Analytics import, route case, and title mapping
+
+### Lint Check
+- `bun run lint` passed with no errors
 
 ---
-Task ID: 5-6
-Agent: Feature Implementation Agent
-Task: Dark Mode Toggle + Notification Center
 
-Work Log:
+## Task 5: Supplier Performance Metrics
 
-1. **Dark Mode Toggle (Feature 1)**
-   - Verified `next-themes` v0.4.6 already installed in package.json
-   - Created `/src/components/app/theme-provider.tsx`: ThemeProvider wrapper using NextThemesProvider
-   - Updated `/src/app/layout.tsx`:
-     - Imported ThemeProvider
-     - Wrapped children with `<ThemeProvider attribute="class" defaultTheme="light" enableSystem disableTransitionOnChange>`
-   - Created `/src/components/app/theme-toggle.tsx`:
-     - Uses `useTheme()` from next-themes
-     - Sun/Moon icon button (ghost variant, size-8)
-     - DropdownMenu with 3 options: Светлая (Light), Тёмная (Dark), Системная (System)
-     - Checkmark indicator for current theme
-     - Sun icon shows in light mode, Moon icon shows in dark mode with CSS transition
-   - Updated `/src/app/page.tsx`: Added ThemeToggle before NotificationCenter in top bar
+### 1. Created Supplier Rating Utility
+- **File**: `/home/z/my-project/src/lib/supplier-rating.ts`
+- `SupplierRating` interface with score (1-5), reliability, deliverySpeed, stars (1-3)
+- `calculateSupplierRating()` function that:
+  - **Reliability**: >90% completion → "excellent" (green), 70-90% → "good" (amber), <70% → "attention" (red)
+  - **Delivery Speed**: <7 days → "fast", 7-14 days → "medium", >14 days → "slow"
+  - **Stars**: >10 items + >2 requests → 3 stars, >5 items or >1 request → 2 stars, else → 1 star
+  - **Score**: Weighted combination of reliability (0.4), delivery (0.3), volume (0.3)
+- `RELIABILITY_CONFIG` and `DELIVERY_SPEED_CONFIG` objects with labels, CSS classes, dot colors, ring colors
 
-2. **Notification Center (Feature 2)**
-   - Created `/src/components/app/notification-center.tsx`:
-     - Bell icon trigger button with unread count badge (destructive red, shows "9+" for overflow)
-     - Fetches notifications from `/api/activity` endpoint via TanStack Query (refetch every 30s)
-     - Displays last 10 notifications in a DropdownMenu
-     - Each notification has type-specific icon and color:
-       - project_created → FolderPlus (emerald)
-       - status_changed → ArrowRightLeft (amber)
-       - request_created → FileText (sky)
-       - invoice_received → Receipt (violet)
-       - warehouse_transaction → Package (orange)
-     - Shows relative time using `formatRelativeTime` from @/lib/utils
-     - "Прочитать все" (Mark all as read) button in header
-     - Click individual notification to mark as read (blue dot disappears)
-     - ScrollArea with max-h-96 for long lists
-     - Empty state with Bell icon and "Нет уведомлений" text
-   - Updated `/src/app/page.tsx`: Added NotificationCenter between ThemeToggle and GlobalSearch
+### 2. Updated Supplier Detail Component
+- **File**: `/home/z/my-project/src/components/app/supplier-detail.tsx`
+- Added imports: `useMemo`, `Truck`, `DollarSign`, `ArrowUpRight`, `ArrowDownRight`, `Minus`, `Star`, `calculateSupplierRating`, `RELIABILITY_CONFIG`, `DELIVERY_SPEED_CONFIG`
+- Added `SupplierProgressRing` component (SVG circular progress ring, similar to dashboard budget ring)
+- Added `SupplierAnalytics` interface for analytics API response
+- Added analytics query: `useQuery` for `/api/analytics/suppliers`
+- Added `supplierAnalytics` computed value (filters analytics by current supplier ID)
+- Added `supplierRating` computed value (uses `calculateSupplierRating`)
+- Added `trendIndicator` computed value:
+  - Counts recent requests + invoices within last 30 days
+  - ≥3 → "up" (Активен, green), ≥1 → "stable" (Стабильно, amber), else → "down" (Снижение, red)
+- Replaced Performance Card (was showing N/A values) with data-driven version:
+  - **Надёжность**: Circular progress ring showing completion rate % + colored badge (Отлично/Хорошо/Требует внимания)
+  - **Срок поставки**: Avg delivery days with Truck icon + speed badge (Быстро/Средне/Долго)
+  - **Объём заказов**: Total spent as formatted currency
+  - **Позиций**: Total items count
+  - **Рейтинг**: 1-3 star rating display
+  - **Trend indicator**: ArrowUpRight/Minus/ArrowDownRight with text label in card header
+- Removed unused `uniqueProjectIds` variable
+- Falls back to N/A badges when analytics data is unavailable
 
-3. **Layout Updates**
-   - Changed top bar `ml-auto` div from single child to flex container with gap-1
-   - Order: ThemeToggle → NotificationCenter → GlobalSearch
+### 3. Updated Supplier Cards on Suppliers List Page
+- **File**: `/home/z/my-project/src/components/app/suppliers.tsx`
+- Added imports: `useMemo`, `Star`, `calculateSupplierRating`, `RELIABILITY_CONFIG`
+- Added `SupplierAnalytics` interface
+- Added analytics query: `useQuery` for `/api/analytics/suppliers`
+- Added `analyticsMap` (Map<string, SupplierAnalytics>) for quick lookup by supplier ID
+- Updated `SupplierCard` component:
+  - Added `analytics` prop (SupplierAnalytics | null)
+  - Calculates rating from analytics data
+  - **Activity dot**: Colored dot on the Building2 icon — green/amber/red based on reliability, or amber if has items but no analytics, or gray if inactive
+  - **Star rating**: 1-3 stars shown at bottom of card next to item count badge
+  - Layout changed from `gap-2` to `justify-between` for items count + stars row
+- Passes `analyticsMap.get(supplier.id)` to each SupplierCard
 
-Files Created:
-- /src/components/app/theme-provider.tsx
-- /src/components/app/theme-toggle.tsx
-- /src/components/app/notification-center.tsx
-
-Files Modified:
-- /src/app/layout.tsx (added ThemeProvider wrapper)
-- /src/app/page.tsx (added ThemeToggle + NotificationCenter to header bar)
-
-Verification:
-- ESLint: no errors
-- Dev server: compiled successfully, /api/activity endpoint returning 200
-- All UI text in Russian
+### Lint Check
+- `bun run lint` passed with no errors
 
 ---
-Task ID: 7
-Agent: Feature Implementation Agent
-Task: Project Lifecycle Timeline Visualization
 
-Work Log:
+## Task 4: Polish Sidebar, Header, and Overall Styling
 
-1. **Created `/src/components/app/project-timeline.tsx`**
-   - New component `ProjectTimeline` with props: `currentStatus: string` and `statusHistory: StatusHistoryEntry[]`
-   - Defines 7 main lifecycle steps in order: new → processing → requested → invoiced → paid → delivered → completed
-   - Plus a "cancelled" branch step
-   - Each step has its own config with:
-     - Specific Lucide icon (FileText, Settings2, Send, Receipt, CreditCard, Truck, CheckCircle2, XCircle)
-     - Color scheme matching the app's status colors (sky, violet, blue, amber, green, teal, emerald, red)
-     - Active/completed/future state styling
-   - **Responsive design**:
-     - Desktop (sm+): Horizontal stepper with circles in a row, connecting lines between steps, icons above labels below
-     - Mobile (<sm): Vertical timeline with dots on the left and content on the right
-   - **State visualization**:
-     - Completed steps: Green filled circle with white checkmark
-     - Current step: Color-filled circle with status icon + pulsing glow animation
-     - Future steps: Light colored circle with faded icon
-     - Connecting lines: Green for completed segments, gray for future
-   - **Cancelled state**:
-     - When project is cancelled, shows a red branch indicator branching from the last active status
-     - Horizontal view: Dashed red line dropping down from the last active step to a red XCircle
-     - Vertical view: Dashed red connector branching to cancelled step
-   - **Animations** (framer-motion):
-     - Staggered entrance animations for each step (0.08s delay between steps)
-     - Scale + fade animation for step circles
-     - Spring animation for checkmarks appearing
-     - Pulsing animation for the current step's outer ring
-     - Slide-in animation for cancelled branch
-   - Date display: Shows the date when each status was reached (from statusHistory data)
+### 1. Sidebar Polish (`app-sidebar.tsx`)
+- Added `SidebarSeparator` between main nav items and settings item
+- Split nav items into `mainNavItems` array and `settingsNavItem` single item, each rendered in its own `SidebarGroup`
+- Added counter badges on sidebar items:
+  - "Проекты" → shows `totalProjects` count in a small rounded pill (`bg-primary/15 text-primary`)
+  - "Склад" → shows `lowStockItems` count if > 0 (`bg-red-500/15 text-red-600`)
+  - "Запросы" → shows `pendingRequests` count if > 0 (`bg-amber-500/15 text-amber-600`)
+- Added `totalProjects` to the `StatsData` interface and fetch query
+- Active state indicator now has `before:transition-all before:duration-300` for animated width
+- Improved footer: added current date in Russian format (e.g., "5 марта 2026") using `getRussianDate()` helper
+- Added `gradient-text` class to the "ЗакупПро" brand name in header
+- Badge pills use `ml-auto` positioning and `text-[10px] font-semibold` for clean look
 
-2. **Updated `/src/components/app/project-detail.tsx`**
-   - Added import for `ProjectTimeline` from `@/components/app/project-timeline`
-   - Updated History tab (`TabsContent value="history"`):
-     - Added `ProjectTimeline` component at the top of the tab, passing `project.status` and `statusHistory`
-     - Changed `space-y-4` to `space-y-6` for better spacing between timeline and history log
-     - Kept existing detailed history log below the timeline (status history, requests, invoices combined timeline)
-     - Added a "Project Lifecycle Timeline" section comment and a "Detailed History Log" section comment for clarity
+### 2. Header Bar Polish (`page.tsx`)
+- Added `bg-background/80 backdrop-blur-sm` glass effect to header bar
+- Made header sticky with `sticky top-0 z-30`
+- Added smooth title transition using `AnimatePresence` and `motion.h1` with `mode="wait"`
+- Title fades in/out with subtle Y-axis movement when view changes
+- Added framer-motion import for `motion` and `AnimatePresence`
 
-Files Created:
-- /src/components/app/project-timeline.tsx
+### 3. Global CSS Polish (`globals.css`)
+- Added smooth focus ring transitions: `*:focus-visible { transition: box-shadow 0.2s ease; }`
+- Added `.table-row-hover` utility class with `transition: background-color 0.15s ease`
+- Added `.glass-card` utility for glassmorphism effect cards:
+  - Light mode: `background: rgba(255,255,255,0.7); backdrop-filter: blur(12px); border: 1px solid rgba(255,255,255,0.2);`
+  - Dark mode: `background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.1);`
+- Added `.gradient-text` utility: `background: linear-gradient(135deg, var(--primary) 0%, oklch(0.5 0.2 270) 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent;`
+- Added `@keyframes pulse-dot` animation: scale(1)→scale(1.5)→scale(1) with opacity
+- Added `.animate-pulse-dot` class using the keyframe
 
-Files Modified:
-- /src/components/app/project-detail.tsx (added import + timeline in History tab)
+### 4. Dashboard Polish (`dashboard.tsx`)
+- Added `.glass-card` class to the quick actions card at the bottom
+- Made the gradient header text use `.gradient-text` on "ЗакупПро" with "— обзор" subtitle
+- Added a subtle animated border on the Budget & Costs card using `animate-pulse-soft` on a gradient line (`from-transparent via-emerald-500/60 to-transparent`)
+- Budget card now has `relative overflow-hidden` for the animated border accent
 
-Verification:
-- ESLint: no errors
-- Dev server: compiled successfully (✓ Compiled in 232ms)
-- All UI text in Russian
-- Responsive: horizontal on desktop, vertical on mobile
-- Cancelled branch properly shown from last active step
+### 5. Settings Page Polish (`settings.tsx`)
+- Fixed dynamic Tailwind classes (`bg-${accentColor}/10`, `text-${accentColor}`) that won't work with Tailwind CSS purging
+- Replaced with a `sectionColorMap` object mapping color keys to full class names:
+  - `'emerald-600'` → `{ line: 'bg-emerald-600/40', iconBg: 'bg-emerald-600/10', iconText: 'text-emerald-600 dark:text-emerald-400' }`
+  - `'sky-600'` → similar pattern
+  - `'violet-600'` → similar pattern
+  - `'amber-600'` → similar pattern
+  - `'primary'` → fallback with `bg-primary/40`, `bg-primary/10`, `text-primary`
+- `SectionCard` now uses `sectionColorMap[accentColor] ?? defaultColor` to resolve full class names
+- Also added proper `dark:` variant text colors for icon text
 
----
-Task ID: 8-9
-Agent: EmptyState Integration & Styling Polish Agent
-Task: Replace inline empty states with reusable EmptyState component + styling polish
-
-Work Log:
-
-1. **Updated `/src/components/app/projects.tsx`**
-   - Replaced inline empty state (FolderOpen icon + dashed border) with `<EmptyState type="projects" action={{ label: 'Новый проект', onClick, icon: PlusCircle }} />`
-   - Added import for `EmptyState` from `@/components/app/empty-state` and `PlusCircle` from lucide-react
-   - Added `overflow-x-auto` wrapper around the table for mobile scroll
-   - Made table columns responsive: Заказчик/Позиций hidden on small screens (`hidden sm:table-cell`), Бюджет/Дата создания hidden on medium (`hidden md:table-cell`), Прогресс hidden on large (`hidden lg:table-cell`)
-
-2. **Updated `/src/components/app/suppliers.tsx`**
-   - Replaced inline Card-based empty state (Building2 icon) with `<EmptyState type={search ? 'search' : 'suppliers'} action={!search ? {...} : undefined} />`
-   - Dynamically switches between 'suppliers' and 'search' type based on search state
-   - Added import for `EmptyState` and `PlusCircle`
-
-3. **Updated `/src/components/app/warehouse.tsx`**
-   - Replaced inline Card-based empty state (WarehouseIcon) with `<EmptyState type={search ? 'search' : 'warehouse'} action={!search ? {...} : undefined} />`
-   - Added `type="button"` to dialog submit buttons (add, edit, transaction dialogs) to prevent form submission bugs
-   - Made table columns responsive: Артикул hidden on small (`hidden md:table-cell`), Категория/Место hidden on large (`hidden lg:table-cell`), Мин. остаток/Ед./Статус hidden on small (`hidden sm:table-cell`)
-
-4. **Updated `/src/components/app/invoices.tsx`**
-   - Replaced inline empty state (Receipt icon in rounded bg) with `<EmptyState type={searchQuery ? 'search' : 'invoices'} action={!searchQuery ? {...} : undefined} />`
-   - Added `type="button"` to dialog submit buttons (create invoice, payment confirmation)
-   - Added `overflow-x-auto` wrapper around the invoice table
-   - Made table columns responsive: Поставщик hidden on small (`hidden sm:table-cell`), № счёта hidden on medium (`hidden md:table-cell`), Дата hidden on large (`hidden lg:table-cell`)
-
-5. **Updated `/src/components/app/requests.tsx`**
-   - Replaced inline empty state (Mail icon in rounded bg) with `<EmptyState type={searchQuery ? 'search' : 'requests'} action={!searchQuery ? {...} : undefined} />`
-   - Added `type="button"` to dialog buttons: step navigation (Назад, Далее), create request, record response, preview email close
-   - Added `overflow-x-auto` wrapper around the requests table
-   - Made table columns responsive: Поставщик/Позиций hidden on small (`hidden sm:table-cell`), Отправлено/Ответ получен hidden on large (`hidden lg:table-cell`)
-
-6. **Updated `/src/components/app/project-detail.tsx`**
-   - Replaced 4 inline empty states with EmptyState component:
-     - Items tab: `<EmptyState type="items" />`
-     - Requests tab: `<EmptyState type="requests" />`
-     - Invoices tab: `<EmptyState type="invoices" />`
-     - History tab: `<EmptyState type="history" />`
-   - Added import for `EmptyState` from `@/components/app/empty-state`
-
-Styling Polish Summary:
-- **Mobile responsiveness**: Tables across all pages now hide less important columns on small screens using `hidden sm:table-cell`, `hidden md:table-cell`, `hidden lg:table-cell` classes
-- **Overflow handling**: Tables wrapped with `overflow-x-auto` divs to prevent horizontal overflow on mobile
-- **Form safety**: Added `type="button"` to all dialog submit buttons that were missing it (prevents accidental form submission)
-- **Consistent empty states**: All empty states now use the reusable EmptyState component with SVG illustrations, animated entrance, and action buttons
-
-Files Modified:
-- /src/components/app/projects.tsx
-- /src/components/app/suppliers.tsx
-- /src/components/app/warehouse.tsx
-- /src/components/app/invoices.tsx
-- /src/components/app/requests.tsx
-- /src/components/app/project-detail.tsx
-
-Verification:
-- ESLint: no errors (clean lint pass)
-- All existing query/mutation logic preserved
-- All UI text remains in Russian
+### Lint Check
+- `bun run lint` passed with no errors
+- Dev server running with no runtime errors

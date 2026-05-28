@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useMemo } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useToast } from '@/hooks/use-toast'
 import {
@@ -16,6 +16,7 @@ import {
   StickyNote,
   Package,
   PlusCircle,
+  Star,
 } from 'lucide-react'
 import { EmptyState } from '@/components/app/empty-state'
 import { useAppStore } from '@/store/app-store'
@@ -56,6 +57,7 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from '@/components/ui/tooltip'
+import { calculateSupplierRating, RELIABILITY_CONFIG } from '@/lib/supplier-rating'
 
 // === Types ===
 interface Supplier {
@@ -71,6 +73,15 @@ interface Supplier {
   _count?: {
     projectItems: number
   }
+}
+
+interface SupplierAnalytics {
+  id: string
+  name: string
+  totalItems: number
+  totalSpent: number
+  avgDeliveryDays: number
+  completionRate: number
 }
 
 interface SupplierFormData {
@@ -229,24 +240,45 @@ function SupplierCardSkeleton() {
 
 function SupplierCard({
   supplier,
+  analytics,
   onEdit,
   onDelete,
   onClick,
 }: {
   supplier: Supplier
+  analytics: SupplierAnalytics | null
   onEdit: (supplier: Supplier) => void
   onDelete: (supplier: Supplier) => void
   onClick: () => void
 }) {
   const projectCount = supplier._count?.projectItems ?? 0
 
+  // Calculate rating from analytics
+  const rating = analytics
+    ? calculateSupplierRating({
+        totalItems: analytics.totalItems,
+        totalSpent: analytics.totalSpent,
+        avgDeliveryDays: analytics.avgDeliveryDays,
+        completionRate: analytics.completionRate,
+        requestCount: 0, // Not available in list view
+      })
+    : null
+
+  // Activity dot color based on reliability
+  const dotColor = rating
+    ? RELIABILITY_CONFIG[rating.reliability].dotColor
+    : projectCount > 0
+      ? 'bg-amber-400'
+      : 'bg-muted-foreground/30'
+
   return (
     <Card className="group relative overflow-hidden transition-all duration-200 hover:shadow-lg hover:-translate-y-1 border-l-4 border-l-sky-400 dark:border-l-sky-600 cursor-pointer" onClick={onClick}>
       <CardHeader className="pb-3">
         <div className="flex items-start justify-between gap-2">
           <div className="flex items-center gap-2 min-w-0">
-            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-gradient-to-br from-sky-500/15 to-primary/10 text-sky-600 dark:text-sky-400">
+            <div className="relative flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-gradient-to-br from-sky-500/15 to-primary/10 text-sky-600 dark:text-sky-400">
               <Building2 className="h-5 w-5" />
+              <span className={`absolute -top-1 -right-1 size-2.5 rounded-full border-2 border-background ${dotColor}`} />
             </div>
             <div className="min-w-0">
               <CardTitle className="text-base truncate" title={supplier.name}>
@@ -326,11 +358,25 @@ function SupplierCard({
             <span className="line-clamp-2">{supplier.notes}</span>
           </div>
         )}
-        <div className="flex items-center gap-2 pt-2 border-t border-dashed">
+        <div className="flex items-center justify-between pt-2 border-t border-dashed">
           <Badge variant="secondary" className="gap-1 rounded-full bg-sky-50 text-sky-700 dark:bg-sky-950/30 dark:text-sky-400 border-sky-200 dark:border-sky-800">
             <Package className="h-3 w-3" />
             {projectCount} {pluralize(projectCount, 'позиция', 'позиции', 'позиций')}
           </Badge>
+          {rating && (
+            <div className="flex items-center gap-0.5">
+              {[1, 2, 3].map((star) => (
+                <Star
+                  key={star}
+                  className={`h-3 w-3 ${
+                    star <= rating.stars
+                      ? 'fill-amber-400 text-amber-400'
+                      : 'text-muted-foreground/20'
+                  }`}
+                />
+              ))}
+            </div>
+          )}
         </div>
       </CardContent>
     </Card>
@@ -371,6 +417,25 @@ export function Suppliers() {
     queryKey: ['suppliers', search],
     queryFn: () => fetchSuppliers(search),
   })
+
+  // Analytics query for performance indicators
+  const { data: analyticsData = [] } = useQuery<SupplierAnalytics[]>({
+    queryKey: ['analytics-suppliers'],
+    queryFn: async () => {
+      const res = await fetch('/api/analytics/suppliers')
+      if (!res.ok) throw new Error('Ошибка загрузки аналитики')
+      return res.json()
+    },
+  })
+
+  // Map analytics by supplier id for quick lookup
+  const analyticsMap = useMemo(() => {
+    const map = new Map<string, SupplierAnalytics>()
+    for (const a of analyticsData) {
+      map.set(a.id, a)
+    }
+    return map
+  }, [analyticsData])
 
   // Mutations
   const createMutation = useMutation({
@@ -541,6 +606,7 @@ export function Suppliers() {
             <SupplierCard
               key={supplier.id}
               supplier={supplier}
+              analytics={analyticsMap.get(supplier.id) ?? null}
               onEdit={openEditDialog}
               onDelete={openDeleteDialog}
               onClick={() => navigateToSupplier(supplier.id)}

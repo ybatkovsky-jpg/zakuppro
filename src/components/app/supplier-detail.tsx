@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useMemo } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useAppStore } from '@/store/app-store'
 import { useToast } from '@/hooks/use-toast'
@@ -19,6 +19,12 @@ import {
   TrendingUp,
   CheckCircle2,
   AlertCircle,
+  Truck,
+  DollarSign,
+  ArrowUpRight,
+  ArrowDownRight,
+  Minus,
+  Star,
 } from 'lucide-react'
 import { motion } from 'framer-motion'
 
@@ -68,6 +74,7 @@ import {
   TableRow,
 } from '@/components/ui/table'
 import { ScrollArea } from '@/components/ui/scroll-area'
+import { calculateSupplierRating, RELIABILITY_CONFIG, DELIVERY_SPEED_CONFIG, type SupplierAnalyticsData } from '@/lib/supplier-rating'
 
 // === Types ===
 interface ProjectItemWithProject {
@@ -234,6 +241,64 @@ const itemVariants = {
   visible: { opacity: 1, y: 0, transition: { duration: 0.35, ease: 'easeOut' } },
 }
 
+// === Circular Progress Ring ===
+function SupplierProgressRing({
+  percent,
+  size = 100,
+  strokeWidth = 8,
+  colorClass = 'text-emerald-500',
+}: {
+  percent: number
+  size?: number
+  strokeWidth?: number
+  colorClass?: string
+}) {
+  const radius = (size - strokeWidth) / 2
+  const circumference = radius * 2 * Math.PI
+  const offset = circumference - (percent / 100) * circumference
+
+  return (
+    <div className="relative" style={{ width: size, height: size }}>
+      <svg width={size} height={size} className="-rotate-90">
+        <circle
+          cx={size / 2}
+          cy={size / 2}
+          r={radius}
+          fill="none"
+          stroke="currentColor"
+          strokeWidth={strokeWidth}
+          className="text-muted/30"
+        />
+        <circle
+          cx={size / 2}
+          cy={size / 2}
+          r={radius}
+          fill="none"
+          stroke="currentColor"
+          strokeWidth={strokeWidth}
+          strokeDasharray={circumference}
+          strokeDashoffset={offset}
+          strokeLinecap="round"
+          className={`${colorClass} transition-all duration-1000 ease-out`}
+        />
+      </svg>
+      <div className="absolute inset-0 flex flex-col items-center justify-center">
+        <span className="text-xl font-bold">{percent}%</span>
+      </div>
+    </div>
+  )
+}
+
+// === Supplier Analytics Data Type ===
+interface SupplierAnalytics {
+  id: string
+  name: string
+  totalItems: number
+  totalSpent: number
+  avgDeliveryDays: number
+  completionRate: number
+}
+
 // === Main Component ===
 export function SupplierDetail() {
   const { selectedSupplierId, navigate } = useAppStore()
@@ -293,6 +358,49 @@ export function SupplierDetail() {
     },
     enabled: !!selectedSupplierId,
   })
+
+  // Analytics query for performance metrics
+  const {
+    data: analyticsData,
+  } = useQuery<SupplierAnalytics[]>({
+    queryKey: ['analytics-suppliers'],
+    queryFn: async () => {
+      const res = await fetch('/api/analytics/suppliers')
+      if (!res.ok) throw new Error('Ошибка загрузки аналитики')
+      return res.json()
+    },
+  })
+
+  // Find current supplier's analytics
+  const supplierAnalytics = useMemo(
+    () => analyticsData?.find((a) => a.id === selectedSupplierId) ?? null,
+    [analyticsData, selectedSupplierId],
+  )
+
+  // Calculate rating from analytics
+  const supplierRating = useMemo(() => {
+    if (!supplierAnalytics) return null
+    return calculateSupplierRating({
+      totalItems: supplierAnalytics.totalItems,
+      totalSpent: supplierAnalytics.totalSpent,
+      avgDeliveryDays: supplierAnalytics.avgDeliveryDays,
+      completionRate: supplierAnalytics.completionRate,
+      requestCount: requests.length,
+    })
+  }, [supplierAnalytics, requests.length])
+
+  // Determine trend based on recent activity
+  const trendIndicator = useMemo(() => {
+    if (!requests.length && !invoices.length) return null
+    const now = Date.now()
+    const thirtyDaysAgo = now - 30 * 24 * 60 * 60 * 1000
+    const recentRequests = requests.filter((r) => new Date(r.createdAt).getTime() > thirtyDaysAgo).length
+    const recentInvoices = invoices.filter((i) => new Date(i.createdAt).getTime() > thirtyDaysAgo).length
+    const recentActivity = recentRequests + recentInvoices
+    if (recentActivity >= 3) return 'up' as const
+    if (recentActivity >= 1) return 'stable' as const
+    return 'down' as const
+  }, [requests, invoices])
 
   // Mutations
   const updateMutation = useMutation({
@@ -374,7 +482,6 @@ export function SupplierDetail() {
 
   // Computed stats
   const totalItems = supplier?.projectItems.length ?? 0
-  const uniqueProjectIds = new Set(supplier?.projectItems.map((item) => item.project.id) ?? [])
   const activeProjectsCount = supplier?.projectItems.filter(
     (item) => !['completed', 'cancelled'].includes(item.project.status)
   ).length ?? 0
@@ -542,27 +649,127 @@ export function SupplierDetail() {
         {/* Performance Card */}
         <Card className="border-l-4 border-l-amber-400 dark:border-l-amber-600">
           <CardHeader className="pb-3">
-            <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
-              <CheckCircle2 className="h-4 w-4" />
-              Показатели
-            </CardTitle>
+            <div className="flex items-center justify-between">
+              <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
+                <CheckCircle2 className="h-4 w-4" />
+                Показатели
+              </CardTitle>
+              {trendIndicator && (
+                <motion.div
+                  initial={{ scale: 0.8, opacity: 0 }}
+                  animate={{ scale: 1, opacity: 1 }}
+                  className={`flex items-center gap-0.5 text-xs font-medium ${
+                    trendIndicator === 'up'
+                      ? 'text-emerald-600 dark:text-emerald-400'
+                      : trendIndicator === 'stable'
+                        ? 'text-amber-600 dark:text-amber-400'
+                        : 'text-red-600 dark:text-red-400'
+                  }`}
+                >
+                  {trendIndicator === 'up' && <ArrowUpRight className="h-3.5 w-3.5" />}
+                  {trendIndicator === 'stable' && <Minus className="h-3.5 w-3.5" />}
+                  {trendIndicator === 'down' && <ArrowDownRight className="h-3.5 w-3.5" />}
+                  {trendIndicator === 'up' ? 'Активен' : trendIndicator === 'stable' ? 'Стабильно' : 'Снижение'}
+                </motion.div>
+              )}
+            </div>
           </CardHeader>
           <CardContent className="space-y-3">
-            <div className="flex items-center justify-between">
-              <span className="text-sm text-muted-foreground">Своевременность доставки</span>
-              <Badge variant="secondary" className="rounded-full text-xs">N/A</Badge>
-            </div>
-            <div className="flex items-center justify-between">
-              <span className="text-sm text-muted-foreground">Скорость ответа</span>
-              <Badge variant="secondary" className="rounded-full text-xs">N/A</Badge>
-            </div>
-            <div className="flex items-center justify-between">
-              <span className="text-sm text-muted-foreground">Качество поставок</span>
-              <Badge variant="secondary" className="rounded-full text-xs">N/A</Badge>
-            </div>
-            <p className="text-[11px] text-muted-foreground pt-2 border-t italic">
-              Показатели будут доступны после обработки достаточного количества заказов
-            </p>
+            {supplierAnalytics && supplierRating ? (
+              <>
+                {/* Reliability ring + badge */}
+                <div className="flex items-center gap-3">
+                  <SupplierProgressRing
+                    percent={supplierAnalytics.completionRate}
+                    size={64}
+                    strokeWidth={5}
+                    colorClass={RELIABILITY_CONFIG[supplierRating.reliability].ringColor}
+                  />
+                  <div className="flex flex-col gap-1">
+                    <span className="text-sm text-muted-foreground">Надёжность</span>
+                    <Badge variant="outline" className={`rounded-full text-xs w-fit ${RELIABILITY_CONFIG[supplierRating.reliability].className}`}>
+                      {RELIABILITY_CONFIG[supplierRating.reliability].label}
+                    </Badge>
+                  </div>
+                </div>
+                {/* Delivery time */}
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-muted-foreground flex items-center gap-1.5">
+                    <Truck className="h-3.5 w-3.5" />
+                    Срок поставки
+                  </span>
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm font-medium">
+                      {supplierAnalytics.avgDeliveryDays > 0
+                        ? `${supplierAnalytics.avgDeliveryDays} дн.`
+                        : '—'}
+                    </span>
+                    {supplierAnalytics.avgDeliveryDays > 0 && (
+                      <Badge variant="outline" className={`rounded-full text-[10px] px-1.5 ${DELIVERY_SPEED_CONFIG[supplierRating.deliverySpeed].className}`}>
+                        {DELIVERY_SPEED_CONFIG[supplierRating.deliverySpeed].label}
+                      </Badge>
+                    )}
+                  </div>
+                </div>
+                {/* Order volume */}
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-muted-foreground flex items-center gap-1.5">
+                    <DollarSign className="h-3.5 w-3.5" />
+                    Объём заказов
+                  </span>
+                  <span className="text-sm font-bold">
+                    {supplierAnalytics.totalSpent > 0
+                      ? formatCurrency(supplierAnalytics.totalSpent)
+                      : '—'}
+                  </span>
+                </div>
+                {/* Items count */}
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-muted-foreground flex items-center gap-1.5">
+                    <Package className="h-3.5 w-3.5" />
+                    Позиций
+                  </span>
+                  <span className="text-sm font-bold">{supplierAnalytics.totalItems}</span>
+                </div>
+                {/* Star rating */}
+                <div className="flex items-center justify-between pt-2 border-t">
+                  <span className="text-sm text-muted-foreground flex items-center gap-1.5">
+                    <Star className="h-3.5 w-3.5" />
+                    Рейтинг
+                  </span>
+                  <div className="flex items-center gap-0.5">
+                    {[1, 2, 3].map((star) => (
+                      <Star
+                        key={star}
+                        className={`h-3.5 w-3.5 ${
+                          star <= supplierRating.stars
+                            ? 'fill-amber-400 text-amber-400'
+                            : 'text-muted-foreground/30'
+                        }`}
+                      />
+                    ))}
+                  </div>
+                </div>
+              </>
+            ) : (
+              <>
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-muted-foreground">Надёжность</span>
+                  <Badge variant="secondary" className="rounded-full text-xs">N/A</Badge>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-muted-foreground">Срок поставки</span>
+                  <Badge variant="secondary" className="rounded-full text-xs">N/A</Badge>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-muted-foreground">Объём заказов</span>
+                  <Badge variant="secondary" className="rounded-full text-xs">N/A</Badge>
+                </div>
+                <p className="text-[11px] text-muted-foreground pt-2 border-t italic">
+                  Показатели будут доступны после обработки данных
+                </p>
+              </>
+            )}
           </CardContent>
         </Card>
       </motion.div>

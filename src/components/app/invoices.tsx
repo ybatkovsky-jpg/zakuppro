@@ -55,8 +55,10 @@ import {
   Search,
   Receipt,
   PlusCircle,
+  FileDown,
 } from 'lucide-react'
 import { EmptyState } from '@/components/app/empty-state'
+import { exportToCSV } from '@/lib/export-csv'
 
 // ── Types ──────────────────────────────────────────────────
 
@@ -391,10 +393,38 @@ export function Invoices() {
           <div>
             <p className="text-muted-foreground text-sm">Управление входящими счетами</p>
           </div>
-          <Button onClick={() => setCreateOpen(true)} className="transition-all duration-200 hover:shadow-md hover:-translate-y-0.5 hover:scale-[1.02]">
-            <Plus className="mr-2 h-4 w-4" />
-            Новый счёт
-          </Button>
+          <div className="flex gap-2">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => {
+                const csvData = filteredInvoices.map((inv) => ({
+                  Проект: inv.project.name,
+                  Поставщик: inv.supplier.name,
+                  '№ счёта': inv.invoiceNumber || '',
+                  Сумма: inv.totalAmount,
+                  Статус: INVOICE_STATUS_MAP[inv.status]?.label ?? inv.status,
+                  Дата: formatDate(inv.receivedAt),
+                }))
+                exportToCSV(csvData, 'invoices.csv', [
+                  { key: 'Проект', header: 'Проект' },
+                  { key: 'Поставщик', header: 'Поставщик' },
+                  { key: '№ счёта', header: '№ счёта' },
+                  { key: 'Сумма', header: 'Сумма' },
+                  { key: 'Статус', header: 'Статус' },
+                  { key: 'Дата', header: 'Дата' },
+                ])
+              }}
+              className="transition-all duration-200 hover:shadow-md hover:-translate-y-0.5 hover:border-primary/30"
+            >
+              <FileDown className="h-4 w-4" />
+              CSV
+            </Button>
+            <Button onClick={() => setCreateOpen(true)} className="transition-all duration-200 hover:shadow-md hover:-translate-y-0.5 hover:scale-[1.02]">
+              <Plus className="mr-2 h-4 w-4" />
+              Новый счёт
+            </Button>
+          </div>
         </div>
       </div>
 

@@ -12,6 +12,7 @@ import {
   SidebarMenuItem,
   SidebarHeader,
   SidebarFooter,
+  SidebarSeparator,
 } from '@/components/ui/sidebar'
 import { useAppStore, type ViewType } from '@/store/app-store'
 import {
@@ -21,29 +22,46 @@ import {
   Warehouse,
   Mail,
   FileText,
+  BarChart3,
   Settings,
   Package,
 } from 'lucide-react'
 
 interface StatsData {
+  totalProjects: number
   pendingRequests: number
   lowStockItems: number
 }
 
-const navItems: { label: string; icon: React.ElementType; view: ViewType }[] = [
+const mainNavItems: { label: string; icon: React.ElementType; view: ViewType }[] = [
   { label: 'Дашборд', icon: LayoutDashboard, view: 'dashboard' },
   { label: 'Проекты', icon: FolderKanban, view: 'projects' },
   { label: 'Поставщики', icon: Building2, view: 'suppliers' },
   { label: 'Запросы', icon: Mail, view: 'requests' },
   { label: 'Счета', icon: FileText, view: 'invoices' },
   { label: 'Склад', icon: Warehouse, view: 'warehouse' },
-  { label: 'Настройки', icon: Settings, view: 'settings' },
+  { label: 'Аналитика', icon: BarChart3, view: 'analytics' },
 ]
+
+const settingsNavItem: { label: string; icon: React.ElementType; view: ViewType } = {
+  label: 'Настройки',
+  icon: Settings,
+  view: 'settings',
+}
+
+function getRussianDate(): string {
+  const months = [
+    'января', 'февраля', 'марта', 'апреля', 'мая', 'июня',
+    'июля', 'августа', 'сентября', 'октября', 'ноября', 'декабря',
+  ]
+  const now = new Date()
+  return `${now.getDate()} ${months[now.getMonth()]} ${now.getFullYear()}`
+}
 
 export function AppSidebar() {
   const { currentView, navigate } = useAppStore()
 
-  // Fetch stats for indicator dots
+  // Fetch stats for indicator dots and badges
   const { data: stats } = useQuery<StatsData>({
     queryKey: ['sidebar-stats'],
     queryFn: async () => {
@@ -51,6 +69,7 @@ export function AppSidebar() {
       if (!res.ok) throw new Error('Failed to fetch stats')
       const data = await res.json()
       return {
+        totalProjects: data.totalProjects ?? 0,
         pendingRequests: data.pendingRequests ?? 0,
         lowStockItems: data.lowStockItems ?? 0,
       }
@@ -62,6 +81,72 @@ export function AppSidebar() {
   const hasDraftRequests = (stats?.pendingRequests ?? 0) > 0
   const hasLowStock = (stats?.lowStockItems ?? 0) > 0
 
+  const renderNavItem = (item: { label: string; icon: React.ElementType; view: ViewType }) => {
+    const isActive =
+      currentView === item.view ||
+      (item.view === 'projects' && currentView === 'project-detail') ||
+      (item.view === 'suppliers' && currentView === 'supplier-detail')
+
+    // Determine badge
+    let badgeCount = 0
+    let badgeColor = ''
+    if (item.view === 'projects') {
+      badgeCount = stats?.totalProjects ?? 0
+      badgeColor = 'bg-primary/15 text-primary'
+    }
+    if (item.view === 'warehouse' && hasLowStock) {
+      badgeCount = stats?.lowStockItems ?? 0
+      badgeColor = 'bg-red-500/15 text-red-600 dark:text-red-400'
+    }
+    if (item.view === 'requests' && hasDraftRequests) {
+      badgeCount = stats?.pendingRequests ?? 0
+      badgeColor = 'bg-amber-500/15 text-amber-600 dark:text-amber-400'
+    }
+
+    // Determine if this item should show an indicator dot
+    let showDot = false
+    let dotColor = ''
+    if (item.view === 'requests' && hasDraftRequests) {
+      showDot = true
+      dotColor = 'bg-amber-500'
+    }
+    if (item.view === 'warehouse' && hasLowStock) {
+      showDot = true
+      dotColor = 'bg-red-500'
+    }
+
+    return (
+      <SidebarMenuItem key={item.view}>
+        <SidebarMenuButton
+          isActive={isActive}
+          tooltip={item.label}
+          onClick={() => navigate(item.view)}
+          className={`
+            relative transition-all duration-200 group
+            ${isActive
+              ? 'bg-primary/10 text-primary font-semibold before:absolute before:left-0 before:top-1/2 before:-translate-y-1/2 before:h-5 before:w-[3px] before:rounded-full before:bg-primary before:transition-all before:duration-300'
+              : 'hover:bg-sidebar-accent/80 hover:translate-x-0.5'
+            }
+          `}
+        >
+          <item.icon className={`h-4 w-4 transition-transform duration-200 ${isActive ? 'scale-110' : ''}`} />
+          <span>{item.label}</span>
+          {badgeCount > 0 && (
+            <span className={`ml-auto flex h-5 min-w-5 items-center justify-center rounded-full px-1.5 text-[10px] font-semibold leading-none ${badgeColor}`}>
+              {badgeCount}
+            </span>
+          )}
+          {showDot && badgeCount === 0 && (
+            <span className="absolute right-2 top-1/2 -translate-y-1/2 flex h-2 w-2">
+              <span className={`animate-ping absolute inline-flex h-full w-full rounded-full ${dotColor} opacity-75`} />
+              <span className={`relative inline-flex rounded-full h-2 w-2 ${dotColor}`} />
+            </span>
+          )}
+        </SidebarMenuButton>
+      </SidebarMenuItem>
+    )
+  }
+
   return (
     <Sidebar collapsible="icon">
       <SidebarHeader className="border-b border-sidebar-border bg-gradient-to-b from-primary/10 via-primary/5 to-transparent">
@@ -70,7 +155,7 @@ export function AppSidebar() {
             <Package className="h-4 w-4" />
           </div>
           <div className="flex flex-col group-data-[collapsible=icon]:hidden">
-            <span className="text-sm font-bold tracking-tight">ЗакупПро</span>
+            <span className="text-sm font-bold tracking-tight gradient-text">ЗакупПро</span>
             <span className="text-[10px] text-sidebar-foreground/60">
               Управление закупками
             </span>
@@ -83,50 +168,18 @@ export function AppSidebar() {
           <SidebarGroupLabel>Навигация</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
-              {navItems.map((item) => {
-                const isActive =
-                  currentView === item.view ||
-                  (item.view === 'projects' && currentView === 'project-detail') ||
-                  (item.view === 'suppliers' && currentView === 'supplier-detail')
+              {mainNavItems.map(renderNavItem)}
+            </SidebarMenu>
+          </SidebarGroupContent>
+        </SidebarGroup>
 
-                // Determine if this item should show an indicator dot
-                let showDot = false
-                let dotColor = ''
-                if (item.view === 'requests' && hasDraftRequests) {
-                  showDot = true
-                  dotColor = 'bg-amber-500'
-                }
-                if (item.view === 'warehouse' && hasLowStock) {
-                  showDot = true
-                  dotColor = 'bg-red-500'
-                }
+        <SidebarSeparator />
 
-                return (
-                  <SidebarMenuItem key={item.view}>
-                    <SidebarMenuButton
-                      isActive={isActive}
-                      tooltip={item.label}
-                      onClick={() => navigate(item.view)}
-                      className={`
-                        relative transition-all duration-200
-                        ${isActive
-                          ? 'bg-primary/10 text-primary font-semibold before:absolute before:left-0 before:top-1/2 before:-translate-y-1/2 before:h-5 before:w-[3px] before:rounded-full before:bg-primary'
-                          : 'hover:bg-sidebar-accent/80 hover:translate-x-0.5'
-                        }
-                      `}
-                    >
-                      <item.icon className={`h-4 w-4 transition-transform duration-200 ${isActive ? 'scale-110' : ''}`} />
-                      <span>{item.label}</span>
-                      {showDot && (
-                        <span className={`absolute right-2 top-1/2 -translate-y-1/2 flex h-2 w-2`}>
-                          <span className={`animate-ping absolute inline-flex h-full w-full rounded-full ${dotColor} opacity-75`} />
-                          <span className={`relative inline-flex rounded-full h-2 w-2 ${dotColor}`} />
-                        </span>
-                      )}
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
-                )
-              })}
+        <SidebarGroup>
+          <SidebarGroupLabel className="sr-only">Система</SidebarGroupLabel>
+          <SidebarGroupContent>
+            <SidebarMenu>
+              {renderNavItem(settingsNavItem)}
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
@@ -136,6 +189,9 @@ export function AppSidebar() {
         <div className="px-2 py-1.5 group-data-[collapsible=icon]:hidden">
           <p className="text-[10px] text-sidebar-foreground/50 font-medium tracking-wide">
             ЗакупПро v1.0
+          </p>
+          <p className="text-[10px] text-sidebar-foreground/40">
+            {getRussianDate()}
           </p>
         </div>
       </SidebarFooter>

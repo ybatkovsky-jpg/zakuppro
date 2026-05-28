@@ -52,6 +52,38 @@ const defaultFormData: Omit<CompanyData, 'id'> = {
   bik: '',
 }
 
+// ── Color Map for SectionCard ──────────────────────────────
+
+const sectionColorMap: Record<string, { line: string; iconBg: string; iconText: string }> = {
+  'emerald-600': {
+    line: 'bg-emerald-600/40',
+    iconBg: 'bg-emerald-600/10',
+    iconText: 'text-emerald-600 dark:text-emerald-400',
+  },
+  'sky-600': {
+    line: 'bg-sky-600/40',
+    iconBg: 'bg-sky-600/10',
+    iconText: 'text-sky-600 dark:text-sky-400',
+  },
+  'violet-600': {
+    line: 'bg-violet-600/40',
+    iconBg: 'bg-violet-600/10',
+    iconText: 'text-violet-600 dark:text-violet-400',
+  },
+  'amber-600': {
+    line: 'bg-amber-600/40',
+    iconBg: 'bg-amber-600/10',
+    iconText: 'text-amber-600 dark:text-amber-400',
+  },
+  primary: {
+    line: 'bg-primary/40',
+    iconBg: 'bg-primary/10',
+    iconText: 'text-primary',
+  },
+}
+
+const defaultColor = sectionColorMap.primary
+
 // ── Section wrapper component ──────────────────────────────
 
 function SectionCard({
@@ -67,6 +99,8 @@ function SectionCard({
   children: React.ReactNode
   accentColor?: string
 }) {
+  const colors = sectionColorMap[accentColor] ?? defaultColor
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 12 }}
@@ -74,10 +108,10 @@ function SectionCard({
       transition={{ duration: 0.3 }}
     >
       <Card className="relative overflow-hidden">
-        <div className={`absolute top-0 left-0 right-0 h-[2px] bg-${accentColor}/40`} />
+        <div className={`absolute top-0 left-0 right-0 h-[2px] ${colors.line}`} />
         <CardHeader className="pb-4">
           <div className="flex items-center gap-3">
-            <div className={`flex size-10 shrink-0 items-center justify-center rounded-lg bg-${accentColor}/10 text-${accentColor}`}>
+            <div className={`flex size-10 shrink-0 items-center justify-center rounded-lg ${colors.iconBg} ${colors.iconText}`}>
               <Icon className="size-5" />
             </div>
             <div>

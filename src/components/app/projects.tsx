@@ -62,8 +62,10 @@ import {
   Download,
   Loader2,
   PlusCircle,
+  FileDown,
 } from 'lucide-react'
 import { EmptyState } from '@/components/app/empty-state'
+import { exportToCSV } from '@/lib/export-csv'
 
 // --- Types ---
 
@@ -317,6 +319,34 @@ export function Projects() {
           </div>
 
           <div className="flex gap-2">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => {
+                const csvData = projects.map((p) => ({
+                  Название: p.name,
+                  Описание: p.description,
+                  Статус: STATUS_MAP[p.status]?.label ?? p.status,
+                  Заказчик: p.customerName || '',
+                  Позиций: p._count?.items ?? 0,
+                  Бюджет: (p.items ?? []).reduce((sum, item) => sum + item.price * item.quantity, 0),
+                  'Дата создания': formatDate(p.createdAt),
+                }))
+                exportToCSV(csvData, 'projects.csv', [
+                  { key: 'Название', header: 'Название' },
+                  { key: 'Описание', header: 'Описание' },
+                  { key: 'Статус', header: 'Статус' },
+                  { key: 'Заказчик', header: 'Заказчик' },
+                  { key: 'Позиций', header: 'Позиций' },
+                  { key: 'Бюджет', header: 'Бюджет' },
+                  { key: 'Дата создания', header: 'Дата создания' },
+                ])
+              }}
+              className="transition-all duration-200 hover:shadow-md hover:-translate-y-0.5 hover:border-primary/30"
+            >
+              <FileDown className="h-4 w-4" />
+              CSV
+            </Button>
             {/* Create Project Dialog */}
             <Dialog open={createOpen} onOpenChange={(open) => { setCreateOpen(open); if (!open) resetCreateForm() }}>
               <DialogTrigger asChild>

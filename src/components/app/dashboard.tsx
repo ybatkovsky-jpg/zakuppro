@@ -22,6 +22,10 @@ import {
   Tooltip,
   ResponsiveContainer,
   Cell,
+  PieChart,
+  Pie,
+  AreaChart,
+  Area,
 } from 'recharts'
 import {
   FolderKanban,
@@ -89,6 +93,9 @@ interface StatsData {
   recentProjects: RecentProject[]
   budgetData: BudgetData
   projectCostData: ProjectCostItem[]
+  projectStatusData: Array<{ name: string; value: number; color: string }>
+  monthlyProjectsData: Array<{ month: string; count: number }>
+  warehouseStockData: Array<{ name: string; quantity: number; minQuantity: number; status: 'ok' | 'warning' | 'low' }>
 }
 
 interface ActivityItem {
@@ -566,8 +573,12 @@ export function Dashboard() {
         variants={itemVariants}
         className="relative -mx-6 -mt-6 px-6 pt-6 pb-4 bg-gradient-to-b from-primary/5 via-primary/[0.02] to-transparent"
       >
-        <p className="text-muted-foreground">
-          Обзор ключевых показателей и последние проекты
+        <h2 className="text-xl font-bold tracking-tight">
+          <span className="gradient-text">ЗакупПро</span>
+          <span className="text-muted-foreground font-normal text-base ml-2">— обзор</span>
+        </h2>
+        <p className="text-muted-foreground mt-1">
+          Ключевые показатели и последние проекты
         </p>
       </motion.div>
 
@@ -663,7 +674,9 @@ export function Dashboard() {
 
       {/* ── Budget Overview Section (full width) ──────────────────────── */}
       <motion.div variants={itemVariants}>
-        <Card>
+        <Card className="relative overflow-hidden">
+          {/* Subtle animated border accent */}
+          <div className="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-transparent via-emerald-500/60 to-transparent animate-pulse-soft" />
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <DollarSign className="size-5 text-muted-foreground" />
@@ -745,6 +758,218 @@ export function Dashboard() {
           </CardContent>
         </Card>
       </motion.div>
+
+      {/* ── Project Status Distribution & Monthly Trend (2-column) ───── */}
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+        {/* Pie Chart: Project Status */}
+        <motion.div variants={itemVariants}>
+          <Card className="h-full">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <FolderKanban className="size-5 text-muted-foreground" />
+                Статусы проектов
+              </CardTitle>
+              <CardDescription>Распределение проектов по статусам</CardDescription>
+            </CardHeader>
+            <CardContent>
+              {(data.projectStatusData?.length ?? 0) > 0 ? (
+                <div className="flex flex-col items-center">
+                  <ResponsiveContainer width="100%" height={220}>
+                    <PieChart>
+                      <Pie
+                        data={data.projectStatusData}
+                        cx="50%"
+                        cy="50%"
+                        innerRadius={55}
+                        outerRadius={90}
+                        paddingAngle={3}
+                        dataKey="value"
+                        animationBegin={0}
+                        animationDuration={800}
+                      >
+                        {data.projectStatusData.map((entry, index) => (
+                          <Cell key={`cell-${index}`} fill={entry.color} stroke="none" />
+                        ))}
+                      </Pie>
+                      <Tooltip
+                        formatter={(value: number, name: string) => [`${value} шт.`, name]}
+                        contentStyle={{ borderRadius: '0.5rem', fontSize: '0.75rem' }}
+                      />
+                    </PieChart>
+                  </ResponsiveContainer>
+                  <div className="mt-4 flex flex-wrap justify-center gap-x-4 gap-y-1.5">
+                    {data.projectStatusData.map((entry, index) => (
+                      <div key={index} className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                        <span
+                          className="inline-block size-2.5 shrink-0 rounded-full"
+                          style={{ backgroundColor: entry.color }}
+                        />
+                        <span>{entry.name}</span>
+                        <span className="font-medium text-foreground">{entry.value}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ) : (
+                <div className="flex h-[220px] items-center justify-center text-sm text-muted-foreground">
+                  Нет данных о статусах
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </motion.div>
+
+        {/* Line Chart: Monthly Projects Trend */}
+        <motion.div variants={itemVariants}>
+          <Card className="h-full">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <TrendingUp className="size-5 text-muted-foreground" />
+                Тренд проектов
+              </CardTitle>
+              <CardDescription>Новые проекты за последние 6 месяцев</CardDescription>
+            </CardHeader>
+            <CardContent>
+              {(data.monthlyProjectsData?.length ?? 0) > 0 ? (
+                <ResponsiveContainer width="100%" height={260}>
+                  <AreaChart
+                    data={data.monthlyProjectsData}
+                    margin={{ top: 10, right: 10, bottom: 0, left: -10 }}
+                  >
+                    <defs>
+                      <linearGradient id="colorCount" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%" stopColor="#10b981" stopOpacity={0.3} />
+                        <stop offset="95%" stopColor="#10b981" stopOpacity={0} />
+                      </linearGradient>
+                    </defs>
+                    <CartesianGrid strokeDasharray="3 3" vertical={false} />
+                    <XAxis
+                      dataKey="month"
+                      fontSize={11}
+                      tickLine={false}
+                      axisLine={false}
+                    />
+                    <YAxis
+                      fontSize={11}
+                      tickLine={false}
+                      axisLine={false}
+                      allowDecimals={false}
+                    />
+                    <Tooltip
+                      formatter={(value: number) => [`${value} шт.`, 'Проектов']}
+                      contentStyle={{ borderRadius: '0.5rem', fontSize: '0.75rem' }}
+                    />
+                    <Area
+                      type="monotone"
+                      dataKey="count"
+                      stroke="#10b981"
+                      strokeWidth={2}
+                      fill="url(#colorCount)"
+                      animationDuration={800}
+                    />
+                  </AreaChart>
+                </ResponsiveContainer>
+              ) : (
+                <div className="flex h-[260px] items-center justify-center text-sm text-muted-foreground">
+                  Нет данных за последние месяцы
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </motion.div>
+      </div>
+
+      {/* ── Warehouse Stock Overview (full width) ──────────────────────── */}
+      {(data.warehouseStockData?.length ?? 0) > 0 && (
+        <motion.div variants={itemVariants}>
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Warehouse className="size-5 text-muted-foreground" />
+                Обзор складских запасов
+              </CardTitle>
+              <CardDescription>Топ-10 позиций по количеству</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="max-h-96 overflow-y-auto custom-scrollbar space-y-3">
+                {data.warehouseStockData.map((item, idx) => {
+                  const maxQty = Math.max(item.quantity, item.minQuantity, 1)
+                  const quantityPercent = (item.quantity / maxQty) * 100
+                  const minPercent = (item.minQuantity / maxQty) * 100
+
+                  const barColor =
+                    item.status === 'ok'
+                      ? 'bg-emerald-500'
+                      : item.status === 'warning'
+                        ? 'bg-amber-500'
+                        : 'bg-red-500'
+
+                  const labelColor =
+                    item.status === 'ok'
+                      ? 'text-emerald-600 dark:text-emerald-400'
+                      : item.status === 'warning'
+                        ? 'text-amber-600 dark:text-amber-400'
+                        : 'text-red-600 dark:text-red-400'
+
+                  const statusLabel =
+                    item.status === 'ok'
+                      ? 'Норма'
+                      : item.status === 'warning'
+                        ? 'Внимание'
+                        : 'Мало'
+
+                  return (
+                    <motion.div
+                      key={idx}
+                      initial={{ opacity: 0, y: 6 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: idx * 0.04, duration: 0.3 }}
+                      className="group"
+                    >
+                      <div className="flex items-center justify-between gap-4 mb-1">
+                        <span className="text-sm font-medium truncate max-w-[200px] sm:max-w-none">
+                          {item.name}
+                        </span>
+                        <div className="flex items-center gap-3 shrink-0 text-xs">
+                          <span className={labelColor}>
+                            {item.quantity} / {item.minQuantity} мин.
+                          </span>
+                          <Badge
+                            variant="outline"
+                            className={`text-[10px] px-1.5 py-0 ${
+                              item.status === 'ok'
+                                ? 'border-emerald-300 text-emerald-600 dark:border-emerald-700 dark:text-emerald-400'
+                                : item.status === 'warning'
+                                  ? 'border-amber-300 text-amber-600 dark:border-amber-700 dark:text-amber-400'
+                                  : 'border-red-300 text-red-600 dark:border-red-700 dark:text-red-400'
+                            }`}
+                          >
+                            {statusLabel}
+                          </Badge>
+                        </div>
+                      </div>
+                      <div className="relative h-2.5 w-full rounded-full bg-muted overflow-hidden">
+                        {/* Min quantity marker */}
+                        <div
+                          className="absolute top-0 h-full w-px bg-foreground/30 z-10"
+                          style={{ left: `${Math.min(minPercent, 100)}%` }}
+                        />
+                        {/* Quantity bar */}
+                        <motion.div
+                          className={`h-full rounded-full ${barColor}`}
+                          initial={{ width: 0 }}
+                          animate={{ width: `${Math.min(quantityPercent, 100)}%` }}
+                          transition={{ delay: idx * 0.04 + 0.2, duration: 0.6, ease: 'easeOut' }}
+                        />
+                      </div>
+                    </motion.div>
+                  )
+                })}
+              </div>
+            </CardContent>
+          </Card>
+        </motion.div>
+      )}
 
       {/* ── Project Costs Table ───────────────────────────────────────── */}
       {projectCostData.length > 0 && (
@@ -913,7 +1138,7 @@ export function Dashboard() {
 
       {/* ── Quick Actions (compact) ───────────────────────────────────── */}
       <motion.div variants={itemVariants}>
-        <Card>
+        <Card className="glass-card">
           <CardContent className="flex flex-wrap items-center gap-3 py-4">
             <span className="text-sm font-medium text-muted-foreground mr-2">Быстрые действия:</span>
             <Button
