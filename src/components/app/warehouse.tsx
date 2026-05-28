@@ -16,6 +16,7 @@ import {
   ArrowUpCircle,
   Clock,
   FileText,
+  Download,
 } from 'lucide-react'
 
 import { Button } from '@/components/ui/button'
@@ -320,7 +321,7 @@ function TableSkeleton() {
 function StatusBadge({ item }: { item: WarehouseItem }) {
   if (item.quantity <= 0) {
     return (
-      <Badge variant="destructive" className="gap-1">
+      <Badge variant="destructive" className="gap-1 rounded-full">
         <AlertTriangle className="h-3 w-3" />
         Нет в наличии
       </Badge>
@@ -328,17 +329,41 @@ function StatusBadge({ item }: { item: WarehouseItem }) {
   }
   if (item.minQuantity > 0 && item.quantity < item.minQuantity) {
     return (
-      <Badge className="bg-amber-500/15 text-amber-700 dark:text-amber-400 border-amber-500/25 gap-1">
+      <Badge className="bg-amber-500/15 text-amber-700 dark:text-amber-400 border-amber-500/25 gap-1 rounded-full">
         <AlertTriangle className="h-3 w-3" />
         Мало
       </Badge>
     )
   }
   return (
-    <Badge variant="secondary" className="gap-1">
+    <Badge variant="secondary" className="gap-1 rounded-full bg-emerald-50 text-emerald-700 dark:bg-emerald-950/30 dark:text-emerald-400 border-emerald-200 dark:border-emerald-800">
       <Package className="h-3 w-3" />
       В наличии
     </Badge>
+  )
+}
+
+function StockBar({ item }: { item: WarehouseItem }) {
+  if (item.minQuantity <= 0) return null
+  const ratio = Math.min(item.quantity / item.minQuantity, 2)
+  const pct = Math.min((ratio / 2) * 100, 100)
+  const barColor = item.quantity <= 0
+    ? 'bg-red-500'
+    : item.quantity < item.minQuantity
+      ? 'bg-amber-500'
+      : 'bg-emerald-500'
+  return (
+    <div className="flex items-center gap-2 w-28">
+      <div className="h-1.5 flex-1 rounded-full bg-muted overflow-hidden">
+        <div
+          className={`h-full rounded-full transition-all duration-500 ${barColor}`}
+          style={{ width: `${pct}%` }}
+        />
+      </div>
+      <span className="text-[10px] text-muted-foreground tabular-nums w-8 text-right">
+        {Math.round(ratio * 100)}%
+      </span>
+    </div>
   )
 }
 
@@ -626,24 +651,39 @@ export function Warehouse() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-        <div>
-          <p className="text-muted-foreground text-sm">
-            Управление складскими запасами и движением товаров
-          </p>
+      <div className="relative -mx-6 -mt-6 px-6 pt-6 pb-5 bg-gradient-to-b from-teal-500/5 via-teal-500/[0.02] to-transparent">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+          <div>
+            <p className="text-muted-foreground text-sm">
+              Управление складскими запасами и движением товаров
+            </p>
+          </div>
+          <div className="flex gap-2">
+            <Button onClick={openAddDialog} className="gap-2 shrink-0 transition-all duration-200 hover:shadow-md hover:-translate-y-0.5 hover:scale-[1.02]">
+              <Plus className="h-4 w-4" />
+              Добавить на склад
+            </Button>
+            <Button
+              variant="outline"
+              onClick={() => window.open('/api/warehouse/export', '_blank')}
+              className="gap-2 shrink-0 transition-all duration-200 hover:shadow-md hover:-translate-y-0.5"
+            >
+              <Download className="h-4 w-4" />
+              Экспорт
+            </Button>
+          </div>
         </div>
-        <Button onClick={openAddDialog} className="gap-2 shrink-0">
-          <Plus className="h-4 w-4" />
-          Добавить на склад
-        </Button>
       </div>
 
       {/* Low Stock Alert */}
       {lowStockItems.length > 0 && (
-        <Card className="border-amber-500/40 bg-amber-50/50 dark:bg-amber-950/20">
+        <Card className="border-amber-500/40 bg-gradient-to-r from-amber-50/80 to-amber-50/30 dark:from-amber-950/30 dark:to-amber-950/10 overflow-hidden">
+          <div className="absolute top-0 left-0 right-0 h-[2px] bg-amber-500 animate-pulse-soft" />
           <CardHeader className="pb-3">
             <div className="flex items-center gap-2">
-              <AlertTriangle className="h-5 w-5 text-amber-600 dark:text-amber-400" />
+              <div className="flex size-8 items-center justify-center rounded-full bg-amber-100 dark:bg-amber-900/50">
+                <AlertTriangle className="h-4 w-4 text-amber-600 dark:text-amber-400 animate-pulse-soft" />
+              </div>
               <CardTitle className="text-base text-amber-800 dark:text-amber-300">
                 Низкий остаток ({lowStockItems.length})
               </CardTitle>
@@ -657,13 +697,11 @@ export function Warehouse() {
               {lowStockItems.map((item) => (
                 <div
                   key={item.id}
-                  className="flex items-center justify-between rounded-md border border-amber-500/20 bg-background px-3 py-2"
+                  className="flex items-center justify-between rounded-lg border border-amber-500/20 bg-background/80 px-3 py-2.5"
                 >
-                  <div className="min-w-0 flex-1 mr-2">
+                  <div className="min-w-0 flex-1 mr-3">
                     <p className="text-sm font-medium truncate">{item.name}</p>
-                    {item.article && (
-                      <p className="text-xs text-muted-foreground">{item.article}</p>
-                    )}
+                    <StockBar item={item} />
                   </div>
                   <div className="text-right shrink-0">
                     <p className="text-sm font-bold text-amber-700 dark:text-amber-400">
@@ -745,10 +783,13 @@ export function Warehouse() {
                   return (
                     <TableRow
                       key={item.id}
-                      className={isOut ? 'bg-destructive/5' : isLow ? 'bg-amber-500/5' : ''}
+                      className={`transition-colors duration-150 ${isOut ? 'bg-red-50/50 dark:bg-red-950/10' : isLow ? 'bg-amber-50/50 dark:bg-amber-950/10' : 'hover:bg-muted/30'}`}
                     >
                       <TableCell className="font-medium max-w-[200px] truncate" title={item.name}>
-                        {item.name}
+                        <div className="flex items-center gap-2">
+                          <div className={`size-2 rounded-full shrink-0 ${isOut ? 'bg-red-500' : isLow ? 'bg-amber-500' : 'bg-emerald-500'}`} />
+                          {item.name}
+                        </div>
                       </TableCell>
                       <TableCell className="text-muted-foreground">{item.article || '—'}</TableCell>
                       <TableCell>
@@ -767,7 +808,10 @@ export function Warehouse() {
                         {item.location || '—'}
                       </TableCell>
                       <TableCell>
-                        <StatusBadge item={item} />
+                        <div className="flex items-center gap-2">
+                          <StatusBadge item={item} />
+                          {item.minQuantity > 0 && <StockBar item={item} />}
+                        </div>
                       </TableCell>
                       <TableCell className="text-right">
                         <div className="flex items-center justify-end gap-1">

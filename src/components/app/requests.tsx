@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useMemo } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { toast } from '@/hooks/use-toast'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -56,6 +56,8 @@ import {
   FileText,
   MessageSquare,
   Loader2,
+  Search,
+  Eye,
 } from 'lucide-react'
 
 // ── Types ──────────────────────────────────────────────────
@@ -120,17 +122,17 @@ interface PurchaseRequest {
 
 // ── Status helpers ─────────────────────────────────────────
 
-const REQUEST_STATUS_MAP: Record<string, { label: string; variant: 'default' | 'secondary' | 'destructive' | 'outline' }> = {
-  draft: { label: 'Черновик', variant: 'secondary' },
-  sent: { label: 'Отправлен', variant: 'default' },
-  responded: { label: 'Ответ получен', variant: 'default' },
-  partial: { label: 'Частичный ответ', variant: 'outline' },
-  cancelled: { label: 'Отменён', variant: 'destructive' },
+const REQUEST_STATUS_MAP: Record<string, { label: string; variant: 'default' | 'secondary' | 'destructive' | 'outline'; className?: string }> = {
+  draft: { label: 'Черновик', variant: 'secondary', className: 'rounded-full' },
+  sent: { label: 'Отправлен', variant: 'default', className: 'rounded-full bg-blue-100 text-blue-800 dark:bg-blue-950/30 dark:text-blue-400 border-blue-200 dark:border-blue-800' },
+  responded: { label: 'Ответ получен', variant: 'default', className: 'rounded-full bg-emerald-100 text-emerald-800 dark:bg-emerald-950/30 dark:text-emerald-400 border-emerald-200 dark:border-emerald-800' },
+  partial: { label: 'Частичный ответ', variant: 'outline', className: 'rounded-full border-amber-400 text-amber-700 bg-amber-50 dark:text-amber-400 dark:bg-amber-950/30' },
+  cancelled: { label: 'Отменён', variant: 'destructive', className: 'rounded-full' },
 }
 
 function StatusBadge({ status }: { status: string }) {
-  const info = REQUEST_STATUS_MAP[status] || { label: status, variant: 'outline' as const }
-  return <Badge variant={info.variant}>{info.label}</Badge>
+  const info = REQUEST_STATUS_MAP[status] || { label: status, variant: 'outline' as const, className: 'rounded-full' }
+  return <Badge variant={info.variant} className={info.className}>{info.label}</Badge>
 }
 
 // ── Main Component ─────────────────────────────────────────
@@ -141,6 +143,9 @@ export function Requests() {
   // Filters
   const [statusFilter, setStatusFilter] = useState<string>('all')
   const [supplierFilter, setSupplierFilter] = useState<string>('all')
+
+  // Search
+  const [searchQuery, setSearchQuery] = useState('')
 
   // Expanded row
   const [expandedId, setExpandedId] = useState<string | null>(null)
@@ -164,6 +169,14 @@ export function Requests() {
 
   // Cancel dialog
   const [cancelId, setCancelId] = useState<string | null>(null)
+
+  // Preview Email dialog
+  const [previewEmailOpen, setPreviewEmailOpen] = useState(false)
+  const [previewEmailData, setPreviewEmailData] = useState<{
+    emailTo: string
+    emailSubject: string
+    emailBody: string
+  }>({ emailTo: '', emailSubject: '', emailBody: '' })
 
   // ── Queries ────────────────────────────────────────────────
 
@@ -215,6 +228,18 @@ export function Requests() {
       return res.json() as Promise<{ companyName: string; inn: string; email: string; phone: string }>
     },
   })
+
+  // ── Filtered requests by search ────────────────────────────
+
+  const filteredRequests = useMemo(() => {
+    if (!searchQuery.trim()) return requests
+    const q = searchQuery.toLowerCase().trim()
+    return requests.filter(
+      (req) =>
+        req.supplier.name.toLowerCase().includes(q) ||
+        req.project.name.toLowerCase().includes(q)
+    )
+  }, [requests, searchQuery])
 
   // ── Mutations ──────────────────────────────────────────────
 
@@ -360,6 +385,15 @@ export function Requests() {
     setResponseOpen(true)
   }
 
+  const openPreviewEmail = (req: PurchaseRequest) => {
+    setPreviewEmailData({
+      emailTo: req.emailTo,
+      emailSubject: req.emailSubject,
+      emailBody: req.emailBody,
+    })
+    setPreviewEmailOpen(true)
+  }
+
   const handleRecordResponse = () => {
     const hasAvailable = responseItems.some((ri) => ri.available)
     updateMutation.mutate({
@@ -386,39 +420,46 @@ export function Requests() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div>
-          <p className="text-muted-foreground text-sm">Управление запросами на закупку</p>
+      <div className="relative -mx-6 -mt-6 px-6 pt-6 pb-5 bg-gradient-to-b from-violet-500/5 via-violet-500/[0.02] to-transparent">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <div>
+            <p className="text-muted-foreground text-sm">Управление запросами на закупку</p>
+          </div>
+          <Button onClick={() => setCreateOpen(true)} className="transition-all duration-200 hover:shadow-md hover:-translate-y-0.5 hover:scale-[1.02]">
+            <Plus className="mr-2 h-4 w-4" />
+            Новый запрос
+          </Button>
         </div>
-        <Button onClick={() => setCreateOpen(true)}>
-          <Plus className="mr-2 h-4 w-4" />
-          Новый запрос
-        </Button>
       </div>
 
       {/* Filter Bar */}
-      <Card>
-        <CardContent className="p-4">
-          <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center">
-            <div className="flex items-center gap-2">
-              <Filter className="h-4 w-4 text-muted-foreground" />
-              <span className="text-sm font-medium">Фильтры:</span>
+      <Card className="border-dashed">
+        <CardContent className="p-3">
+          <div className="flex flex-col sm:flex-row gap-3 items-start sm:items-center">
+            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+              <Filter className="h-4 w-4" />
             </div>
-            <Select value={statusFilter} onValueChange={setStatusFilter}>
-              <SelectTrigger className="w-[180px]">
-                <SelectValue placeholder="Статус" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Все статусы</SelectItem>
-                <SelectItem value="draft">Черновик</SelectItem>
-                <SelectItem value="sent">Отправлен</SelectItem>
-                <SelectItem value="responded">Ответ получен</SelectItem>
-                <SelectItem value="partial">Частичный ответ</SelectItem>
-                <SelectItem value="cancelled">Отменён</SelectItem>
-              </SelectContent>
-            </Select>
+            <div className="flex flex-wrap gap-2">
+              {['all', 'draft', 'sent', 'responded', 'partial', 'cancelled'].map((val) => {
+                const label = val === 'all' ? 'Все' : REQUEST_STATUS_MAP[val]?.label ?? val
+                const isActive = statusFilter === val
+                return (
+                  <button
+                    key={val}
+                    onClick={() => setStatusFilter(val)}
+                    className={`px-3 py-1 rounded-full text-xs font-medium transition-all duration-150 border ${
+                      isActive
+                        ? 'bg-primary text-primary-foreground border-primary'
+                        : 'bg-muted/50 text-muted-foreground border-transparent hover:bg-muted hover:border-border'
+                    }`}
+                  >
+                    {label}
+                  </button>
+                )
+              })}
+            </div>
             <Select value={supplierFilter} onValueChange={setSupplierFilter}>
-              <SelectTrigger className="w-[200px]">
+              <SelectTrigger className="w-[180px] h-8 text-xs">
                 <SelectValue placeholder="Поставщик" />
               </SelectTrigger>
               <SelectContent>
@@ -430,6 +471,16 @@ export function Requests() {
                 ))}
               </SelectContent>
             </Select>
+            {/* Search Input */}
+            <div className="relative flex-1 min-w-[200px]">
+              <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Поиск по поставщику или проекту..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-9 h-8 text-xs"
+              />
+            </div>
           </div>
         </CardContent>
       </Card>
@@ -442,10 +493,13 @@ export function Requests() {
               <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
               <span className="ml-2 text-muted-foreground">Загрузка...</span>
             </div>
-          ) : requests.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-12 text-muted-foreground">
-              <FileText className="h-10 w-10 mb-2" />
-              <p>Запросы не найдены</p>
+          ) : filteredRequests.length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-16 text-muted-foreground">
+              <div className="rounded-full bg-muted p-4 mb-4">
+                <Mail className="h-10 w-10 text-muted-foreground/50" />
+              </div>
+              <p className="text-base font-medium">{searchQuery ? 'Ничего не найдено по запросу' : 'Запросы не найдены'}</p>
+              <p className="text-sm mt-1">{searchQuery ? 'Попробуйте изменить параметры поиска' : 'Создайте первый запрос поставщику'}</p>
             </div>
           ) : (
             <Table>
@@ -462,7 +516,7 @@ export function Requests() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {requests.map((req) => (
+                {filteredRequests.map((req) => (
                   <>
                     <TableRow
                       key={req.id}
@@ -486,6 +540,16 @@ export function Requests() {
                       <TableCell>{formatDate(req.responseAt)}</TableCell>
                       <TableCell className="text-right">
                         <div className="flex justify-end gap-1" onClick={(e) => e.stopPropagation()}>
+                          {req.emailBody && (
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              onClick={() => openPreviewEmail(req)}
+                              title="Предпросмотр письма"
+                            >
+                              <Eye className="h-3 w-3" />
+                            </Button>
+                          )}
                           {req.status === 'draft' && (
                             <Button
                               size="sm"
@@ -601,6 +665,42 @@ export function Requests() {
           )}
         </CardContent>
       </Card>
+
+      {/* ── Preview Email Dialog ──────────────────────────────── */}
+      <Dialog open={previewEmailOpen} onOpenChange={setPreviewEmailOpen}>
+        <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Mail className="size-5" />
+              Предпросмотр письма
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="grid grid-cols-1 gap-3">
+              <div>
+                <p className="text-sm text-muted-foreground">Кому</p>
+                <p className="font-medium text-sm">{previewEmailData.emailTo || '—'}</p>
+              </div>
+              <div>
+                <p className="text-sm text-muted-foreground">Тема</p>
+                <p className="font-medium text-sm">{previewEmailData.emailSubject || '—'}</p>
+              </div>
+            </div>
+            <Separator />
+            <div>
+              <p className="text-sm text-muted-foreground mb-2">Текст письма</p>
+              <div className="bg-muted rounded-md p-4 whitespace-pre-wrap text-sm max-h-96 overflow-y-auto">
+                {previewEmailData.emailBody || 'Шаблон письма пуст'}
+              </div>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setPreviewEmailOpen(false)}>
+              Закрыть
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {/* ── Create Request Dialog ──────────────────────────── */}
       <Dialog open={createOpen} onOpenChange={(open) => { if (!open) resetCreateDialog() }}>

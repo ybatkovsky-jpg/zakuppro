@@ -236,11 +236,11 @@ function SupplierCard({
   const projectCount = supplier._count?.projectItems ?? 0
 
   return (
-    <Card className="group transition-shadow hover:shadow-md">
+    <Card className="group relative overflow-hidden transition-all duration-200 hover:shadow-lg hover:-translate-y-1 border-l-4 border-l-sky-400 dark:border-l-sky-600">
       <CardHeader className="pb-3">
         <div className="flex items-start justify-between gap-2">
           <div className="flex items-center gap-2 min-w-0">
-            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
+            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-gradient-to-br from-sky-500/15 to-primary/10 text-sky-600 dark:text-sky-400">
               <Building2 className="h-5 w-5" />
             </div>
             <div className="min-w-0">
@@ -254,7 +254,7 @@ function SupplierCard({
               )}
             </div>
           </div>
-          <div className="flex shrink-0 gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+          <div className="flex shrink-0 gap-1 opacity-0 group-hover:opacity-100 transition-all duration-200 group-hover:translate-x-0 translate-x-1">
             <Tooltip>
               <TooltipTrigger asChild>
                 <Button
@@ -321,8 +321,8 @@ function SupplierCard({
             <span className="line-clamp-2">{supplier.notes}</span>
           </div>
         )}
-        <div className="flex items-center gap-2 pt-2 border-t">
-          <Badge variant="secondary" className="gap-1">
+        <div className="flex items-center gap-2 pt-2 border-t border-dashed">
+          <Badge variant="secondary" className="gap-1 rounded-full bg-sky-50 text-sky-700 dark:bg-sky-950/30 dark:text-sky-400 border-sky-200 dark:border-sky-800">
             <Package className="h-3 w-3" />
             {projectCount} {pluralize(projectCount, 'позиция', 'позиции', 'позиций')}
           </Badge>
@@ -474,16 +474,18 @@ export function Suppliers() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-        <div>
-          <p className="text-muted-foreground text-sm">
-            Управление списком поставщиков и подрядчиков
-          </p>
+      <div className="relative -mx-6 -mt-6 px-6 pt-6 pb-5 bg-gradient-to-b from-sky-500/5 via-sky-500/[0.02] to-transparent">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+          <div>
+            <p className="text-muted-foreground text-sm">
+              Управление списком поставщиков и подрядчиков
+            </p>
+          </div>
+          <Button onClick={openAddDialog} className="gap-2 shrink-0 transition-all duration-200 hover:shadow-md hover:-translate-y-0.5 hover:scale-[1.02]">
+            <Plus className="h-4 w-4" />
+            Добавить поставщика
+          </Button>
         </div>
-        <Button onClick={openAddDialog} className="gap-2 shrink-0">
-          <Plus className="h-4 w-4" />
-          Добавить поставщика
-        </Button>
       </div>
 
       {/* Search */}

@@ -51,6 +51,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
+import { motion, AnimatePresence } from 'framer-motion'
 import {
   Plus,
   Upload,
@@ -58,6 +59,7 @@ import {
   MoreHorizontal,
   FolderOpen,
   FileSpreadsheet,
+  Download,
   Loader2,
 } from 'lucide-react'
 
@@ -78,18 +80,18 @@ interface Project {
 // --- Status helpers ---
 
 const STATUS_MAP: Record<string, { label: string; variant: 'default' | 'secondary' | 'outline' | 'destructive'; className?: string }> = {
-  new: { label: 'Новый', variant: 'secondary' },
-  processing: { label: 'В обработке', variant: 'default' },
-  requested: { label: 'Запрошено', variant: 'outline' },
-  invoiced: { label: 'Счета', variant: 'outline', className: 'border-amber-500 text-amber-700 bg-amber-50 dark:text-amber-400 dark:bg-amber-950/30' },
-  paid: { label: 'Оплачено', variant: 'outline', className: 'border-green-500 text-green-700 bg-green-50 dark:text-green-400 dark:bg-green-950/30' },
-  delivered: { label: 'Доставлено', variant: 'outline', className: 'border-green-600 text-green-800 bg-green-50 dark:text-green-400 dark:bg-green-950/30' },
-  completed: { label: 'Завершено', variant: 'outline', className: 'border-green-700 text-green-900 bg-green-100 dark:text-green-300 dark:bg-green-950/40' },
-  cancelled: { label: 'Отменено', variant: 'destructive' },
+  new: { label: 'Новый', variant: 'secondary', className: 'rounded-full px-2.5' },
+  processing: { label: 'В обработке', variant: 'default', className: 'rounded-full px-2.5' },
+  requested: { label: 'Запрошено', variant: 'outline', className: 'rounded-full px-2.5 border-primary/30 text-primary' },
+  invoiced: { label: 'Счета', variant: 'outline', className: 'rounded-full px-2.5 border-amber-500 text-amber-700 bg-amber-50 dark:text-amber-400 dark:bg-amber-950/30' },
+  paid: { label: 'Оплачено', variant: 'outline', className: 'rounded-full px-2.5 border-green-500 text-green-700 bg-green-50 dark:text-green-400 dark:bg-green-950/30' },
+  delivered: { label: 'Доставлено', variant: 'outline', className: 'rounded-full px-2.5 border-green-600 text-green-800 bg-green-50 dark:text-green-400 dark:bg-green-950/30' },
+  completed: { label: 'Завершено', variant: 'outline', className: 'rounded-full px-2.5 border-green-700 text-green-900 bg-green-100 dark:text-green-300 dark:bg-green-950/40' },
+  cancelled: { label: 'Отменено', variant: 'destructive', className: 'rounded-full px-2.5' },
 }
 
 function StatusBadge({ status }: { status: string }) {
-  const config = STATUS_MAP[status] ?? { label: status, variant: 'secondary' as const }
+  const config = STATUS_MAP[status] ?? { label: status, variant: 'secondary' as const, className: 'rounded-full px-2.5' }
   return (
     <Badge variant={config.variant} className={config.className}>
       {config.label}
@@ -302,143 +304,145 @@ export function Projects() {
 
   return (
     <div className="space-y-4">
-      {/* Header */}
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <p className="text-muted-foreground text-sm">
-            Управление проектами закупок
-          </p>
-        </div>
+      {/* Gradient Header */}
+      <div className="relative -mx-6 -mt-6 px-6 pt-6 pb-5 bg-gradient-to-b from-primary/5 via-primary/[0.02] to-transparent">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <p className="text-muted-foreground text-sm">
+              Управление проектами закупок
+            </p>
+          </div>
 
-        <div className="flex gap-2">
-          {/* Create Project Dialog */}
-          <Dialog open={createOpen} onOpenChange={(open) => { setCreateOpen(open); if (!open) resetCreateForm() }}>
-            <DialogTrigger asChild>
-              <Button>
-                <Plus className="h-4 w-4" />
-                Новый проект
-              </Button>
-            </DialogTrigger>
-            <DialogContent>
-              <form onSubmit={handleCreateSubmit}>
-                <DialogHeader>
-                  <DialogTitle>Новый проект</DialogTitle>
-                  <DialogDescription>
-                    Создайте пустой проект для управления закупками
-                  </DialogDescription>
-                </DialogHeader>
-                <div className="grid gap-4 py-4">
-                  <div className="grid gap-2">
-                    <Label htmlFor="project-name">Название *</Label>
-                    <Input
-                      id="project-name"
-                      placeholder="Название проекта"
-                      value={newName}
-                      onChange={(e) => setNewName(e.target.value)}
-                      required
-                    />
+          <div className="flex gap-2">
+            {/* Create Project Dialog */}
+            <Dialog open={createOpen} onOpenChange={(open) => { setCreateOpen(open); if (!open) resetCreateForm() }}>
+              <DialogTrigger asChild>
+                <Button className="transition-all duration-200 hover:shadow-md hover:-translate-y-0.5 hover:scale-[1.02]">
+                  <Plus className="h-4 w-4" />
+                  Новый проект
+                </Button>
+              </DialogTrigger>
+              <DialogContent>
+                <form onSubmit={handleCreateSubmit}>
+                  <DialogHeader>
+                    <DialogTitle>Новый проект</DialogTitle>
+                    <DialogDescription>
+                      Создайте пустой проект для управления закупками
+                    </DialogDescription>
+                  </DialogHeader>
+                  <div className="grid gap-4 py-4">
+                    <div className="grid gap-2">
+                      <Label htmlFor="project-name">Название *</Label>
+                      <Input
+                        id="project-name"
+                        placeholder="Название проекта"
+                        value={newName}
+                        onChange={(e) => setNewName(e.target.value)}
+                        required
+                      />
+                    </div>
+                    <div className="grid gap-2">
+                      <Label htmlFor="project-customer">Заказчик</Label>
+                      <Input
+                        id="project-customer"
+                        placeholder="Имя заказчика"
+                        value={newCustomer}
+                        onChange={(e) => setNewCustomer(e.target.value)}
+                      />
+                    </div>
+                    <div className="grid gap-2">
+                      <Label htmlFor="project-desc">Описание</Label>
+                      <Textarea
+                        id="project-desc"
+                        placeholder="Описание проекта"
+                        value={newDescription}
+                        onChange={(e) => setNewDescription(e.target.value)}
+                        rows={3}
+                      />
+                    </div>
                   </div>
-                  <div className="grid gap-2">
-                    <Label htmlFor="project-customer">Заказчик</Label>
-                    <Input
-                      id="project-customer"
-                      placeholder="Имя заказчика"
-                      value={newCustomer}
-                      onChange={(e) => setNewCustomer(e.target.value)}
-                    />
-                  </div>
-                  <div className="grid gap-2">
-                    <Label htmlFor="project-desc">Описание</Label>
-                    <Textarea
-                      id="project-desc"
-                      placeholder="Описание проекта"
-                      value={newDescription}
-                      onChange={(e) => setNewDescription(e.target.value)}
-                      rows={3}
-                    />
-                  </div>
-                </div>
-                <DialogFooter>
-                  <Button type="button" variant="outline" onClick={() => { setCreateOpen(false); resetCreateForm() }}>
-                    Отмена
-                  </Button>
-                  <Button type="submit" disabled={!newName.trim() || createMutation.isPending}>
-                    {createMutation.isPending && <Loader2 className="h-4 w-4 animate-spin" />}
-                    Создать
-                  </Button>
-                </DialogFooter>
-              </form>
-            </DialogContent>
-          </Dialog>
+                  <DialogFooter>
+                    <Button type="button" variant="outline" onClick={() => { setCreateOpen(false); resetCreateForm() }}>
+                      Отмена
+                    </Button>
+                    <Button type="submit" disabled={!newName.trim() || createMutation.isPending}>
+                      {createMutation.isPending && <Loader2 className="h-4 w-4 animate-spin" />}
+                      Создать
+                    </Button>
+                  </DialogFooter>
+                </form>
+              </DialogContent>
+            </Dialog>
 
-          {/* Upload Excel Dialog */}
-          <Dialog open={uploadOpen} onOpenChange={(open) => { setUploadOpen(open); if (!open) resetUploadForm() }}>
-            <DialogTrigger asChild>
-              <Button variant="outline">
-                <FileSpreadsheet className="h-4 w-4" />
-                Загрузить Excel
-              </Button>
-            </DialogTrigger>
-            <DialogContent>
-              <form onSubmit={handleUploadSubmit}>
-                <DialogHeader>
-                  <DialogTitle>Загрузить Excel</DialogTitle>
-                  <DialogDescription>
-                    Загрузите файл Excel с позициями для нового проекта
-                  </DialogDescription>
-                </DialogHeader>
-                <div className="grid gap-4 py-4">
-                  <div className="grid gap-2">
-                    <Label htmlFor="upload-name">Название проекта *</Label>
-                    <Input
-                      id="upload-name"
-                      placeholder="Название проекта"
-                      value={uploadProjectName}
-                      onChange={(e) => setUploadProjectName(e.target.value)}
-                      required
-                    />
+            {/* Upload Excel Dialog */}
+            <Dialog open={uploadOpen} onOpenChange={(open) => { setUploadOpen(open); if (!open) resetUploadForm() }}>
+              <DialogTrigger asChild>
+                <Button variant="outline" className="transition-all duration-200 hover:shadow-md hover:-translate-y-0.5 hover:border-primary/30">
+                  <FileSpreadsheet className="h-4 w-4" />
+                  Загрузить Excel
+                </Button>
+              </DialogTrigger>
+              <DialogContent>
+                <form onSubmit={handleUploadSubmit}>
+                  <DialogHeader>
+                    <DialogTitle>Загрузить Excel</DialogTitle>
+                    <DialogDescription>
+                      Загрузите файл Excel с позициями для нового проекта
+                    </DialogDescription>
+                  </DialogHeader>
+                  <div className="grid gap-4 py-4">
+                    <div className="grid gap-2">
+                      <Label htmlFor="upload-name">Название проекта *</Label>
+                      <Input
+                        id="upload-name"
+                        placeholder="Название проекта"
+                        value={uploadProjectName}
+                        onChange={(e) => setUploadProjectName(e.target.value)}
+                        required
+                      />
+                    </div>
+                    <div className="grid gap-2">
+                      <Label htmlFor="upload-file">Файл Excel *</Label>
+                      <Input
+                        id="upload-file"
+                        ref={fileInputRef}
+                        type="file"
+                        accept=".xlsx,.xls"
+                        onChange={(e) => setUploadFile(e.target.files?.[0] ?? null)}
+                        required
+                      />
+                      {uploadFile && (
+                        <p className="text-muted-foreground text-xs">
+                          Выбран: {uploadFile.name} ({(uploadFile.size / 1024).toFixed(1)} КБ)
+                        </p>
+                      )}
+                    </div>
                   </div>
-                  <div className="grid gap-2">
-                    <Label htmlFor="upload-file">Файл Excel *</Label>
-                    <Input
-                      id="upload-file"
-                      ref={fileInputRef}
-                      type="file"
-                      accept=".xlsx,.xls"
-                      onChange={(e) => setUploadFile(e.target.files?.[0] ?? null)}
-                      required
-                    />
-                    {uploadFile && (
-                      <p className="text-muted-foreground text-xs">
-                        Выбран: {uploadFile.name} ({(uploadFile.size / 1024).toFixed(1)} КБ)
-                      </p>
-                    )}
-                  </div>
-                </div>
-                <DialogFooter>
-                  <Button type="button" variant="outline" onClick={() => { setUploadOpen(false); resetUploadForm() }}>
-                    Отмена
-                  </Button>
-                  <Button
-                    type="submit"
-                    disabled={!uploadProjectName.trim() || !uploadFile || uploadMutation.isPending}
-                  >
-                    {uploadMutation.isPending ? (
-                      <>
-                        <Loader2 className="h-4 w-4 animate-spin" />
-                        Загрузка...
-                      </>
-                    ) : (
-                      <>
-                        <Upload className="h-4 w-4" />
-                        Загрузить
-                      </>
-                    )}
-                  </Button>
-                </DialogFooter>
-              </form>
-            </DialogContent>
-          </Dialog>
+                  <DialogFooter>
+                    <Button type="button" variant="outline" onClick={() => { setUploadOpen(false); resetUploadForm() }}>
+                      Отмена
+                    </Button>
+                    <Button
+                      type="submit"
+                      disabled={!uploadProjectName.trim() || !uploadFile || uploadMutation.isPending}
+                    >
+                      {uploadMutation.isPending ? (
+                        <>
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                          Загрузка...
+                        </>
+                      ) : (
+                        <>
+                          <Upload className="h-4 w-4" />
+                          Загрузить
+                        </>
+                      )}
+                    </Button>
+                  </DialogFooter>
+                </form>
+              </DialogContent>
+            </Dialog>
+          </div>
         </div>
       </div>
 
@@ -463,20 +467,26 @@ export function Projects() {
 
       {/* Projects Table */}
       {projects.length === 0 ? (
-        <div className="flex flex-col items-center justify-center gap-4 rounded-lg border border-dashed p-12 text-center">
-          <FolderOpen className="text-muted-foreground h-12 w-12" />
+        <motion.div
+          initial={{ opacity: 0, y: 12 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="flex flex-col items-center justify-center gap-4 rounded-xl border border-dashed p-12 text-center"
+        >
+          <div className="rounded-full bg-muted p-4">
+            <FolderOpen className="text-muted-foreground h-10 w-10" />
+          </div>
           <div>
             <p className="text-lg font-medium">Нет проектов</p>
             <p className="text-muted-foreground text-sm">
               Создайте новый проект или загрузите позиции из Excel
             </p>
           </div>
-        </div>
+        </motion.div>
       ) : (
-        <div className="rounded-md border">
+        <div className="rounded-xl border overflow-hidden">
           <Table>
             <TableHeader>
-              <TableRow>
+              <TableRow className="bg-muted/30">
                 <TableHead>Название</TableHead>
                 <TableHead>Заказчик</TableHead>
                 <TableHead>Статус</TableHead>
@@ -486,89 +496,105 @@ export function Projects() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {projects.map((project) => (
-                <TableRow
-                  key={project.id}
-                  className="cursor-pointer"
-                  onClick={() => navigateToProject(project.id)}
-                >
-                  <TableCell className="font-medium">
-                    <div className="flex flex-col">
-                      <span>{project.name}</span>
-                      {project.description && (
-                        <span className="text-muted-foreground text-xs truncate max-w-64">
-                          {project.description}
-                        </span>
+              <AnimatePresence>
+                {projects.map((project, idx) => (
+                  <motion.tr
+                    key={project.id}
+                    initial={{ opacity: 0, y: 8 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: idx * 0.03, duration: 0.3 }}
+                    className="cursor-pointer group relative transition-colors duration-150 hover:bg-primary/[0.03] border-l-2 border-l-transparent hover:border-l-primary/40"
+                    onClick={() => navigateToProject(project.id)}
+                  >
+                    <TableCell className="font-medium">
+                      <div className="flex flex-col">
+                        <span className="group-hover:text-primary transition-colors duration-150">{project.name}</span>
+                        {project.description && (
+                          <span className="text-muted-foreground text-xs truncate max-w-64">
+                            {project.description}
+                          </span>
+                        )}
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      {project.customerName || (
+                        <span className="text-muted-foreground">—</span>
                       )}
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    {project.customerName || (
-                      <span className="text-muted-foreground">—</span>
-                    )}
-                  </TableCell>
-                  <TableCell>
-                    <StatusBadge status={project.status} />
-                  </TableCell>
-                  <TableCell className="text-center">
-                    {project._count?.items ?? 0}
-                  </TableCell>
-                  <TableCell>{formatDate(project.createdAt)}</TableCell>
-                  <TableCell className="text-right">
-                    <AlertDialog>
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
-                          <Button variant="ghost" size="icon" className="h-8 w-8">
-                            <MoreHorizontal className="h-4 w-4" />
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                          <DropdownMenuItem
-                            onClick={(e) => {
-                              e.stopPropagation()
-                              navigateToProject(project.id)
-                            }}
-                          >
-                            <FolderOpen className="h-4 w-4" />
-                            Открыть
-                          </DropdownMenuItem>
-                          <AlertDialogTrigger asChild>
+                    </TableCell>
+                    <TableCell>
+                      <StatusBadge status={project.status} />
+                    </TableCell>
+                    <TableCell className="text-center">
+                      <span className="inline-flex items-center justify-center size-6 rounded-full bg-muted text-xs font-medium">
+                        {project._count?.items ?? 0}
+                      </span>
+                    </TableCell>
+                    <TableCell className="text-muted-foreground text-sm">{formatDate(project.createdAt)}</TableCell>
+                    <TableCell className="text-right">
+                      <AlertDialog>
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
+                            <Button variant="ghost" size="icon" className="h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity">
+                              <MoreHorizontal className="h-4 w-4" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
                             <DropdownMenuItem
-                              className="text-destructive focus:text-destructive"
-                              onClick={(e) => e.stopPropagation()}
+                              onClick={(e) => {
+                                e.stopPropagation()
+                                navigateToProject(project.id)
+                              }}
                             >
-                              <Trash2 className="h-4 w-4" />
-                              Удалить
+                              <FolderOpen className="h-4 w-4" />
+                              Открыть
                             </DropdownMenuItem>
-                          </AlertDialogTrigger>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-                      <AlertDialogContent>
-                        <AlertDialogHeader>
-                          <AlertDialogTitle>Удалить проект?</AlertDialogTitle>
-                          <AlertDialogDescription>
-                            Проект &laquo;{project.name}&raquo; будет удалён без возможности восстановления. Все связанные позиции, запросы и счета также будут удалены.
-                          </AlertDialogDescription>
-                        </AlertDialogHeader>
-                        <AlertDialogFooter>
-                          <AlertDialogCancel>Отмена</AlertDialogCancel>
-                          <AlertDialogAction
-                            className="bg-destructive text-white hover:bg-destructive/90"
-                            onClick={() => deleteMutation.mutate(project.id)}
-                            disabled={deleteMutation.isPending}
-                          >
-                            {deleteMutation.isPending ? (
-                              <Loader2 className="h-4 w-4 animate-spin" />
-                            ) : (
-                              'Удалить'
-                            )}
-                          </AlertDialogAction>
-                        </AlertDialogFooter>
-                      </AlertDialogContent>
-                    </AlertDialog>
-                  </TableCell>
-                </TableRow>
-              ))}
+                            <DropdownMenuItem
+                              onClick={(e) => {
+                                e.stopPropagation()
+                                window.open(`/api/projects/${project.id}/export`, '_blank')
+                              }}
+                            >
+                              <Download className="h-4 w-4" />
+                              Экспорт в Excel
+                            </DropdownMenuItem>
+                            <AlertDialogTrigger asChild>
+                              <DropdownMenuItem
+                                className="text-destructive focus:text-destructive"
+                                onClick={(e) => e.stopPropagation()}
+                              >
+                                <Trash2 className="h-4 w-4" />
+                                Удалить
+                              </DropdownMenuItem>
+                            </AlertDialogTrigger>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                        <AlertDialogContent>
+                          <AlertDialogHeader>
+                            <AlertDialogTitle>Удалить проект?</AlertDialogTitle>
+                            <AlertDialogDescription>
+                              Проект &laquo;{project.name}&raquo; будет удалён без возможности восстановления. Все связанные позиции, запросы и счета также будут удалены.
+                            </AlertDialogDescription>
+                          </AlertDialogHeader>
+                          <AlertDialogFooter>
+                            <AlertDialogCancel>Отмена</AlertDialogCancel>
+                            <AlertDialogAction
+                              className="bg-destructive text-white hover:bg-destructive/90"
+                              onClick={() => deleteMutation.mutate(project.id)}
+                              disabled={deleteMutation.isPending}
+                            >
+                              {deleteMutation.isPending ? (
+                                <Loader2 className="h-4 w-4 animate-spin" />
+                              ) : (
+                                'Удалить'
+                              )}
+                            </AlertDialogAction>
+                          </AlertDialogFooter>
+                        </AlertDialogContent>
+                      </AlertDialog>
+                    </TableCell>
+                  </motion.tr>
+                ))}
+              </AnimatePresence>
             </TableBody>
           </Table>
         </div>

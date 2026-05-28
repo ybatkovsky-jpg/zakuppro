@@ -44,6 +44,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog'
+import { motion } from 'framer-motion'
 import {
   ArrowLeft,
   ChevronDown,
@@ -59,6 +60,7 @@ import {
   ShoppingCart,
   History,
   Package,
+  Download,
 } from 'lucide-react'
 
 // --- Types ---
@@ -158,15 +160,15 @@ interface ProjectDetail {
 
 // --- Status helpers ---
 
-const PROJECT_STATUS_MAP: Record<string, { label: string; variant: 'default' | 'secondary' | 'outline' | 'destructive'; className?: string }> = {
-  new: { label: 'Новый', variant: 'secondary' },
-  processing: { label: 'В обработке', variant: 'default' },
-  requested: { label: 'Запрошено', variant: 'outline' },
-  invoiced: { label: 'Счета', variant: 'outline', className: 'border-amber-500 text-amber-700 bg-amber-50 dark:text-amber-400 dark:bg-amber-950/30' },
-  paid: { label: 'Оплачено', variant: 'outline', className: 'border-green-500 text-green-700 bg-green-50 dark:text-green-400 dark:bg-green-950/30' },
-  delivered: { label: 'Доставлено', variant: 'outline', className: 'border-green-600 text-green-800 bg-green-50 dark:text-green-400 dark:bg-green-950/30' },
-  completed: { label: 'Завершено', variant: 'outline', className: 'border-green-700 text-green-900 bg-green-100 dark:text-green-300 dark:bg-green-950/40' },
-  cancelled: { label: 'Отменено', variant: 'destructive' },
+const PROJECT_STATUS_MAP: Record<string, { label: string; variant: 'default' | 'secondary' | 'outline' | 'destructive'; className?: string; bannerClass?: string }> = {
+  new: { label: 'Новый', variant: 'secondary', bannerClass: 'bg-sky-50 border-sky-200 text-sky-800 dark:bg-sky-950/30 dark:border-sky-800 dark:text-sky-300' },
+  processing: { label: 'В обработке', variant: 'default', bannerClass: 'bg-violet-50 border-violet-200 text-violet-800 dark:bg-violet-950/30 dark:border-violet-800 dark:text-violet-300' },
+  requested: { label: 'Запрошено', variant: 'outline', bannerClass: 'bg-blue-50 border-blue-200 text-blue-800 dark:bg-blue-950/30 dark:border-blue-800 dark:text-blue-300' },
+  invoiced: { label: 'Счета', variant: 'outline', className: 'border-amber-500 text-amber-700 bg-amber-50 dark:text-amber-400 dark:bg-amber-950/30 rounded-full', bannerClass: 'bg-amber-50 border-amber-200 text-amber-800 dark:bg-amber-950/30 dark:border-amber-800 dark:text-amber-300' },
+  paid: { label: 'Оплачено', variant: 'outline', className: 'border-green-500 text-green-700 bg-green-50 dark:text-green-400 dark:bg-green-950/30 rounded-full', bannerClass: 'bg-green-50 border-green-200 text-green-800 dark:bg-green-950/30 dark:border-green-800 dark:text-green-300' },
+  delivered: { label: 'Доставлено', variant: 'outline', className: 'border-green-600 text-green-800 bg-green-50 dark:text-green-400 dark:bg-green-950/30 rounded-full', bannerClass: 'bg-teal-50 border-teal-200 text-teal-800 dark:bg-teal-950/30 dark:border-teal-800 dark:text-teal-300' },
+  completed: { label: 'Завершено', variant: 'outline', className: 'border-green-700 text-green-900 bg-green-100 dark:text-green-300 dark:bg-green-950/40 rounded-full', bannerClass: 'bg-emerald-50 border-emerald-200 text-emerald-800 dark:bg-emerald-950/30 dark:border-emerald-800 dark:text-emerald-300' },
+  cancelled: { label: 'Отменено', variant: 'destructive', bannerClass: 'bg-red-50 border-red-200 text-red-800 dark:bg-red-950/30 dark:border-red-800 dark:text-red-300' },
 }
 
 const ITEM_STATUS_MAP: Record<string, { label: string; variant: 'default' | 'secondary' | 'outline' | 'destructive'; className?: string }> = {
@@ -490,8 +492,28 @@ export function ProjectDetail() {
   const pendingItems = project.items.filter((i) => i.status === 'pending' && i.supplierId)
   const warehouseItems = project.items.filter((i) => i.isFromWarehouse)
 
+  // --- Status banner color ---
+  const statusBanner = PROJECT_STATUS_MAP[project?.status ?? 'new']
+
   return (
     <div className="space-y-4">
+      {/* Status Banner */}
+      {project && statusBanner?.bannerClass && (
+        <motion.div
+          initial={{ opacity: 0, y: -8 }}
+          animate={{ opacity: 1, y: 0 }}
+          className={`-mx-6 -mt-6 px-6 py-3 border-b ${statusBanner.bannerClass}`}
+        >
+          <div className="flex items-center gap-2 text-sm font-medium">
+            <div className="size-2 rounded-full bg-current opacity-60" />
+            Статус: {statusBanner.label}
+            {project.customerName && (
+              <span className="opacity-60">• Заказчик: {project.customerName}</span>
+            )}
+          </div>
+        </motion.div>
+      )}
+
       {/* Header */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div className="flex items-start gap-3">
@@ -525,6 +547,14 @@ export function ProjectDetail() {
         </div>
 
         <div className="flex items-center gap-2">
+          <Button
+            variant="outline"
+            onClick={() => window.open(`/api/projects/${project.id}/export`, '_blank')}
+            className="gap-2 transition-all duration-200 hover:shadow-md hover:-translate-y-0.5"
+          >
+            <Download className="h-4 w-4" />
+            Экспорт в Excel
+          </Button>
           <Select
             value={project.status}
             onValueChange={(value) => updateProjectStatus.mutate({ status: value })}
@@ -545,29 +575,29 @@ export function ProjectDetail() {
 
       {/* Tabs */}
       <Tabs defaultValue="items">
-        <TabsList>
-          <TabsTrigger value="items" className="gap-1.5">
+        <TabsList className="bg-muted/50 p-1">
+          <TabsTrigger value="items" className="gap-1.5 data-[state=active]:bg-background data-[state=active]:shadow-sm data-[state=active]:border-b-2 data-[state=active]:border-primary">
             <Package className="h-4 w-4" />
             Позиции
-            <Badge variant="secondary" className="ml-1 h-5 px-1.5 text-[10px]">
+            <Badge variant="secondary" className="ml-1 h-5 px-1.5 text-[10px] rounded-full">
               {project.items.length}
             </Badge>
           </TabsTrigger>
-          <TabsTrigger value="requests" className="gap-1.5">
+          <TabsTrigger value="requests" className="gap-1.5 data-[state=active]:bg-background data-[state=active]:shadow-sm data-[state=active]:border-b-2 data-[state=active]:border-primary">
             <Mail className="h-4 w-4" />
             Запросы
-            <Badge variant="secondary" className="ml-1 h-5 px-1.5 text-[10px]">
+            <Badge variant="secondary" className="ml-1 h-5 px-1.5 text-[10px] rounded-full">
               {project.purchaseRequests.length}
             </Badge>
           </TabsTrigger>
-          <TabsTrigger value="invoices" className="gap-1.5">
+          <TabsTrigger value="invoices" className="gap-1.5 data-[state=active]:bg-background data-[state=active]:shadow-sm data-[state=active]:border-b-2 data-[state=active]:border-primary">
             <FileText className="h-4 w-4" />
             Счета
-            <Badge variant="secondary" className="ml-1 h-5 px-1.5 text-[10px]">
+            <Badge variant="secondary" className="ml-1 h-5 px-1.5 text-[10px] rounded-full">
               {project.invoices.length}
             </Badge>
           </TabsTrigger>
-          <TabsTrigger value="history" className="gap-1.5">
+          <TabsTrigger value="history" className="gap-1.5 data-[state=active]:bg-background data-[state=active]:shadow-sm data-[state=active]:border-b-2 data-[state=active]:border-primary">
             <History className="h-4 w-4" />
             История
           </TabsTrigger>
@@ -613,22 +643,25 @@ export function ProjectDetail() {
                     onOpenChange={() => toggleSupplier(key)}
                   >
                     <CollapsibleTrigger asChild>
-                      <div className="flex items-center gap-2 rounded-md border bg-muted/50 px-4 py-2 cursor-pointer hover:bg-muted/70 transition-colors">
+                      <div className="flex items-center gap-2 rounded-lg border bg-gradient-to-r from-primary/5 to-transparent px-4 py-2.5 cursor-pointer hover:from-primary/10 transition-all duration-200">
                         {isOpen ? (
-                          <ChevronDown className="h-4 w-4 text-muted-foreground" />
+                          <ChevronDown className="h-4 w-4 text-primary/60 transition-transform" />
                         ) : (
-                          <ChevronRight className="h-4 w-4 text-muted-foreground" />
+                          <ChevronRight className="h-4 w-4 text-primary/60 transition-transform" />
                         )}
+                        <div className="flex size-6 items-center justify-center rounded-md bg-primary/10 text-primary">
+                          <Package className="size-3.5" />
+                        </div>
                         <span className="font-medium text-sm">
                           {supplierName}
                         </span>
-                        <Badge variant="secondary" className="text-xs">
+                        <Badge variant="secondary" className="text-xs rounded-full">
                           {group.items.length} поз.
                         </Badge>
                       </div>
                     </CollapsibleTrigger>
                     <CollapsibleContent>
-                      <div className="rounded-md border border-t-0">
+                      <div className="rounded-b-lg border border-t-0" style={{ animation: 'slide-down 0.3s ease-out' }}>
                         <Table>
                           <TableHeader>
                             <TableRow>

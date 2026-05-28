@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useMemo } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { toast } from '@/hooks/use-toast'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -8,7 +8,6 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Badge } from '@/components/ui/badge'
-import { Textarea } from '@/components/ui/textarea'
 import {
   Dialog,
   DialogContent,
@@ -46,7 +45,6 @@ import {
   Plus,
   Filter,
   ChevronDown,
-  ChevronUp,
   FileText,
   CheckCircle2,
   XCircle,
@@ -54,6 +52,8 @@ import {
   CreditCard,
   Loader2,
   Trash2,
+  Search,
+  Receipt,
 } from 'lucide-react'
 
 // ── Types ──────────────────────────────────────────────────
@@ -127,26 +127,18 @@ interface InvoiceListItem {
 
 // ── Status helpers ─────────────────────────────────────────
 
-const INVOICE_STATUS_MAP: Record<string, { label: string; variant: 'default' | 'secondary' | 'destructive' | 'outline' }> = {
-  received: { label: 'Получен', variant: 'secondary' },
-  verified: { label: 'Проверен', variant: 'default' },
-  discrepancy: { label: 'Расхождение', variant: 'destructive' },
-  approved: { label: 'Одобрен', variant: 'default' },
-  paid: { label: 'Оплачен', variant: 'default' },
-  cancelled: { label: 'Отменён', variant: 'destructive' },
+const INVOICE_STATUS_MAP: Record<string, { label: string; variant: 'default' | 'secondary' | 'destructive' | 'outline'; className?: string }> = {
+  received: { label: 'Получен', variant: 'secondary', className: 'rounded-full' },
+  verified: { label: 'Проверен', variant: 'default', className: 'rounded-full bg-sky-100 text-sky-800 dark:bg-sky-950/30 dark:text-sky-400 border-sky-200 dark:border-sky-800' },
+  discrepancy: { label: 'Расхождение', variant: 'destructive', className: 'rounded-full' },
+  approved: { label: 'Одобрен', variant: 'default', className: 'rounded-full bg-emerald-100 text-emerald-800 dark:bg-emerald-950/30 dark:text-emerald-400 border-emerald-200 dark:border-emerald-800' },
+  paid: { label: 'Оплачен', variant: 'default', className: 'rounded-full bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400 border-green-200 dark:border-green-800' },
+  cancelled: { label: 'Отменён', variant: 'destructive', className: 'rounded-full' },
 }
 
 function StatusBadge({ status }: { status: string }) {
-  const info = INVOICE_STATUS_MAP[status] || { label: status, variant: 'outline' as const }
-  const colorClass =
-    status === 'paid'
-      ? 'bg-green-100 text-green-800 border-green-200 dark:bg-green-900/30 dark:text-green-400 dark:border-green-800'
-      : status === 'approved'
-        ? 'bg-emerald-100 text-emerald-800 border-emerald-200 dark:bg-emerald-900/30 dark:text-emerald-400 dark:border-emerald-800'
-        : status === 'discrepancy'
-          ? 'bg-red-100 text-red-800 border-red-200 dark:bg-red-900/30 dark:text-red-400 dark:border-red-800'
-          : ''
-  return <Badge variant={info.variant} className={colorClass}>{info.label}</Badge>
+  const info = INVOICE_STATUS_MAP[status] || { label: status, variant: 'outline' as const, className: 'rounded-full' }
+  return <Badge variant={info.variant} className={info.className}>{info.label}</Badge>
 }
 
 // ── New invoice item type ──────────────────────────────────
@@ -165,9 +157,7 @@ export function Invoices() {
 
   // Filters
   const [projectFilter, setProjectFilter] = useState<string>('all')
-
-  // Expanded row
-  const [expandedId, setExpandedId] = useState<string | null>(null)
+  const [searchQuery, setSearchQuery] = useState('')
 
   // Create dialog
   const [createOpen, setCreateOpen] = useState(false)
@@ -230,6 +220,19 @@ export function Invoices() {
     },
     enabled: !!newProjectId,
   })
+
+  // ── Filtered invoices by search ────────────────────────────
+
+  const filteredInvoices = useMemo(() => {
+    if (!searchQuery.trim()) return invoicesList
+    const q = searchQuery.toLowerCase().trim()
+    return invoicesList.filter(
+      (inv) =>
+        inv.supplier.name.toLowerCase().includes(q) ||
+        inv.invoiceNumber.toLowerCase().includes(q) ||
+        inv.project.name.toLowerCase().includes(q)
+    )
+  }, [invoicesList, searchQuery])
 
   // ── Mutations ──────────────────────────────────────────────
 
@@ -381,14 +384,27 @@ export function Invoices() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div>
-          <p className="text-muted-foreground text-sm">Управление входящими счетами</p>
+      <div className="relative -mx-6 -mt-6 px-6 pt-6 pb-5 bg-gradient-to-b from-amber-500/5 via-amber-500/[0.02] to-transparent">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <div>
+            <p className="text-muted-foreground text-sm">Управление входящими счетами</p>
+          </div>
+          <Button onClick={() => setCreateOpen(true)} className="transition-all duration-200 hover:shadow-md hover:-translate-y-0.5 hover:scale-[1.02]">
+            <Plus className="mr-2 h-4 w-4" />
+            Новый счёт
+          </Button>
         </div>
-        <Button onClick={() => setCreateOpen(true)}>
-          <Plus className="mr-2 h-4 w-4" />
-          Новый счёт
-        </Button>
+      </div>
+
+      {/* Search */}
+      <div className="relative max-w-sm">
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+        <Input
+          placeholder="Поиск по номеру, проекту, поставщику..."
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          className="pl-9"
+        />
       </div>
 
       {/* Filter Bar */}
@@ -412,6 +428,16 @@ export function Invoices() {
                 ))}
               </SelectContent>
             </Select>
+            {/* Search Input */}
+            <div className="relative flex-1 min-w-[200px]">
+              <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Поиск по поставщику, № счёта или проекту..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-9"
+              />
+            </div>
           </div>
         </CardContent>
       </Card>
@@ -424,10 +450,17 @@ export function Invoices() {
               <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
               <span className="ml-2 text-muted-foreground">Загрузка...</span>
             </div>
-          ) : invoicesList.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-12 text-muted-foreground">
-              <FileText className="h-10 w-10 mb-2" />
-              <p>Счета не найдены</p>
+          ) : filteredInvoices.length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-16 text-muted-foreground">
+              <div className="rounded-full bg-muted p-4 mb-4">
+                <Receipt className="h-10 w-10 text-muted-foreground/50" />
+              </div>
+              <p className="text-base font-medium">
+                {searchQuery ? 'Ничего не найдено по запросу' : 'Счета не найдены'}
+              </p>
+              <p className="text-sm mt-1">
+                {searchQuery ? 'Попробуйте изменить параметры поиска' : 'Создайте первый счёт от поставщика'}
+              </p>
             </div>
           ) : (
             <Table>
@@ -444,10 +477,10 @@ export function Invoices() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {invoicesList.map((inv) => (
+                {filteredInvoices.map((inv) => (
                   <TableRow
                     key={inv.id}
-                    className="cursor-pointer hover:bg-muted/50"
+                    className="cursor-pointer hover:bg-muted/50 transition-colors duration-150"
                     onClick={() => openDetail(inv)}
                   >
                     <TableCell>
@@ -456,7 +489,9 @@ export function Invoices() {
                     <TableCell className="font-medium">{inv.project.name}</TableCell>
                     <TableCell>{inv.supplier.name}</TableCell>
                     <TableCell>{inv.invoiceNumber || '—'}</TableCell>
-                    <TableCell className="text-right">{formatAmount(inv.totalAmount)}</TableCell>
+                    <TableCell className="text-right font-semibold tabular-nums text-sm">
+                      {formatAmount(inv.totalAmount)}
+                    </TableCell>
                     <TableCell>
                       <StatusBadge status={inv.status} />
                     </TableCell>

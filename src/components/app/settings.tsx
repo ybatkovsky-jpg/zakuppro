@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Separator } from '@/components/ui/separator'
+import { motion } from 'framer-motion'
 import {
   Building2,
   Save,
@@ -16,6 +17,8 @@ import {
   Mail,
   Phone,
   Landmark,
+  FileText,
+  CreditCard,
 } from 'lucide-react'
 
 // ── Types ──────────────────────────────────────────────────
@@ -47,6 +50,48 @@ const defaultFormData: Omit<CompanyData, 'id'> = {
   bankAccount: '',
   korAccount: '',
   bik: '',
+}
+
+// ── Section wrapper component ──────────────────────────────
+
+function SectionCard({
+  icon: Icon,
+  title,
+  description,
+  children,
+  accentColor = 'primary',
+}: {
+  icon: React.ComponentType<{ className?: string }>
+  title: string
+  description: string
+  children: React.ReactNode
+  accentColor?: string
+}) {
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 12 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.3 }}
+    >
+      <Card className="relative overflow-hidden">
+        <div className={`absolute top-0 left-0 right-0 h-[2px] bg-${accentColor}/40`} />
+        <CardHeader className="pb-4">
+          <div className="flex items-center gap-3">
+            <div className={`flex size-10 shrink-0 items-center justify-center rounded-lg bg-${accentColor}/10 text-${accentColor}`}>
+              <Icon className="size-5" />
+            </div>
+            <div>
+              <CardTitle className="text-base">{title}</CardTitle>
+              <CardDescription className="text-xs">{description}</CardDescription>
+            </div>
+          </div>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          {children}
+        </CardContent>
+      </Card>
+    </motion.div>
+  )
 }
 
 // ── Main Component ─────────────────────────────────────────
@@ -142,186 +187,253 @@ export function Settings() {
   return (
     <div className="space-y-6 max-w-3xl">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div>
-          <p className="text-muted-foreground text-sm">Данные компании для документов и запросов</p>
+      <div className="relative -mx-6 -mt-6 px-6 pt-6 pb-5 bg-gradient-to-b from-primary/5 via-primary/[0.02] to-transparent">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <div>
+            <p className="text-muted-foreground text-sm">Данные компании для документов и запросов</p>
+          </div>
+          <Button
+            onClick={handleSave}
+            disabled={!hasChanges || saveMutation.isPending}
+            className="transition-all duration-200 hover:shadow-md hover:-translate-y-0.5 hover:scale-[1.02]"
+          >
+            {saveMutation.isPending ? (
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+            ) : (
+              <Save className="mr-2 h-4 w-4" />
+            )}
+            Сохранить
+          </Button>
         </div>
-        <Button onClick={handleSave} disabled={!hasChanges || saveMutation.isPending}>
-          {saveMutation.isPending ? (
-            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-          ) : (
-            <Save className="mr-2 h-4 w-4" />
-          )}
-          Сохранить
-        </Button>
       </div>
 
-      {/* Company Details */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Building2 className="h-5 w-5" />
-            Реквизиты компании
-          </CardTitle>
-          <CardDescription>
-            Основная информация о компании, используемая в запросах и документах
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-6">
-          {/* Company Name */}
+      {/* Company Details Section */}
+      <SectionCard
+        icon={Building2}
+        title="Реквизиты компании"
+        description="Основная информация о компании, используемая в запросах и документах"
+        accentColor="emerald-600"
+      >
+        <div className="space-y-2">
+          <Label htmlFor="companyName" className="text-sm font-medium">
+            Название компании
+          </Label>
+          <Input
+            id="companyName"
+            value={formData.companyName}
+            onChange={(e) => handleChange('companyName', e.target.value)}
+            placeholder="ООО «Моя Компания»"
+          />
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
           <div className="space-y-2">
-            <Label htmlFor="companyName" className="text-sm font-medium">
-              Название компании
+            <Label htmlFor="inn" className="text-sm font-medium">
+              ИНН
             </Label>
             <Input
-              id="companyName"
-              value={formData.companyName}
-              onChange={(e) => handleChange('companyName', e.target.value)}
-              placeholder="ООО «Моя Компания»"
+              id="inn"
+              value={formData.inn}
+              onChange={(e) => handleChange('inn', e.target.value)}
+              placeholder="7712345678"
             />
           </div>
+          <div className="space-y-2">
+            <Label htmlFor="kpp" className="text-sm font-medium">
+              КПП
+            </Label>
+            <Input
+              id="kpp"
+              value={formData.kpp}
+              onChange={(e) => handleChange('kpp', e.target.value)}
+              placeholder="771201001"
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="ogrn" className="text-sm font-medium">
+              ОГРН
+            </Label>
+            <Input
+              id="ogrn"
+              value={formData.ogrn}
+              onChange={(e) => handleChange('ogrn', e.target.value)}
+              placeholder="1027700132195"
+            />
+          </div>
+        </div>
+      </SectionCard>
 
-          {/* Tax IDs */}
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="inn" className="text-sm font-medium">
-                ИНН
-              </Label>
-              <Input
-                id="inn"
-                value={formData.inn}
-                onChange={(e) => handleChange('inn', e.target.value)}
-                placeholder="7712345678"
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="kpp" className="text-sm font-medium">
-                КПП
-              </Label>
-              <Input
-                id="kpp"
-                value={formData.kpp}
-                onChange={(e) => handleChange('kpp', e.target.value)}
-                placeholder="771201001"
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="ogrn" className="text-sm font-medium">
-                ОГРН
-              </Label>
-              <Input
-                id="ogrn"
-                value={formData.ogrn}
-                onChange={(e) => handleChange('ogrn', e.target.value)}
-                placeholder="1027700132195"
-              />
+      {/* Address & Contacts Section */}
+      <SectionCard
+        icon={MapPin}
+        title="Адрес и контакты"
+        description="Юридический адрес и контактная информация"
+        accentColor="sky-600"
+      >
+        <div className="space-y-2">
+          <Label htmlFor="address" className="text-sm font-medium flex items-center gap-1">
+            <MapPin className="h-3.5 w-3.5" />
+            Юридический адрес
+          </Label>
+          <Input
+            id="address"
+            value={formData.address}
+            onChange={(e) => handleChange('address', e.target.value)}
+            placeholder="123456, г. Москва, ул. Примерная, д. 1, оф. 100"
+          />
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div className="space-y-2">
+            <Label htmlFor="email" className="text-sm font-medium flex items-center gap-1">
+              <Mail className="h-3.5 w-3.5" />
+              Email
+            </Label>
+            <Input
+              id="email"
+              type="email"
+              value={formData.email}
+              onChange={(e) => handleChange('email', e.target.value)}
+              placeholder="info@company.ru"
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="phone" className="text-sm font-medium flex items-center gap-1">
+              <Phone className="h-3.5 w-3.5" />
+              Телефон
+            </Label>
+            <Input
+              id="phone"
+              value={formData.phone}
+              onChange={(e) => handleChange('phone', e.target.value)}
+              placeholder="+7 (495) 123-45-67"
+            />
+          </div>
+        </div>
+      </SectionCard>
+
+      {/* Bank Details Section */}
+      <SectionCard
+        icon={Landmark}
+        title="Банковские реквизиты"
+        description="Расчётный счёт и банковская информация"
+        accentColor="violet-600"
+      >
+        <div className="space-y-2">
+          <Label htmlFor="bankName" className="text-sm font-medium">
+            Наименование банка
+          </Label>
+          <Input
+            id="bankName"
+            value={formData.bankName}
+            onChange={(e) => handleChange('bankName', e.target.value)}
+            placeholder="ПАО «Сбербанк»"
+          />
+        </div>
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          <div className="space-y-2">
+            <Label htmlFor="bankAccount" className="text-sm font-medium">
+              Расчётный счёт
+            </Label>
+            <Input
+              id="bankAccount"
+              value={formData.bankAccount}
+              onChange={(e) => handleChange('bankAccount', e.target.value)}
+              placeholder="40702810938000123456"
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="korAccount" className="text-sm font-medium">
+              Корреспондентский счёт
+            </Label>
+            <Input
+              id="korAccount"
+              value={formData.korAccount}
+              onChange={(e) => handleChange('korAccount', e.target.value)}
+              placeholder="30101810400000000225"
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="bik" className="text-sm font-medium">
+              БИК
+            </Label>
+            <Input
+              id="bik"
+              value={formData.bik}
+              onChange={(e) => handleChange('bik', e.target.value)}
+              placeholder="044525225"
+            />
+          </div>
+        </div>
+      </SectionCard>
+
+      {/* Document Preview Section */}
+      <SectionCard
+        icon={FileText}
+        title="Предпросмотр реквизитов"
+        description="Как данные компании будут выглядеть в документах"
+        accentColor="amber-600"
+      >
+        <div className="rounded-xl border bg-gradient-to-br from-muted/30 to-muted/10 p-6 space-y-4">
+          {/* Company Header */}
+          <div className="text-center border-b pb-4">
+            <h3 className="text-lg font-bold tracking-tight">
+              {formData.companyName || 'Название компании'}
+            </h3>
+            <div className="flex flex-wrap justify-center gap-4 mt-2 text-xs text-muted-foreground">
+              {formData.inn && <span>ИНН: {formData.inn}</span>}
+              {formData.kpp && <span>КПП: {formData.kpp}</span>}
+              {formData.ogrn && <span>ОГРН: {formData.ogrn}</span>}
             </div>
           </div>
-
-          <Separator />
 
           {/* Address */}
-          <div className="space-y-2">
-            <Label htmlFor="address" className="text-sm font-medium flex items-center gap-1">
-              <MapPin className="h-3.5 w-3.5" />
-              Юридический адрес
-            </Label>
-            <Input
-              id="address"
-              value={formData.address}
-              onChange={(e) => handleChange('address', e.target.value)}
-              placeholder="123456, г. Москва, ул. Примерная, д. 1, оф. 100"
-            />
-          </div>
-
-          {/* Contact Info */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="email" className="text-sm font-medium flex items-center gap-1">
-                <Mail className="h-3.5 w-3.5" />
-                Email
-              </Label>
-              <Input
-                id="email"
-                type="email"
-                value={formData.email}
-                onChange={(e) => handleChange('email', e.target.value)}
-                placeholder="info@company.ru"
-              />
+          {formData.address && (
+            <div className="flex items-start gap-2 text-sm">
+              <MapPin className="h-4 w-4 shrink-0 mt-0.5 text-muted-foreground" />
+              <span>{formData.address}</span>
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="phone" className="text-sm font-medium flex items-center gap-1">
-                <Phone className="h-3.5 w-3.5" />
-                Телефон
-              </Label>
-              <Input
-                id="phone"
-                value={formData.phone}
-                onChange={(e) => handleChange('phone', e.target.value)}
-                placeholder="+7 (495) 123-45-67"
-              />
-            </div>
-          </div>
+          )}
 
-          <Separator />
-
-          {/* Bank Details */}
-          <div>
-            <h3 className="text-sm font-semibold flex items-center gap-2 mb-4">
-              <Landmark className="h-4 w-4" />
-              Банковские реквизиты
-            </h3>
-            <div className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="bankName" className="text-sm font-medium">
-                  Наименование банка
-                </Label>
-                <Input
-                  id="bankName"
-                  value={formData.bankName}
-                  onChange={(e) => handleChange('bankName', e.target.value)}
-                  placeholder="ПАО «Сбербанк»"
-                />
+          {/* Contacts */}
+          <div className="flex flex-wrap gap-4 text-sm">
+            {formData.phone && (
+              <div className="flex items-center gap-1.5">
+                <Phone className="h-3.5 w-3.5 text-muted-foreground" />
+                <span>{formData.phone}</span>
               </div>
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="bankAccount" className="text-sm font-medium">
-                    Расчётный счёт
-                  </Label>
-                  <Input
-                    id="bankAccount"
-                    value={formData.bankAccount}
-                    onChange={(e) => handleChange('bankAccount', e.target.value)}
-                    placeholder="40702810938000123456"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="korAccount" className="text-sm font-medium">
-                    Корреспондентский счёт
-                  </Label>
-                  <Input
-                    id="korAccount"
-                    value={formData.korAccount}
-                    onChange={(e) => handleChange('korAccount', e.target.value)}
-                    placeholder="30101810400000000225"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="bik" className="text-sm font-medium">
-                    БИК
-                  </Label>
-                  <Input
-                    id="bik"
-                    value={formData.bik}
-                    onChange={(e) => handleChange('bik', e.target.value)}
-                    placeholder="044525225"
-                  />
-                </div>
+            )}
+            {formData.email && (
+              <div className="flex items-center gap-1.5">
+                <Mail className="h-3.5 w-3.5 text-muted-foreground" />
+                <span>{formData.email}</span>
+              </div>
+            )}
+          </div>
+
+          {/* Bank Info */}
+          {formData.bankName && (
+            <div className="border-t pt-3 space-y-1.5">
+              <div className="flex items-center gap-2 text-sm font-medium">
+                <CreditCard className="h-4 w-4 text-muted-foreground" />
+                {formData.bankName}
+              </div>
+              <div className="flex flex-wrap gap-x-6 gap-y-1 text-xs text-muted-foreground ml-6">
+                {formData.bankAccount && <span>Р/с: {formData.bankAccount}</span>}
+                {formData.korAccount && <span>К/с: {formData.korAccount}</span>}
+                {formData.bik && <span>БИК: {formData.bik}</span>}
               </div>
             </div>
-          </div>
-        </CardContent>
-      </Card>
+          )}
+
+          {/* Placeholder if empty */}
+          {!formData.companyName && !formData.inn && !formData.address && (
+            <p className="text-center text-sm text-muted-foreground/60 py-4">
+              Заполните данные компании выше, чтобы увидеть предпросмотр
+            </p>
+          )}
+        </div>
+      </SectionCard>
     </div>
   )
 }

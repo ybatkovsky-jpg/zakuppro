@@ -39,9 +39,9 @@ export function AppSidebar() {
 
   return (
     <Sidebar collapsible="icon">
-      <SidebarHeader className="border-b border-sidebar-border">
+      <SidebarHeader className="border-b border-sidebar-border bg-gradient-to-b from-primary/10 via-primary/5 to-transparent">
         <div className="flex items-center gap-2 px-2 py-1">
-          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-primary text-primary-foreground">
+          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-primary text-primary-foreground shadow-sm">
             <Package className="h-4 w-4" />
           </div>
           <div className="flex flex-col group-data-[collapsible=icon]:hidden">
@@ -69,8 +69,15 @@ export function AppSidebar() {
                       isActive={isActive}
                       tooltip={item.label}
                       onClick={() => navigate(item.view)}
+                      className={`
+                        relative transition-all duration-200
+                        ${isActive
+                          ? 'bg-primary/10 text-primary font-semibold before:absolute before:left-0 before:top-1/2 before:-translate-y-1/2 before:h-5 before:w-[3px] before:rounded-full before:bg-primary'
+                          : 'hover:bg-sidebar-accent/80 hover:translate-x-0.5'
+                        }
+                      `}
                     >
-                      <item.icon className="h-4 w-4" />
+                      <item.icon className={`h-4 w-4 transition-transform duration-200 ${isActive ? 'scale-110' : ''}`} />
                       <span>{item.label}</span>
                     </SidebarMenuButton>
                   </SidebarMenuItem>
@@ -82,8 +89,8 @@ export function AppSidebar() {
       </SidebarContent>
 
       <SidebarFooter className="border-t border-sidebar-border">
-        <div className="px-2 py-1 group-data-[collapsible=icon]:hidden">
-          <p className="text-[10px] text-sidebar-foreground/50">
+        <div className="px-2 py-1.5 group-data-[collapsible=icon]:hidden">
+          <p className="text-[10px] text-sidebar-foreground/50 font-medium tracking-wide">
             ЗакупПро v1.0
           </p>
         </div>
