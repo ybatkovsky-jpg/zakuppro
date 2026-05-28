@@ -75,6 +75,7 @@ interface Project {
   createdAt: string
   updatedAt: string
   _count?: { items: number }
+  items?: { id: string; price: number; quantity: number; status: string }[]
 }
 
 // --- Status helpers ---
@@ -491,6 +492,8 @@ export function Projects() {
                 <TableHead>Заказчик</TableHead>
                 <TableHead>Статус</TableHead>
                 <TableHead className="text-center">Позиций</TableHead>
+                <TableHead className="text-right">Бюджет</TableHead>
+                <TableHead className="text-center">Прогресс</TableHead>
                 <TableHead>Дата создания</TableHead>
                 <TableHead className="text-right">Действия</TableHead>
               </TableRow>
@@ -528,6 +531,37 @@ export function Projects() {
                       <span className="inline-flex items-center justify-center size-6 rounded-full bg-muted text-xs font-medium">
                         {project._count?.items ?? 0}
                       </span>
+                    </TableCell>
+                    <TableCell className="text-right font-mono">
+                      {(() => {
+                        const budget = (project.items ?? []).reduce((sum, item) => sum + item.price * item.quantity, 0)
+                        return budget > 0
+                          ? new Intl.NumberFormat('ru-RU').format(budget) + ' ₽'
+                          : '—'
+                      })()}
+                    </TableCell>
+                    <TableCell className="text-center">
+                      {(() => {
+                        const totalItems = project.items?.length ?? 0
+                        if (totalItems === 0) return <span className="text-muted-foreground text-xs">—</span>
+                        const processedItems = (project.items ?? []).filter(
+                          (item) => ['requested', 'invoiced', 'partial', 'available', 'delivered', 'completed'].includes(item.status)
+                        ).length
+                        const pct = Math.round((processedItems / totalItems) * 100)
+                        return (
+                          <div className="flex items-center gap-2 justify-center">
+                            <div className="h-1.5 w-16 rounded-full bg-muted overflow-hidden">
+                              <div
+                                className={`h-full rounded-full transition-all duration-500 ${pct >= 100 ? 'bg-emerald-500' : pct > 50 ? 'bg-primary' : 'bg-amber-500'}`}
+                                style={{ width: `${pct}%` }}
+                              />
+                            </div>
+                            <span className={`text-[11px] font-mono tabular-nums ${pct >= 100 ? 'text-emerald-600' : pct > 50 ? 'text-primary' : 'text-amber-600'}`}>
+                              {pct}%
+                            </span>
+                          </div>
+                        )
+                      })()}
                     </TableCell>
                     <TableCell className="text-muted-foreground text-sm">{formatDate(project.createdAt)}</TableCell>
                     <TableCell className="text-right">

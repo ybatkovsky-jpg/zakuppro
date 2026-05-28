@@ -116,6 +116,107 @@ export async function GET() {
           : ('low' as const),
     }))
 
+    // ── Budget Data ─────────────────────────────────────────────────────────
+    // Get all project items with their invoice info for budget calculations
+    const allProjectItems = await db.projectItem.findMany({
+      select: {
+        id: true,
+        category: true,
+        price: true,
+        quantity: true,
+        invoiceItems: {
+          where: {
+            invoice: { status: { notIn: ['cancelled'] } },
+          },
+          select: { quantity: true, price: true },
+        },
+      },
+    })
+
+    // Calculate total budget from all project items
+    const totalBudget = allProjectItems.reduce(
+      (sum, item) => sum + item.price * item.quantity,
+      0,
+    )
+
+    // Calculate spent budget from invoiced items (where invoice is not cancelled)
+    const spentBudget = allProjectItems.reduce((sum, item) => {
+      const itemSpent = item.invoiceItems.reduce(
+        (s, ii) => s + ii.price * ii.quantity,
+        0,
+      )
+      return sum + itemSpent
+    }, 0)
+
+    const pendingBudget = totalBudget - spentBudget
+
+    // Budget by category (top 8)
+    const categoryMap = new Map<string, { budget: number; spent: number }>()
+    for (const item of allProjectItems) {
+      const cat = item.category || 'Без категории'
+      const existing = categoryMap.get(cat) || { budget: 0, spent: 0 }
+      existing.budget += item.price * item.quantity
+      const itemSpent = item.invoiceItems.reduce(
+        (s, ii) => s + ii.price * ii.quantity,
+        0,
+      )
+      existing.spent += itemSpent
+      categoryMap.set(cat, existing)
+    }
+
+    const byCategory = Array.from(categoryMap.entries())
+      .map(([category, data]) => ({ category, ...data }))
+      .sort((a, b) => b.budget - a.budget)
+      .slice(0, 8)
+
+    const budgetData = {
+      totalBudget,
+      spentBudget,
+      pendingBudget,
+      byCategory,
+    }
+
+    // ── Project Cost Data ───────────────────────────────────────────────────
+    const projectsWithItems = await db.project.findMany({
+      select: {
+        id: true,
+        name: true,
+        status: true,
+        items: {
+          select: {
+            price: true,
+            quantity: true,
+            invoiceItems: {
+              where: {
+                invoice: { status: { notIn: ['cancelled'] } },
+              },
+              select: { quantity: true, price: true },
+            },
+          },
+        },
+      },
+    })
+
+    const projectCostData = projectsWithItems.map((project) => {
+      const budget = project.items.reduce(
+        (sum, item) => sum + item.price * item.quantity,
+        0,
+      )
+      const spent = project.items.reduce((sum, item) => {
+        const itemSpent = item.invoiceItems.reduce(
+          (s, ii) => s + ii.price * ii.quantity,
+          0,
+        )
+        return sum + itemSpent
+      }, 0)
+      return {
+        projectName: project.name,
+        budget,
+        spent,
+        status: project.status,
+      }
+    })
+
     return NextResponse.json({
       totalProjects,
       activeProjects,
@@ -131,6 +232,8 @@ export async function GET() {
       projectStatusData,
       monthlyProjectsData,
       warehouseStockData,
+      budgetData,
+      projectCostData,
     })
   } catch (error) {
     console.error('Stats error:', error)

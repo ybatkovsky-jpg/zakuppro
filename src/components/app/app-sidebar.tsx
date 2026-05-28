@@ -1,5 +1,6 @@
 'use client'
 
+import { useQuery } from '@tanstack/react-query'
 import {
   Sidebar,
   SidebarContent,
@@ -24,6 +25,11 @@ import {
   Package,
 } from 'lucide-react'
 
+interface StatsData {
+  pendingRequests: number
+  lowStockItems: number
+}
+
 const navItems: { label: string; icon: React.ElementType; view: ViewType }[] = [
   { label: 'Дашборд', icon: LayoutDashboard, view: 'dashboard' },
   { label: 'Проекты', icon: FolderKanban, view: 'projects' },
@@ -36,6 +42,25 @@ const navItems: { label: string; icon: React.ElementType; view: ViewType }[] = [
 
 export function AppSidebar() {
   const { currentView, navigate } = useAppStore()
+
+  // Fetch stats for indicator dots
+  const { data: stats } = useQuery<StatsData>({
+    queryKey: ['sidebar-stats'],
+    queryFn: async () => {
+      const res = await fetch('/api/stats')
+      if (!res.ok) throw new Error('Failed to fetch stats')
+      const data = await res.json()
+      return {
+        pendingRequests: data.pendingRequests ?? 0,
+        lowStockItems: data.lowStockItems ?? 0,
+      }
+    },
+    refetchInterval: 60_000,
+    staleTime: 30_000,
+  })
+
+  const hasDraftRequests = (stats?.pendingRequests ?? 0) > 0
+  const hasLowStock = (stats?.lowStockItems ?? 0) > 0
 
   return (
     <Sidebar collapsible="icon">
@@ -61,7 +86,20 @@ export function AppSidebar() {
               {navItems.map((item) => {
                 const isActive =
                   currentView === item.view ||
-                  (item.view === 'projects' && currentView === 'project-detail')
+                  (item.view === 'projects' && currentView === 'project-detail') ||
+                  (item.view === 'suppliers' && currentView === 'supplier-detail')
+
+                // Determine if this item should show an indicator dot
+                let showDot = false
+                let dotColor = ''
+                if (item.view === 'requests' && hasDraftRequests) {
+                  showDot = true
+                  dotColor = 'bg-amber-500'
+                }
+                if (item.view === 'warehouse' && hasLowStock) {
+                  showDot = true
+                  dotColor = 'bg-red-500'
+                }
 
                 return (
                   <SidebarMenuItem key={item.view}>
@@ -79,6 +117,12 @@ export function AppSidebar() {
                     >
                       <item.icon className={`h-4 w-4 transition-transform duration-200 ${isActive ? 'scale-110' : ''}`} />
                       <span>{item.label}</span>
+                      {showDot && (
+                        <span className={`absolute right-2 top-1/2 -translate-y-1/2 flex h-2 w-2`}>
+                          <span className={`animate-ping absolute inline-flex h-full w-full rounded-full ${dotColor} opacity-75`} />
+                          <span className={`relative inline-flex rounded-full h-2 w-2 ${dotColor}`} />
+                        </span>
+                      )}
                     </SidebarMenuButton>
                   </SidebarMenuItem>
                 )

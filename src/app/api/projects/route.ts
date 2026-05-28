@@ -5,13 +5,29 @@ export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url)
     const status = searchParams.get('status')
+    const search = searchParams.get('search')
 
-    const where = status ? { status } : {}
+    const where: Record<string, unknown> = {}
+    if (status) where.status = status
+    if (search) {
+      where.OR = [
+        { name: { contains: search } },
+        { customerName: { contains: search } },
+      ]
+    }
 
     const projects = await db.project.findMany({
       where,
       orderBy: { createdAt: 'desc' },
       include: {
+        items: {
+          select: {
+            id: true,
+            price: true,
+            quantity: true,
+            status: true,
+          },
+        },
         _count: {
           select: { items: true },
         },

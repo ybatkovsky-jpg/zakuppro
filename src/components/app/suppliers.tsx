@@ -16,6 +16,7 @@ import {
   StickyNote,
   Package,
 } from 'lucide-react'
+import { useAppStore } from '@/store/app-store'
 
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -228,15 +229,17 @@ function SupplierCard({
   supplier,
   onEdit,
   onDelete,
+  onClick,
 }: {
   supplier: Supplier
   onEdit: (supplier: Supplier) => void
   onDelete: (supplier: Supplier) => void
+  onClick: () => void
 }) {
   const projectCount = supplier._count?.projectItems ?? 0
 
   return (
-    <Card className="group relative overflow-hidden transition-all duration-200 hover:shadow-lg hover:-translate-y-1 border-l-4 border-l-sky-400 dark:border-l-sky-600">
+    <Card className="group relative overflow-hidden transition-all duration-200 hover:shadow-lg hover:-translate-y-1 border-l-4 border-l-sky-400 dark:border-l-sky-600 cursor-pointer" onClick={onClick}>
       <CardHeader className="pb-3">
         <div className="flex items-start justify-between gap-2">
           <div className="flex items-center gap-2 min-w-0">
@@ -346,6 +349,7 @@ function pluralize(n: number, one: string, few: string, many: string): string {
 export function Suppliers() {
   const { toast } = useToast()
   const queryClient = useQueryClient()
+  const { navigateToSupplier } = useAppStore()
 
   // State
   const [search, setSearch] = useState('')
@@ -544,6 +548,7 @@ export function Suppliers() {
               supplier={supplier}
               onEdit={openEditDialog}
               onDelete={openDeleteDialog}
+              onClick={() => navigateToSupplier(supplier.id)}
             />
           ))}
         </div>

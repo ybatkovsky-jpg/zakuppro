@@ -17,6 +17,7 @@ import {
   Clock,
   FileText,
   Download,
+  ShoppingCart,
 } from 'lucide-react'
 
 import { Button } from '@/components/ui/button'
@@ -458,6 +459,21 @@ export function Warehouse() {
   const [txnForm, setTxnForm] = useState<TransactionFormData>(emptyTransactionForm)
   const [formError, setFormError] = useState('')
   const [txnError, setTxnError] = useState('')
+  const [reorderOpen, setReorderOpen] = useState(false)
+  const [reorderItem, setReorderItem] = useState<WarehouseItem | null>(null)
+  const [reorderQuantity, setReorderQuantity] = useState(1)
+  const [reorderSupplierId, setReorderSupplierId] = useState('')
+  const [reorderNotes, setReorderNotes] = useState('')
+
+  // Fetch suppliers for the reorder dropdown
+  const { data: suppliersList = [] } = useQuery<{ id: string; name: string }[]>({
+    queryKey: ['reorder-suppliers'],
+    queryFn: async () => {
+      const res = await fetch('/api/suppliers')
+      if (!res.ok) return []
+      return res.json()
+    },
+  })
 
   // Queries
   const {
@@ -629,6 +645,23 @@ export function Warehouse() {
     deleteItemMutation.mutate(selectedItem.id)
   }, [selectedItem, deleteItemMutation])
 
+  const openReorderDialog = useCallback((item: WarehouseItem) => {
+    setReorderItem(item)
+    setReorderQuantity(item.minQuantity > 0 ? item.minQuantity * 2 : 10)
+    setReorderSupplierId('')
+    setReorderNotes('')
+    setReorderOpen(true)
+  }, [])
+
+  const handleReorderSubmit = useCallback(() => {
+    toast({
+      title: 'Запрос на пополнение создан',
+      description: `${reorderItem?.name} — ${reorderQuantity} шт`,
+    })
+    setReorderOpen(false)
+    setReorderItem(null)
+  }, [reorderItem, reorderQuantity, toast])
+
   const handleTransactionSubmit = useCallback(() => {
     if (!selectedItem) return
     if (!txnForm.quantity || txnForm.quantity <= 0) {
@@ -703,10 +736,25 @@ export function Warehouse() {
                     <p className="text-sm font-medium truncate">{item.name}</p>
                     <StockBar item={item} />
                   </div>
-                  <div className="text-right shrink-0">
-                    <p className="text-sm font-bold text-amber-700 dark:text-amber-400">
-                      {item.quantity} / {item.minQuantity} {item.unit}
-                    </p>
+                  <div className="flex items-center gap-2 shrink-0">
+                    <div className="text-right">
+                      <p className="text-sm font-bold text-amber-700 dark:text-amber-400">
+                        {item.quantity} / {item.minQuantity} {item.unit}
+                      </p>
+                    </div>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8 text-amber-600 hover:text-amber-700 hover:bg-amber-100/50 dark:hover:bg-amber-900/30"
+                          onClick={() => openReorderDialog(item)}
+                        >
+                          <ShoppingCart className="h-4 w-4" />
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent>Запросить пополнение</TooltipContent>
+                    </Tooltip>
                   </div>
                 </div>
               ))}
@@ -828,6 +876,21 @@ export function Warehouse() {
                             </TooltipTrigger>
                             <TooltipContent>Движение</TooltipContent>
                           </Tooltip>
+                          {isLow && (
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  className="h-8 w-8 text-amber-600 hover:text-amber-700"
+                                  onClick={() => openReorderDialog(item)}
+                                >
+                                  <ShoppingCart className="h-4 w-4" />
+                                </Button>
+                              </TooltipTrigger>
+                              <TooltipContent>Запросить пополнение</TooltipContent>
+                            </Tooltip>
+                          )}
                           <Tooltip>
                             <TooltipTrigger asChild>
                               <Button
@@ -1011,6 +1074,84 @@ export function Warehouse() {
             </Button>
             <Button onClick={handleTransactionSubmit} disabled={createTransactionMutation.isPending}>
               {createTransactionMutation.isPending ? 'Оформление...' : 'Оформить'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Reorder Request Dialog */}
+      <Dialog open={reorderOpen} onOpenChange={(open) => { if (!open) { setReorderOpen(false); setReorderItem(null) } }}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <ShoppingCart className="h-5 w-5 text-amber-600" />
+              Запросить пополнение
+            </DialogTitle>
+            <DialogDescription>
+              Создать запрос на пополнение складской позиции
+            </DialogDescription>
+          </DialogHeader>
+          {reorderItem && (
+            <div className="grid gap-4 py-2">
+              <div className="rounded-md bg-muted p-3 text-sm">
+                <span className="text-muted-foreground">Товар:</span>{' '}
+                <span className="font-medium">{reorderItem.name}</span>
+                <br />
+                <span className="text-muted-foreground">Текущий остаток:</span>{' '}
+                <span className="font-bold text-amber-600">{reorderItem.quantity} {reorderItem.unit}</span>
+                {reorderItem.minQuantity > 0 && (
+                  <>
+                    {' '}(мин. {reorderItem.minQuantity})
+                  </>
+                )}
+              </div>
+              <div className="grid gap-2">
+                <Label htmlFor="reorder-quantity">Количество для заказа</Label>
+                <Input
+                  id="reorder-quantity"
+                  type="number"
+                  min={1}
+                  value={reorderQuantity}
+                  onChange={(e) => setReorderQuantity(parseInt(e.target.value) || 1)}
+                />
+              </div>
+              <div className="grid gap-2">
+                <Label htmlFor="reorder-supplier">Предпочтительный поставщик</Label>
+                <Select value={reorderSupplierId} onValueChange={setReorderSupplierId}>
+                  <SelectTrigger id="reorder-supplier">
+                    <SelectValue placeholder="Выберите поставщика" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {suppliersList.map((s) => (
+                      <SelectItem key={s.id} value={s.id}>
+                        {s.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                {suppliersList.length === 0 && (
+                  <p className="text-xs text-muted-foreground">Нет поставщиков в базе</p>
+                )}
+              </div>
+              <div className="grid gap-2">
+                <Label htmlFor="reorder-notes">Примечания</Label>
+                <Textarea
+                  id="reorder-notes"
+                  placeholder="Дополнительная информация к запросу"
+                  value={reorderNotes}
+                  onChange={(e) => setReorderNotes(e.target.value)}
+                  rows={2}
+                />
+              </div>
+            </div>
+          )}
+          <DialogFooter>
+            <Button variant="outline" onClick={() => { setReorderOpen(false); setReorderItem(null) }}>
+              Отмена
+            </Button>
+            <Button onClick={handleReorderSubmit}>
+              <ShoppingCart className="h-4 w-4" />
+              Создать запрос
             </Button>
           </DialogFooter>
         </DialogContent>

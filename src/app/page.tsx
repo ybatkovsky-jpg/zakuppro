@@ -7,16 +7,19 @@ import { Dashboard } from '@/components/app/dashboard'
 import { Projects } from '@/components/app/projects'
 import { ProjectDetail } from '@/components/app/project-detail'
 import { Suppliers } from '@/components/app/suppliers'
+import { SupplierDetail } from '@/components/app/supplier-detail'
 import { Warehouse } from '@/components/app/warehouse'
 import { Requests } from '@/components/app/requests'
 import { Invoices } from '@/components/app/invoices'
 import { Settings } from '@/components/app/settings'
+import { GlobalSearch } from '@/components/app/global-search'
 
 const pageTitles: Record<string, string> = {
   dashboard: 'Дашборд',
   projects: 'Проекты',
   'project-detail': 'Детали проекта',
   suppliers: 'Поставщики',
+  'supplier-detail': 'Детали поставщика',
   requests: 'Запросы поставщикам',
   invoices: 'Счета',
   warehouse: 'Склад',
@@ -27,7 +30,7 @@ function AppContent() {
   const { currentView } = useAppStore()
 
   const pageTitle = pageTitles[currentView] ?? 'ЗакупПро'
-  const hasOwnHeader = currentView === 'project-detail'
+  const hasOwnHeader = currentView === 'project-detail' || currentView === 'supplier-detail'
 
   return (
     <SidebarProvider>
@@ -38,12 +41,16 @@ function AppContent() {
           {!hasOwnHeader && (
             <h1 className="text-lg font-semibold">{pageTitle}</h1>
           )}
+          <div className="ml-auto">
+            <GlobalSearch />
+          </div>
         </div>
         <div className={hasOwnHeader ? '' : 'p-6'}>
           {currentView === 'dashboard' && <Dashboard />}
           {currentView === 'projects' && <Projects />}
           {currentView === 'project-detail' && <ProjectDetail />}
           {currentView === 'suppliers' && <Suppliers />}
+          {currentView === 'supplier-detail' && <SupplierDetail />}
           {currentView === 'requests' && <Requests />}
           {currentView === 'invoices' && <Invoices />}
           {currentView === 'warehouse' && <Warehouse />}

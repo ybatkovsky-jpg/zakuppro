@@ -14,6 +14,16 @@ import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
 import { motion } from 'framer-motion'
 import {
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
+  Cell,
+} from 'recharts'
+import {
   FolderKanban,
   Building2,
   Warehouse,
@@ -27,7 +37,9 @@ import {
   Plus,
   Package,
   Users,
+  ArrowRight,
 } from 'lucide-react'
+import { formatRelativeTime } from '@/lib/utils'
 
 // ── Types ───────────────────────────────────────────────────────────────────
 
@@ -43,6 +55,26 @@ interface RecentProject {
   _count: { items: number }
 }
 
+interface CategoryBudget {
+  category: string
+  budget: number
+  spent: number
+}
+
+interface BudgetData {
+  totalBudget: number
+  spentBudget: number
+  pendingBudget: number
+  byCategory: CategoryBudget[]
+}
+
+interface ProjectCostItem {
+  projectName: string
+  budget: number
+  spent: number
+  status: string
+}
+
 interface StatsData {
   totalProjects: number
   activeProjects: number
@@ -55,6 +87,16 @@ interface StatsData {
   unpaidInvoices: number
   totalInvoiceAmount: number
   recentProjects: RecentProject[]
+  budgetData: BudgetData
+  projectCostData: ProjectCostItem[]
+}
+
+interface ActivityItem {
+  id: string
+  type: 'project_created' | 'status_changed' | 'request_created' | 'invoice_received' | 'warehouse_transaction'
+  title: string
+  description: string
+  timestamp: string
 }
 
 // ── Status helpers ──────────────────────────────────────────────────────────
@@ -174,6 +216,11 @@ const itemVariants = {
   visible: { opacity: 1, y: 0, transition: { duration: 0.35, ease: 'easeOut' } },
 }
 
+const activityItemVariants = {
+  hidden: { opacity: 0, x: -12 },
+  visible: { opacity: 1, x: 0, transition: { duration: 0.3, ease: 'easeOut' } },
+}
+
 // ── Stat Card Component ─────────────────────────────────────────────────────
 
 function StatCard({
@@ -186,6 +233,7 @@ function StatCard({
   sparkColor,
   cardClassName,
   valueClassName,
+  onClick,
 }: {
   title: string
   value: number | string
@@ -196,11 +244,14 @@ function StatCard({
   sparkColor?: string
   cardClassName?: string
   valueClassName?: string
+  onClick?: () => void
 }) {
+  const isClickable = !!onClick
   return (
     <motion.div variants={itemVariants} className="h-full">
       <Card
-        className={`relative overflow-hidden transition-all duration-200 hover:shadow-lg hover:-translate-y-0.5 hover:scale-[1.02] ${borderColor ? `border-l-4 ${borderColor}` : ''} ${cardClassName ?? ''}`}
+        className={`relative overflow-hidden transition-all duration-200 ${borderColor ? `border-l-4 ${borderColor}` : ''} ${cardClassName ?? ''} ${isClickable ? 'cursor-pointer hover:shadow-lg hover:-translate-y-0.5 hover:scale-[1.02] active:scale-[0.98]' : ''}`}
+        onClick={onClick}
       >
         <CardHeader className="flex flex-row items-center justify-between pb-2">
           <CardDescription className="text-sm font-medium">
@@ -221,6 +272,168 @@ function StatCard({
         </CardContent>
       </Card>
     </motion.div>
+  )
+}
+
+// ── Circular Progress Ring ──────────────────────────────────────────────────
+
+function CircularProgressRing({ percent, size = 140, strokeWidth = 10 }: { percent: number; size?: number; strokeWidth?: number }) {
+  const radius = (size - strokeWidth) / 2
+  const circumference = radius * 2 * Math.PI
+  const offset = circumference - (percent / 100) * circumference
+
+  return (
+    <div className="relative" style={{ width: size, height: size }}>
+      <svg width={size} height={size} className="-rotate-90">
+        <circle
+          cx={size / 2}
+          cy={size / 2}
+          r={radius}
+          fill="none"
+          stroke="currentColor"
+          strokeWidth={strokeWidth}
+          className="text-muted/30"
+        />
+        <circle
+          cx={size / 2}
+          cy={size / 2}
+          r={radius}
+          fill="none"
+          stroke="currentColor"
+          strokeWidth={strokeWidth}
+          strokeDasharray={circumference}
+          strokeDashoffset={offset}
+          strokeLinecap="round"
+          className="text-emerald-500 transition-all duration-1000 ease-out"
+        />
+      </svg>
+      <div className="absolute inset-0 flex flex-col items-center justify-center">
+        <span className="text-2xl font-bold">{percent.toFixed(0)}%</span>
+        <span className="text-[11px] text-muted-foreground">освоено</span>
+      </div>
+    </div>
+  )
+}
+
+// ── Activity Feed Component ─────────────────────────────────────────────────
+
+function ActivityFeed() {
+  const { data: activities, isLoading } = useQuery<ActivityItem[]>({
+    queryKey: ['activity'],
+    queryFn: async () => {
+      const res = await fetch('/api/activity')
+      if (!res.ok) throw new Error('Failed to fetch activity')
+      return res.json()
+    },
+    refetchInterval: 30_000,
+  })
+
+  const getActivityIcon = (type: ActivityItem['type']) => {
+    switch (type) {
+      case 'project_created':
+        return <FolderKanban className="size-4" />
+      case 'status_changed':
+        return <ArrowRight className="size-4" />
+      case 'request_created':
+        return <Mail className="size-4" />
+      case 'invoice_received':
+        return <FileText className="size-4" />
+      case 'warehouse_transaction':
+        return <Package className="size-4" />
+    }
+  }
+
+  const getActivityDotColor = (type: ActivityItem['type']) => {
+    switch (type) {
+      case 'project_created':
+        return 'bg-emerald-500'
+      case 'status_changed':
+        return 'bg-sky-500'
+      case 'request_created':
+        return 'bg-violet-500'
+      case 'invoice_received':
+        return 'bg-amber-500'
+      case 'warehouse_transaction':
+        return 'bg-teal-500'
+    }
+  }
+
+  const getActivityBg = (type: ActivityItem['type']) => {
+    switch (type) {
+      case 'project_created':
+        return 'bg-emerald-50 text-emerald-600 dark:bg-emerald-950/50 dark:text-emerald-400'
+      case 'status_changed':
+        return 'bg-sky-50 text-sky-600 dark:bg-sky-950/50 dark:text-sky-400'
+      case 'request_created':
+        return 'bg-violet-50 text-violet-600 dark:bg-violet-950/50 dark:text-violet-400'
+      case 'invoice_received':
+        return 'bg-amber-50 text-amber-600 dark:bg-amber-950/50 dark:text-amber-400'
+      case 'warehouse_transaction':
+        return 'bg-teal-50 text-teal-600 dark:bg-teal-950/50 dark:text-teal-400'
+    }
+  }
+
+  return (
+    <Card className="h-full">
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2">
+          <Clock className="size-5 text-muted-foreground" />
+          Последняя активность
+        </CardTitle>
+        <CardDescription>Последние действия в системе</CardDescription>
+      </CardHeader>
+      <CardContent>
+        {isLoading ? (
+          <div className="space-y-3">
+            {Array.from({ length: 5 }).map((_, i) => (
+              <div key={i} className="flex items-center gap-3">
+                <Skeleton className="size-8 rounded-full shrink-0" />
+                <div className="flex-1 space-y-1.5">
+                  <Skeleton className="h-4 w-3/4" />
+                  <Skeleton className="h-3 w-1/2" />
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : !activities || activities.length === 0 ? (
+          <div className="flex flex-col items-center justify-center py-8 text-center">
+            <div className="rounded-full bg-muted p-3 mb-3">
+              <Clock className="size-6 text-muted-foreground/60" />
+            </div>
+            <p className="text-sm text-muted-foreground">Нет активности</p>
+          </div>
+        ) : (
+          <motion.div
+            className="max-h-80 space-y-1 overflow-y-auto pr-1 custom-scrollbar"
+            variants={containerVariants}
+            initial="hidden"
+            animate="visible"
+          >
+            {activities.map((activity) => (
+              <motion.div
+                key={activity.id}
+                variants={activityItemVariants}
+                className="flex items-start gap-3 rounded-lg p-2 transition-colors hover:bg-muted/50"
+              >
+                <div className={`flex size-8 shrink-0 items-center justify-center rounded-full ${getActivityBg(activity.type)}`}>
+                  {getActivityIcon(activity.type)}
+                </div>
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-center gap-2">
+                    <span className={`size-1.5 shrink-0 rounded-full ${getActivityDotColor(activity.type)}`} />
+                    <p className="truncate text-sm font-medium">{activity.title}</p>
+                  </div>
+                  <p className="mt-0.5 text-xs text-muted-foreground">{activity.description}</p>
+                  <p className="mt-0.5 text-[11px] text-muted-foreground/70">
+                    {formatRelativeTime(activity.timestamp)}
+                  </p>
+                </div>
+              </motion.div>
+            ))}
+          </motion.div>
+        )}
+      </CardContent>
+    </Card>
   )
 }
 
@@ -269,6 +482,25 @@ function DashboardSkeleton() {
   )
 }
 
+// ── Custom Tooltip for Category Chart ───────────────────────────────────────
+
+function CategoryTooltip({ active, payload, label }: { active?: boolean; payload?: Array<{ value: number; dataKey: string; color: string }>; label?: string }) {
+  if (!active || !payload) return null
+  const formatVal = (v: number) =>
+    new Intl.NumberFormat('ru-RU', { maximumFractionDigits: 0 }).format(v)
+
+  return (
+    <div className="rounded-lg border bg-background p-3 shadow-lg">
+      <p className="mb-1.5 text-sm font-medium">{label}</p>
+      {payload.map((entry, i) => (
+        <p key={i} className="text-xs" style={{ color: entry.color }}>
+          {entry.dataKey === 'budget' ? 'Бюджет' : 'Потрачено'}: {formatVal(entry.value)} ₽
+        </p>
+      ))}
+    </div>
+  )
+}
+
 // ── Dashboard Component ─────────────────────────────────────────────────────
 
 export function Dashboard() {
@@ -311,6 +543,17 @@ export function Dashboard() {
       maximumFractionDigits: 0,
     }).format(amount)
 
+  const formatCompact = (amount: number) =>
+    new Intl.NumberFormat('ru-RU', { maximumFractionDigits: 0 }).format(amount)
+
+  // Budget calculations
+  const budgetData = data.budgetData || { totalBudget: 0, spentBudget: 0, pendingBudget: 0, byCategory: [] }
+  const spentPercent = budgetData.totalBudget > 0
+    ? (budgetData.spentBudget / budgetData.totalBudget) * 100
+    : 0
+
+  const projectCostData = data.projectCostData || []
+
   return (
     <motion.div
       className="space-y-6"
@@ -338,6 +581,7 @@ export function Dashboard() {
           iconClassName="text-primary"
           borderColor="border-l-primary"
           sparkColor="bg-primary"
+          onClick={() => navigate('projects')}
         />
         <StatCard
           title="Поставщиков"
@@ -347,6 +591,7 @@ export function Dashboard() {
           iconClassName="text-sky-600"
           borderColor="border-l-sky-500"
           sparkColor="bg-sky-500"
+          onClick={() => navigate('suppliers')}
         />
         <StatCard
           title="Запросов в процессе"
@@ -356,6 +601,7 @@ export function Dashboard() {
           iconClassName="text-violet-600"
           borderColor="border-l-violet-500"
           sparkColor="bg-violet-500"
+          onClick={() => navigate('requests')}
         />
         <StatCard
           title="Неоплаченных счетов"
@@ -369,6 +615,7 @@ export function Dashboard() {
           iconClassName="text-amber-600"
           borderColor="border-l-amber-500"
           sparkColor="bg-amber-500"
+          onClick={() => navigate('invoices')}
         />
       </div>
 
@@ -382,6 +629,7 @@ export function Dashboard() {
           iconClassName="text-emerald-600"
           borderColor="border-l-emerald-500"
           sparkColor="bg-emerald-500"
+          onClick={() => navigate('projects')}
         />
         <StatCard
           title="На складе"
@@ -391,6 +639,7 @@ export function Dashboard() {
           iconClassName="text-teal-600"
           borderColor="border-l-teal-500"
           sparkColor="bg-teal-500"
+          onClick={() => navigate('warehouse')}
         />
         <StatCard
           title="Низкий запас"
@@ -400,6 +649,7 @@ export function Dashboard() {
           iconClassName="text-amber-500"
           borderColor="border-l-amber-400"
           sparkColor="bg-amber-400"
+          onClick={() => navigate('warehouse')}
           cardClassName={
             data.lowStockItems > 0
               ? 'border-amber-300 bg-amber-50/50 dark:border-amber-700 dark:bg-amber-950/30'
@@ -411,8 +661,179 @@ export function Dashboard() {
         />
       </div>
 
-      {/* ── Recent Projects & Quick Actions ───────────────────────────── */}
+      {/* ── Budget Overview Section (full width) ──────────────────────── */}
+      <motion.div variants={itemVariants}>
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <DollarSign className="size-5 text-muted-foreground" />
+              Бюджет и затраты
+            </CardTitle>
+            <CardDescription>Обзор бюджета по проектам и категориям</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 gap-8 lg:grid-cols-2">
+              {/* Left: Circular progress + budget numbers */}
+              <div className="flex flex-col items-center gap-6">
+                <CircularProgressRing percent={spentPercent} />
+                <div className="flex flex-col items-center gap-3 w-full">
+                  <div className="text-center">
+                    <p className="text-xs text-muted-foreground uppercase tracking-wide">Общий бюджет</p>
+                    <p className="text-3xl font-bold tracking-tight">
+                      {formatAmount(budgetData.totalBudget)}
+                    </p>
+                  </div>
+                  <div className="flex gap-8">
+                    <div className="text-center">
+                      <p className="text-xs text-muted-foreground">Потрачено</p>
+                      <p className="text-lg font-semibold text-emerald-600 dark:text-emerald-400">
+                        {formatAmount(budgetData.spentBudget)}
+                      </p>
+                    </div>
+                    <div className="text-center">
+                      <p className="text-xs text-muted-foreground">Ожидание</p>
+                      <p className="text-lg font-semibold text-amber-600 dark:text-amber-400">
+                        {formatAmount(budgetData.pendingBudget)}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Right: Bar chart budget vs spent by category */}
+              <div className="min-h-[300px]">
+                {budgetData.byCategory.length > 0 ? (
+                  <ResponsiveContainer width="100%" height={300}>
+                    <BarChart
+                      data={budgetData.byCategory}
+                      layout="vertical"
+                      margin={{ top: 0, right: 20, bottom: 0, left: 0 }}
+                    >
+                      <CartesianGrid strokeDasharray="3 3" horizontal={false} />
+                      <XAxis
+                        type="number"
+                        tickFormatter={(v: number) => `${formatCompact(v)} ₽`}
+                        fontSize={11}
+                      />
+                      <YAxis
+                        dataKey="category"
+                        type="category"
+                        width={100}
+                        fontSize={11}
+                        tickLine={false}
+                      />
+                      <Tooltip content={<CategoryTooltip />} />
+                      <Bar dataKey="budget" name="Бюджет" radius={[0, 4, 4, 0]} barSize={12}>
+                        {budgetData.byCategory.map((_entry, index) => (
+                          <Cell key={`budget-${index}`} fill="#94a3b8" />
+                        ))}
+                      </Bar>
+                      <Bar dataKey="spent" name="Потрачено" radius={[0, 4, 4, 0]} barSize={12}>
+                        {budgetData.byCategory.map((_entry, index) => (
+                          <Cell key={`spent-${index}`} fill="#10b981" />
+                        ))}
+                      </Bar>
+                    </BarChart>
+                  </ResponsiveContainer>
+                ) : (
+                  <div className="flex h-full items-center justify-center text-sm text-muted-foreground">
+                    Нет данных о бюджете
+                  </div>
+                )}
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </motion.div>
+
+      {/* ── Project Costs Table ───────────────────────────────────────── */}
+      {projectCostData.length > 0 && (
+        <motion.div variants={itemVariants}>
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <FolderKanban className="size-5 text-muted-foreground" />
+                Затраты по проектам
+              </CardTitle>
+              <CardDescription>Бюджет и освоение по каждому проекту</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="max-h-64 overflow-y-auto custom-scrollbar">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="border-b text-left text-xs text-muted-foreground">
+                      <th className="pb-2 pr-4 font-medium">Проект</th>
+                      <th className="pb-2 pr-4 font-medium text-right">Бюджет</th>
+                      <th className="pb-2 pr-4 font-medium text-right">Потрачено</th>
+                      <th className="pb-2 font-medium text-center">Статус</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {projectCostData.map((project, idx) => {
+                      const utilization = project.budget > 0
+                        ? (project.spent / project.budget) * 100
+                        : 0
+                      const utilizationColor =
+                        utilization < 70
+                          ? 'text-emerald-600 dark:text-emerald-400'
+                          : utilization <= 90
+                            ? 'text-amber-600 dark:text-amber-400'
+                            : 'text-red-600 dark:text-red-400'
+                      const barColor =
+                        utilization < 70
+                          ? 'bg-emerald-500'
+                          : utilization <= 90
+                            ? 'bg-amber-500'
+                            : 'bg-red-500'
+
+                      return (
+                        <motion.tr
+                          key={idx}
+                          initial={{ opacity: 0, y: 4 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          transition={{ delay: idx * 0.04 }}
+                          className="border-b last:border-0 transition-colors hover:bg-muted/50"
+                        >
+                          <td className="py-2.5 pr-4 font-medium truncate max-w-[200px]">
+                            {project.projectName}
+                          </td>
+                          <td className="py-2.5 pr-4 text-right text-muted-foreground">
+                            {formatCompact(project.budget)} ₽
+                          </td>
+                          <td className="py-2.5 pr-4">
+                            <div className="flex items-center gap-2 justify-end">
+                              <div className="w-16 h-1.5 rounded-full bg-muted overflow-hidden">
+                                <div
+                                  className={`h-full rounded-full ${barColor} transition-all duration-500`}
+                                  style={{ width: `${Math.min(utilization, 100)}%` }}
+                                />
+                              </div>
+                              <span className={`text-right ${utilizationColor}`}>
+                                {formatCompact(project.spent)} ₽
+                              </span>
+                            </div>
+                          </td>
+                          <td className="py-2.5 text-center">
+                            {getStatusBadge(project.status)}
+                          </td>
+                        </motion.tr>
+                      )
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            </CardContent>
+          </Card>
+        </motion.div>
+      )}
+
+      {/* ── Activity Feed & Recent Projects ───────────────────────────── */}
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
+        {/* Activity Feed */}
+        <motion.div variants={itemVariants} className="lg:col-span-1">
+          <ActivityFeed />
+        </motion.div>
+
         {/* Recent Projects */}
         <motion.div variants={itemVariants} className="lg:col-span-2">
           <Card className="h-full">
@@ -442,7 +863,7 @@ export function Dashboard() {
                   </Button>
                 </div>
               ) : (
-                <div className="max-h-96 space-y-3 overflow-y-auto pr-1 custom-scrollbar">
+                <div className="max-h-80 space-y-3 overflow-y-auto pr-1 custom-scrollbar">
                   {data.recentProjects.map((project, idx) => (
                     <motion.button
                       key={project.id}
@@ -488,45 +909,51 @@ export function Dashboard() {
             </CardContent>
           </Card>
         </motion.div>
-
-        {/* Quick Actions */}
-        <motion.div variants={itemVariants}>
-          <Card className="h-full">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <TrendingUp className="size-5 text-muted-foreground" />
-                Быстрые действия
-              </CardTitle>
-              <CardDescription>Частые операции</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              <Button
-                className="w-full justify-start transition-all duration-200 hover:shadow-md hover:-translate-y-0.5 hover:scale-[1.02]"
-                onClick={() => navigate('projects')}
-              >
-                <Plus className="size-4" />
-                Новый проект
-              </Button>
-              <Button
-                variant="outline"
-                className="w-full justify-start transition-all duration-200 hover:shadow-md hover:-translate-y-0.5 hover:scale-[1.02] hover:border-primary/30"
-                onClick={() => navigate('suppliers')}
-              >
-                <Users className="size-4" />
-                Добавить поставщика
-              </Button>
-              <Button
-                variant="outline"
-                className="w-full justify-start transition-all duration-200 hover:shadow-md hover:-translate-y-0.5 hover:scale-[1.02] hover:border-primary/30"
-                onClick={() => navigate('warehouse')}
-              >
-                <Warehouse className="size-4" />
-                Склад
-              </Button>
-            </CardContent>
-          </Card>
-        </motion.div>
       </div>
+
+      {/* ── Quick Actions (compact) ───────────────────────────────────── */}
+      <motion.div variants={itemVariants}>
+        <Card>
+          <CardContent className="flex flex-wrap items-center gap-3 py-4">
+            <span className="text-sm font-medium text-muted-foreground mr-2">Быстрые действия:</span>
+            <Button
+              size="sm"
+              className="transition-all duration-200 hover:shadow-md hover:-translate-y-0.5"
+              onClick={() => navigate('projects')}
+            >
+              <Plus className="size-4" />
+              Новый проект
+            </Button>
+            <Button
+              size="sm"
+              variant="outline"
+              className="transition-all duration-200 hover:shadow-md hover:-translate-y-0.5 hover:border-primary/30"
+              onClick={() => navigate('suppliers')}
+            >
+              <Users className="size-4" />
+              Поставщик
+            </Button>
+            <Button
+              size="sm"
+              variant="outline"
+              className="transition-all duration-200 hover:shadow-md hover:-translate-y-0.5 hover:border-primary/30"
+              onClick={() => navigate('warehouse')}
+            >
+              <Warehouse className="size-4" />
+              Склад
+            </Button>
+            <Button
+              size="sm"
+              variant="outline"
+              className="transition-all duration-200 hover:shadow-md hover:-translate-y-0.5 hover:border-primary/30"
+              onClick={() => navigate('requests')}
+            >
+              <Mail className="size-4" />
+              Запрос
+            </Button>
+          </CardContent>
+        </Card>
+      </motion.div>
     </motion.div>
   )
 }
