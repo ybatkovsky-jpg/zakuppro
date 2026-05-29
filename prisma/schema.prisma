@@ -258,6 +258,11 @@ model EmailSettings {
   // Общие
   isConfigured    Boolean @default(false)
   lastCheckedAt   DateTime?
+  // Результаты тестирования
+  smtpTestResult  String @default("")     // "success" | "error" | ""
+  imapTestResult  String @default("")     // "success" | "error" | ""
+  smtpLastTestedAt DateTime?
+  imapLastTestedAt DateTime?
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
 }

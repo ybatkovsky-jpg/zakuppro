@@ -151,7 +151,7 @@ export function AppSidebar() {
 
   return (
     <Sidebar collapsible="icon">
-      <SidebarHeader className="border-b border-sidebar-border bg-gradient-to-b from-primary/10 via-primary/5 to-transparent">
+      <SidebarHeader className="border-b border-sidebar-border">
         <div className="flex items-center gap-2 px-2 py-1">
           <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-white shadow-sm overflow-hidden">
             <Image src="/logo.png" alt="ПРОМЕБЕЛЬ" width={32} height={32} className="h-8 w-8 object-contain rounded-lg" />

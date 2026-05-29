@@ -69,6 +69,9 @@ import {
   Key,
   Thermometer,
   MessageSquare,
+  CircleCheck,
+  CircleX,
+  Circle,
 } from 'lucide-react'
 
 // ── Types ──────────────────────────────────────────────────
@@ -242,7 +245,108 @@ function SectionCard({
   )
 }
 
+// ── Email Preset Data ────────────────────────────────────────
+
+const EMAIL_PRESETS = [
+  {
+    id: 'yandex',
+    name: 'Yandex',
+    letter: 'Я',
+    color: 'bg-red-500',
+    hoverColor: 'hover:bg-red-600',
+    textColor: 'text-white',
+    borderActive: 'border-red-500',
+    bgActive: 'bg-red-50 dark:bg-red-950/30',
+    smtp: { host: 'smtp.yandex.ru', port: '587', encryption: 'tls' },
+    imap: { host: 'imap.yandex.ru', port: '993', encryption: 'ssl' },
+  },
+  {
+    id: 'gmail',
+    name: 'Gmail',
+    letter: 'G',
+    color: 'bg-amber-500',
+    hoverColor: 'hover:bg-amber-600',
+    textColor: 'text-white',
+    borderActive: 'border-amber-500',
+    bgActive: 'bg-amber-50 dark:bg-amber-950/30',
+    smtp: { host: 'smtp.gmail.com', port: '587', encryption: 'tls' },
+    imap: { host: 'imap.gmail.com', port: '993', encryption: 'ssl' },
+  },
+  {
+    id: 'mailru',
+    name: 'Mail.ru',
+    letter: 'M',
+    color: 'bg-sky-500',
+    hoverColor: 'hover:bg-sky-600',
+    textColor: 'text-white',
+    borderActive: 'border-sky-500',
+    bgActive: 'bg-sky-50 dark:bg-sky-950/30',
+    smtp: { host: 'smtp.mail.ru', port: '587', encryption: 'tls' },
+    imap: { host: 'imap.mail.ru', port: '993', encryption: 'ssl' },
+  },
+] as const
+
+// ── Connection Status Badge Component ────────────────────────
+
+type ConnectionStatus = 'success' | 'error' | 'unknown'
+
+function ConnectionStatusBadge({
+  testResult,
+  lastTestedAt,
+  label,
+}: {
+  testResult: string | undefined | null
+  lastTestedAt: string | Date | null | undefined
+  label: string
+}) {
+  let status: ConnectionStatus = 'unknown'
+  if (testResult === 'success') status = 'success'
+  else if (testResult === 'error' || (testResult && testResult !== '')) status = 'error'
+
+  const formatLastTested = (date: string | Date) => {
+    try {
+      const d = typeof date === 'string' ? new Date(date) : date
+      if (isNaN(d.getTime())) return ''
+      return d.toLocaleDateString('ru-RU', { day: '2-digit', month: '2-digit', year: '2-digit', hour: '2-digit', minute: '2-digit' })
+    } catch {
+      return ''
+    }
+  }
+
+  return (
+    <div className="flex items-center gap-2">
+      {status === 'success' ? (
+        <Badge className="gap-1 bg-emerald-100 text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-400 border-emerald-200 dark:border-emerald-800 hover:bg-emerald-100">
+          <CircleCheck className="size-3" />
+          {label}
+        </Badge>
+      ) : status === 'error' ? (
+        <Badge variant="destructive" className="gap-1">
+          <CircleX className="size-3" />
+          {label}
+        </Badge>
+      ) : (
+        <Badge variant="outline" className="gap-1 text-muted-foreground">
+          <Circle className="size-3" />
+          {label}
+        </Badge>
+      )}
+      {lastTestedAt && (
+        <span className="text-[10px] text-muted-foreground">
+          {formatLastTested(lastTestedAt)}
+        </span>
+      )}
+    </div>
+  )
+}
+
 // ── Email template data ─────────────────────────────────────
+
+// Auto-detect preset from current SMTP host
+function detectPreset(smtpHost: string): string | null {
+  const match = EMAIL_PRESETS.find(p => p.smtp.host === smtpHost)
+  return match?.id ?? null
+}
 
 const EMAIL_TEMPLATES = [
   {
@@ -311,6 +415,7 @@ export function Settings() {
   const [showImapPassword, setShowImapPassword] = useState(false)
   const [testingSmtp, setTestingSmtp] = useState(false)
   const [testingImap, setTestingImap] = useState(false)
+  const [selectedPreset, setSelectedPreset] = useState<string | null>(null)
 
   // ── AI Settings state ──────────────────────────────────────
   const [aiSettings, setAiSettings] = useState({
@@ -483,6 +588,11 @@ export function Settings() {
         imapCheckInterval: String(emailData.imapCheckInterval ?? 15),
         imapEnabled: emailData.imapEnabled ?? false,
       })
+      // Auto-detect active preset from server data
+      const detectedPreset = detectPreset(emailData.smtpHost ?? '')
+      if (detectedPreset) {
+        setSelectedPreset(detectedPreset)
+      }
     }
   }, [emailData])
 
@@ -549,6 +659,30 @@ export function Settings() {
   const handleEmailChange = (field: keyof typeof emailSettings, value: string | boolean) => {
     setEmailSettings((prev) => ({ ...prev, [field]: value }))
     setEmailSettingsChanged(true)
+    // Clear preset selection when manually changing server settings
+    if (['smtpHost', 'smtpPort', 'smtpEncryption', 'imapHost', 'imapPort', 'imapEncryption'].includes(field)) {
+      setSelectedPreset(null)
+    }
+  }
+
+  const handlePresetClick = (presetId: string) => {
+    const preset = EMAIL_PRESETS.find(p => p.id === presetId)
+    if (!preset) return
+    setSelectedPreset(presetId)
+    setEmailSettings((prev) => ({
+      ...prev,
+      smtpHost: preset.smtp.host,
+      smtpPort: preset.smtp.port,
+      smtpEncryption: preset.smtp.encryption,
+      imapHost: preset.imap.host,
+      imapPort: preset.imap.port,
+      imapEncryption: preset.imap.encryption,
+      // Auto-fill IMAP user from SMTP user if empty
+      imapUser: prev.imapUser || prev.smtpUser,
+      imapPassword: prev.imapPassword || prev.smtpPassword,
+    }))
+    setEmailSettingsChanged(true)
+    toast({ title: `Пресет ${preset.name}`, description: `Настройки ${preset.name} применены. Укажите логин и пароль.` })
   }
 
   const handleSaveEmail = async () => {
@@ -610,6 +744,8 @@ export function Settings() {
         description: data.message || data.error,
         variant: data.success ? 'default' : 'destructive',
       })
+      // Refetch email settings to update connection status
+      queryClient.invalidateQueries({ queryKey: ['email-settings'] })
     } catch {
       toast({ title: 'Ошибка', description: 'Не удалось проверить SMTP', variant: 'destructive' })
     } finally {
@@ -631,6 +767,8 @@ export function Settings() {
         description: data.message || data.error,
         variant: data.success ? 'default' : 'destructive',
       })
+      // Refetch email settings to update connection status
+      queryClient.invalidateQueries({ queryKey: ['email-settings'] })
     } catch {
       toast({ title: 'Ошибка', description: 'Не удалось проверить IMAP', variant: 'destructive' })
     } finally {
@@ -690,6 +828,8 @@ export function Settings() {
         description: data.message || data.error,
         variant: data.success ? 'default' : 'destructive',
       })
+      // Refetch AI settings to update connection status
+      queryClient.invalidateQueries({ queryKey: ['ai-settings'] })
     } catch {
       toast({ title: 'Ошибка', description: 'Не удалось проверить подключение', variant: 'destructive' })
     } finally {
@@ -1627,7 +1767,44 @@ export function Settings() {
         hasChanges={emailSettingsChanged}
       >
         <div className="space-y-4">
-          {/* Status indicator */}
+          {/* Connection status */}
+          <div className="flex items-center justify-between">
+            <ConnectionStatusBadge
+              testResult={emailData?.smtpTestResult}
+              lastTestedAt={emailData?.smtpLastTestedAt}
+              label={emailData?.smtpTestResult === 'success' ? 'Подключено' : emailData?.smtpTestResult === 'error' ? 'Не подключено' : 'Не проверено'}
+            />
+          </div>
+
+          {/* Email Preset Quick-Config Buttons */}
+          <div className="space-y-2">
+            <Label className="text-sm font-medium">Быстрая настройка</Label>
+            <div className="grid grid-cols-3 gap-3">
+              {EMAIL_PRESETS.map((preset) => (
+                <button
+                  key={preset.id}
+                  onClick={() => handlePresetClick(preset.id)}
+                  className={`flex items-center gap-2.5 rounded-lg border-2 px-3 py-2.5 text-left transition-all duration-200 hover:shadow-md hover:-translate-y-0.5 ${
+                    selectedPreset === preset.id
+                      ? `${preset.borderActive} ${preset.bgActive} shadow-sm`
+                      : 'border-transparent bg-muted/40 hover:bg-muted/60'
+                  }`}
+                >
+                  <div className={`flex size-8 shrink-0 items-center justify-center rounded-full ${preset.color} ${preset.textColor} text-sm font-bold`}>
+                    {preset.letter}
+                  </div>
+                  <div className="min-w-0">
+                    <p className="text-sm font-medium truncate">Настроить {preset.name}</p>
+                    <p className="text-[10px] text-muted-foreground truncate">{preset.smtp.host}</p>
+                  </div>
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <Separator />
+
+          {/* SMTP Status indicator */}
           <div className={`flex items-center gap-2 rounded-lg p-3 ${emailSettings.smtpHost ? 'bg-emerald-50 dark:bg-emerald-950/30' : 'bg-amber-50 dark:bg-amber-950/30'}`}>
             {emailSettings.smtpHost ? (
               <CheckCircle2 className="size-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
@@ -1759,7 +1936,7 @@ export function Settings() {
 
           <div className="rounded-md bg-muted/50 px-3 py-2">
             <p className="text-xs text-muted-foreground">
-              💡 Популярные SMTP: Yandex (smtp.yandex.ru:587), Gmail (smtp.gmail.com:587), Mail.ru (smtp.mail.ru:587).
+              💡 Нажмите кнопку пресета выше для быстрой настройки, или введите данные вручную.
               Для Gmail и Yandex используйте пароль приложения, а не основной пароль.
             </p>
           </div>
@@ -1777,6 +1954,15 @@ export function Settings() {
         hasChanges={emailSettingsChanged}
       >
         <div className="space-y-4">
+          {/* Connection status */}
+          <div className="flex items-center justify-between">
+            <ConnectionStatusBadge
+              testResult={emailData?.imapTestResult}
+              lastTestedAt={emailData?.imapLastTestedAt}
+              label={emailData?.imapTestResult === 'success' ? 'Подключено' : emailData?.imapTestResult === 'error' ? 'Не подключено' : 'Не проверено'}
+            />
+          </div>
+
           {/* Enable/Disable IMAP */}
           <div className="flex items-center justify-between gap-4 rounded-lg p-3 hover:bg-muted/50">
             <div className="space-y-0.5 min-w-0">
@@ -1907,6 +2093,15 @@ export function Settings() {
         hasChanges={aiSettingsChanged}
       >
         <div className="space-y-4">
+          {/* Connection status */}
+          <div className="flex items-center justify-between">
+            <ConnectionStatusBadge
+              testResult={aiData?.testResult}
+              lastTestedAt={aiData?.lastTestedAt}
+              label={aiData?.testResult === 'success' ? 'Подключено' : aiData?.testResult === 'error' ? 'Не подключено' : 'Не проверено'}
+            />
+          </div>
+
           {/* Provider selector */}
           <div className="space-y-2">
             <Label className="text-sm font-medium">Провайдер ИИ</Label>

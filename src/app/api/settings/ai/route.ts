@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import ZAI from 'z-ai-web-dev-sdk'
 import { db } from '@/lib/db'
 
 // GET /api/settings/ai — получить настройки ИИ
@@ -88,31 +89,95 @@ export async function PUT(request: NextRequest) {
   }
 }
 
-// POST /api/settings/ai — тест подключения к ИИ
-export async function POST() {
+// POST /api/settings/ai — тест подключения к ИИ (реальная проверка)
+export async function POST(_request: NextRequest) {
   try {
     const settings = await db.aiSettings.findFirst()
 
     if (!settings) {
-      return NextResponse.json({ success: false, error: 'Настройки ИИ не найдены' })
+      return NextResponse.json({ success: false, error: 'Настройки ИИ не найдены. Сначала сохраните настройки.' })
     }
 
-    // Имитация теста
-    await new Promise(resolve => setTimeout(resolve, 1000))
+    // Если провайдер не z-ai — сообщаем, что тест работает только с Z-AI
+    if (settings.provider !== 'z-ai') {
+      return NextResponse.json({
+        success: false,
+        error: `Тестирование подключения доступно только для провайдера Z-AI. Для провайдера "${settings.provider}" проверьте API-ключ вручную, отправив тестовый запрос к вашему эндпоинту.`,
+        hint: 'Переключите провайдер на "z-ai" для автоматической проверки, или убедитесь в работоспособности вашего API-ключа самостоятельно.',
+      })
+    }
 
-    // Обновляем дату последнего теста
-    await db.aiSettings.update({
-      where: { id: settings.id },
-      data: {
-        lastTestedAt: new Date(),
-        testResult: 'success',
-      },
-    })
+    // Реальный тест подключения через z-ai-web-dev-sdk
+    try {
+      const zai = await ZAI.create()
 
-    return NextResponse.json({
-      success: true,
-      message: `Модель ${settings.model} (${settings.provider}) — подключение успешно`,
-    })
+      const completion = await zai.chat.completions.create({
+        messages: [
+          { role: 'assistant', content: 'Ты — тестовый ассистент. Отвечай кратко.' },
+          { role: 'user', content: 'Ответь одним словом: работает' },
+        ],
+        thinking: { type: 'disabled' },
+      })
+
+      const response = completion.choices[0]?.message?.content
+
+      if (!response) {
+        // Пустой ответ — считаем частичной ошибкой
+        await db.aiSettings.update({
+          where: { id: settings.id },
+          data: {
+            lastTestedAt: new Date(),
+            testResult: 'warning: пустой ответ от модели',
+          },
+        })
+
+        return NextResponse.json({
+          success: false,
+          error: `Модель ${settings.model} вернула пустой ответ. Проверьте настройки модели.`,
+        })
+      }
+
+      // Успешный тест — обновляем дату и результат
+      await db.aiSettings.update({
+        where: { id: settings.id },
+        data: {
+          lastTestedAt: new Date(),
+          testResult: 'success',
+        },
+      })
+
+      return NextResponse.json({
+        success: true,
+        message: `Подключение к ИИ (${settings.provider}, модель ${settings.model}) — успешно. Ответ получен: "${response.slice(0, 50)}${response.length > 50 ? '...' : ''}"`,
+      })
+    } catch (aiError: unknown) {
+      const errMsg = aiError instanceof Error ? aiError.message : String(aiError)
+
+      // Обновляем результат в БД
+      await db.aiSettings.update({
+        where: { id: settings.id },
+        data: {
+          lastTestedAt: new Date(),
+          testResult: `error: ${errMsg}`,
+        },
+      })
+
+      // Формируем понятное сообщение на русском
+      let ruMessage = `Ошибка подключения к ИИ: ${errMsg}`
+      if (errMsg.includes('API key') || errMsg.includes('api_key') || errMsg.includes('unauthorized') || errMsg.includes('401')) {
+        ruMessage = 'Ошибка аутентификации ИИ: неверный или просроченный API-ключ.'
+      } else if (errMsg.includes('rate limit') || errMsg.includes('429')) {
+        ruMessage = 'Превышен лимит запросов к ИИ. Попробуйте позже.'
+      } else if (errMsg.includes('timeout') || errMsg.includes('ETIMEDOUT')) {
+        ruMessage = 'Таймаут при подключении к ИИ. Сервер не отвечает.'
+      } else if (errMsg.includes('network') || errMsg.includes('ECONNREFUSED') || errMsg.includes('fetch')) {
+        ruMessage = 'Сетевая ошибка при подключении к ИИ. Проверьте подключение к интернету.'
+      } else if (errMsg.includes('model') || errMsg.includes('not found') || errMsg.includes('404')) {
+        ruMessage = `Модель "${settings.model}" не найдена. Проверьте название модели в настройках.`
+      }
+
+      return NextResponse.json({ success: false, error: ruMessage })
+    }
   } catch (error) {
     console.error('Error testing AI connection:', error)
     return NextResponse.json({ success: false, error: 'Ошибка при проверке подключения' }, { status: 500 })

@@ -1262,19 +1262,18 @@ export function Dashboard() {
         className="relative -mx-6 -mt-6 px-6 pt-6 pb-5 overflow-hidden rounded-b-2xl"
       >
         {/* Professional gradient background */}
-        <div className="absolute inset-0 bg-gradient-to-br from-primary/10 via-primary/[0.04] to-emerald-500/[0.03] dark:from-primary/15 dark:via-primary/[0.06] dark:to-emerald-500/[0.04]" />
+        <div className="absolute inset-0 bg-gradient-to-br from-primary/[0.06] via-primary/[0.02] to-emerald-500/[0.02] dark:from-primary/10 dark:via-primary/[0.04] dark:to-emerald-500/[0.03]" />
 
-        {/* Decorative subtle grid lines (replaces broken SVG dot pattern) */}
-        <div className="absolute inset-0 opacity-[0.02] dark:opacity-[0.04]" style={{
+        {/* Decorative subtle grid lines */}
+        <div className="absolute inset-0 opacity-[0.015] dark:opacity-[0.03] pointer-events-none" style={{
           backgroundImage: 'radial-gradient(circle, currentColor 1px, transparent 1px)',
           backgroundSize: '24px 24px',
         }} />
 
-        {/* Decorative gradient orbs */}
+        {/* Decorative gradient orbs — very subtle */}
         <div className="absolute inset-0 overflow-hidden pointer-events-none">
-          <div className="absolute -top-24 -right-24 w-64 h-64 rounded-full bg-gradient-to-br from-primary/15 to-transparent blur-3xl" />
-          <div className="absolute -bottom-16 -left-16 w-48 h-48 rounded-full bg-gradient-to-tr from-emerald-500/10 to-transparent blur-3xl" />
-          <div className="absolute top-1/2 right-1/4 w-32 h-32 rounded-full bg-gradient-to-bl from-violet-500/5 to-transparent blur-2xl" />
+          <div className="absolute -top-24 -right-24 w-64 h-64 rounded-full bg-gradient-to-br from-primary/[0.08] to-transparent blur-3xl" />
+          <div className="absolute -bottom-16 -left-16 w-48 h-48 rounded-full bg-gradient-to-tr from-emerald-500/[0.06] to-transparent blur-3xl" />
         </div>
 
         <div className="relative flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
