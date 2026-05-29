@@ -1,5 +1,6 @@
 import { db } from '@/lib/db'
 import { NextRequest, NextResponse } from 'next/server'
+import { parseExcelFile } from '@/lib/excel-parser'
 
 export async function GET(request: NextRequest) {
   try {
@@ -44,17 +45,64 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
-    const { name, description, customerName } = body
+    const { name, description, customerName, fileData, fileName } = body
 
     if (!name || !name.trim()) {
       return NextResponse.json({ error: 'Project name is required' }, { status: 400 })
     }
 
+    // Если переданы файловые данные (от Telegram Bot), парсим Excel
+    if (fileData && typeof fileData === 'string') {
+      try {
+        const buffer = Buffer.from(fileData, 'base64')
+        const parsedItems = parseExcelFile(buffer.buffer as ArrayBuffer)
+
+        if (parsedItems.length === 0) {
+          return NextResponse.json({ error: 'Excel файл пуст или не содержит распознаваемых позиций' }, { status: 400 })
+        }
+
+        // Создаём проект с позициями из Excel
+        const project = await db.project.create({
+          data: {
+            name: name.trim(),
+            description: description?.trim() || '',
+            customerName: customerName?.trim() || '',
+            fileName: fileName || '',
+            items: {
+              create: parsedItems.map((item) => ({
+                name: item.name,
+                article: item.article,
+                category: item.category,
+                quantity: item.quantity,
+                unit: item.unit,
+                price: item.price,
+                notes: item.notes,
+                rowNumber: item.rowNumber,
+                status: 'pending' as const,
+              })),
+            },
+          },
+          include: {
+            _count: { select: { items: true } },
+          },
+        })
+
+        return NextResponse.json(project, { status: 201 })
+      } catch (parseError) {
+        console.error('Excel parse error:', parseError)
+        return NextResponse.json({ error: `Ошибка парсинга Excel: ${parseError instanceof Error ? parseError.message : 'неизвестная ошибка'}` }, { status: 400 })
+      }
+    }
+
+    // Обычное создание проекта (без файла)
     const project = await db.project.create({
       data: {
         name: name.trim(),
         description: description?.trim() || '',
         customerName: customerName?.trim() || '',
+      },
+      include: {
+        _count: { select: { items: true } },
       },
     })
 

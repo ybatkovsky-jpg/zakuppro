@@ -11,6 +11,7 @@ import { Separator } from '@/components/ui/separator'
 import { Switch } from '@/components/ui/switch'
 import { Textarea } from '@/components/ui/textarea'
 import { Badge } from '@/components/ui/badge'
+import { Collapsible, CollapsibleTrigger, CollapsibleContent } from '@/components/ui/collapsible'
 import {
   Select,
   SelectContent,
@@ -28,7 +29,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog'
-import { motion } from 'framer-motion'
+import { motion, AnimatePresence } from 'framer-motion'
 import {
   Building2,
   Save,
@@ -72,6 +73,12 @@ import {
   CircleCheck,
   CircleX,
   Circle,
+  Play,
+  Square,
+  Terminal,
+  FileSpreadsheet,
+  Wifi,
+  WifiOff,
 } from 'lucide-react'
 
 // ── Types ──────────────────────────────────────────────────
@@ -441,6 +448,9 @@ export function Settings() {
   const [telegramSettingsChanged, setTelegramSettingsChanged] = useState(false)
   const [showBotToken, setShowBotToken] = useState(false)
   const [testingTelegram, setTestingTelegram] = useState(false)
+  const [togglingBot, setTogglingBot] = useState(false)
+  const [commandsOpen, setCommandsOpen] = useState(false)
+  const [botInfo, setBotInfo] = useState<{ username?: string; first_name?: string } | null>(null)
 
   // ── User Preferences state ─────────────────────────────────
   const [preferences, setPreferences] = useState({
@@ -474,6 +484,21 @@ export function Settings() {
   const [exporting, setExporting] = useState(false)
   const [importing, setImporting] = useState(false)
   const importFileRef = useRef<HTMLInputElement>(null)
+
+  // ── Email Inbox state ────────────────────────────────────────
+  const [inboxEmails, setInboxEmails] = useState<Array<{
+    uid: number
+    from: string
+    to: string
+    subject: string
+    date: string
+    body: string
+    isRead: boolean
+    hasAttachments: boolean
+  }>>([])
+  const [loadingInbox, setLoadingInbox] = useState(false)
+  const [inboxError, setInboxError] = useState<string | null>(null)
+  const [expandedEmailUid, setExpandedEmailUid] = useState<number | null>(null)
 
   // ── Query ──────────────────────────────────────────────────
 
@@ -514,6 +539,21 @@ export function Settings() {
       if (!res.ok) return null
       return res.json()
     },
+  })
+
+  // ── Telegram Bot Service Health Query ─────────────────────
+  const { data: botServiceHealth } = useQuery({
+    queryKey: ['telegram-bot-health'],
+    queryFn: async () => {
+      try {
+        const res = await fetch('/?XTransformPort=3003')
+        if (!res.ok) return null
+        return res.json() as Promise<{ status: string; service: string; port: number; botRunning: boolean }>
+      } catch {
+        return null
+      }
+    },
+    refetchInterval: 15000, // Check every 15 seconds
   })
 
   // ── Mutation ───────────────────────────────────────────────
@@ -877,15 +917,50 @@ export function Settings() {
     try {
       const res = await fetch('/api/settings/telegram', { method: 'POST' })
       const data = await res.json()
+      if (data.success && data.botInfo) {
+        setBotInfo({ username: data.botInfo.username, first_name: data.botInfo.first_name })
+      }
       toast({
         title: data.success ? 'Telegram подключение' : 'Ошибка Telegram',
         description: data.message || data.error,
         variant: data.success ? 'default' : 'destructive',
       })
+      queryClient.invalidateQueries({ queryKey: ['telegram-settings'] })
     } catch {
       toast({ title: 'Ошибка', description: 'Не удалось проверить подключение', variant: 'destructive' })
     } finally {
       setTestingTelegram(false)
+    }
+  }
+
+  const handleToggleBot = async () => {
+    setTogglingBot(true)
+    try {
+      const newEnabled = !telegramSettings.isEnabled
+      const res = await fetch('/api/settings/telegram', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ isEnabled: newEnabled }),
+      })
+      const data = await res.json()
+      if (data.success) {
+        setTelegramSettings((prev) => ({ ...prev, isEnabled: newEnabled }))
+        setTelegramSettingsChanged(false)
+        toast({
+          title: newEnabled ? 'Бот запущен' : 'Бот остановлен',
+          description: newEnabled
+            ? 'Telegram бот теперь принимает сообщения и файлы'
+            : 'Telegram бот приостановлен',
+        })
+      } else {
+        toast({ title: 'Ошибка', description: data.error || 'Не удалось изменить статус бота', variant: 'destructive' })
+      }
+      queryClient.invalidateQueries({ queryKey: ['telegram-settings'] })
+      queryClient.invalidateQueries({ queryKey: ['telegram-bot-health'] })
+    } catch {
+      toast({ title: 'Ошибка', description: 'Не удалось изменить статус бота', variant: 'destructive' })
+    } finally {
+      setTogglingBot(false)
     }
   }
 
@@ -1040,6 +1115,25 @@ export function Settings() {
   const handleResetDb = () => {
     toast({ title: 'База данных сброшена', description: 'Все данные удалены и пересозданы' })
     setResetDbOpen(false)
+  }
+
+  // ── Email Inbox handler ──────────────────────────────────────
+  const handleCheckInbox = async () => {
+    setLoadingInbox(true)
+    setInboxError(null)
+    try {
+      const res = await fetch('/api/email/inbox?limit=10')
+      const data = await res.json()
+      if (!res.ok) {
+        setInboxError(data.error || 'Ошибка проверки почты')
+        return
+      }
+      setInboxEmails(data.emails || [])
+    } catch {
+      setInboxError('Не удалось подключиться к почтовому серверу')
+    } finally {
+      setLoadingInbox(false)
+    }
   }
 
   // ── Render ─────────────────────────────────────────────────
@@ -2291,44 +2385,107 @@ export function Settings() {
         icon={Bot}
         title="Telegram бот"
         description="Настройка бота для приёма Excel и управления через Telegram"
-        accentColor="sky-600"
+        accentColor="orange-600"
         onSave={handleSaveTelegram}
         onReset={handleResetTelegram}
         hasChanges={telegramSettingsChanged}
       >
         <div className="space-y-4">
-          {/* Status indicator */}
-          <div className={`flex items-center gap-2 rounded-lg p-3 ${telegramSettings.botToken ? 'bg-emerald-50 dark:bg-emerald-950/30' : 'bg-amber-50 dark:bg-amber-950/30'}`}>
-            {telegramSettings.botToken ? (
-              <CheckCircle2 className="size-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
-            ) : (
-              <Bot className="size-4 text-amber-600 dark:text-amber-400 shrink-0" />
-            )}
-            <span className="text-sm font-medium">
-              {telegramSettings.botToken ? (telegramSettings.isEnabled ? 'Бот активен' : 'Бот настроен, но выключен') : 'Telegram бот не настроен'}
-            </span>
-            {telegramSettings.botToken && telegramSettings.isEnabled && (
-              <Badge className="ml-auto bg-emerald-600 text-white text-[10px]">Активен</Badge>
-            )}
+          {/* ── 1. Status Card ─────────────────────────────── */}
+          <div className="rounded-lg border bg-muted/30 p-4 space-y-3">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <span className="text-sm font-semibold">Статус бота</span>
+              </div>
+              {/* Overall status indicator dot */}
+              {(() => {
+                const botConnected = !!telegramSettings.botToken
+                const serviceRunning = botServiceHealth?.botRunning === true
+                const serviceAvailable = botServiceHealth != null
+                let dotColor = 'bg-red-500'
+                let statusLabel = 'Не подключён'
+                if (botConnected && serviceRunning) {
+                  dotColor = 'bg-emerald-500'
+                  statusLabel = 'Подключён и работает'
+                } else if (botConnected && serviceAvailable && !serviceRunning) {
+                  dotColor = 'bg-yellow-500'
+                  statusLabel = 'Подключён, сервис остановлен'
+                } else if (!botConnected && serviceAvailable) {
+                  dotColor = 'bg-red-500'
+                  statusLabel = 'Не настроен'
+                }
+                return (
+                  <Badge variant="outline" className="gap-1.5 text-xs">
+                    <span className={`size-2 rounded-full ${dotColor} animate-pulse`} />
+                    {statusLabel}
+                  </Badge>
+                )
+              })()}
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              {/* Bot connection status */}
+              <div className="flex items-center gap-2.5 rounded-md border bg-background p-2.5">
+                {telegramSettings.botToken ? (
+                  <div className="flex size-8 shrink-0 items-center justify-center rounded-md bg-emerald-100 dark:bg-emerald-950/50">
+                    <Wifi className="size-4 text-emerald-600 dark:text-emerald-400" />
+                  </div>
+                ) : (
+                  <div className="flex size-8 shrink-0 items-center justify-center rounded-md bg-red-100 dark:bg-red-950/50">
+                    <WifiOff className="size-4 text-red-600 dark:text-red-400" />
+                  </div>
+                )}
+                <div className="min-w-0">
+                  <p className="text-xs font-medium">Бот API</p>
+                  <p className="text-[11px] text-muted-foreground truncate">
+                    {telegramSettings.botToken ? 'Подключён' : 'Не настроен'}
+                  </p>
+                </div>
+              </div>
+
+              {/* Service status */}
+              <div className="flex items-center gap-2.5 rounded-md border bg-background p-2.5">
+                {botServiceHealth?.botRunning ? (
+                  <div className="flex size-8 shrink-0 items-center justify-center rounded-md bg-emerald-100 dark:bg-emerald-950/50">
+                    <Server className="size-4 text-emerald-600 dark:text-emerald-400" />
+                  </div>
+                ) : botServiceHealth ? (
+                  <div className="flex size-8 shrink-0 items-center justify-center rounded-md bg-yellow-100 dark:bg-yellow-950/50">
+                    <Server className="size-4 text-yellow-600 dark:text-yellow-400" />
+                  </div>
+                ) : (
+                  <div className="flex size-8 shrink-0 items-center justify-center rounded-md bg-red-100 dark:bg-red-950/50">
+                    <Server className="size-4 text-red-600 dark:text-red-400" />
+                  </div>
+                )}
+                <div className="min-w-0">
+                  <p className="text-xs font-medium">Сервис бота</p>
+                  <p className="text-[11px] text-muted-foreground truncate">
+                    {botServiceHealth?.botRunning ? 'Работает' : botServiceHealth ? 'Остановлен' : 'Недоступен'}
+                  </p>
+                </div>
+              </div>
+
+              {/* Bot username / last message */}
+              <div className="flex items-center gap-2.5 rounded-md border bg-background p-2.5">
+                <div className="flex size-8 shrink-0 items-center justify-center rounded-md bg-orange-100 dark:bg-orange-950/50">
+                  <Bot className="size-4 text-orange-600 dark:text-orange-400" />
+                </div>
+                <div className="min-w-0">
+                  <p className="text-xs font-medium">
+                    {botInfo?.username ? `@${botInfo.username}` : 'Бот'}
+                  </p>
+                  <p className="text-[11px] text-muted-foreground truncate">
+                    {telegramData?.lastMessageAt
+                      ? `Посл. сообщение: ${new Date(telegramData.lastMessageAt).toLocaleDateString('ru-RU', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })}`
+                      : 'Нет сообщений'}
+                  </p>
+                </div>
+              </div>
+            </div>
           </div>
 
-          {/* Enable/Disable */}
-          {telegramSettings.botToken && (
-            <div className="flex items-center justify-between gap-4 rounded-lg p-3 hover:bg-muted/50">
-              <div className="space-y-0.5 min-w-0">
-                <Label className="text-sm font-medium cursor-pointer">Включить бота</Label>
-                <p className="text-xs text-muted-foreground">Бот будет принимать сообщения и файлы</p>
-              </div>
-              <Switch
-                checked={telegramSettings.isEnabled}
-                onCheckedChange={(v) => handleTelegramChange('isEnabled', v)}
-                className="data-[state=checked]:bg-sky-500"
-              />
-            </div>
-          )}
-
-          <Separator />
-
+          {/* ── 2. Configuration Form ──────────────────────── */}
           <div className="space-y-2">
             <Label className="text-sm font-medium flex items-center gap-1">
               <Key className="h-3.5 w-3.5" />
@@ -2373,6 +2530,85 @@ export function Settings() {
             </div>
           </div>
 
+          <Separator />
+
+          {/* ── 3. Enable/Disable Toggle + Start/Stop Button ── */}
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 rounded-lg border p-3">
+            <div className="flex items-center gap-3">
+              <Switch
+                checked={telegramSettings.isEnabled}
+                onCheckedChange={(v) => handleTelegramChange('isEnabled', v)}
+                className="data-[state=checked]:bg-orange-500"
+              />
+              <div className="space-y-0.5 min-w-0">
+                <Label className="text-sm font-medium cursor-pointer">
+                  {telegramSettings.isEnabled ? 'Бот включён' : 'Бот выключен'}
+                </Label>
+                <p className="text-xs text-muted-foreground">
+                  {telegramSettings.isEnabled ? 'Принимает сообщения и файлы' : 'Бот не обрабатывает запросы'}
+                </p>
+              </div>
+            </div>
+            <Button
+              size="sm"
+              variant={telegramSettings.isEnabled ? 'destructive' : 'default'}
+              onClick={handleToggleBot}
+              disabled={togglingBot || !telegramSettings.botToken}
+              className="gap-1.5 min-w-[130px]"
+            >
+              {togglingBot ? (
+                <Loader2 className="h-3.5 w-3.5 animate-spin" />
+              ) : telegramSettings.isEnabled ? (
+                <Square className="h-3.5 w-3.5" />
+              ) : (
+                <Play className="h-3.5 w-3.5" />
+              )}
+              {telegramSettings.isEnabled ? 'Остановить бота' : 'Запустить бота'}
+            </Button>
+          </div>
+
+          {/* ── 4. Commands Reference (Collapsible) ────────── */}
+          <Collapsible open={commandsOpen} onOpenChange={setCommandsOpen}>
+            <CollapsibleTrigger asChild>
+              <Button variant="ghost" size="sm" className="w-full justify-between gap-2 text-muted-foreground hover:text-foreground">
+                <span className="flex items-center gap-1.5">
+                  <Terminal className="h-3.5 w-3.5" />
+                  Команды бота
+                </span>
+                <ChevronDown className={`h-4 w-4 transition-transform ${commandsOpen ? 'rotate-180' : ''}`} />
+              </Button>
+            </CollapsibleTrigger>
+            <CollapsibleContent>
+              <div className="rounded-lg border bg-muted/30 p-3 space-y-2 mt-1">
+                <div className="space-y-1.5">
+                  {[
+                    { cmd: '/start', desc: 'Начать работу с ботом' },
+                    { cmd: '/help', desc: 'Список команд' },
+                    { cmd: '/status', desc: 'Статус закупок' },
+                    { cmd: '/settings', desc: 'Настройки бота' },
+                  ].map((item) => (
+                    <div key={item.cmd} className="flex items-center gap-2 text-sm">
+                      <code className="rounded bg-orange-100 dark:bg-orange-950/40 px-1.5 py-0.5 text-orange-700 dark:text-orange-300 text-xs font-mono">
+                        {item.cmd}
+                      </code>
+                      <span className="text-muted-foreground">—</span>
+                      <span>{item.desc}</span>
+                    </div>
+                  ))}
+                </div>
+                <Separator />
+                <div className="flex items-start gap-2 text-xs text-muted-foreground">
+                  <FileSpreadsheet className="size-3.5 shrink-0 mt-0.5 text-orange-500" />
+                  <span>
+                    Отправьте Excel файл (.xlsx) боту для автоматического создания проекта.
+                    Бот обработает файл и создаст позиции закупки.
+                  </span>
+                </div>
+              </div>
+            </CollapsibleContent>
+          </Collapsible>
+
+          {/* ── 5. Test Connection Button ──────────────────── */}
           <div className="flex justify-end">
             <Button
               variant="outline"
@@ -2382,7 +2618,7 @@ export function Settings() {
               className="gap-1.5"
             >
               {testingTelegram ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Bot className="h-3.5 w-3.5" />}
-              Тест бота
+              Тест подключения
             </Button>
           </div>
 
@@ -2510,6 +2746,159 @@ export function Settings() {
             </AlertDialogFooter>
           </AlertDialogContent>
         </AlertDialog>
+      </SectionCard>
+
+      {/* Email Inbox Section */}
+      <SectionCard
+        icon={MailOpen}
+        title="Входящие письма"
+        description="Проверьте входящую почту через IMAP"
+        accentColor="teal-600"
+      >
+        <div className="space-y-4">
+          <div className="flex items-center gap-3">
+            <Button
+              onClick={handleCheckInbox}
+              disabled={loadingInbox}
+              className="gap-2 bg-teal-600 hover:bg-teal-700 text-white"
+            >
+              {loadingInbox ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <MailOpen className="h-4 w-4" />
+              )}
+              {loadingInbox ? 'Загрузка...' : 'Проверить почту'}
+            </Button>
+            {inboxEmails.length > 0 && (
+              <span className="text-sm text-muted-foreground">
+                {inboxEmails.length} {inboxEmails.length === 1 ? 'письмо' : inboxEmails.length < 5 ? 'письма' : 'писем'}
+              </span>
+            )}
+          </div>
+
+          {inboxError && (
+            <motion.div
+              initial={{ opacity: 0, y: -8 }}
+              animate={{ opacity: 1, y: 0 }}
+            >
+              <div className="rounded-lg border border-red-200 dark:border-red-800 bg-red-50 dark:bg-red-950/20 p-4">
+                <div className="flex items-center gap-2">
+                  <CircleX className="h-4 w-4 text-red-600 dark:text-red-400 shrink-0" />
+                  <p className="text-sm text-red-700 dark:text-red-400">{inboxError}</p>
+                </div>
+                {inboxError.toLowerCase().includes('imap') && (
+                  <p className="text-xs text-red-600/70 dark:text-red-400/60 mt-1 ml-6">
+                    Проверьте настройки IMAP выше и убедитесь, что приём почты включён.
+                  </p>
+                )}
+              </div>
+            </motion.div>
+          )}
+
+          {loadingInbox && inboxEmails.length === 0 && (
+            <div className="space-y-2">
+              {[1, 2, 3].map((i) => (
+                <div key={i} className="flex items-center gap-3 p-3 rounded-lg border">
+                  <div className="h-8 w-8 rounded-full bg-muted animate-pulse" />
+                  <div className="flex-1 space-y-1.5">
+                    <div className="h-3 w-3/4 rounded bg-muted animate-pulse" />
+                    <div className="h-2.5 w-1/2 rounded bg-muted animate-pulse" />
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {!loadingInbox && !inboxError && inboxEmails.length === 0 && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              className="text-center py-8"
+            >
+              <MailOpen className="h-10 w-10 text-muted-foreground/30 mx-auto mb-2" />
+              <p className="text-sm text-muted-foreground">Нет писем</p>
+              <p className="text-xs text-muted-foreground/60 mt-1">Нажмите «Проверить почту» для загрузки входящих</p>
+            </motion.div>
+          )}
+
+          {inboxEmails.length > 0 && (
+            <div className="space-y-2 max-h-96 overflow-y-auto custom-scrollbar">
+              {inboxEmails.map((email) => (
+                <motion.div
+                  key={email.uid}
+                  initial={{ opacity: 0, y: 8 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.2 }}
+                >
+                  <div
+                    className={`rounded-lg border p-3 cursor-pointer transition-all duration-200 hover:shadow-sm ${
+                      !email.isRead
+                        ? 'bg-teal-50/50 dark:bg-teal-950/10 border-teal-200 dark:border-teal-800'
+                        : 'hover:bg-muted/50'
+                    }`}
+                    onClick={() => setExpandedEmailUid(expandedEmailUid === email.uid ? null : email.uid)}
+                  >
+                    <div className="flex items-start gap-3">
+                      <div className={`mt-0.5 h-2.5 w-2.5 rounded-full shrink-0 ${
+                        !email.isRead ? 'bg-teal-500' : 'bg-transparent border border-muted-foreground/30'
+                      }`} />
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center justify-between gap-2">
+                          <p className={`text-sm truncate ${!email.isRead ? 'font-semibold' : 'font-medium'}`}>
+                            {email.subject || '(Без темы)'}
+                          </p>
+                          <div className="flex items-center gap-1.5 shrink-0">
+                            {email.hasAttachments && (
+                              <Badge variant="outline" className="text-[10px] h-4 px-1.5 gap-0.5">
+                                📎
+                              </Badge>
+                            )}
+                            <Badge variant={email.isRead ? 'outline' : 'secondary'} className="text-[10px] h-4 px-1.5">
+                              {email.isRead ? 'Прочитано' : 'Новое'}
+                            </Badge>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-2 mt-0.5">
+                          <p className="text-xs text-muted-foreground truncate">От: {email.from}</p>
+                        </div>
+                        <p className="text-[10px] text-muted-foreground/60 mt-0.5">
+                          {email.date ? new Date(email.date).toLocaleDateString('ru-RU', {
+                            day: '2-digit',
+                            month: '2-digit',
+                            year: '2-digit',
+                            hour: '2-digit',
+                            minute: '2-digit',
+                          }) : '—'}
+                        </p>
+                      </div>
+                    </div>
+
+                    {expandedEmailUid === email.uid && (
+                      <motion.div
+                        initial={{ height: 0, opacity: 0 }}
+                        animate={{ height: 'auto', opacity: 1 }}
+                        exit={{ height: 0, opacity: 0 }}
+                        transition={{ duration: 0.2 }}
+                        className="mt-3 pt-3 border-t"
+                      >
+                        <div className="space-y-2">
+                          <div className="flex items-center gap-4 text-xs text-muted-foreground">
+                            <span>Кому: {email.to}</span>
+                          </div>
+                          <div className="bg-muted/30 rounded-lg p-3 max-h-60 overflow-y-auto custom-scrollbar">
+                            <pre className="text-xs whitespace-pre-wrap font-sans break-words">
+                              {email.body || '(Пустое тело письма)'}
+                            </pre>
+                          </div>
+                        </div>
+                      </motion.div>
+                    )}
+                  </div>
+                </motion.div>
+              ))}
+            </div>
+          )}
+        </div>
       </SectionCard>
 
       {/* About Section */}

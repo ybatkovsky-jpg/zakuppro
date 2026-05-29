@@ -1,0 +1,11 @@
+{
+  "name": "promebel-telegram-bot",
+  "version": "1.0.0",
+  "description": "Telegram Bot mini-service for ПРОМЕБЕЛЬ procurement app",
+  "scripts": {
+    "dev": "bun --hot index.ts"
+  },
+  "dependencies": {
+    "grammy": "^1.35.0"
+  }
+}

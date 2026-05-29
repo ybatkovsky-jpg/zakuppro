@@ -452,6 +452,26 @@ export function Requests() {
     return result
   }, [requests, searchQuery, projectFilter])
 
+  // ── Send email mutation ───────────────────────────────────
+
+  const sendEmailMutation = useMutation({
+    mutationFn: async (requestId: string) => {
+      const res = await fetch(`/api/requests/${requestId}/send-email`, { method: 'POST' })
+      if (!res.ok) {
+        const err = await res.json()
+        throw new Error(err.error || 'Ошибка отправки')
+      }
+      return res.json()
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['requests'] })
+      toast({ title: 'Письмо отправлено', description: 'Запрос отправлен поставщику по email' })
+    },
+    onError: (error: Error) => {
+      toast({ title: 'Ошибка отправки', description: error.message, variant: 'destructive' })
+    },
+  })
+
   // ── Mutations ──────────────────────────────────────────────
 
   const createMutation = useMutation({
@@ -932,16 +952,31 @@ export function Requests() {
                             </Tooltip>
                           )}
                           {req.status === 'draft' && (
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              onClick={() => handleMarkSent(req.id)}
-                              disabled={updateMutation.isPending}
-                              className="h-7 text-xs"
-                            >
-                              <Send className="mr-1 h-3 w-3" />
-                              Отправить
-                            </Button>
+                            <>
+                              <Button
+                                size="sm"
+                                onClick={() => sendEmailMutation.mutate(req.id)}
+                                disabled={sendEmailMutation.isPending}
+                                className="h-7 text-xs bg-emerald-600 hover:bg-emerald-700 text-white"
+                              >
+                                {sendEmailMutation.isPending ? (
+                                  <Loader2 className="mr-1 h-3 w-3 animate-spin" />
+                                ) : (
+                                  <Send className="mr-1 h-3 w-3" />
+                                )}
+                                Отправить по email
+                              </Button>
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => handleMarkSent(req.id)}
+                                disabled={updateMutation.isPending}
+                                className="h-7 text-xs"
+                              >
+                                <Send className="mr-1 h-3 w-3" />
+                                Отправить
+                              </Button>
+                            </>
                           )}
                           {(req.status === 'sent' || req.status === 'partial') && (
                             <Button

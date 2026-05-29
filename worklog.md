@@ -1,5 +1,71 @@
 # ПРОМЕБЕЛЬ — Project Worklog
 
+---
+Task ID: 7
+Agent: Telegram Settings Enhancement Agent
+Task: Update Settings page with Telegram bot status
+
+Work Log:
+- Read worklog.md and existing settings.tsx component (Telegram section at lines 2289-2397)
+- Read telegram-bot mini-service (port 3003) — has health check at GET / returning { status, service, port, botRunning }
+- Read /api/settings/telegram route — GET returns masked token, PUT saves settings, POST tests connection
+- Updated /api/settings/telegram POST handler to support start/stop bot: when body contains `{ isEnabled: true/false }`, it updates the isEnabled field instead of testing connection
+- Added new imports: Play, Square, Terminal, FileSpreadsheet, Wifi, WifiOff, Collapsible/CollapsibleTrigger/CollapsibleContent
+- Added new state: togglingBot, commandsOpen, botInfo
+- Added botServiceHealth query — fetches from `/?XTransformPort=3003` every 15 seconds
+- Added handleToggleBot handler — POSTs { isEnabled } to /api/settings/telegram, invalidates queries
+- Updated handleTestTelegram — now captures botInfo from test response and invalidates telegram-settings query
+- Replaced entire Telegram section JSX with enhanced 5-part layout:
+  1. Status Card — shows bot API connection, service status, bot username/last message with colored indicator dots (green/yellow/red)
+  2. Configuration Form — bot token with show/hide, webhook URL, chat ID
+  3. Enable/Disable Toggle + Start/Stop Button — switch + Play/Square button with loading state
+  4. Commands Reference — collapsible section with /start, /help, /status, /settings commands and Excel file instructions
+  5. Test Connection Button — existing test functionality
+- Changed accentColor from sky-600 to orange-600
+- All text in Russian
+- Lint: clean pass
+- Telegram bot service confirmed running on port 3003
+
+Stage Summary:
+- Enhanced API: POST /api/settings/telegram now supports `{ isEnabled: true/false }` for start/stop
+- Enhanced component: Telegram section in settings.tsx completely restructured with:
+  - Status Card with 3-column grid (Bot API, Service, Bot info) and color-coded dots
+  - Start/Stop Bot button with Play/Square icons and loading state
+  - Collapsible Commands Reference with /start, /help, /status, /settings
+  - Bot service health check (refetches every 15 seconds via `?XTransformPort=3003`)
+  - accentColor changed to orange-600
+
+Files modified:
+- `/home/z/my-project/src/app/api/settings/telegram/route.ts` — POST handler now supports start/stop
+- `/home/z/my-project/src/components/app/settings.tsx` — Telegram section enhanced
+
+---
+Task ID: 4-a
+Agent: Email API Agent
+Task: Add SMTP email sending + IMAP inbox reading API endpoints
+
+Work Log:
+- Read worklog.md and existing codebase — app has EmailSettings, EmailLog, PurchaseRequest models; nodemailer/imapflow already installed
+- Created `/api/email/send/route.ts` — POST endpoint for sending emails via configured SMTP
+- Created `/api/email/inbox/route.ts` — GET endpoint for reading IMAP inbox with filters
+- Created `/api/requests/[id]/send-email/route.ts` — POST endpoint for sending purchase request emails to suppliers
+- All endpoints use real SMTP/IMAP settings from DB, handle masked passwords, log to EmailLog
+- Comprehensive Russian error messages for all failure scenarios
+- Always clean up connections (transport.close(), client.logout()) in finally blocks
+- Ran `bun run lint` — clean pass, no errors
+- Tested all 3 endpoints via curl — proper error responses for unconfigured/missing data
+
+Stage Summary:
+- New API endpoint: `POST /api/email/send` — Sends emails via SMTP with CC/BCC/replyTo support, signature appending, EmailLog logging
+- New API endpoint: `GET /api/email/inbox` — Reads IMAP inbox with limit/unseen/since filters, attachment detection, EmailLog deduplication
+- New API endpoint: `POST /api/requests/[id]/send-email` — Sends purchase request emails with HTML items table, auto-updates status to 'sent'
+- All error messages in Russian, connections always cleaned up, masked passwords rejected
+
+Files created:
+- `/home/z/my-project/src/app/api/email/send/route.ts`
+- `/home/z/my-project/src/app/api/email/inbox/route.ts`
+- `/home/z/my-project/src/app/api/requests/[id]/send-email/route.ts`
+
 ## Session 11: Real SMTP/IMAP/AI Connection Tests, Email Presets, Bug Fixes
 
 ### Current Project Status Assessment
@@ -2531,3 +2597,208 @@ Files modified:
 - `/home/z/my-project/src/components/app/settings.tsx` — Added presets, connection status badges, handlers
 - `/home/z/my-project/prisma/schema.prisma` — Added test result fields to EmailSettings
 - `/home/z/my-project/src/app/api/settings/email/route.ts` — Save test results to DB on SMTP/IMAP test
+
+---
+Task ID: 3
+Agent: Telegram Bot Agent
+Task: Build Telegram Bot mini-service
+
+Work Log:
+- Read worklog.md and existing API routes to understand project structure
+- Modified `/api/settings/telegram` GET handler to support `?raw=true` parameter for returning unmasked bot token (needed by bot service)
+- Updated `/api/projects` POST handler to accept `fileData` (base64) and `fileName` fields for Excel file upload from bot
+- Created mini-service directory at `/home/z/my-project/mini-services/telegram-bot/` with package.json, tsconfig.json, index.ts, start.sh
+- Implemented full Telegram Bot using grammy library with long polling
+- Bot commands: /start (welcome), /help (commands list), /status (procurement stats), /settings (bot config)
+- File upload: Accepts .xlsx/.xls documents, downloads via Telegram API, forwards to main app for parsing
+- Text messages: Searches suppliers by name, shows matching supplier details
+- HTTP health check server on port 3003 using Node.js http module
+- Token auto-retry every 30 seconds when not configured
+- All user-facing messages in Russian
+- Installed grammy v1.43.0, started service using start-stop-daemon for persistence
+- Updated start-dev.sh to include telegram-bot service startup
+- Lint: Clean pass
+- Health check confirmed: GET / returns {status:"ok", service:"telegram-bot", port:3003, botRunning:false}
+
+Stage Summary:
+- New mini-service: `/home/z/my-project/mini-services/telegram-bot/` — Telegram Bot on port 3003
+  - Commands: /start, /help, /status, /settings
+  - Excel file upload → project creation
+  - Supplier search via text messages
+  - Health check endpoints: GET / and GET /status
+  - Auto-retry token fetch every 30s
+- Modified: `/api/settings/telegram` — Added ?raw=true for bot token retrieval
+- Modified: `/api/projects` — Added fileData/fileName support for Excel upload from bot
+- Modified: `start-dev.sh` — Added telegram-bot service auto-start
+
+---
+Task ID: 6
+Agent: UI Email Enhancement Agent
+Task: Add email send button + inbox viewer to UI
+
+Work Log:
+- Read worklog.md for project context — app has backend APIs for email sending (POST /api/email/send, GET /api/email/inbox, POST /api/requests/[id]/send-email)
+- Read requests.tsx to find draft request action buttons area (around line 934)
+- Read settings.tsx to understand structure and find insertion point (before About Section)
+- Added sendEmailMutation to requests.tsx component — calls POST /api/requests/[id]/send-email with success/error toasts
+- Added "Отправить по email" button (emerald bg, Send icon, Loader2 spinner) next to existing "Отправить" button for draft requests
+- Kept existing "Отправить" button as secondary option (just changes status without sending email)
+- Added inbox state variables to settings.tsx (inboxEmails, loadingInbox, inboxError, expandedEmailUid)
+- Added handleCheckInbox handler — fetches GET /api/email/inbox?limit=10 with error handling
+- Added "Входящие письма" SectionCard with MailOpen icon and teal-600 accent color to settings page
+- Inbox section features: "Проверить почту" button, loading skeleton, error display with IMAP hint, empty state, email list with read/unread indicators, expandable email body, attachment badges, framer-motion animations
+- Added AnimatePresence import to settings.tsx for framer-motion animations
+- Fixed JSX syntax error (missing closing `}` in fragment conditional)
+- Ran `bun run lint` — clean pass
+
+Stage Summary:
+- Enhanced: `/src/components/app/requests.tsx` — Added "Отправить по email" button for draft requests with sendEmailMutation
+- Enhanced: `/src/components/app/settings.tsx` — Added "Входящие письма" inbox viewer section with IMAP email checking
+- All text in Russian, uses existing shadcn/ui components, framer-motion animations
+- Lint clean pass, dev server running without errors
+
+## Session 12: Telegram Bot, Email Sending, IMAP Inbox, UI Enhancements
+
+### Current Project Status Assessment
+The app has gone through 11+ development sessions. All Priority 1 (Settings) features were already implemented in Session 11. This session focused on Priority 2 (Telegram Bot) and adding real email sending/reading capabilities.
+
+### Completed Work
+
+#### 1. Telegram Bot Mini-Service (Task 3)
+- Created `/home/z/my-project/mini-services/telegram-bot/` as independent Bun project on port 3003
+- Uses `grammy` library for Telegram Bot API integration
+- Commands: `/start`, `/help`, `/status`, `/settings` (all in Russian)
+- Excel file upload handling: downloads .xlsx/.xls from Telegram → forwards to main app API for parsing
+- Supplier search: text messages search suppliers by name/contact person
+- Health check endpoint: `GET /` returns `{ status: "ok", service: "telegram-bot", port: 3003 }`
+- Auto-retry: if no bot token configured, retries every 30 seconds
+- Updated `start-dev.sh` to auto-start telegram-bot service
+
+#### 2. SMTP Email Sending API (Task 4-a)
+- Created `POST /api/email/send` — Send actual emails via SMTP using Nodemailer
+  - Validates required fields (to, subject, body)
+  - Fetches SMTP settings from DB, creates transport with TLS/SSL support
+  - Appends email signature if configured
+  - Logs sent emails to EmailLog model (direction: 'outgoing')
+  - Comprehensive Russian error messages for auth, DNS, timeout, TLS failures
+
+#### 3. IMAP Inbox Reading API (Task 4-a)
+- Created `GET /api/email/inbox` — Read emails from IMAP inbox using ImapFlow
+  - Query params: limit (1-100), unseen (boolean), since (ISO date)
+  - Returns emails with uid, from, to, subject, date, body, isRead, hasAttachments
+  - Detects attachments via recursive bodyStructure parsing
+  - Deduplicates logging to EmailLog
+  - Comprehensive error handling with Russian messages
+
+#### 4. Purchase Request Email Sending (Task 4-a)
+- Created `POST /api/requests/[id]/send-email` — Send purchase request to supplier
+  - Fetches request with project, supplier, items
+  - Builds Russian HTML email template with items table
+  - Updates request status to 'sent', sets sentAt
+  - Logs to EmailLog
+
+#### 5. Requests Page — "Отправить по email" Button (Task 6)
+- Added `sendEmailMutation` that calls `POST /api/requests/[id]/send-email`
+- Draft requests now show two buttons:
+  - "Отправить по email" (emerald green) — sends actual email via SMTP AND updates status
+  - "Отправить" (outline) — existing button that just changes status
+- Loading spinner while email is being sent
+- Success/error toasts in Russian
+
+#### 6. Settings Page — Email Inbox Viewer (Task 6)
+- New SectionCard "Входящие письма" with MailOpen icon, teal-600 accent
+- "Проверить почту" button fetches `GET /api/email/inbox?limit=10`
+- Loading skeleton, error display, empty state
+- Email list with: read/unread dot, subject, from, date, expandable body
+- Unread emails have subtle teal highlight
+- Scrollable list with max-h-96 and custom scrollbar
+
+#### 7. Settings Page — Telegram Bot Enhancement (Task 7)
+- Status Card: green/yellow/red indicator based on connection + service status
+  - Polls `/?XTransformPort=3003` every 15 seconds for service health
+  - Shows bot username, last message timestamp
+- Configuration Form: bot token (show/hide), webhook URL, chat ID
+- Enable/Disable Toggle + Start/Stop button with loading state
+- Commands Reference: collapsible section showing /start, /help, /status, /settings
+- Excel upload instructions
+- Changed accentColor to orange-600 for Telegram section
+- Updated backend POST handler to support start/stop bot
+
+### Verification
+- `bun run lint`: Clean pass ✅
+- Dev server: Running on port 3000 ✅
+- Telegram bot service: Running on port 3003, health check responding ✅
+- All API endpoints returning proper responses ✅
+
+### Unresolved Issues / Next Phase Recommendations
+- Telegram Bot needs actual token to test end-to-end flow
+- Could add Excel AI parsing in Telegram Bot (group by supplier using AI)
+- Could add IMAP auto-check on schedule (cron job to check for new emails)
+- Could add email template editor with variable substitution
+- Could add WebSocket for real-time notifications
+- Could add user authentication via NextAuth.js
+- AI assistant could use saved AI settings instead of hardcoded z-ai SDK
+
+---
+Task ID: 3
+Agent: Main Agent (delegated to Telegram Bot Agent)
+Task: Build Telegram Bot mini-service
+
+Work Log:
+- Created mini-services/telegram-bot/ with package.json, tsconfig.json, index.ts
+- Installed grammy library for Telegram Bot API
+- Implemented /start, /help, /status, /settings commands in Russian
+- Added Excel file upload handling (downloads from Telegram → forwards to API)
+- Added supplier search via text messages
+- Added health check HTTP server on port 3003
+- Updated start-dev.sh to auto-start service
+
+Stage Summary:
+- Telegram Bot mini-service running on port 3003
+- Health check: {"status":"ok","service":"telegram-bot","port":3003,"botRunning":false}
+- Bot waiting for token configuration (set via Settings page)
+
+---
+Task ID: 4-a
+Agent: Main Agent (delegated to Email API Agent)
+Task: Add SMTP email sending + IMAP inbox reading API endpoints
+
+Work Log:
+- Created POST /api/email/send — real email sending via SMTP
+- Created GET /api/email/inbox — IMAP inbox reading
+- Created POST /api/requests/[id]/send-email — purchase request email sending
+- All endpoints with comprehensive Russian error handling
+
+Stage Summary:
+- Three new API endpoints for email operations
+- Full SMTP sending and IMAP reading capability
+- Purchase requests can now be emailed to suppliers
+
+---
+Task ID: 6
+Agent: Main Agent (delegated to UI Email Enhancement Agent)
+Task: Add email send button + inbox viewer to UI
+
+Work Log:
+- Added "Отправить по email" button to Requests page
+- Added email inbox viewer to Settings page
+- All in Russian with proper loading/error states
+
+Stage Summary:
+- Requests page now has email sending capability
+- Settings page has email inbox viewer
+
+---
+Task ID: 7
+Agent: Main Agent (delegated to Telegram Settings Enhancement Agent)
+Task: Update Settings page with Telegram bot status
+
+Work Log:
+- Added Telegram bot status card with connection + service indicators
+- Added bot service health polling
+- Added start/stop bot button
+- Added commands reference section
+- Enhanced configuration form
+
+Stage Summary:
+- Settings Telegram section fully enhanced with status, controls, and reference

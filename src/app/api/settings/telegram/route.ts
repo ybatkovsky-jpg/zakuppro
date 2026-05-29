@@ -2,19 +2,23 @@ import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 
 // GET /api/settings/telegram — получить настройки Telegram бота
-export async function GET() {
+// ?raw=true — вернуть реальный токен (для внутреннего использования ботом)
+export async function GET(request: NextRequest) {
   try {
+    const { searchParams } = new URL(request.url)
+    const raw = searchParams.get('raw') === 'true'
+
     const settings = await db.telegramSettings.findFirst()
     if (!settings) {
       const created = await db.telegramSettings.create({ data: {} })
       return NextResponse.json({
         ...created,
-        botToken: created.botToken ? '••••••••' : '',
+        botToken: raw ? created.botToken : (created.botToken ? '••••••••' : ''),
       })
     }
     return NextResponse.json({
       ...settings,
-      botToken: settings.botToken ? '••••••••' : '',
+      botToken: raw ? settings.botToken : (settings.botToken ? '••••••••' : ''),
     })
   } catch (error) {
     console.error('Error fetching telegram settings:', error)
@@ -65,11 +69,52 @@ export async function PUT(request: NextRequest) {
   }
 }
 
-// POST /api/settings/telegram — тест подключения к Telegram Bot API
-export async function POST() {
+// POST /api/settings/telegram — тест подключения к Telegram Bot API или включение/выключение бота
+// Body: { action: 'test' } — тест подключения (по умолчанию)
+// Body: { isEnabled: true/false } — включить/выключить бота
+export async function POST(request: NextRequest) {
   try {
+    let body: Record<string, unknown> = {}
+    try {
+      body = await request.json()
+    } catch {
+      // Пустое тело — тест подключения
+    }
+
     const settings = await db.telegramSettings.findFirst()
 
+    // ── Включение/выключение бота ──────────────────────────────
+    if (typeof body.isEnabled === 'boolean') {
+      const isEnabled = body.isEnabled as boolean
+
+      if (!settings) {
+        const created = await db.telegramSettings.create({
+          data: { isEnabled, isConfigured: false },
+        })
+        return NextResponse.json({
+          success: true,
+          isEnabled,
+          message: isEnabled ? 'Бот включён' : 'Бот выключен',
+          botToken: created.botToken ? '••••••••' : '',
+        })
+      }
+
+      await db.telegramSettings.update({
+        where: { id: settings.id },
+        data: {
+          isEnabled,
+          isConfigured: !!settings.botToken,
+        },
+      })
+
+      return NextResponse.json({
+        success: true,
+        isEnabled,
+        message: isEnabled ? 'Бот включён' : 'Бот выключен',
+      })
+    }
+
+    // ── Тест подключения (по умолчанию) ───────────────────────
     if (!settings || !settings.botToken) {
       return NextResponse.json({ success: false, error: 'Укажите токен бота' })
     }
