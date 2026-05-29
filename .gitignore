@@ -52,3 +52,23 @@ prompt
 server.log
 # Skills directory
 /skills/
+
+# Database (user-specific data)
+db/*.db
+db/*.db-journal
+
+# Uploads & downloads
+/upload/
+/download/
+
+# Agent context
+/agent-ctx/
+
+# Screenshots
+*.png
+!public/logo.png
+!public/logo.svg
+
+# Mini services runtime
+mini-services/*/node_modules/
+mini-services/*/bun.lock
