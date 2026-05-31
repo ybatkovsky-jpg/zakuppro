@@ -1,4 +1,4 @@
-# GSD context snapshot (2026-05-31T22:44:03.525Z)
+# GSD context snapshot (2026-05-31T22:48:00.485Z)
 
 ## Active context
-Active: M001 / S01 / T04 - Test migration apply/rollback
+Active: M001 / S01 / T05 - Add indexes for performance

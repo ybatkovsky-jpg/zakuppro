@@ -15,4 +15,4 @@
 - None
 
 ## Next Action
-Execute T04: Test migration apply/rollback in slice S01.
+Execute T05: Add indexes for performance in slice S01.

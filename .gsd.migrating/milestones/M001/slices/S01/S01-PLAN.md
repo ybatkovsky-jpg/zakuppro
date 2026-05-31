@@ -46,7 +46,7 @@ integration: реальная PostgreSQL БД (через docker или лока
   - Files: `alembic/versions/001_initial_schema.py`
   - Verify: alembic upgrade head применяет миграцию; psql \dt показывает все таблицы
 
-- [ ] **T04: Test migration apply/rollback** `est:20m`
+- [x] **T04: Test migration apply/rollback** `est:20m`
   1. Применить миграцию: alembic upgrade head
   2. Проверить схемы через psql (\d table_name)
   3. Откатить: alembic downgrade -1

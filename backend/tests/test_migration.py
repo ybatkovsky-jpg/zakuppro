@@ -146,6 +146,32 @@ class TestMigrationStructure:
         assert "ix_project_items_project_id" in content
         assert "ix_purchase_orders_project_id" in content
 
+    def test_performance_indexes_migration_exists(self):
+        """Test that the performance indexes migration file exists."""
+        migration_path = os.path.join(
+            BACKEND_DIR, "alembic", "versions", "e6b0df437c13_add_performance_indexes.py"
+        )
+        assert os.path.exists(migration_path), "Performance indexes migration file not found"
+
+    def test_performance_indexes_migration_has_project_items_status_index(self):
+        """Test that performance indexes migration creates project_items.status index."""
+        migration_path = os.path.join(
+            BACKEND_DIR, "alembic", "versions", "e6b0df437c13_add_performance_indexes.py"
+        )
+        with open(migration_path, "r") as f:
+            content = f.read()
+
+        # Check for project_items.status index creation
+        assert "ix_project_items_status" in content
+        assert "'project_items'" in content
+        assert "['status']" in content
+
+        # Verify revision chain
+        assert "revision: str = 'e6b0df437c13'" in content
+        assert "down_revision: Union[str, None] = 'd6d07b9ba359'" in content
+        assert "def upgrade() -> None:" in content
+        assert "def downgrade() -> None:" in content
+
     def test_downgrade_drops_in_reverse_order(self):
         """Test that downgrade drops tables in correct order (respecting FKs)."""
         migration_path = os.path.join(
@@ -378,14 +404,17 @@ class TestMigrationWithTestData:
 
 
 def test_alembic_history():
-    """Test that alembic history shows our migration."""
+    """Test that alembic history shows our migrations."""
     config = get_alembic_config()
     script = ScriptDirectory.from_config(config)
 
     revisions = list(script.walk_revisions())
 
-    assert len(revisions) >= 1, "At least one revision should exist"
-    assert revisions[0].revision == "d6d07b9ba359"
+    assert len(revisions) >= 2, f"At least two revisions should exist, found {len(revisions)}"
+    # Revisions are walked in reverse order (newest first)
+    revision_ids = [r.revision for r in revisions]
+    assert "d6d07b9ba359" in revision_ids
+    assert "e6b0df437c13" in revision_ids
 
 
 if __name__ == "__main__":
