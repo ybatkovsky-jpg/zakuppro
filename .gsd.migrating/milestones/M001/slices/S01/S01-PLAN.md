@@ -33,12 +33,12 @@ integration: реальная PostgreSQL БД (через docker или лока
   - Files: `alembic.ini`, `alembic/env.py`, `.env`
   - Verify: alembic current - показывает revision; alembic history работает
 
-- [ ] **T02: Create Base SQLAlchemy models** `est:30m`
+- [x] **T02: Create Base SQLAlchemy models** `est:30m`
   Создать базовые SQLAlchemy модели для всех таблиц из SPEC.md. Пока без relationships - только структура таблиц.
   - Files: `models/base.py`, `models/__init__.py`
   - Verify: Python импортирует модели без ошибок; структура совпадает с SPEC
 
-- [ ] **T03: Create first Alembic migration** `est:25m`
+- [x] **T03: Create first Alembic migration** `est:25m`
   1. Создать миграцию: alembic revision --autogenerate -m "Initial schema"
   2. Проверить сгенерированный SQL
   3. При необходимости вручную добавить индексы (например, на project.status, supplier.email)

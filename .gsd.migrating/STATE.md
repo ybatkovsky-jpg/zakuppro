@@ -15,4 +15,4 @@
 - None
 
 ## Next Action
-Execute T02: Create Base SQLAlchemy models in slice S01.
+Execute T04: Test migration apply/rollback in slice S01.
