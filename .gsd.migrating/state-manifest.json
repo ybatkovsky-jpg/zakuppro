@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "exported_at": "2026-05-31T14:26:59.939Z",
+  "exported_at": "2026-05-31T22:37:15.187Z",
   "milestones": [
     {
       "id": "M001",
@@ -59,7 +59,7 @@
     {
       "milestone_id": "M001",
       "id": "S01",
-      "title": "PostgreSQL Schema + Alembic Setup",
+      "title": "S01",
       "status": "pending",
       "risk": "high",
       "depends": [],
@@ -156,19 +156,19 @@
       "milestone_id": "M001",
       "slice_id": "S01",
       "id": "T01",
-      "title": "Setup PostgreSQL connection и Alembic",
-      "status": "pending",
-      "one_liner": "",
-      "narrative": "",
-      "verification_result": "",
+      "title": "Installed PostgreSQL dependencies (psycopg2, alembic, sqlalchemy), configured DATABASE_URL in .env, initialized Alembic with proper PostgreSQL configuration in alembic.ini and env.py, created database.py for connection management",
+      "status": "complete",
+      "one_liner": "Installed PostgreSQL dependencies (psycopg2, alembic, sqlalchemy), configured DATABASE_URL in .env, initialized Alembic with proper PostgreSQL configuration in alembic.ini and env.py, created database.py for connection management",
+      "narrative": "## Task T01: Setup PostgreSQL connection и Alembic\n\n### What Happened\n\n1. **Installed Dependencies**: Added core database dependencies to `backend/requirements.txt`:\n   - psycopg2-binary (PostgreSQL adapter)\n   - alembic (database migration tool)\n   - sqlalchemy (ORM)\n   - Additional dependencies for FastAPI, Celery, OpenAI, Telegram Bot\n\n2. **Configured .env**: Updated `.env` in project root with:\n   - `DATABASE_URL=postgresql+psycopg2://postgres:postgres@localhost:5432/zakuppro`\n   - `DATABASE_URL_ASYNC` for async operations\n   - Additional environment variables for Redis, OpenAI, Telegram, SMTP, and security\n\n3. **Initialized Alembic**: Ran `alembic init alembic` which created:\n   - `alembic/` directory structure\n   - `alembic/versions/` for migration files\n   - `alembic.ini` configuration file\n   - `alembic/env.py` environment configuration\n   - `alembic/script.py.mako` migration template\n\n4. **Configured PostgreSQL Connection**:\n   - Updated `alembic.ini` with PostgreSQL URL\n   - Modified `alembic/env.py` to:\n     - Load DATABASE_URL from environment variables\n     - Import Base metadata from database module\n     - Support both online and offline migration modes\n   - Created `database.py` with:\n     - SQLAlchemy engine configuration with pool_pre_ping\n     - SessionLocal for database sessions\n     - Base declarative class for models\n     - get_db() dependency for FastAPI\n\n5. **Created Project Structure**: Added `backend/__init__.py` and `backend/README.md` for proper Python package structure and documentation.\n\n### Files Created/Modified\n\n- `backend/requirements.txt` — Python dependencies including psycopg2-binary, alembic, sqlalchemy\n- `.env` — Updated with DATABASE_URL and other environment variables\n- `backend/alembic.ini` — Alembic configuration with PostgreSQL URL\n- `backend/alembic/env.py` — Modified to load DATABASE_URL from .env and import Base metadata\n- `backend/database.py` — Database connection and session management module\n- `backend/__init__.py` — Package initialization\n- `backend/README.md` — Setup documentation\n- `backend/alembic/versions/` — Directory for migration files (created by alembic init)\n\n### Verification\n\nThe configuration is verified:\n- `alembic history` command works correctly (no errors)\n- `alembic.ini` correctly shows the PostgreSQL URL\n- `env.py` properly loads DATABASE_URL from environment\n- `alembic/versions/` directory exists for migration files\n\nNote: `alembic current` requires a running PostgreSQL server, which is expected. The configuration is complete and ready for database operations.",
+      "verification_result": "- Confirmed alembic history command works (no migrations yet, no errors)\n- Verified alembic.ini contains correct PostgreSQL URL: postgresql+psycopg2://postgres:postgres@localhost:5432/zakuppro\n- Verified env.py imports Base from database.py and loads DATABASE_URL from .env\n- Confirmed alembic/versions/ directory exists for migrations\n- Note: alembic current requires running PostgreSQL server (not running in this environment)",
       "duration": "",
-      "completed_at": null,
+      "completed_at": "2026-05-31T22:37:15.159Z",
       "blocker_discovered": false,
-      "deviations": "",
-      "known_issues": "",
+      "deviations": "None.",
+      "known_issues": "None.",
       "key_files": [],
       "key_decisions": [],
-      "full_summary_md": "",
+      "full_summary_md": "---\nid: T01\nparent: S01\nmilestone: M001\nkey_files: []\nkey_decisions: []\nduration: \nverification_result: passed\ncompleted_at: 2026-05-31T22:37:15.156Z\nblocker_discovered: false\n---\n\n# T01: Installed PostgreSQL dependencies (psycopg2, alembic, sqlalchemy), configured DATABASE_URL in .env, initialized Alembic with proper PostgreSQL configuration in alembic.ini and env.py, created database.py for connection management\n\n**Installed PostgreSQL dependencies (psycopg2, alembic, sqlalchemy), configured DATABASE_URL in .env, initialized Alembic with proper PostgreSQL configuration in alembic.ini and env.py, created database.py for connection management**\n\n## What Happened\n\n## Task T01: Setup PostgreSQL connection и Alembic\n\n### What Happened\n\n1. **Installed Dependencies**: Added core database dependencies to `backend/requirements.txt`:\n   - psycopg2-binary (PostgreSQL adapter)\n   - alembic (database migration tool)\n   - sqlalchemy (ORM)\n   - Additional dependencies for FastAPI, Celery, OpenAI, Telegram Bot\n\n2. **Configured .env**: Updated `.env` in project root with:\n   - `DATABASE_URL=postgresql+psycopg2://postgres:postgres@localhost:5432/zakuppro`\n   - `DATABASE_URL_ASYNC` for async operations\n   - Additional environment variables for Redis, OpenAI, Telegram, SMTP, and security\n\n3. **Initialized Alembic**: Ran `alembic init alembic` which created:\n   - `alembic/` directory structure\n   - `alembic/versions/` for migration files\n   - `alembic.ini` configuration file\n   - `alembic/env.py` environment configuration\n   - `alembic/script.py.mako` migration template\n\n4. **Configured PostgreSQL Connection**:\n   - Updated `alembic.ini` with PostgreSQL URL\n   - Modified `alembic/env.py` to:\n     - Load DATABASE_URL from environment variables\n     - Import Base metadata from database module\n     - Support both online and offline migration modes\n   - Created `database.py` with:\n     - SQLAlchemy engine configuration with pool_pre_ping\n     - SessionLocal for database sessions\n     - Base declarative class for models\n     - get_db() dependency for FastAPI\n\n5. **Created Project Structure**: Added `backend/__init__.py` and `backend/README.md` for proper Python package structure and documentation.\n\n### Files Created/Modified\n\n- `backend/requirements.txt` — Python dependencies including psycopg2-binary, alembic, sqlalchemy\n- `.env` — Updated with DATABASE_URL and other environment variables\n- `backend/alembic.ini` — Alembic configuration with PostgreSQL URL\n- `backend/alembic/env.py` — Modified to load DATABASE_URL from .env and import Base metadata\n- `backend/database.py` — Database connection and session management module\n- `backend/__init__.py` — Package initialization\n- `backend/README.md` — Setup documentation\n- `backend/alembic/versions/` — Directory for migration files (created by alembic init)\n\n### Verification\n\nThe configuration is verified:\n- `alembic history` command works correctly (no errors)\n- `alembic.ini` correctly shows the PostgreSQL URL\n- `env.py` properly loads DATABASE_URL from environment\n- `alembic/versions/` directory exists for migration files\n\nNote: `alembic current` requires a running PostgreSQL server, which is expected. The configuration is complete and ready for database operations.\n\n## Verification\n\n- Confirmed alembic history command works (no migrations yet, no errors)\n- Verified alembic.ini contains correct PostgreSQL URL: postgresql+psycopg2://postgres:postgres@localhost:5432/zakuppro\n- Verified env.py imports Base from database.py and loads DATABASE_URL from .env\n- Confirmed alembic/versions/ directory exists for migrations\n- Note: alembic current requires running PostgreSQL server (not running in this environment)\n\n## Verification Evidence\n\n| # | Command | Exit Code | Verdict | Duration |\n|---|---------|-----------|---------|----------|\n| 1 | `alembic history` | 0 | PASS - Command executed successfully with no errors | 1200ms |\n| 2 | `python -c \"from alembic.config import Config; c = Config('alembic.ini'); print(c.get_main_option('sqlalchemy.url'))\"` | 0 | PASS - alembic.ini configured with PostgreSQL URL | 800ms |\n| 3 | `ls -la alembic/versions/` | 0 | PASS - alembic/versions/ directory exists for migrations | 100ms |\n\n## Deviations\n\nNone.\n\n## Known Issues\n\nNone.\n\n## Files Created/Modified\n\nNone.\n",
       "description": "1. Установить зависимости (psycopg2, alembic, sqlalchemy)\n2. Создать .env с DATABASE_URL\n3. Инициализировать Alembic (alembic init)\n4. Настроить alembic.ini и env.py для PostgreSQL",
       "estimate": "20m",
       "files": [
@@ -354,5 +354,39 @@
     }
   ],
   "decisions": [],
-  "verification_evidence": []
+  "verification_evidence": [
+    {
+      "id": 1,
+      "task_id": "T01",
+      "slice_id": "S01",
+      "milestone_id": "M001",
+      "command": "alembic history",
+      "exit_code": 0,
+      "verdict": "PASS - Command executed successfully with no errors",
+      "duration_ms": 1200,
+      "created_at": "2026-05-31T22:37:15.160Z"
+    },
+    {
+      "id": 2,
+      "task_id": "T01",
+      "slice_id": "S01",
+      "milestone_id": "M001",
+      "command": "python -c \"from alembic.config import Config; c = Config('alembic.ini'); print(c.get_main_option('sqlalchemy.url'))\"",
+      "exit_code": 0,
+      "verdict": "PASS - alembic.ini configured with PostgreSQL URL",
+      "duration_ms": 800,
+      "created_at": "2026-05-31T22:37:15.160Z"
+    },
+    {
+      "id": 3,
+      "task_id": "T01",
+      "slice_id": "S01",
+      "milestone_id": "M001",
+      "command": "ls -la alembic/versions/",
+      "exit_code": 0,
+      "verdict": "PASS - alembic/versions/ directory exists for migrations",
+      "duration_ms": 100,
+      "created_at": "2026-05-31T22:37:15.160Z"
+    }
+  ]
 }

@@ -1,7 +1,7 @@
 # Codebase Map
 
-Generated: 2026-05-31T22:18:39Z | Files: 500 | Described: 0/500
-<!-- gsd:codebase-meta {"generatedAt":"2026-05-31T22:18:39Z","fingerprint":"6063bb875ca5b8ac72e459b8a270893d7ef5431a","fileCount":500,"truncated":true} -->
+Generated: 2026-05-31T22:38:04Z | Files: 500 | Described: 0/500
+<!-- gsd:codebase-meta {"generatedAt":"2026-05-31T22:38:04Z","fingerprint":"b02eb30fd5898d29cbfa6c99b7f114afe2db6564","fileCount":500,"truncated":true} -->
 Note: Truncated to first 500 files. Run with higher --max-files to include all.
 
 ### (root)/
@@ -17,13 +17,49 @@ Note: Truncated to first 500 files. Run with higher --max-files to include all.
 
 ### .gsd.migrating/
 - `.gsd.migrating/CODEBASE.md`
+- `.gsd.migrating/doctor-history.jsonl`
+- `.gsd.migrating/event-log.jsonl`
 - `.gsd.migrating/gsd.db`
 - `.gsd.migrating/gsd.db-shm`
 - `.gsd.migrating/gsd.db-wal`
+- `.gsd.migrating/KNOWLEDGE.md`
+- `.gsd.migrating/metrics.json`
 - `.gsd.migrating/notifications.jsonl`
+- `.gsd.migrating/state-manifest.json`
+- `.gsd.migrating/STATE.md`
+
+### .gsd.migrating/activity/
+- `.gsd.migrating/activity/001-discuss-milestone-M001.jsonl`
+- `.gsd.migrating/activity/002-discuss-milestone-M001.jsonl`
+- `.gsd.migrating/activity/003-discuss-milestone-M001.jsonl`
+
+### .gsd.migrating/audit/
+- `.gsd.migrating/audit/events.jsonl`
+
+### .gsd.migrating/journal/
+- `.gsd.migrating/journal/2026-05-31.jsonl`
+
+### .gsd.migrating/milestones/M001/
+- `.gsd.migrating/milestones/M001/M001-CONTEXT.md`
+- `.gsd.migrating/milestones/M001/M001-ROADMAP.md`
+
+### .gsd.migrating/milestones/M001/slices/S01/
+- `.gsd.migrating/milestones/M001/slices/S01/S01-PLAN.md`
+
+### .gsd.migrating/milestones/M001/slices/S01/tasks/
+- `.gsd.migrating/milestones/M001/slices/S01/tasks/T01-PLAN.md`
+- `.gsd.migrating/milestones/M001/slices/S01/tasks/T02-PLAN.md`
+- `.gsd.migrating/milestones/M001/slices/S01/tasks/T03-PLAN.md`
+- `.gsd.migrating/milestones/M001/slices/S01/tasks/T04-PLAN.md`
+- `.gsd.migrating/milestones/M001/slices/S01/tasks/T05-PLAN.md`
 
 ### .gsd.migrating/runtime/
+- `.gsd.migrating/runtime/uok-parity.jsonl`
+- `.gsd.migrating/runtime/uok-writer-sequence.json`
 - `.gsd.migrating/runtime/write-gate-state.json`
+
+### .gsd.migrating/runtime/units/
+- `.gsd.migrating/runtime/units/discuss-milestone-M001.json`
 
 ### .zscripts/
 - `.zscripts/build.sh`
@@ -36,6 +72,18 @@ Note: Truncated to first 500 files. Run with higher --max-files to include all.
 
 ### agent-ctx/
 - *(24 files: 24 .md)*
+
+### backend/
+- `backend/__init__.py`
+- `backend/alembic.ini`
+- `backend/database.py`
+- `backend/README.md`
+- `backend/requirements.txt`
+
+### backend/alembic/
+- `backend/alembic/env.py`
+- `backend/alembic/README`
+- `backend/alembic/script.py.mako`
 
 ### download/
 - `download/README.md`
@@ -673,9 +721,6 @@ Note: Truncated to first 500 files. Run with higher --max-files to include all.
 - `skills/ui-ux-pro-max/data/react-performance.csv`
 - `skills/ui-ux-pro-max/data/styles.csv`
 - `skills/ui-ux-pro-max/data/typography.csv`
-- `skills/ui-ux-pro-max/data/ui-reasoning.csv`
-- `skills/ui-ux-pro-max/data/ux-guidelines.csv`
-- `skills/ui-ux-pro-max/data/web-interface.csv`
 
 ### skills/ui-ux-pro-max/data/stacks/
 - `skills/ui-ux-pro-max/data/stacks/astro.csv`
@@ -691,58 +736,3 @@ Note: Truncated to first 500 files. Run with higher --max-files to include all.
 - `skills/ui-ux-pro-max/data/stacks/svelte.csv`
 - `skills/ui-ux-pro-max/data/stacks/swiftui.csv`
 - `skills/ui-ux-pro-max/data/stacks/vue.csv`
-
-### skills/ui-ux-pro-max/references/
-- `skills/ui-ux-pro-max/references/upstream-README.md`
-- `skills/ui-ux-pro-max/references/upstream-skill-content.md`
-
-### skills/ui-ux-pro-max/scripts/
-- `skills/ui-ux-pro-max/scripts/__init__.py`
-- `skills/ui-ux-pro-max/scripts/core.py`
-- `skills/ui-ux-pro-max/scripts/design_system.py`
-- `skills/ui-ux-pro-max/scripts/search.py`
-
-### skills/video-generation/
-- `skills/video-generation/LICENSE.txt`
-- `skills/video-generation/SKILL.md`
-
-### skills/video-generation/scripts/
-- `skills/video-generation/scripts/video.ts`
-
-### skills/video-understand/
-- `skills/video-understand/LICENSE.txt`
-- `skills/video-understand/SKILL.md`
-
-### skills/video-understand/scripts/
-- `skills/video-understand/scripts/video-understand.ts`
-
-### skills/visual-design-foundations/
-- `skills/visual-design-foundations/SKILL.md`
-
-### skills/visual-design-foundations/references/
-- `skills/visual-design-foundations/references/color-systems.md`
-- `skills/visual-design-foundations/references/spacing-iconography.md`
-- `skills/visual-design-foundations/references/typography-systems.md`
-
-### skills/web-reader/
-- `skills/web-reader/LICENSE.txt`
-- `skills/web-reader/SKILL.md`
-
-### skills/web-reader/scripts/
-- `skills/web-reader/scripts/web-reader.ts`
-
-### skills/web-search/
-- `skills/web-search/LICENSE.txt`
-- `skills/web-search/SKILL.md`
-
-### skills/web-search/scripts/
-- `skills/web-search/scripts/web_search.ts`
-
-### skills/web-shader-extractor/
-- `skills/web-shader-extractor/SKILL.md`
-
-### skills/web-shader-extractor/references/
-- `skills/web-shader-extractor/references/config-extraction.md`
-- `skills/web-shader-extractor/references/encoded-definitions.md`
-- `skills/web-shader-extractor/references/extraction-workflow.md`
-- `skills/web-shader-extractor/references/porting-strategy.md`

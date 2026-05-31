@@ -25,7 +25,7 @@ integration: реальная PostgreSQL БД (через docker или лока
 
 ## Tasks
 
-- [ ] **T01: Setup PostgreSQL connection и Alembic** `est:20m`
+- [x] **T01: Setup PostgreSQL connection и Alembic** `est:20m`
   1. Установить зависимости (psycopg2, alembic, sqlalchemy)
   2. Создать .env с DATABASE_URL
   3. Инициализировать Alembic (alembic init)

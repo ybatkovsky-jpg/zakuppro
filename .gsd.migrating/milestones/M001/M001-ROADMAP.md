@@ -12,7 +12,7 @@
 
 ## Slices
 
-- [ ] **S01: PostgreSQL Schema + Alembic Setup** `risk:high` `depends:[]`
+- [ ] **S01: S01** `risk:high` `depends:[]`
   > After this: После этого: `alembic revision head` применяет схему к пустой БД; все таблицы созданы с правильными типами, индексами и foreign keys
 
 - [ ] **S02: SQLAlchemy Models + Pydantic Schemas** `risk:high` `depends:[S01]`

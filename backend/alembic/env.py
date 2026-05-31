@@ -16,6 +16,9 @@ import sys
 sys.path.insert(0, os.path.dirname(__file__))
 from database import Base
 
+# Import all models so Alembic can detect them for autogenerate
+import models
+
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.
 config = context.config

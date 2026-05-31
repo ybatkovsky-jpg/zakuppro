@@ -1,2 +1,1 @@
-{"v":2,"cmd":"plan-milestone","params":{"milestoneId":"M001"},"ts":"2026-05-31T14:26:34.992Z","actor":"agent","hash":"e7646f64e62daa33","session_id":"b4bf4827-d9ee-410d-9522-b0352fb868a2"}
-{"v":2,"cmd":"plan-slice","params":{"milestoneId":"M001","sliceId":"S01"},"ts":"2026-05-31T14:26:59.941Z","actor":"agent","hash":"b4e65a48e7b42f57","session_id":"b4bf4827-d9ee-410d-9522-b0352fb868a2"}
+{"v":2,"cmd":"complete-task","params":{"milestoneId":"M001","sliceId":"S01","taskId":"T01"},"ts":"2026-05-31T22:37:15.189Z","actor":"agent","hash":"5a804380eb33710e","session_id":"7dba7c66-4b03-4545-a6fe-30a9e7dd1af5"}

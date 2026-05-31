@@ -1,7 +1,7 @@
 # GSD State
 
 **Active Milestone:** M001: Foundation: Database Schema and Core API
-**Active Slice:** S01: PostgreSQL Schema + Alembic Setup
+**Active Slice:** S01: S01
 **Phase:** executing
 **Requirements Status:** 0 active · 0 validated · 0 deferred · 0 out of scope
 
@@ -15,4 +15,4 @@
 - None
 
 ## Next Action
-Execute T01: Setup PostgreSQL connection и Alembic in slice S01.
+Execute T02: Create Base SQLAlchemy models in slice S01.
