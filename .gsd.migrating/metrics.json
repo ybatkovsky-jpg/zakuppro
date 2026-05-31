@@ -1,0 +1,66 @@
+{
+  "version": 1,
+  "projectStartedAt": 1780265728188,
+  "units": [
+    {
+      "type": "discuss-milestone",
+      "id": "M001",
+      "model": "claude-opus-4-6",
+      "startedAt": 1780265729110,
+      "finishedAt": 1780265790495,
+      "tokens": {
+        "input": 47611,
+        "output": 1602,
+        "cacheRead": 601600,
+        "cacheWrite": 0,
+        "total": 49213
+      },
+      "cost": 0.578905,
+      "toolCalls": 16,
+      "assistantMessages": 1,
+      "userMessages": 0,
+      "apiRequests": 1,
+      "cacheHitRate": 93
+    },
+    {
+      "type": "discuss-milestone",
+      "id": "M001",
+      "model": "claude-opus-4-6",
+      "startedAt": 1780265816893,
+      "finishedAt": 1780265866549,
+      "tokens": {
+        "input": 11807,
+        "output": 1352,
+        "cacheRead": 459776,
+        "cacheWrite": 0,
+        "total": 13159
+      },
+      "cost": 0.32272300000000004,
+      "toolCalls": 11,
+      "assistantMessages": 1,
+      "userMessages": 0,
+      "apiRequests": 1,
+      "cacheHitRate": 97
+    },
+    {
+      "type": "discuss-milestone",
+      "id": "M001",
+      "model": "claude-opus-4-6",
+      "startedAt": 1780265988530,
+      "finishedAt": 1780266079922,
+      "tokens": {
+        "input": 22965,
+        "output": 5966,
+        "cacheRead": 688000,
+        "cacheWrite": 0,
+        "total": 28931
+      },
+      "cost": 0.6079749999999999,
+      "toolCalls": 14,
+      "assistantMessages": 1,
+      "userMessages": 0,
+      "apiRequests": 1,
+      "cacheHitRate": 97
+    }
+  ]
+}

@@ -1,7 +1,7 @@
 # Codebase Map
 
-Generated: 2026-05-31T14:23:30Z | Files: 500 | Described: 0/500
-<!-- gsd:codebase-meta {"generatedAt":"2026-05-31T14:23:30Z","fingerprint":"bb6507bb2cb174ae31a1668c3d39239fa13dd7b3","fileCount":500,"truncated":true} -->
+Generated: 2026-05-31T22:18:39Z | Files: 500 | Described: 0/500
+<!-- gsd:codebase-meta {"generatedAt":"2026-05-31T22:18:39Z","fingerprint":"6063bb875ca5b8ac72e459b8a270893d7ef5431a","fileCount":500,"truncated":true} -->
 Note: Truncated to first 500 files. Run with higher --max-files to include all.
 
 ### (root)/
@@ -13,6 +13,17 @@ Note: Truncated to first 500 files. Run with higher --max-files to include all.
 - `next.config.ts`
 - `package.json`
 - `postcss.config.mjs`
+- `SPEC.md`
+
+### .gsd.migrating/
+- `.gsd.migrating/CODEBASE.md`
+- `.gsd.migrating/gsd.db`
+- `.gsd.migrating/gsd.db-shm`
+- `.gsd.migrating/gsd.db-wal`
+- `.gsd.migrating/notifications.jsonl`
+
+### .gsd.migrating/runtime/
+- `.gsd.migrating/runtime/write-gate-state.json`
 
 ### .zscripts/
 - `.zscripts/build.sh`
@@ -735,12 +746,3 @@ Note: Truncated to first 500 files. Run with higher --max-files to include all.
 - `skills/web-shader-extractor/references/encoded-definitions.md`
 - `skills/web-shader-extractor/references/extraction-workflow.md`
 - `skills/web-shader-extractor/references/porting-strategy.md`
-- `skills/web-shader-extractor/references/shader-injection.md`
-- `skills/web-shader-extractor/references/shaders-com.md`
-- `skills/web-shader-extractor/references/tech-signatures.md`
-- `skills/web-shader-extractor/references/tsl-extraction.md`
-- `skills/web-shader-extractor/references/unicorn-studio.md`
-
-### skills/web-shader-extractor/scripts/
-- `skills/web-shader-extractor/scripts/fetch-rendered-dom.mjs`
-- `skills/web-shader-extractor/scripts/scan-bundle.sh`

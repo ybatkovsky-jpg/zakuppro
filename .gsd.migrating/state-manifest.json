@@ -1,0 +1,358 @@
+{
+  "version": 1,
+  "exported_at": "2026-05-31T14:26:59.939Z",
+  "milestones": [
+    {
+      "id": "M001",
+      "title": "Foundation: Database Schema and Core API",
+      "status": "active",
+      "depends_on": [],
+      "created_at": "2026-05-31T14:26:05.610Z",
+      "completed_at": null,
+      "vision": "Создать фундамент системы: схему БД PostgreSQL, базовый FastAPI backend с основными сущностями (Project, ProjectItem, Supplier, StockItem) и REST API для CRUD операций. Это основа для всех последующих модулей.",
+      "success_criteria": [
+        "PostgreSQL схема создана и применена через Alembic миграции",
+        "FastAPI сервер запускается и отвечает на health check",
+        "CRUD API работает для Project, ProjectItem, Supplier, StockItem",
+        "Базовые тесты покрывают модели и эндпоинты",
+        "Документация API доступна через /docs (Swagger UI)"
+      ],
+      "key_risks": [
+        {
+          "risk": "Неполная схема БД потребует сложные миграции в будущем",
+          "whyItMatters": "Добавление новых полей и таблиц в PostgreSQL может потребовать downtime для production данных"
+        },
+        {
+          "risk": "Pydantic модели могут не синхронизироваться с SQLAlchemy схемой",
+          "whyItMatters": "Это приведет к ошибкам валидации и проблемам с API"
+        }
+      ],
+      "proof_strategy": [
+        {
+          "riskOrUnknown": "Синхронизация Pydantic и SQLAlchemy моделей",
+          "retireIn": "S01",
+          "whatWillBeProven": "Полнотестовые CRUD операции с реальными данными подтверждают корректность маппинга"
+        },
+        {
+          "riskOrUnknown": "Мигратоспособность схемы",
+          "retireIn": "S02",
+          "whatWillBeProven": "Alembic migration для добавления нового поля применяется и откатывается без потери данных"
+        }
+      ],
+      "verification_contract": "contract: pytest tests/test_api.py covers CRUD endpoints with fixtures; tests/test_models.py verifies SQLAlchemy relationships; migration tests apply/rollback Alembic migrations",
+      "verification_integration": "integration: FastAPI + PostgreSQL работают вместе — реальные HTTP запросы создают/читают записи в БД; проверки foreign keys и constraints работают",
+      "verification_operational": "operational: FastAPI сервер корректно останавливается по SIGTERM; соединения с БД закрываются; connection pool не протекает",
+      "verification_uat": "uat: Swagger UI открывается в браузере; можно вручную создать Project через UI, добавить ProjectItem, получить список — всё работает ожидаемо",
+      "definition_of_done": [
+        "Все слайсы завершены и интегрированы",
+        "FastAPI + PostgreSQL запускаются вместе (docker-compose или локально)",
+        "Swagger UI доступен и документирует все эндпоинты",
+        "Тесты проходят (pytest)",
+        "Базовая модель Project с ProjectItem работает end-to-end"
+      ],
+      "requirement_coverage": "Covers: Базовая модель данных из SPEC.md (Project, ProjectItem, Supplier, StockItem, PurchaseOrder, Invoice)",
+      "boundary_map_markdown": "### S01 → S02\nProduces:\n- PostgreSQL таблицы: project, project_item, supplier, stock_item, purchase_order, invoice, payment, unresolved_transaction, production_task\n- Foreign keys и constraints\n- Alembic конфигурация для будущих миграций\n\nConsumes:\n- nothing (first slice)\n\n### S02 → S03\nProduces:\n- SQLAlchemy ORM модели (Python классы с маппингом)\n- Pydantic schemas (Create, Update, Response схемы)\n- Relationships между моделями\n\nConsumes:\n- PostgreSQL схемы из S01\n\n### S03 → S04\nProduces:\n- FastAPI приложение с CRUD endpoints\n- Dependency injection для DB session\n- Swagger UI документация\n\nConsumes:\n- SQLAlchemy модели из S02\n- PostgreSQL таблицы из S01",
+      "sequence": 0
+    }
+  ],
+  "slices": [
+    {
+      "milestone_id": "M001",
+      "id": "S01",
+      "title": "PostgreSQL Schema + Alembic Setup",
+      "status": "pending",
+      "risk": "high",
+      "depends": [],
+      "demo": "После этого: `alembic revision head` применяет схему к пустой БД; все таблицы созданы с правильными типами, индексами и foreign keys",
+      "created_at": "2026-05-31T14:26:34.963Z",
+      "completed_at": null,
+      "full_summary_md": "",
+      "full_uat_md": "",
+      "goal": "Создать полную схему БД по SPEC с Alembic миграциями. PostgreSQL схема включает все сущности из SPEC.md с правильными типами, индексами и foreign keys.",
+      "success_criteria": "- PostgreSQL схема создана через Alembic миграцию\n- Все таблицы из SPEC.md существуют (project, project_item, supplier, stock_item, purchase_order, invoice, payment, unresolved_transaction, production_task)\n- Foreign keys настроены корректно\n- Индексы на часто запрашиваемых полях\n- Migration applies и rollback без ошибок",
+      "proof_level": "contract: pytest с fixtures проверяет миграции; тестовые данные создаются и читаются; foreign key constraints enforce",
+      "integration_closure": "integration: реальная PostgreSQL БД (через docker или локальная); psql подтверждает схемы; migration откатывается без потери данных",
+      "observability_impact": "SQL команды логируются при миграции; ошибки миграции показывают контекст; version table фиксирует успешные миграции",
+      "sequence": 1,
+      "replan_triggered_at": null,
+      "is_sketch": 0,
+      "sketch_scope": ""
+    },
+    {
+      "milestone_id": "M001",
+      "id": "S02",
+      "title": "SQLAlchemy Models + Pydantic Schemas",
+      "status": "pending",
+      "risk": "high",
+      "depends": [
+        "S01"
+      ],
+      "demo": "После этого: Python модели мапятся 1:1 к таблицам; Pydantic schemas валидируют вход/выход; можно создать ORM объект и сохранить в БД",
+      "created_at": "2026-05-31T14:26:34.963Z",
+      "completed_at": null,
+      "full_summary_md": "",
+      "full_uat_md": "",
+      "goal": "Создать ORM модели и Pydantic schemas для всех сущностей",
+      "success_criteria": "SQLAlchemy модели для всех таблиц; Pydantic schemas (create/update/response); связи (relationships) работают; Pydantic валидация соответствует SQL constraints",
+      "proof_level": "contract: pytest тестирует модели; fixtures создают тестовые данные; проверки отношений (Project.items, Supplier.orders)",
+      "integration_closure": "integration: реальные записи в БД читаются через ORM; foreign key constraints enforce на уровне БД",
+      "observability_impact": "ORM ошибки логируются с контекстом; SQL запросы логируются для отладки",
+      "sequence": 2,
+      "replan_triggered_at": null,
+      "is_sketch": 0,
+      "sketch_scope": ""
+    },
+    {
+      "milestone_id": "M001",
+      "id": "S03",
+      "title": "FastAPI CRUD Endpoints",
+      "status": "pending",
+      "risk": "medium",
+      "depends": [
+        "S02"
+      ],
+      "demo": "После этого: POST /projects создает проект; GET /projects/{id} возвращает с items; DELETE работает; Swagger UI показывает все эндпоинты",
+      "created_at": "2026-05-31T14:26:34.963Z",
+      "completed_at": null,
+      "full_summary_md": "",
+      "full_uat_md": "",
+      "goal": "Реализовать CRUD API для основных сущностей",
+      "success_criteria": "REST API для Project, ProjectItem, Supplier, StockItem; Pydantic валидация запросов; корректные HTTP статусы; Swagger UI документация",
+      "proof_level": "contract: pytest с TestClient проверяет все endpoints; тесты CRUD; проверки ошибок валидации",
+      "integration_closure": "integration: HTTP запросы через TestClient работают; реальные CRUD в БД",
+      "observability_impact": "HTTP запросы логируются (method, path, status, duration); ошибки API логируются с payload",
+      "sequence": 3,
+      "replan_triggered_at": null,
+      "is_sketch": 0,
+      "sketch_scope": ""
+    },
+    {
+      "milestone_id": "M001",
+      "id": "S04",
+      "title": "Docker + Health Checks",
+      "status": "pending",
+      "risk": "low",
+      "depends": [
+        "S03"
+      ],
+      "demo": "После этого: docker-compose up запускает всё; GET /health returns 200; localhost:8000/docs открывается",
+      "created_at": "2026-05-31T14:26:34.964Z",
+      "completed_at": null,
+      "full_summary_md": "",
+      "full_uat_md": "",
+      "goal": "Собрать контейнеры и добавить health checks",
+      "success_criteria": "docker-compose.yml с FastAPI + PostgreSQL; health check endpoint; graceful shutdown; логирование",
+      "proof_level": "contract: контейнер собирается; health check проходит; проверки на остановку",
+      "integration_closure": "integration: docker-compose up; контейнеры общаются; API отвечает",
+      "observability_impact": "Health endpoint показывает статус БД; логи видны через docker-compose logs",
+      "sequence": 4,
+      "replan_triggered_at": null,
+      "is_sketch": 0,
+      "sketch_scope": ""
+    }
+  ],
+  "tasks": [
+    {
+      "milestone_id": "M001",
+      "slice_id": "S01",
+      "id": "T01",
+      "title": "Setup PostgreSQL connection и Alembic",
+      "status": "pending",
+      "one_liner": "",
+      "narrative": "",
+      "verification_result": "",
+      "duration": "",
+      "completed_at": null,
+      "blocker_discovered": false,
+      "deviations": "",
+      "known_issues": "",
+      "key_files": [],
+      "key_decisions": [],
+      "full_summary_md": "",
+      "description": "1. Установить зависимости (psycopg2, alembic, sqlalchemy)\n2. Создать .env с DATABASE_URL\n3. Инициализировать Alembic (alembic init)\n4. Настроить alembic.ini и env.py для PostgreSQL",
+      "estimate": "20m",
+      "files": [
+        "alembic.ini",
+        "alembic/env.py",
+        ".env"
+      ],
+      "verify": "alembic current - показывает revision; alembic history работает",
+      "inputs": [
+        ".env с DATABASE_URL"
+      ],
+      "expected_output": [
+        "alembic.ini настроен",
+        "env.py подключается к БД",
+        "alembic/versions/ директория создана"
+      ],
+      "observability_impact": "",
+      "full_plan_md": "",
+      "sequence": 0,
+      "blocker_source": "",
+      "escalation_pending": 0,
+      "escalation_awaiting_review": 0,
+      "escalation_artifact_path": null,
+      "escalation_override_applied_at": null
+    },
+    {
+      "milestone_id": "M001",
+      "slice_id": "S01",
+      "id": "T02",
+      "title": "Create Base SQLAlchemy models",
+      "status": "pending",
+      "one_liner": "",
+      "narrative": "",
+      "verification_result": "",
+      "duration": "",
+      "completed_at": null,
+      "blocker_discovered": false,
+      "deviations": "",
+      "known_issues": "",
+      "key_files": [],
+      "key_decisions": [],
+      "full_summary_md": "",
+      "description": "Создать базовые SQLAlchemy модели для всех таблиц из SPEC.md. Пока без relationships - только структура таблиц.\n\nТаблицы:\n- Project (id, name, client, status, total_cost)\n- ProjectItem (id, project_id, name, sku, qty, supplier_id, stock_item_id, status)\n- Supplier (id, name, email, requisites)\n- PurchaseOrder (id, project_id, supplier_id, status)\n- Invoice (id, purchase_order_id, file_url, raw_text, status)\n- Payment (id, invoice_id, amount, bank_transaction_id, payment_date)\n- UnresolvedTransaction (id, amount, description, bank_date, status)\n- StockItem (id, name, sku, qty_total, qty_reserved, qty_available)\n- ProductionTask (id, project_id, status)",
+      "estimate": "30m",
+      "files": [
+        "models/base.py",
+        "models/__init__.py"
+      ],
+      "verify": "Python импортирует модели без ошибок; структура совпадает с SPEC",
+      "inputs": [
+        "SPEC.md таблицы"
+      ],
+      "expected_output": [
+        "SQLAlchemy models.py сdeclarative_base()",
+        "все таблицы определены"
+      ],
+      "observability_impact": "",
+      "full_plan_md": "",
+      "sequence": 0,
+      "blocker_source": "",
+      "escalation_pending": 0,
+      "escalation_awaiting_review": 0,
+      "escalation_artifact_path": null,
+      "escalation_override_applied_at": null
+    },
+    {
+      "milestone_id": "M001",
+      "slice_id": "S01",
+      "id": "T03",
+      "title": "Create first Alembic migration",
+      "status": "pending",
+      "one_liner": "",
+      "narrative": "",
+      "verification_result": "",
+      "duration": "",
+      "completed_at": null,
+      "blocker_discovered": false,
+      "deviations": "",
+      "known_issues": "",
+      "key_files": [],
+      "key_decisions": [],
+      "full_summary_md": "",
+      "description": "1. Создать миграцию: alembic revision --autogenerate -m \"Initial schema\"\n2. Проверить сгенерированный SQL\n3. При необходимости вручную добавить индексы (например, на project.status, supplier.email)\n4. Убедиться что все foreign keys корректны",
+      "estimate": "25m",
+      "files": [
+        "alembic/versions/001_initial_schema.py"
+      ],
+      "verify": "alembic upgrade head применяет миграцию; psql \\dt показывает все таблицы",
+      "inputs": [
+        "SQLAlchemy models из T02"
+      ],
+      "expected_output": [
+        "migration file создан",
+        "SQL генерируется корректно"
+      ],
+      "observability_impact": "",
+      "full_plan_md": "",
+      "sequence": 0,
+      "blocker_source": "",
+      "escalation_pending": 0,
+      "escalation_awaiting_review": 0,
+      "escalation_artifact_path": null,
+      "escalation_override_applied_at": null
+    },
+    {
+      "milestone_id": "M001",
+      "slice_id": "S01",
+      "id": "T04",
+      "title": "Test migration apply/rollback",
+      "status": "pending",
+      "one_liner": "",
+      "narrative": "",
+      "verification_result": "",
+      "duration": "",
+      "completed_at": null,
+      "blocker_discovered": false,
+      "deviations": "",
+      "known_issues": "",
+      "key_files": [],
+      "key_decisions": [],
+      "full_summary_md": "",
+      "description": "1. Применить миграцию: alembic upgrade head\n2. Проверить схемы через psql (\\d table_name)\n3. Откатить: alembic downgrade -1\n4. Повторить apply\n5. Убедиться что данные не теряются (create test data before rollback)",
+      "estimate": "20m",
+      "files": [
+        "tests/test_migration.py"
+      ],
+      "verify": "pytest tests/test_migration.py проходит; миграция применяется и откатывается; foreign keys работают",
+      "inputs": [
+        "PostgreSQL БД",
+        "migration из T03"
+      ],
+      "expected_output": [
+        "тест migration passing",
+        "alembic current показывает последнюю версию"
+      ],
+      "observability_impact": "",
+      "full_plan_md": "",
+      "sequence": 0,
+      "blocker_source": "",
+      "escalation_pending": 0,
+      "escalation_awaiting_review": 0,
+      "escalation_artifact_path": null,
+      "escalation_override_applied_at": null
+    },
+    {
+      "milestone_id": "M001",
+      "slice_id": "S01",
+      "id": "T05",
+      "title": "Add indexes for performance",
+      "status": "pending",
+      "one_liner": "",
+      "narrative": "",
+      "verification_result": "",
+      "duration": "",
+      "completed_at": null,
+      "blocker_discovered": false,
+      "deviations": "",
+      "known_issues": "",
+      "key_files": [],
+      "key_decisions": [],
+      "full_summary_md": "",
+      "description": "Добавить индексы на часто запрашиваемые поля:\n- project.status (для Kanban фильтрации)\n- project_item.project_id\n- project_item.status\n- supplier.email (для поиска)\n- stock_item.sku (уникальный)\n- invoice.status\n\nОбновить миграцию или создать новую.",
+      "estimate": "15m",
+      "files": [
+        "alembic/versions/002_add_indexes.py"
+      ],
+      "verify": "psql \\di показывает индексы; EXPLAIN показывает использование индексов",
+      "inputs": [
+        "схема из T03"
+      ],
+      "expected_output": [
+        "индексы созданы",
+        "migration applies"
+      ],
+      "observability_impact": "",
+      "full_plan_md": "",
+      "sequence": 0,
+      "blocker_source": "",
+      "escalation_pending": 0,
+      "escalation_awaiting_review": 0,
+      "escalation_artifact_path": null,
+      "escalation_override_applied_at": null
+    }
+  ],
+  "decisions": [],
+  "verification_evidence": []
+}
