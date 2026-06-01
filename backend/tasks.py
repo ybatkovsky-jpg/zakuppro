@@ -708,6 +708,7 @@ def verify_invoice_task(self, invoice_id: int) -> dict:
     3. Linking InvoiceItems to ProjectItems
     4. Storing structured verification result in Invoice.verification_result JSONB
     5. Updating Invoice.status based on verification verdict
+    6. Dispatching notifications based on verification verdict
 
     Intended to be chained after parse_invoice completes:
         parse_invoice.apply_async(args=(filename, content, metadata)) \\
@@ -745,7 +746,7 @@ def verify_invoice_task(self, invoice_id: int) -> dict:
         # Import invoice verifier service
         from backend.services.invoice_verifier import verify_invoice
         from backend.database import SessionLocal
-        from backend.models import FailedTask
+        from backend.models import FailedTask, Invoice, PurchaseOrder
 
         # Step 1: Create database session
         db = SessionLocal()
@@ -769,6 +770,10 @@ def verify_invoice_task(self, invoice_id: int) -> dict:
             f"{unmapped_count} unmapped, {discrepancies} discrepancies, "
             f"{extra_count} extra, {missing_count} missing"
         )
+
+        # Step 4: Dispatch notifications based on verdict
+        logger.info(f"Task {task_id}: Dispatching notifications for verdict={verdict}")
+        dispatch_invoice_notifications(verification_result, invoice_id, db)
 
         result = {
             'status': 'success',
@@ -832,3 +837,183 @@ def verify_invoice_task(self, invoice_id: int) -> dict:
         if db is not None:
             db.close()
             logger.info(f"Task {task_id}: Database session closed")
+
+
+def dispatch_invoice_notifications(verification_result, invoice_id: int, db) -> None:
+    """
+    Dispatch notifications based on invoice verification result.
+
+    Routes to appropriate notification channels based on verdict:
+    - 'verified' → Telegram success notification to owner
+    - 'partial' → Telegram warning notification to owner
+    - 'clarification_needed' → Email to supplier + Telegram notification to owner
+    - 'failed' → Telegram critical alert to owner
+
+    Notifications are non-critical: failures are logged but don't block processing.
+
+    Args:
+        verification_result: VerificationResult schema with verdict and details
+        invoice_id: ID of the verified invoice
+        db: SQLAlchemy database session
+    """
+    import os
+    from backend.models import Invoice, PurchaseOrder
+    from backend.telegram_notifier import (
+        send_invoice_verified,
+        send_invoice_partial,
+        send_invoice_clarification_needed,
+        send_invoice_failed,
+    )
+    from backend.email_notifier import send_clarification_email
+
+    # Get owner chat_id from environment
+    owner_chat_id = os.getenv('TELEGRAM_OWNER_CHAT_ID')
+    if not owner_chat_id:
+        logger.error('TELEGRAM_OWNER_CHAT_ID not set, skipping notifications')
+        return
+
+    try:
+        owner_chat_id_int = int(owner_chat_id)
+    except ValueError:
+        logger.error(f'Invalid TELEGRAM_OWNER_CHAT_ID: {owner_chat_id}')
+        return
+
+    verdict = verification_result.verdict
+
+    # Fetch Invoice and PurchaseOrder for supplier email
+    invoice = db.query(Invoice).filter(Invoice.id == invoice_id).first()
+    if not invoice:
+        logger.warning(f"Invoice {invoice_id} not found, skipping notifications")
+        return
+
+    purchase_order = db.query(PurchaseOrder).filter(
+        PurchaseOrder.id == invoice.purchase_order_id
+    ).first()
+
+    invoice_number = invoice.file_url or f"#{invoice_id}"
+
+    if verdict == 'verified':
+        # Send success notification to owner
+        stats = {
+            'matched': len(verification_result.matched_items),
+            'total': len(verification_result.items),
+            'confidence': 100.0,
+        }
+        try:
+            send_invoice_verified(owner_chat_id_int, invoice_id, stats)
+            logger.info(f"Dispatched 'verified' notification for invoice {invoice_id}")
+        except Exception as e:
+            logger.error(
+                f"Failed to send 'verified' notification for invoice {invoice_id}: {e}",
+                exc_info=True
+            )
+
+    elif verdict == 'partial':
+        # Send warning notification about discrepancies
+        discrepancies = []
+        for disc in verification_result.quantity_discrepancies:
+            discrepancies.append(
+                f"Item {disc.invoice_item_id}: invoice={disc.invoice_qty}, "
+                f"expected={disc.expected_qty}"
+            )
+        try:
+            send_invoice_partial(owner_chat_id_int, invoice_id, discrepancies)
+            logger.info(f"Dispatched 'partial' notification for invoice {invoice_id}")
+        except Exception as e:
+            logger.error(
+                f"Failed to send 'partial' notification for invoice {invoice_id}: {e}",
+                exc_info=True
+            )
+
+    elif verdict == 'clarification_needed':
+        # Send email to supplier + notification to owner
+        supplier_email = None
+        supplier_name = None
+
+        if purchase_order and purchase_order.supplier:
+            supplier_email = purchase_order.supplier.email
+            supplier_name = purchase_order.supplier.name
+
+        if supplier_email:
+            # Build unmatched items for email
+            from backend.models import InvoiceItem, ProjectItem
+            unmatched_items = []
+            for item in verification_result.fuzzy_matched_items:
+                # Fetch invoice item details
+                invoice_item = db.query(InvoiceItem).filter(
+                    InvoiceItem.id == item.invoice_item_id
+                ).first()
+                if invoice_item:
+                    # Fetch expected project item
+                    project_item = db.query(ProjectItem).filter(
+                        ProjectItem.id == item.project_item_id
+                    ).first()
+
+                    unmatched_items.append({
+                        'invoice_item': {
+                            'name': invoice_item.name,
+                            'quantity': invoice_item.qty,
+                            'price': float(invoice_item.unit_price) if invoice_item.unit_price else None,
+                        },
+                        'expected_item': {
+                            'name': project_item.name if project_item else 'N/A',
+                        },
+                        'confidence': item.name_similarity / 100.0 if item.name_similarity else 0.0,
+                    })
+
+            # Send email asynchronously (fire and forget in task context)
+            import asyncio
+            try:
+                loop = asyncio.get_event_loop()
+                loop.run_until_complete(
+                    send_clarification_email(
+                        supplier_email=supplier_email,
+                        invoice_number=invoice_number,
+                        supplier_name=supplier_name,
+                        unmatched_items=unmatched_items
+                    )
+                )
+                logger.info(
+                    f"Sent clarification email to supplier {supplier_email} "
+                    f"for invoice {invoice_id}"
+                )
+            except Exception as e:
+                logger.error(
+                    f"Failed to send clarification email: {e}",
+                    exc_info=True
+                )
+
+        # Also notify owner via Telegram
+        fuzzy_matches = []
+        for item in verification_result.fuzzy_matched_items:
+            fuzzy_matches.append({
+                'name': f"Item {item.invoice_item_id}",
+                'confidence': item.name_similarity / 100.0 if item.name_similarity else 0.0,
+            })
+
+        try:
+            send_invoice_clarification_needed(owner_chat_id_int, invoice_id, fuzzy_matches)
+            logger.info(f"Dispatched 'clarification_needed' notification for invoice {invoice_id}")
+        except Exception as e:
+            logger.error(
+                f"Failed to send 'clarification_needed' notification for invoice {invoice_id}: {e}",
+                exc_info=True
+            )
+
+    elif verdict == 'failed':
+        # Send critical alert to owner
+        error_msg = (
+            f"Invoice verification failed. "
+            f"{len(verification_result.unmapped_items)} items could not be matched."
+        )
+        try:
+            send_invoice_failed(owner_chat_id_int, invoice_id, error_msg)
+            logger.info(f"Dispatched 'failed' notification for invoice {invoice_id}")
+        except Exception as e:
+            logger.error(
+                f"Failed to send 'failed' notification for invoice {invoice_id}: {e}",
+                exc_info=True
+            )
+
+    else:
+        logger.warning(f"Unknown verdict '{verdict}', skipping notifications")
