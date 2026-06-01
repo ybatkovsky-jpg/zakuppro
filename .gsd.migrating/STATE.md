@@ -1,12 +1,17 @@
 # GSD State
 
-**Active Milestone:** M001: Foundation: Database Schema and Core API
-**Active Slice:** None
-**Phase:** completing-milestone
-**Requirements Status:** 0 active · 0 validated · 0 deferred · 0 out of scope
+**Active Milestone:** M002: Asynchronous Core + AI-Agent Foundation
+**Active Slice:** S01: RabbitMQ + Celery Infrastructure
+**Phase:** planning
+**Requirements Status:** 14 active · 0 validated · 5 deferred · 0 out of scope
 
 ## Milestone Registry
-- 🔄 **M001:** Foundation: Database Schema and Core API
+- ✅ **M001:** Foundation: Database Schema and Core API
+- 🔄 **M002:** Asynchronous Core + AI-Agent Foundation
+- ⬜ **M003:** Email + Invoice Processing
+- ⬜ **M004:** Bank Integration + Financials
+- ⬜ **M005:** Frontend UI
+- ⬜ **M006:** Business Logic Polish
 
 ## Recent Decisions
 - None recorded
@@ -15,4 +20,4 @@
 - None
 
 ## Next Action
-All slices complete in M001. Write milestone summary.
+Slice S01 has no DB tasks. Plan slice tasks before execution.

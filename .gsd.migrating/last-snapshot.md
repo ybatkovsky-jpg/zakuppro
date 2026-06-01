@@ -1,4 +1,4 @@
-# GSD context snapshot (2026-06-01T04:26:54.212Z)
+# GSD context snapshot (2026-06-01T09:34:20.404Z)
 
 ## Top project memories
 - [MEM005] (architecture) SQLAlchemy 2.0 uses relationship(back_populates=...) for bidirectional relationships, not backref. This makes relationships explicit on both sides for clearer code.

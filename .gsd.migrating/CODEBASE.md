@@ -1,10 +1,11 @@
 # Codebase Map
 
-Generated: 2026-06-01T09:22:09Z | Files: 500 | Described: 0/500
-<!-- gsd:codebase-meta {"generatedAt":"2026-06-01T09:22:09Z","fingerprint":"ba7b9f4aa078a19fdd004c16fd2216fa14ecc98b","fileCount":500,"truncated":true} -->
+Generated: 2026-06-01T09:39:12Z | Files: 500 | Described: 0/500
+<!-- gsd:codebase-meta {"generatedAt":"2026-06-01T09:39:12Z","fingerprint":"3573dbce124846c398d521b28055f07263f9340c","fileCount":500,"truncated":true} -->
 Note: Truncated to first 500 files. Run with higher --max-files to include all.
 
 ### (root)/
+- `.dockerignore`
 - `.env`
 - `.gitignore`
 - `.test_db.sqlite`
@@ -26,27 +27,13 @@ Note: Truncated to first 500 files. Run with higher --max-files to include all.
 - `.gsd.migrating/STATE.md`
 
 ### .gsd.migrating/activity/
-- *(28 files: 28 .jsonl)*
+- *(39 files: 39 .jsonl)*
 
 ### .gsd.migrating/audit/
 - `.gsd.migrating/audit/events.jsonl`
 
 ### .gsd.migrating/exec/
-- `.gsd.migrating/exec/086c8607-9624-4142-bca7-c1da01ba8bdb.meta.json`
-- `.gsd.migrating/exec/086c8607-9624-4142-bca7-c1da01ba8bdb.stderr`
-- `.gsd.migrating/exec/086c8607-9624-4142-bca7-c1da01ba8bdb.stdout`
-- `.gsd.migrating/exec/86980f16-5862-423e-90c8-1b547e0017ab.meta.json`
-- `.gsd.migrating/exec/86980f16-5862-423e-90c8-1b547e0017ab.stderr`
-- `.gsd.migrating/exec/86980f16-5862-423e-90c8-1b547e0017ab.stdout`
-- `.gsd.migrating/exec/a52959db-966b-4a6b-944c-31e111f63af0.meta.json`
-- `.gsd.migrating/exec/a52959db-966b-4a6b-944c-31e111f63af0.stderr`
-- `.gsd.migrating/exec/a52959db-966b-4a6b-944c-31e111f63af0.stdout`
-- `.gsd.migrating/exec/ce57c045-f1c6-4fa6-98a9-7edb2c1d8d14.meta.json`
-- `.gsd.migrating/exec/ce57c045-f1c6-4fa6-98a9-7edb2c1d8d14.stderr`
-- `.gsd.migrating/exec/ce57c045-f1c6-4fa6-98a9-7edb2c1d8d14.stdout`
-- `.gsd.migrating/exec/dfd9513b-0e43-4bba-aa9f-d9ce0a4f5722.meta.json`
-- `.gsd.migrating/exec/dfd9513b-0e43-4bba-aa9f-d9ce0a4f5722.stderr`
-- `.gsd.migrating/exec/dfd9513b-0e43-4bba-aa9f-d9ce0a4f5722.stdout`
+- *(21 files: 7 .json, 7 .stderr, 7 .stdout)*
 
 ### .gsd.migrating/graphs/
 - `.gsd.migrating/graphs/graph.json`
@@ -58,6 +45,7 @@ Note: Truncated to first 500 files. Run with higher --max-files to include all.
 ### .gsd.migrating/milestones/M001/
 - `.gsd.migrating/milestones/M001/M001-CONTEXT.md`
 - `.gsd.migrating/milestones/M001/M001-ROADMAP.md`
+- `.gsd.migrating/milestones/M001/M001-VALIDATION.md`
 
 ### .gsd.migrating/milestones/M001/anchors/
 - `.gsd.migrating/milestones/M001/anchors/plan-slice.json`
@@ -107,6 +95,8 @@ Note: Truncated to first 500 files. Run with higher --max-files to include all.
 - `.gsd.migrating/milestones/M001/slices/S03/S03-PLAN.md`
 - `.gsd.migrating/milestones/M001/slices/S03/S03-PRE-EXEC-VERIFY.json`
 - `.gsd.migrating/milestones/M001/slices/S03/S03-RESEARCH.md`
+- `.gsd.migrating/milestones/M001/slices/S03/S03-SUMMARY.md`
+- `.gsd.migrating/milestones/M001/slices/S03/S03-UAT.md`
 
 ### .gsd.migrating/milestones/M001/slices/S03/tasks/
 - `.gsd.migrating/milestones/M001/slices/S03/tasks/T01-PLAN.md`
@@ -119,6 +109,26 @@ Note: Truncated to first 500 files. Run with higher --max-files to include all.
 - `.gsd.migrating/milestones/M001/slices/S03/tasks/T03-SUMMARY.md`
 - `.gsd.migrating/milestones/M001/slices/S03/tasks/T03-VERIFY.json`
 - `.gsd.migrating/milestones/M001/slices/S03/tasks/T04-PLAN.md`
+- `.gsd.migrating/milestones/M001/slices/S03/tasks/T04-SUMMARY.md`
+- `.gsd.migrating/milestones/M001/slices/S03/tasks/T04-VERIFY.json`
+
+### .gsd.migrating/milestones/M001/slices/S04/
+- `.gsd.migrating/milestones/M001/slices/S04/S04-PLAN.md`
+- `.gsd.migrating/milestones/M001/slices/S04/S04-PRE-EXEC-VERIFY.json`
+- `.gsd.migrating/milestones/M001/slices/S04/S04-RESEARCH.md`
+- `.gsd.migrating/milestones/M001/slices/S04/S04-SUMMARY.md`
+- `.gsd.migrating/milestones/M001/slices/S04/S04-UAT.md`
+
+### .gsd.migrating/milestones/M001/slices/S04/tasks/
+- `.gsd.migrating/milestones/M001/slices/S04/tasks/T01-PLAN.md`
+- `.gsd.migrating/milestones/M001/slices/S04/tasks/T01-SUMMARY.md`
+- `.gsd.migrating/milestones/M001/slices/S04/tasks/T01-VERIFY.json`
+- `.gsd.migrating/milestones/M001/slices/S04/tasks/T02-PLAN.md`
+- `.gsd.migrating/milestones/M001/slices/S04/tasks/T02-SUMMARY.md`
+- `.gsd.migrating/milestones/M001/slices/S04/tasks/T02-VERIFY.json`
+- `.gsd.migrating/milestones/M001/slices/S04/tasks/T03-PLAN.md`
+- `.gsd.migrating/milestones/M001/slices/S04/tasks/T03-SUMMARY.md`
+- `.gsd.migrating/milestones/M001/slices/S04/tasks/T03-VERIFY.json`
 
 ### .gsd.migrating/runtime/
 - `.gsd.migrating/runtime/uok-parity.jsonl`
@@ -127,25 +137,7 @@ Note: Truncated to first 500 files. Run with higher --max-files to include all.
 - `.gsd.migrating/runtime/write-gate-state.json`
 
 ### .gsd.migrating/runtime/units/
-- `.gsd.migrating/runtime/units/complete-slice-M001-S01.json`
-- `.gsd.migrating/runtime/units/complete-slice-M001-S02.json`
-- `.gsd.migrating/runtime/units/discuss-milestone-M001.json`
-- `.gsd.migrating/runtime/units/execute-task-M001-S01-T01.json`
-- `.gsd.migrating/runtime/units/execute-task-M001-S01-T02.json`
-- `.gsd.migrating/runtime/units/execute-task-M001-S01-T03.json`
-- `.gsd.migrating/runtime/units/execute-task-M001-S01-T04.json`
-- `.gsd.migrating/runtime/units/execute-task-M001-S01-T05.json`
-- `.gsd.migrating/runtime/units/execute-task-M001-S02-T01.json`
-- `.gsd.migrating/runtime/units/execute-task-M001-S02-T02.json`
-- `.gsd.migrating/runtime/units/execute-task-M001-S02-T03.json`
-- `.gsd.migrating/runtime/units/execute-task-M001-S03-T01.json`
-- `.gsd.migrating/runtime/units/execute-task-M001-S03-T02.json`
-- `.gsd.migrating/runtime/units/execute-task-M001-S03-T03.json`
-- `.gsd.migrating/runtime/units/execute-task-M001-S03-T04.json`
-- `.gsd.migrating/runtime/units/plan-slice-M001-S02.json`
-- `.gsd.migrating/runtime/units/plan-slice-M001-S03.json`
-- `.gsd.migrating/runtime/units/research-slice-M001-S02.json`
-- `.gsd.migrating/runtime/units/research-slice-M001-S03.json`
+- *(27 files: 27 .json)*
 
 ### .zscripts/
 - `.zscripts/build.sh`
@@ -230,4 +222,4 @@ Note: Truncated to first 500 files. Run with higher --max-files to include all.
 - `Python/pythoncore-3.14-64/Doc/html/_sources/installing/index.rst.txt`
 
 ### Python/pythoncore-3.14-64/Doc/html/_sources/library/
-- *(151 files: 151 .txt)*
+- *(106 files: 106 .txt)*

@@ -1,14 +1,14 @@
 {
   "version": 1,
-  "exported_at": "2026-06-01T04:45:32.130Z",
+  "exported_at": "2026-06-01T09:54:54.666Z",
   "milestones": [
     {
       "id": "M001",
       "title": "Foundation: Database Schema and Core API",
-      "status": "active",
+      "status": "complete",
       "depends_on": [],
       "created_at": "2026-05-31T14:26:05.610Z",
-      "completed_at": null,
+      "completed_at": "2026-06-01T09:34:08.572Z",
       "vision": "Создать фундамент системы: схему БД PostgreSQL, базовый FastAPI backend с основными сущностями (Project, ProjectItem, Supplier, StockItem) и REST API для CRUD операций. Это основа для всех последующих модулей.",
       "success_criteria": [
         "PostgreSQL схема создана и применена через Alembic миграции",
@@ -52,6 +52,160 @@
       ],
       "requirement_coverage": "Covers: Базовая модель данных из SPEC.md (Project, ProjectItem, Supplier, StockItem, PurchaseOrder, Invoice)",
       "boundary_map_markdown": "### S01 → S02\nProduces:\n- PostgreSQL таблицы: project, project_item, supplier, stock_item, purchase_order, invoice, payment, unresolved_transaction, production_task\n- Foreign keys и constraints\n- Alembic конфигурация для будущих миграций\n\nConsumes:\n- nothing (first slice)\n\n### S02 → S03\nProduces:\n- SQLAlchemy ORM модели (Python классы с маппингом)\n- Pydantic schemas (Create, Update, Response схемы)\n- Relationships между моделями\n\nConsumes:\n- PostgreSQL схемы из S01\n\n### S03 → S04\nProduces:\n- FastAPI приложение с CRUD endpoints\n- Dependency injection для DB session\n- Swagger UI документация\n\nConsumes:\n- SQLAlchemy модели из S02\n- PostgreSQL таблицы из S01",
+      "sequence": 0
+    },
+    {
+      "id": "M002",
+      "title": "Asynchronous Core + AI-Agent Foundation",
+      "status": "active",
+      "depends_on": [],
+      "created_at": "2026-06-01T09:52:52.608Z",
+      "completed_at": null,
+      "vision": "Создать асинхронное ядро системы с message broker и AI-агентом для автоматической обработки спецификаций (BOM) из Excel файлов, загружаемых через Telegram Bot.",
+      "success_criteria": [
+        "Владелец может загрузить Excel через Telegram и получить Project в БД",
+        "Telegram Bot авторизует по chat_id из .env",
+        "RabbitMQ + Celery обрабатывают задачи асинхронно",
+        "OpenAI GPT-4o распознаёт dirty Excel структуры",
+        "DLQ сохраняет контекст ошибок",
+        "Telegram alerts отправляются при проблемах",
+        "Health check показывает статус всех сервисов",
+        "Сервисы изолированы в Docker (падение worker не останавливает bot)"
+      ],
+      "key_risks": [
+        {
+          "risk": "Dirty Excel recognition",
+          "whyItMatters": "LLM может неправильно распознать структуру, нужна fallback стратегия"
+        },
+        {
+          "risk": "OpenAI API costs",
+          "whyItMatters": "Большое количество файлов может увеличить расходы"
+        },
+        {
+          "risk": "RabbitMQ setup complexity",
+          "whyItMatters": "Первая интеграция message broker, возможны проблемы с конфигурацией"
+        },
+        {
+          "risk": "Telegram Bot file size limits",
+          "whyItMatters": "Excel файлы могут быть большими"
+        }
+      ],
+      "proof_strategy": [
+        {
+          "riskOrUnknown": "RabbitMQ + Celery integration",
+          "retireIn": "S01",
+          "whatWillBeProven": "Worker обрабатывает dummy задачу, health check показывает соединение с RabbitMQ"
+        },
+        {
+          "riskOrUnknown": "Dirty Excel recognition",
+          "retireIn": "S03",
+          "whatWillBeProven": "LLM правильно распознаёт объединенные ячейки и многоэтажные шапки на реальных dirty примерах"
+        },
+        {
+          "riskOrUnknown": "End-to-end flow",
+          "retireIn": "S04",
+          "whatWillBeProven": "Excel из Telegram приводит к созданию Project в production-like БД с реальными данными"
+        },
+        {
+          "riskOrUnknown": "DLQ handling",
+          "retireIn": "S04",
+          "whatWillBeProven": "LLM error приводит к retry, затем DLQ с контекстом, и Telegram alert"
+        }
+      ],
+      "verification_contract": "Unit tests: pandas parsing, LLM prompt construction, Celery task logic\nIntegration tests: RabbitMQ task execution, Telegram Bot message handling\nE2E test: Excel → Telegram → Project created\nDLQ scenario: LLM error → retry → DLQ → alert",
+      "verification_integration": "Telegram Bot API: receiving messages, sending notifications\nOpenAI API: GPT-4o calls for Excel recognition\nRabbitMQ: message queue operations\nPostgreSQL: Project/ProjectItem creation via FastAPI",
+      "verification_operational": "Service isolation: stopping celery-worker doesn't stop bot and API\nRetry logic: temporary failures handled correctly\nDLQ persistence: failed tasks survive worker restart",
+      "verification_uat": "Владелец загружает real Excel file через Telegram и видит созданный Project в БД",
+      "definition_of_done": [
+        "Все slice deliverables complete",
+        "RabbitMQ + Celery + Telegram Bot + AI-Agent работают вместе",
+        "Flow 1 работает end-to-end (Excel → Project → Telegram response)",
+        "DLQ работает с контекстом и alerts",
+        "Health check показывает все сервисы",
+        "Docker compose up поднимает всю систему"
+      ],
+      "requirement_coverage": "Covers: R001, R002, R003, R004, R005, R006\nPartially covers: none\nLeaves for later: R007-R019\nOrphan risks: none",
+      "boundary_map_markdown": "### S01 → S02, S03, S04\n\nProduces:\n- RabbitMQ service accessible at `rabbitmq:5672`\n- Celery worker infrastructure with task registry\n- Health check endpoint at `/health` returning status of all services\n- DLQ queue configuration\n\nConsumes:\n- nothing (first slice)\n\n### S02 → S04\n\nProduces:\n- Telegram Bot service accepting Excel files\n- File persistence in volume mount\n- Task publication to RabbitMQ `process_bom` queue\n- chat_id authorization via `ALLOWED_CHAT_IDS` env var\n\nConsumes:\n- RabbitMQ connection from S01\n- Health check infrastructure from S01\n\n### S03 → S04\n\nProduces:\n- Celery task `parse_excel_bom` for Excel processing\n- pandas-based Excel reading\n- OpenAI GPT-4o integration for structure recognition\n- Prompt construction for dirty table handling\n- JSON output with recognized columns (sku, name, qty, supplier)\n\nConsumes:\n- RabbitMQ connection from S01\n- DLQ queue from S01\n\n### S04 → Integration\n\nProduces:\n- End-to-end flow integration\n- Project creation via existing FastAPI endpoints\n- DLQ table with failed task context\n- Telegram alerts for DLQ events\n- Full observability across all services\n\nConsumes:\n- Telegram Bot from S02\n- Excel parsing task from S03\n- RabbitMQ infrastructure from S01\n- FastAPI endpoints from M001",
+      "sequence": 0
+    },
+    {
+      "id": "M003",
+      "title": "Email + Invoice Processing",
+      "status": "queued",
+      "depends_on": [],
+      "created_at": "2026-06-01T09:52:52.608Z",
+      "completed_at": null,
+      "vision": "",
+      "success_criteria": [],
+      "key_risks": [],
+      "proof_strategy": [],
+      "verification_contract": "",
+      "verification_integration": "",
+      "verification_operational": "",
+      "verification_uat": "",
+      "definition_of_done": [],
+      "requirement_coverage": "",
+      "boundary_map_markdown": "",
+      "sequence": 0
+    },
+    {
+      "id": "M004",
+      "title": "Bank Integration + Financials",
+      "status": "queued",
+      "depends_on": [],
+      "created_at": "2026-06-01T09:52:52.608Z",
+      "completed_at": null,
+      "vision": "",
+      "success_criteria": [],
+      "key_risks": [],
+      "proof_strategy": [],
+      "verification_contract": "",
+      "verification_integration": "",
+      "verification_operational": "",
+      "verification_uat": "",
+      "definition_of_done": [],
+      "requirement_coverage": "",
+      "boundary_map_markdown": "",
+      "sequence": 0
+    },
+    {
+      "id": "M005",
+      "title": "Frontend UI",
+      "status": "queued",
+      "depends_on": [],
+      "created_at": "2026-06-01T09:52:52.609Z",
+      "completed_at": null,
+      "vision": "",
+      "success_criteria": [],
+      "key_risks": [],
+      "proof_strategy": [],
+      "verification_contract": "",
+      "verification_integration": "",
+      "verification_operational": "",
+      "verification_uat": "",
+      "definition_of_done": [],
+      "requirement_coverage": "",
+      "boundary_map_markdown": "",
+      "sequence": 0
+    },
+    {
+      "id": "M006",
+      "title": "Business Logic Polish",
+      "status": "queued",
+      "depends_on": [],
+      "created_at": "2026-06-01T09:52:52.609Z",
+      "completed_at": null,
+      "vision": "",
+      "success_criteria": [],
+      "key_risks": [],
+      "proof_strategy": [],
+      "verification_contract": "",
+      "verification_integration": "",
+      "verification_operational": "",
+      "verification_uat": "",
+      "definition_of_done": [],
+      "requirement_coverage": "",
+      "boundary_map_markdown": "",
       "sequence": 0
     }
   ],
@@ -139,6 +293,101 @@
       "proof_level": "operational",
       "integration_closure": "Upstream surfaces consumed: FastAPI application from S03, PostgreSQL schema from S01, SQLAlchemy models from S02. New wiring: Docker Compose orchestration with healthcheck directives. What remains: nothing — milestone M001 end-to-end operational after this slice.",
       "observability_impact": "Health check endpoint now reports database connectivity status. Docker Compose healthchecks expose service readiness via `docker-compose ps`. Container logs capture startup errors and database connection issues.",
+      "sequence": 4,
+      "replan_triggered_at": null,
+      "is_sketch": 0,
+      "sketch_scope": ""
+    },
+    {
+      "milestone_id": "M002",
+      "id": "S01",
+      "title": "RabbitMQ + Celery Infrastructure",
+      "status": "pending",
+      "risk": "medium",
+      "depends": [],
+      "demo": "RabbitMQ запущен, Celery worker обрабатывает dummy задачу, health check работает",
+      "created_at": "2026-06-01T09:54:54.638Z",
+      "completed_at": null,
+      "full_summary_md": "",
+      "full_uat_md": "",
+      "goal": "Поднять message broker и worker infrastructure",
+      "success_criteria": "RabbitMQ сервис запускается в Docker, Celery worker подключается к RabbitMQ, dummy task выполняется, /health возвращает статус всех сервисов",
+      "proof_level": "contract",
+      "integration_closure": "RabbitMQ доступен из telegram-bot и celery-worker, Celery может публиковать и выполнять задачи",
+      "observability_impact": "Health check endpoint, Celery task logging, RabbitMQ management UI (опционально)",
+      "sequence": 1,
+      "replan_triggered_at": null,
+      "is_sketch": 0,
+      "sketch_scope": ""
+    },
+    {
+      "milestone_id": "M002",
+      "id": "S02",
+      "title": "Telegram Bot Gateway",
+      "status": "pending",
+      "risk": "high",
+      "depends": [
+        "S01"
+      ],
+      "demo": "Telegram Bot принимает Excel файл от разрешённого chat_id, сохраняет локально, публикует задачу в RabbitMQ",
+      "created_at": "2026-06-01T09:54:54.638Z",
+      "completed_at": null,
+      "full_summary_md": "",
+      "full_uat_md": "",
+      "goal": "Реализовать Telegram Bot для приёма Excel файлов",
+      "success_criteria": "Bot запускается, отвечает на команды /start, /status, принимает Excel файлы, проверяет chat_id, сохраняет файл, публикует задачу",
+      "proof_level": "integration",
+      "integration_closure": "Telegram Bot → RabbitMQ → Celery worker, файл сохранён в persistent volume",
+      "observability_impact": "Telegram Bot логирование, file upload logging, error handling логи",
+      "sequence": 2,
+      "replan_triggered_at": null,
+      "is_sketch": 0,
+      "sketch_scope": ""
+    },
+    {
+      "milestone_id": "M002",
+      "id": "S03",
+      "title": "Excel Parsing + AI-Agent",
+      "status": "pending",
+      "risk": "high",
+      "depends": [
+        "S01"
+      ],
+      "demo": "Celery task парсит Excel с pandas, вызывает GPT-4o для распознавания структуры, возвращает JSON с данными",
+      "created_at": "2026-06-01T09:54:54.639Z",
+      "completed_at": null,
+      "full_summary_md": "",
+      "full_uat_md": "",
+      "goal": "Реализовать Excel parsing и LLM integration",
+      "success_criteria": "Excel читается pandas, prompt строится корректно, OpenAI API вызывается, JSON ответа парсится, dirty Excel обрабатывается",
+      "proof_level": "contract",
+      "integration_closure": "Celery task → OpenAI API, результат передаётся дальше по цепочке",
+      "observability_impact": "OpenAI API calls логируются, prompt/response сохраняются в DLQ при ошибке, token usage tracked",
+      "sequence": 3,
+      "replan_triggered_at": null,
+      "is_sketch": 0,
+      "sketch_scope": ""
+    },
+    {
+      "milestone_id": "M002",
+      "id": "S04",
+      "title": "Project Creation + DLQ",
+      "status": "pending",
+      "risk": "high",
+      "depends": [
+        "S02",
+        "S03"
+      ],
+      "demo": "End-to-end: Excel из Telegram → Project в БД → ответ в Telegram со статистикой. DLQ работает при ошибках.",
+      "created_at": "2026-06-01T09:54:54.639Z",
+      "completed_at": null,
+      "full_summary_md": "",
+      "full_uat_md": "",
+      "goal": "Соединить все компоненты в полный Flow 1 с обработкой ошибок",
+      "success_criteria": "Project создаётся через API, ProjectItem создаётся для каждой строки, Telegram ответ с статистикой, retry 2x работает, DLQ сохраняет контекст, alert отправляется",
+      "proof_level": "integration",
+      "integration_closure": "Telegram Bot → RabbitMQ → Celery → OpenAI → FastAPI → PostgreSQL → Telegram",
+      "observability_impact": "Полный flow логируется end-to-end, DLQ records queryable, alerts отправляются, health check показывает все сервисы",
       "sequence": 4,
       "replan_triggered_at": null,
       "is_sketch": 0,

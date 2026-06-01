@@ -3832,6 +3832,25 @@
       "promptCharCount": 27736,
       "baselineCharCount": 0,
       "cacheHitRate": 84
+    },
+    {
+      "type": "complete-milestone",
+      "id": "M001",
+      "model": "claude-opus-4-6",
+      "startedAt": 1780306219258,
+      "finishedAt": 1780306466090,
+      "tokens": {
+        "input": 0,
+        "output": 0,
+        "cacheRead": 0,
+        "cacheWrite": 0,
+        "total": 0
+      },
+      "cost": 0,
+      "toolCalls": 0,
+      "assistantMessages": 0,
+      "userMessages": 0,
+      "apiRequests": 0
     }
   ]
 }
