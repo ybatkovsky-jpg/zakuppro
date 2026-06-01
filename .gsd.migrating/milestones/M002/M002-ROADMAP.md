@@ -18,10 +18,10 @@
 - [x] **S01: S01** `risk:medium` `depends:[]`
   > After this: RabbitMQ запущен, Celery worker обрабатывает dummy задачу, health check работает
 
-- [ ] **S02: S02** `risk:high` `depends:[]`
+- [x] **S02: S02** `risk:high` `depends:[]`
   > After this: Telegram Bot принимает Excel файл от разрешённого chat_id, сохраняет локально, публикует задачу в RabbitMQ
 
-- [ ] **S03: Excel Parsing + AI-Agent** `risk:high` `depends:[S01]`
+- [ ] **S03: S03** `risk:high` `depends:[]`
   > After this: Celery task парсит Excel с pandas, вызывает GPT-4o для распознавания структуры, возвращает JSON с данными
 
 - [ ] **S04: Project Creation + DLQ** `risk:high` `depends:[S02,S03]`

@@ -13,7 +13,12 @@ load_dotenv(os.path.join(os.path.dirname(__file__), '..', '.env'))
 # Import the Base metadata from our database module
 # This allows alembic to autogenerate migrations from our models
 import sys
-sys.path.insert(0, os.path.dirname(__file__))
+# Add both backend directory and parent project directory to support both import styles
+backend_dir = os.path.dirname(__file__)
+project_dir = os.path.dirname(backend_dir)
+sys.path.insert(0, backend_dir)
+sys.path.insert(0, project_dir)
+
 from database import Base
 
 # Import all models so Alembic can detect them for autogenerate

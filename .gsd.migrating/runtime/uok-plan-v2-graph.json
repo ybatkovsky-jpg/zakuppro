@@ -1,12 +1,12 @@
 {
-  "compiledAt": "2026-06-01T10:38:13.544Z",
+  "compiledAt": "2026-06-01T11:04:26.352Z",
   "milestoneId": "M002",
   "pipeline": {
     "clarifyRoundLimit": 3,
     "researchSynthesized": true,
     "draftContextIncluded": false,
     "finalizedContextIncluded": true,
-    "sourcePhase": "summarizing"
+    "sourcePhase": "executing"
   },
   "nodes": [
     {
@@ -165,6 +165,81 @@
         "unitType": "complete-slice",
         "unitId": "M002.S02",
         "title": "S02",
+        "status": "complete"
+      }
+    },
+    {
+      "id": "execute-task:M002:S03:T01",
+      "kind": "unit",
+      "dependsOn": [],
+      "writes": [
+        "backend/excel_parser.py"
+      ],
+      "metadata": {
+        "unitType": "execute-task",
+        "unitId": "M002.S03.T01",
+        "title": "Created excel_parser.py module with pandas-based Excel reading, header detection, and markdown conversion for dirty invoice tables",
+        "status": "complete"
+      }
+    },
+    {
+      "id": "execute-task:M002:S03:T02",
+      "kind": "unit",
+      "dependsOn": [
+        "execute-task:M002:S03:T01"
+      ],
+      "writes": [
+        "backend/ai_agent.py"
+      ],
+      "metadata": {
+        "unitType": "execute-task",
+        "unitId": "M002.S03.T02",
+        "title": "Created AI agent module with OpenAI GPT-4o integration for BOM extraction from Russian invoice tables",
+        "status": "complete"
+      }
+    },
+    {
+      "id": "execute-task:M002:S03:T03",
+      "kind": "unit",
+      "dependsOn": [
+        "execute-task:M002:S03:T02"
+      ],
+      "writes": [
+        "backend/tasks.py",
+        "backend/excel_parser.py",
+        "backend/ai_agent.py"
+      ],
+      "metadata": {
+        "unitType": "execute-task",
+        "unitId": "M002.S03.T03",
+        "title": "Created Celery task parse_excel_bom that integrates Excel parser and AI agent for BOM extraction with retry logic and DLQ support",
+        "status": "complete"
+      }
+    },
+    {
+      "id": "execute-task:M002:S03:T04",
+      "kind": "unit",
+      "dependsOn": [
+        "execute-task:M002:S03:T03"
+      ],
+      "writes": [],
+      "metadata": {
+        "unitType": "execute-task",
+        "unitId": "M002.S03.T04",
+        "title": "Create Test Excel and Verify Task End-to-End",
+        "status": "pending"
+      }
+    },
+    {
+      "id": "complete-slice:M002:S03",
+      "kind": "verification",
+      "dependsOn": [
+        "execute-task:M002:S03:T04"
+      ],
+      "metadata": {
+        "unitType": "complete-slice",
+        "unitId": "M002.S03",
+        "title": "S03",
         "status": "pending"
       }
     }

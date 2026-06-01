@@ -6,7 +6,12 @@ All tables are defined without relationships (to be added later).
 from sqlalchemy import Column, Integer, String, Numeric, DateTime, Text, ForeignKey, Boolean
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
-from backend.database import Base
+
+# Handle both cases: when backend is a package and when running directly from backend directory
+try:
+    from backend.database import Base
+except ImportError:
+    from database import Base
 
 
 class Project(Base):
@@ -155,3 +160,18 @@ class ProductionTask(Base):
 
     # Relationships
     project = relationship("Project", back_populates="production_tasks")
+
+
+class FailedTask(Base):
+    """FailedTask - Dead Letter Queue (DLQ) for failed Celery tasks."""
+    __tablename__ = "failed_tasks"
+
+    id = Column(Integer, primary_key=True, index=True)
+    task_id = Column(String(255), unique=True, nullable=False, index=True)  # Celery task UUID
+    task_name = Column(String(100), nullable=False)  # Task function name
+    error_message = Column(Text, nullable=False)  # Full error traceback/message
+    error_type = Column(String(100), nullable=False)  # Exception class name
+    file_path = Column(String(500), nullable=True)  # Input file path (e.g., Excel from Telegram)
+    chat_id = Column(Integer, nullable=True)  # Telegram chat_id for user notification
+    context = Column(Text, nullable=True)  # JSON context for debugging/reprocessing
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
