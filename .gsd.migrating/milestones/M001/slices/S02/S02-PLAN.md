@@ -35,12 +35,12 @@ What remains before milestone is usable: S03 will create FastAPI endpoints that 
   - Files: `backend/models.py`
   - Verify: python -c "from backend.models import Project, ProjectItem, Supplier, StockItem, PurchaseOrder, Invoice, Payment, UnresolvedTransaction, ProductionTask; print('Models imported successfully')"
 
-- [ ] **T02: Create Pydantic v2 schemas in schemas.py** `est:1h`
+- [x] **T02: Create Pydantic v2 schemas in schemas.py** `est:1h`
   ## Why This Task Exists
   - Files: `backend/schemas.py`
   - Verify: python -c "from backend.schemas import ProjectCreate, ProjectResponse; print('Schemas imported successfully')"
 
-- [ ] **T03: Write tests for models and schemas** `est:1h`
+- [x] **T03: Write tests for models and schemas** `est:1h`
   ## Why This Task Exists
   - Files: `backend/tests/test_models.py`, `backend/tests/test_schemas.py`
   - Verify: pytest backend/tests/test_models.py backend/tests/test_schemas.py -v

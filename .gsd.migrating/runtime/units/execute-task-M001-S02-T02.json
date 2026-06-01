@@ -2,15 +2,15 @@
   "version": 1,
   "unitType": "execute-task",
   "unitId": "M001/S02/T02",
-  "startedAt": 1780269974579,
-  "updatedAt": 1780278040192,
-  "phase": "crashed",
-  "wrapupWarningSent": true,
+  "startedAt": 1780284663513,
+  "updatedAt": 1780284663534,
+  "phase": "dispatched",
+  "wrapupWarningSent": false,
   "continueHereFired": false,
   "timeoutAt": 1780271774608,
-  "lastProgressAt": 1780278040191,
-  "progressCount": 1,
-  "lastProgressKind": "signal",
+  "lastProgressAt": 1780284663513,
+  "progressCount": 0,
+  "lastProgressKind": "dispatch",
   "recovery": {
     "planPath": ".gsd/milestones/M001/slices/S02/S02-PLAN.md",
     "summaryPath": ".gsd/milestones/M001/slices/S02/tasks/T02-SUMMARY.md",
@@ -21,6 +21,6 @@
     "mustHaveCount": 0,
     "mustHavesMentionedInSummary": 0
   },
-  "recoveryAttempts": 1,
+  "recoveryAttempts": 0,
   "lastRecoveryReason": "hard"
 }

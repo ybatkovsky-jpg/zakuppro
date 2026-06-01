@@ -1,0 +1,18 @@
+{
+  "id": "ce57c045-f1c6-4fa6-98a9-7edb2c1d8d14",
+  "runtime": "bash",
+  "purpose": "Run all 58 model and schema tests",
+  "script_chars": 123,
+  "started_at": "2026-06-01T03:47:26.332Z",
+  "finished_at": "2026-06-01T03:47:26.515Z",
+  "exit_code": 1,
+  "signal": null,
+  "timed_out": false,
+  "duration_ms": 183,
+  "stdout_bytes": 544,
+  "stderr_bytes": 0,
+  "stdout_truncated": false,
+  "stderr_truncated": false,
+  "stdout_path": "D:\\CLAUDE\\Project\\zakuppro\\zakuppro\\.gsd\\exec\\ce57c045-f1c6-4fa6-98a9-7edb2c1d8d14.stdout",
+  "stderr_path": "D:\\CLAUDE\\Project\\zakuppro\\zakuppro\\.gsd\\exec\\ce57c045-f1c6-4fa6-98a9-7edb2c1d8d14.stderr"
+}

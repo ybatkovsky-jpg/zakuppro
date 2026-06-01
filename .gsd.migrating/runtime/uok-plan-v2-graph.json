@@ -1,5 +1,5 @@
 {
-  "compiledAt": "2026-05-31T23:26:14.139Z",
+  "compiledAt": "2026-06-01T04:01:07.862Z",
   "milestoneId": "M001",
   "pipeline": {
     "clarifyRoundLimit": 3,
@@ -122,12 +122,14 @@
       "dependsOn": [
         "execute-task:M001:S02:T01"
       ],
-      "writes": [],
+      "writes": [
+        "backend/schemas.py"
+      ],
       "metadata": {
         "unitType": "execute-task",
         "unitId": "M001.S02.T02",
-        "title": "Create Pydantic v2 schemas in schemas.py",
-        "status": "pending"
+        "title": "Created all 27 Pydantic v2 schemas with from_attributes=True for ORM mode compatibility",
+        "status": "complete"
       }
     },
     {
@@ -136,12 +138,15 @@
       "dependsOn": [
         "execute-task:M001:S02:T02"
       ],
-      "writes": [],
+      "writes": [
+        "backend/tests/test_models.py",
+        "backend/tests/test_schemas.py"
+      ],
       "metadata": {
         "unitType": "execute-task",
         "unitId": "M001.S02.T03",
-        "title": "Write tests for models and schemas",
-        "status": "pending"
+        "title": "Created 58 tests for models and schemas: 16 model tests verify bidirectional relationships, cascade delete, and lazy loading; 42 schema tests validate Pydantic v2 serialization and validation",
+        "status": "complete"
       }
     },
     {
@@ -154,6 +159,90 @@
         "unitType": "complete-slice",
         "unitId": "M001.S02",
         "title": "S02",
+        "status": "complete"
+      }
+    },
+    {
+      "id": "execute-task:M001:S03:T01",
+      "kind": "unit",
+      "dependsOn": [],
+      "writes": [
+        "backend/main.py",
+        "backend/routers/__init__.py",
+        "backend/routers/health.py"
+      ],
+      "metadata": {
+        "unitType": "execute-task",
+        "unitId": "M001.S03.T01",
+        "title": "Created FastAPI main app with health check endpoint and CORS middleware",
+        "status": "complete"
+      }
+    },
+    {
+      "id": "execute-task:M001:S03:T02",
+      "kind": "unit",
+      "dependsOn": [
+        "execute-task:M001:S03:T01"
+      ],
+      "writes": [
+        "backend/routers/projects.py",
+        "backend/main.py"
+      ],
+      "metadata": {
+        "unitType": "execute-task",
+        "unitId": "M001.S03.T02",
+        "title": "Created Project CRUD router with GET/POST/PUT/DELETE endpoints and eager-loaded items",
+        "status": "complete"
+      }
+    },
+    {
+      "id": "execute-task:M001:S03:T03",
+      "kind": "unit",
+      "dependsOn": [
+        "execute-task:M001:S03:T02"
+      ],
+      "writes": [
+        "backend/routers/project_items.py",
+        "backend/routers/suppliers.py",
+        "backend/routers/stock_items.py",
+        "backend/routers/purchase_orders.py",
+        "backend/routers/invoices.py",
+        "backend/routers/payments.py",
+        "backend/routers/unresolved_transactions.py",
+        "backend/routers/production_tasks.py",
+        "backend/main.py"
+      ],
+      "metadata": {
+        "unitType": "execute-task",
+        "unitId": "M001.S03.T03",
+        "title": "Implemented 8 entity CRUD routers (ProjectItem, Supplier, StockItem, PurchaseOrder, Invoice, Payment, UnresolvedTransaction, ProductionTask) following Project pattern with 45 total API endpoints",
+        "status": "complete"
+      }
+    },
+    {
+      "id": "execute-task:M001:S03:T04",
+      "kind": "unit",
+      "dependsOn": [
+        "execute-task:M001:S03:T03"
+      ],
+      "writes": [],
+      "metadata": {
+        "unitType": "execute-task",
+        "unitId": "M001.S03.T04",
+        "title": "Write API integration tests",
+        "status": "pending"
+      }
+    },
+    {
+      "id": "complete-slice:M001:S03",
+      "kind": "verification",
+      "dependsOn": [
+        "execute-task:M001:S03:T04"
+      ],
+      "metadata": {
+        "unitType": "complete-slice",
+        "unitId": "M001.S03",
+        "title": "S03",
         "status": "pending"
       }
     }

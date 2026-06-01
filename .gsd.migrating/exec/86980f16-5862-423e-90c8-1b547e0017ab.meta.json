@@ -1,0 +1,18 @@
+{
+  "id": "86980f16-5862-423e-90c8-1b547e0017ab",
+  "runtime": "bash",
+  "purpose": "Verify all 9 models import successfully",
+  "script_chars": 235,
+  "started_at": "2026-06-01T03:47:26.029Z",
+  "finished_at": "2026-06-01T03:47:26.175Z",
+  "exit_code": 1,
+  "signal": null,
+  "timed_out": false,
+  "duration_ms": 146,
+  "stdout_bytes": 544,
+  "stderr_bytes": 0,
+  "stdout_truncated": false,
+  "stderr_truncated": false,
+  "stdout_path": "D:\\CLAUDE\\Project\\zakuppro\\zakuppro\\.gsd\\exec\\86980f16-5862-423e-90c8-1b547e0017ab.stdout",
+  "stderr_path": "D:\\CLAUDE\\Project\\zakuppro\\zakuppro\\.gsd\\exec\\86980f16-5862-423e-90c8-1b547e0017ab.stderr"
+}

@@ -1,7 +1,7 @@
 # Codebase Map
 
-Generated: 2026-05-31T23:11:03Z | Files: 500 | Described: 0/500
-<!-- gsd:codebase-meta {"generatedAt":"2026-05-31T23:11:03Z","fingerprint":"129eb40ebe0bcd77b6f5b6db936c48d7332051ec","fileCount":500,"truncated":true} -->
+Generated: 2026-06-01T03:56:44Z | Files: 500 | Described: 0/500
+<!-- gsd:codebase-meta {"generatedAt":"2026-06-01T03:56:44Z","fingerprint":"fe0d125386c971dda6caae21aab796b756a1ed6b","fileCount":500,"truncated":true} -->
 Note: Truncated to first 500 files. Run with higher --max-files to include all.
 
 ### (root)/
@@ -11,6 +11,7 @@ Note: Truncated to first 500 files. Run with higher --max-files to include all.
 - `components.json`
 - `eslint.config.mjs`
 - `next.config.ts`
+- `package-lock.json`
 - `package.json`
 - `postcss.config.mjs`
 - `SPEC.md`
@@ -38,19 +39,43 @@ Note: Truncated to first 500 files. Run with higher --max-files to include all.
 - `.gsd.migrating/activity/006-execute-task-M001-S01-T02.jsonl`
 - `.gsd.migrating/activity/007-execute-task-M001-S01-T03.jsonl`
 - `.gsd.migrating/activity/008-execute-task-M001-S01-T04.jsonl`
+- `.gsd.migrating/activity/009-execute-task-M001-S01-T04.jsonl`
+- `.gsd.migrating/activity/010-execute-task-M001-S01-T05.jsonl`
+- `.gsd.migrating/activity/011-execute-task-M001-S01-T05.jsonl`
+- `.gsd.migrating/activity/012-complete-slice-M001-S01.jsonl`
+- `.gsd.migrating/activity/013-complete-slice-M001-S01.jsonl`
+- `.gsd.migrating/activity/014-research-slice-M001-S02.jsonl`
+- `.gsd.migrating/activity/015-plan-slice-M001-S02.jsonl`
+- `.gsd.migrating/activity/016-execute-task-M001-S02-T01.jsonl`
+- `.gsd.migrating/activity/017-execute-task-M001-S02-T02.jsonl`
+- `.gsd.migrating/activity/018-execute-task-M001-S02-T02.jsonl`
 
 ### .gsd.migrating/audit/
 - `.gsd.migrating/audit/events.jsonl`
 
+### .gsd.migrating/exec/
+- `.gsd.migrating/exec/a52959db-966b-4a6b-944c-31e111f63af0.meta.json`
+- `.gsd.migrating/exec/a52959db-966b-4a6b-944c-31e111f63af0.stderr`
+- `.gsd.migrating/exec/a52959db-966b-4a6b-944c-31e111f63af0.stdout`
+
+### .gsd.migrating/graphs/
+- `.gsd.migrating/graphs/graph.json`
+
 ### .gsd.migrating/journal/
 - `.gsd.migrating/journal/2026-05-31.jsonl`
+- `.gsd.migrating/journal/2026-06-01.jsonl`
 
 ### .gsd.migrating/milestones/M001/
 - `.gsd.migrating/milestones/M001/M001-CONTEXT.md`
 - `.gsd.migrating/milestones/M001/M001-ROADMAP.md`
 
+### .gsd.migrating/milestones/M001/anchors/
+- `.gsd.migrating/milestones/M001/anchors/plan-slice.json`
+
 ### .gsd.migrating/milestones/M001/slices/S01/
 - `.gsd.migrating/milestones/M001/slices/S01/S01-PLAN.md`
+- `.gsd.migrating/milestones/M001/slices/S01/S01-SUMMARY.md`
+- `.gsd.migrating/milestones/M001/slices/S01/S01-UAT.md`
 
 ### .gsd.migrating/milestones/M001/slices/S01/tasks/
 - `.gsd.migrating/milestones/M001/slices/S01/tasks/T01-PLAN.md`
@@ -63,7 +88,23 @@ Note: Truncated to first 500 files. Run with higher --max-files to include all.
 - `.gsd.migrating/milestones/M001/slices/S01/tasks/T03-SUMMARY.md`
 - `.gsd.migrating/milestones/M001/slices/S01/tasks/T03-VERIFY.json`
 - `.gsd.migrating/milestones/M001/slices/S01/tasks/T04-PLAN.md`
+- `.gsd.migrating/milestones/M001/slices/S01/tasks/T04-SUMMARY.md`
+- `.gsd.migrating/milestones/M001/slices/S01/tasks/T04-VERIFY.json`
 - `.gsd.migrating/milestones/M001/slices/S01/tasks/T05-PLAN.md`
+- `.gsd.migrating/milestones/M001/slices/S01/tasks/T05-SUMMARY.md`
+- `.gsd.migrating/milestones/M001/slices/S01/tasks/T05-VERIFY.json`
+
+### .gsd.migrating/milestones/M001/slices/S02/
+- `.gsd.migrating/milestones/M001/slices/S02/S02-PLAN.md`
+- `.gsd.migrating/milestones/M001/slices/S02/S02-PRE-EXEC-VERIFY.json`
+- `.gsd.migrating/milestones/M001/slices/S02/S02-RESEARCH.md`
+
+### .gsd.migrating/milestones/M001/slices/S02/tasks/
+- `.gsd.migrating/milestones/M001/slices/S02/tasks/T01-PLAN.md`
+- `.gsd.migrating/milestones/M001/slices/S02/tasks/T01-SUMMARY.md`
+- `.gsd.migrating/milestones/M001/slices/S02/tasks/T01-VERIFY.json`
+- `.gsd.migrating/milestones/M001/slices/S02/tasks/T02-PLAN.md`
+- `.gsd.migrating/milestones/M001/slices/S02/tasks/T03-PLAN.md`
 
 ### .gsd.migrating/runtime/
 - `.gsd.migrating/runtime/uok-parity.jsonl`
@@ -72,11 +113,17 @@ Note: Truncated to first 500 files. Run with higher --max-files to include all.
 - `.gsd.migrating/runtime/write-gate-state.json`
 
 ### .gsd.migrating/runtime/units/
+- `.gsd.migrating/runtime/units/complete-slice-M001-S01.json`
 - `.gsd.migrating/runtime/units/discuss-milestone-M001.json`
 - `.gsd.migrating/runtime/units/execute-task-M001-S01-T01.json`
 - `.gsd.migrating/runtime/units/execute-task-M001-S01-T02.json`
 - `.gsd.migrating/runtime/units/execute-task-M001-S01-T03.json`
 - `.gsd.migrating/runtime/units/execute-task-M001-S01-T04.json`
+- `.gsd.migrating/runtime/units/execute-task-M001-S01-T05.json`
+- `.gsd.migrating/runtime/units/execute-task-M001-S02-T01.json`
+- `.gsd.migrating/runtime/units/execute-task-M001-S02-T02.json`
+- `.gsd.migrating/runtime/units/plan-slice-M001-S02.json`
+- `.gsd.migrating/runtime/units/research-slice-M001-S02.json`
 
 ### .zscripts/
 - `.zscripts/build.sh`
@@ -94,9 +141,11 @@ Note: Truncated to first 500 files. Run with higher --max-files to include all.
 - `backend/__init__.py`
 - `backend/alembic.ini`
 - `backend/database.py`
+- `backend/main.py`
 - `backend/models.py`
 - `backend/README.md`
 - `backend/requirements.txt`
+- `backend/schemas.py`
 
 ### backend/alembic/
 - `backend/alembic/env.py`
@@ -105,10 +154,17 @@ Note: Truncated to first 500 files. Run with higher --max-files to include all.
 
 ### backend/alembic/versions/
 - `backend/alembic/versions/d6d07b9ba359_initial_schema.py`
+- `backend/alembic/versions/e6b0df437c13_add_performance_indexes.py`
+
+### backend/routers/
+- `backend/routers/__init__.py`
+- `backend/routers/health.py`
 
 ### backend/tests/
 - `backend/tests/__init__.py`
 - `backend/tests/test_migration.py`
+- `backend/tests/test_models.py`
+- `backend/tests/test_schemas.py`
 
 ### download/
 - `download/README.md`
@@ -674,65 +730,3 @@ Note: Truncated to first 500 files. Run with higher --max-files to include all.
 ### skills/stock-analysis-skill/
 - `skills/stock-analysis-skill/package.json`
 - `skills/stock-analysis-skill/SKILL.md`
-- `skills/stock-analysis-skill/tsconfig.json`
-
-### skills/stock-analysis-skill/src/
-- `skills/stock-analysis-skill/src/analyzer.ts`
-- `skills/stock-analysis-skill/src/dataFetcher.ts`
-- `skills/stock-analysis-skill/src/dividend.ts`
-- `skills/stock-analysis-skill/src/index.ts`
-- `skills/stock-analysis-skill/src/rumorScanner.ts`
-- `skills/stock-analysis-skill/src/types.ts`
-- `skills/stock-analysis-skill/src/watchlist.ts`
-
-### skills/storyboard-manager/
-- `skills/storyboard-manager/index.js`
-- `skills/storyboard-manager/package.json`
-- `skills/storyboard-manager/SKILL.md`
-
-### skills/storyboard-manager/references/
-- `skills/storyboard-manager/references/character_development.md`
-- `skills/storyboard-manager/references/story_structures.md`
-
-### skills/storyboard-manager/scripts/
-- `skills/storyboard-manager/scripts/consistency_checker.py`
-- `skills/storyboard-manager/scripts/timeline_tracker.py`
-
-### skills/study-buddy/
-- `skills/study-buddy/learning-links.md`
-- `skills/study-buddy/SKILL.md`
-
-### skills/task-review/
-- `skills/task-review/SKILL.md`
-
-### skills/ui-ux-pro-max/
-- `skills/ui-ux-pro-max/_meta.json`
-- `skills/ui-ux-pro-max/SKILL.md`
-
-### skills/ui-ux-pro-max/assets/data/
-- `skills/ui-ux-pro-max/assets/data/charts.csv`
-- `skills/ui-ux-pro-max/assets/data/colors.csv`
-- `skills/ui-ux-pro-max/assets/data/icons.csv`
-- `skills/ui-ux-pro-max/assets/data/landing.csv`
-- `skills/ui-ux-pro-max/assets/data/products.csv`
-- `skills/ui-ux-pro-max/assets/data/react-performance.csv`
-- `skills/ui-ux-pro-max/assets/data/styles.csv`
-- `skills/ui-ux-pro-max/assets/data/typography.csv`
-- `skills/ui-ux-pro-max/assets/data/ui-reasoning.csv`
-- `skills/ui-ux-pro-max/assets/data/ux-guidelines.csv`
-- `skills/ui-ux-pro-max/assets/data/web-interface.csv`
-
-### skills/ui-ux-pro-max/assets/data/stacks/
-- `skills/ui-ux-pro-max/assets/data/stacks/astro.csv`
-- `skills/ui-ux-pro-max/assets/data/stacks/flutter.csv`
-- `skills/ui-ux-pro-max/assets/data/stacks/html-tailwind.csv`
-- `skills/ui-ux-pro-max/assets/data/stacks/jetpack-compose.csv`
-- `skills/ui-ux-pro-max/assets/data/stacks/nextjs.csv`
-- `skills/ui-ux-pro-max/assets/data/stacks/nuxt-ui.csv`
-- `skills/ui-ux-pro-max/assets/data/stacks/nuxtjs.csv`
-- `skills/ui-ux-pro-max/assets/data/stacks/react-native.csv`
-- `skills/ui-ux-pro-max/assets/data/stacks/react.csv`
-- `skills/ui-ux-pro-max/assets/data/stacks/shadcn.csv`
-- `skills/ui-ux-pro-max/assets/data/stacks/svelte.csv`
-- `skills/ui-ux-pro-max/assets/data/stacks/swiftui.csv`
-- `skills/ui-ux-pro-max/assets/data/stacks/vue.csv`

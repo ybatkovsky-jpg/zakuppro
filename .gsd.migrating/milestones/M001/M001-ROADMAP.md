@@ -15,10 +15,10 @@
 - [x] **S01: S01** `risk:high` `depends:[]`
   > After this: После этого: `alembic revision head` применяет схему к пустой БД; все таблицы созданы с правильными типами, индексами и foreign keys
 
-- [ ] **S02: S02** `risk:high` `depends:[]`
+- [x] **S02: S02** `risk:high` `depends:[]`
   > After this: После этого: Python модели мапятся 1:1 к таблицам; Pydantic schemas валидируют вход/выход; можно создать ORM объект и сохранить в БД
 
-- [ ] **S03: FastAPI CRUD Endpoints** `risk:medium` `depends:[S02]`
+- [ ] **S03: S03** `risk:medium` `depends:[]`
   > After this: После этого: POST /projects создает проект; GET /projects/{id} возвращает с items; DELETE работает; Swagger UI показывает все эндпоинты
 
 - [ ] **S04: Docker + Health Checks** `risk:low` `depends:[S03]`

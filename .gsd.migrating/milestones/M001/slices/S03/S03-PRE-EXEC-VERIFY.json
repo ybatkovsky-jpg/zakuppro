@@ -1,0 +1,24 @@
+{
+  "schemaVersion": 1,
+  "milestoneId": "M001",
+  "sliceId": "S03",
+  "timestamp": 1780285923516,
+  "status": "fail",
+  "durationMs": 6,
+  "checks": [
+    {
+      "category": "tool",
+      "target": "T02 Verify",
+      "passed": false,
+      "message": "Unsafe or non-runnable Verify command: python -c \"from backend.main import app; from backend.routers import projects; print('Project router loaded')\"\ngrep -q 'projects' backend/main.py (contains shell control syntax such as pipes, redirects, semicolons, backticks, or command substitution)",
+      "blocking": true
+    },
+    {
+      "category": "tool",
+      "target": "T03 Verify",
+      "passed": false,
+      "message": "Unsafe or non-runnable Verify command: python -c \"\nfrom backend.main import app\nroutes = [r.path for r in app.routes]\nentity_count = sum(1 for r in routes if '/api/' in r)\nprint(f'API routes: {entity_count}')\nassert entity_count >= 45, f'Expected 45+ routes, got {entity_count}'\n\"\ngrep -c 'include_router' backend/main.py (contains shell control syntax such as pipes, redirects, semicolons, backticks, or command substitution)",
+      "blocking": true
+    }
+  ]
+}

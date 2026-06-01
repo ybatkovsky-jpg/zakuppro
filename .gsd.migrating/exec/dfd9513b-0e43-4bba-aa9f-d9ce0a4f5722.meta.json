@@ -1,0 +1,18 @@
+{
+  "id": "dfd9513b-0e43-4bba-aa9f-d9ce0a4f5722",
+  "runtime": "bash",
+  "purpose": "Verify schemas import successfully",
+  "script_chars": 154,
+  "started_at": "2026-06-01T03:31:29.563Z",
+  "finished_at": "2026-06-01T03:31:29.741Z",
+  "exit_code": 1,
+  "signal": null,
+  "timed_out": false,
+  "duration_ms": 178,
+  "stdout_bytes": 544,
+  "stderr_bytes": 0,
+  "stdout_truncated": false,
+  "stderr_truncated": false,
+  "stdout_path": "D:\\CLAUDE\\Project\\zakuppro\\zakuppro\\.gsd\\exec\\dfd9513b-0e43-4bba-aa9f-d9ce0a4f5722.stdout",
+  "stderr_path": "D:\\CLAUDE\\Project\\zakuppro\\zakuppro\\.gsd\\exec\\dfd9513b-0e43-4bba-aa9f-d9ce0a4f5722.stderr"
+}

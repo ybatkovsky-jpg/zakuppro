@@ -1,0 +1,16 @@
+{
+  "schemaVersion": 1,
+  "taskId": "T03",
+  "unitId": "M001/S02/T03",
+  "timestamp": 1780285233805,
+  "passed": true,
+  "discoverySource": "task-plan",
+  "checks": [
+    {
+      "command": "pytest backend/tests/test_models.py backend/tests/test_schemas.py -v",
+      "exitCode": 0,
+      "durationMs": 2962,
+      "verdict": "pass"
+    }
+  ]
+}
