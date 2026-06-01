@@ -1,0 +1,18 @@
+{
+  "id": "3a95c17b-2f2a-4770-9b77-48b8970f6a51",
+  "runtime": "bash",
+  "purpose": "Verify S03 test files exist",
+  "script_chars": 189,
+  "started_at": "2026-06-01T11:10:36.212Z",
+  "finished_at": "2026-06-01T11:10:36.323Z",
+  "exit_code": 1,
+  "signal": null,
+  "timed_out": false,
+  "duration_ms": 111,
+  "stdout_bytes": 544,
+  "stderr_bytes": 0,
+  "stdout_truncated": false,
+  "stderr_truncated": false,
+  "stdout_path": "D:\\CLAUDE\\Project\\zakuppro\\zakuppro\\.gsd\\exec\\3a95c17b-2f2a-4770-9b77-48b8970f6a51.stdout",
+  "stderr_path": "D:\\CLAUDE\\Project\\zakuppro\\zakuppro\\.gsd\\exec\\3a95c17b-2f2a-4770-9b77-48b8970f6a51.stderr"
+}

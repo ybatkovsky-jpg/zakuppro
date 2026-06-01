@@ -21,10 +21,10 @@
 - [x] **S02: S02** `risk:high` `depends:[]`
   > After this: Telegram Bot принимает Excel файл от разрешённого chat_id, сохраняет локально, публикует задачу в RabbitMQ
 
-- [ ] **S03: S03** `risk:high` `depends:[]`
+- [x] **S03: S03** `risk:high` `depends:[]`
   > After this: Celery task парсит Excel с pandas, вызывает GPT-4o для распознавания структуры, возвращает JSON с данными
 
-- [ ] **S04: Project Creation + DLQ** `risk:high` `depends:[S02,S03]`
+- [ ] **S04: S04** `risk:high` `depends:[]`
   > After this: End-to-end: Excel из Telegram → Project в БД → ответ в Telegram со статистикой. DLQ работает при ошибках.
 
 ## Boundary Map

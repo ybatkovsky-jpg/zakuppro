@@ -1,0 +1,38 @@
+{
+  "schemaVersion": 1,
+  "milestoneId": "M002",
+  "sliceId": "S04",
+  "timestamp": 1780312622092,
+  "status": "fail",
+  "durationMs": 4,
+  "checks": [
+    {
+      "category": "tool",
+      "target": "T01 Verify",
+      "passed": false,
+      "message": "Unsafe or non-runnable Verify command: python -c \"from backend.models import FailedTask; print('FailedTask imported successfully')\" (contains shell control syntax such as pipes, redirects, semicolons, backticks, or command substitution)",
+      "blocking": true
+    },
+    {
+      "category": "tool",
+      "target": "T02 Verify",
+      "passed": false,
+      "message": "Unsafe or non-runnable Verify command: python -c \"from backend.supplier_resolver import find_or_create_supplier; print('Module imported successfully')\" (contains shell control syntax such as pipes, redirects, semicolons, backticks, or command substitution)",
+      "blocking": true
+    },
+    {
+      "category": "tool",
+      "target": "T03 Verify",
+      "passed": false,
+      "message": "Unsafe or non-runnable Verify command: python -c \"from backend.telegram_notifier import send_completion_message, send_dlq_alert; print('Module imported successfully')\" (contains shell control syntax such as pipes, redirects, semicolons, backticks, or command substitution)",
+      "blocking": true
+    },
+    {
+      "category": "tool",
+      "target": "T05 Verify",
+      "passed": false,
+      "message": "Unsafe or non-runnable Verify command: grep -q 'process_bom_to_project' backend/handlers/documents.py || grep -q 'parse_excel_bom.delay' backend/tasks.py (contains shell control syntax such as pipes, redirects, semicolons, backticks, or command substitution)",
+      "blocking": true
+    }
+  ]
+}

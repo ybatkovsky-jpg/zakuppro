@@ -48,7 +48,7 @@ What remains: S04 will wire this task's JSON output into FastAPI Project endpoin
   - Files: `backend/tasks.py`
   - Verify: grep -q "parse_excel_bom" backend/tasks.py && python -c "from backend.tasks import parse_excel_bom; print('Task registered:', parse_excel_bom.name)"
 
-- [ ] **T04: Create Test Excel and Verify Task End-to-End** `est:30m`
+- [x] **T04: Create Test Excel and Verify Task End-to-End** `est:30m`
   ## Why
   Prove the complete pipeline works: Excel file → Celery task → AI extraction → JSON output. Test file validates dirty table handling (merged cells, Russian columns).
   - Files: `tests/fixtures/sample_bom.xlsx`, `backend/tests/test_s03_integration.py`

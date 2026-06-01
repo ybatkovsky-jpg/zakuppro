@@ -1,7 +1,7 @@
-# GSD context snapshot (2026-06-01T11:04:23.066Z)
+# GSD context snapshot (2026-06-01T11:20:26.072Z)
 
 ## Active context
-Active: M002 / S03 / T04 - Create Test Excel and Verify Task End-to-End
+Active: M002 / S04 / T02 - Create Supplier Resolver Module
 
 ## Top project memories
 - [MEM005] (architecture) SQLAlchemy 2.0 uses relationship(back_populates=...) for bidirectional relationships, not backref. This makes relationships explicit on both sides for clearer code.
@@ -12,4 +12,8 @@ Active: M002 / S03 / T04 - Create Test Excel and Verify Task End-to-End
 - [MEM004] (pattern) Pydantic v2 requires model_config = ConfigDict(from_attributes=True) for ORM mode, not the inner Config class from v1.
 
 ## Recent gsd_exec runs
-- [1dfc457e-ccb4-4e7a-b911-73bed67929c3] bash exit:1 — Slice S02 verification checks
+- [bb93d77e-d54d-401f-8c6f-6ca22fc8098d] bash exit:1 — Verify Python syntax validation
+- [88bdd060-7c6c-4635-9473-5b780547bc3a] bash exit:1 — Verify core module functions
+- [dae524d0-fc5e-4465-9e71-1d9269fbb761] bash exit:1 — Verify Celery task registration
+- [3a95c17b-2f2a-4770-9b77-48b8970f6a51] bash exit:1 — Verify S03 test files exist
+- [e6ee96e0-d95d-48b7-a2d8-9e183112781f] bash exit:1 — Verify S03 core files exist

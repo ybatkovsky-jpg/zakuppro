@@ -1,0 +1,18 @@
+{
+  "id": "88bdd060-7c6c-4635-9473-5b780547bc3a",
+  "runtime": "bash",
+  "purpose": "Verify core module functions",
+  "script_chars": 291,
+  "started_at": "2026-06-01T11:10:36.460Z",
+  "finished_at": "2026-06-01T11:10:36.572Z",
+  "exit_code": 1,
+  "signal": null,
+  "timed_out": false,
+  "duration_ms": 112,
+  "stdout_bytes": 544,
+  "stderr_bytes": 0,
+  "stdout_truncated": false,
+  "stderr_truncated": false,
+  "stdout_path": "D:\\CLAUDE\\Project\\zakuppro\\zakuppro\\.gsd\\exec\\88bdd060-7c6c-4635-9473-5b780547bc3a.stdout",
+  "stderr_path": "D:\\CLAUDE\\Project\\zakuppro\\zakuppro\\.gsd\\exec\\88bdd060-7c6c-4635-9473-5b780547bc3a.stderr"
+}

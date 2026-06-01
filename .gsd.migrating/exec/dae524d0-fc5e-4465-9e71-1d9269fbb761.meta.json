@@ -1,0 +1,18 @@
+{
+  "id": "dae524d0-fc5e-4465-9e71-1d9269fbb761",
+  "runtime": "bash",
+  "purpose": "Verify Celery task registration",
+  "script_chars": 218,
+  "started_at": "2026-06-01T11:10:36.336Z",
+  "finished_at": "2026-06-01T11:10:36.448Z",
+  "exit_code": 1,
+  "signal": null,
+  "timed_out": false,
+  "duration_ms": 112,
+  "stdout_bytes": 544,
+  "stderr_bytes": 0,
+  "stdout_truncated": false,
+  "stderr_truncated": false,
+  "stdout_path": "D:\\CLAUDE\\Project\\zakuppro\\zakuppro\\.gsd\\exec\\dae524d0-fc5e-4465-9e71-1d9269fbb761.stdout",
+  "stderr_path": "D:\\CLAUDE\\Project\\zakuppro\\zakuppro\\.gsd\\exec\\dae524d0-fc5e-4465-9e71-1d9269fbb761.stderr"
+}

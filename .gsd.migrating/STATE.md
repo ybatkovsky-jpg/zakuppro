@@ -1,7 +1,7 @@
 # GSD State
 
 **Active Milestone:** M002: Asynchronous Core + AI-Agent Foundation
-**Active Slice:** S03: S03
+**Active Slice:** S04: S04
 **Phase:** executing
 **Requirements Status:** 14 active · 0 validated · 5 deferred · 0 out of scope
 
@@ -20,4 +20,4 @@
 - None
 
 ## Next Action
-Execute T04: Create Test Excel and Verify Task End-to-End in slice S03.
+Execute T02: Create Supplier Resolver Module in slice S04.

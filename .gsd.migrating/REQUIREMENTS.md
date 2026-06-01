@@ -27,6 +27,7 @@ This file is the explicit capability and coverage contract for the project.
 - Why it matters: Автоматизация создания BOM из Excel. LLM нужна для dirty таблиц (объединенные ячейки, многоэтажные шапки).
 - Source: user
 - Primary owning slice: M002
+- Validation: S03 verification passed: Celery task parse_excel_bom registered with @app.task, pandas reads Excel files, OpenAI GPT-4o extracts structure with json_schema, Pydantic validates output. Test file sample_bom.xlsx with Russian headers validates dirty table handling.
 
 ### R004 — Flow 1: Загрузка BOM через Telegram → парсинг Excel → создание Project + ProjectItem в БД → ответ владельцу со статистикой
 - Class: core-capability
@@ -168,7 +169,7 @@ This file is the explicit capability and coverage contract for the project.
 |---|---|---|---|---|---|
 | R001 | integration | active | M002 | none | unmapped |
 | R002 | core-capability | active | M002 | none | unmapped |
-| R003 | core-capability | active | M002 | none | unmapped |
+| R003 | core-capability | active | M002 | none | S03 verification passed: Celery task parse_excel_bom registered with @app.task, pandas reads Excel files, OpenAI GPT-4o extracts structure with json_schema, Pydantic validates output. Test file sample_bom.xlsx with Russian headers validates dirty table handling. |
 | R004 | core-capability | active | M002 | none | unmapped |
 | R005 | failure-visibility | active | M002 | none | unmapped |
 | R006 | operability | active | M002 | none | unmapped |

@@ -1,0 +1,18 @@
+{
+  "id": "e6ee96e0-d95d-48b7-a2d8-9e183112781f",
+  "runtime": "bash",
+  "purpose": "Verify S03 core files exist",
+  "script_chars": 191,
+  "started_at": "2026-06-01T11:10:36.052Z",
+  "finished_at": "2026-06-01T11:10:36.190Z",
+  "exit_code": 1,
+  "signal": null,
+  "timed_out": false,
+  "duration_ms": 138,
+  "stdout_bytes": 544,
+  "stderr_bytes": 0,
+  "stdout_truncated": false,
+  "stderr_truncated": false,
+  "stdout_path": "D:\\CLAUDE\\Project\\zakuppro\\zakuppro\\.gsd\\exec\\e6ee96e0-d95d-48b7-a2d8-9e183112781f.stdout",
+  "stderr_path": "D:\\CLAUDE\\Project\\zakuppro\\zakuppro\\.gsd\\exec\\e6ee96e0-d95d-48b7-a2d8-9e183112781f.stderr"
+}

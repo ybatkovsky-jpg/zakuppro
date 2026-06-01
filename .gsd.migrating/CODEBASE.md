@@ -1,7 +1,7 @@
 # Codebase Map
 
-Generated: 2026-06-01T10:55:39Z | Files: 500 | Described: 0/500
-<!-- gsd:codebase-meta {"generatedAt":"2026-06-01T10:55:39Z","fingerprint":"0264b9353cbc1561a65d7f815dcc22a9867138d1","fileCount":500,"truncated":true} -->
+Generated: 2026-06-01T11:12:12Z | Files: 500 | Described: 0/500
+<!-- gsd:codebase-meta {"generatedAt":"2026-06-01T11:12:12Z","fingerprint":"51cbed549d2b67117d8ee70608a1e3b0f9fc398e","fileCount":500,"truncated":true} -->
 Note: Truncated to first 500 files. Run with higher --max-files to include all.
 
 ### (root)/
@@ -29,13 +29,13 @@ Note: Truncated to first 500 files. Run with higher --max-files to include all.
 - `.gsd.migrating/STATE.md`
 
 ### .gsd.migrating/activity/
-- *(41 files: 41 .jsonl)*
+- *(56 files: 56 .jsonl)*
 
 ### .gsd.migrating/audit/
 - `.gsd.migrating/audit/events.jsonl`
 
 ### .gsd.migrating/exec/
-- *(21 files: 7 .json, 7 .stderr, 7 .stdout)*
+- *(33 files: 11 .json, 11 .stderr, 11 .stdout)*
 
 ### .gsd.migrating/graphs/
 - `.gsd.migrating/graphs/graph.json`
@@ -140,6 +140,65 @@ Note: Truncated to first 500 files. Run with higher --max-files to include all.
 - `.gsd.migrating/milestones/M002/M002-CONTEXT.md`
 - `.gsd.migrating/milestones/M002/M002-ROADMAP.md`
 
+### .gsd.migrating/milestones/M002/anchors/
+- `.gsd.migrating/milestones/M002/anchors/plan-slice.json`
+- `.gsd.migrating/milestones/M002/anchors/research-slice.json`
+
+### .gsd.migrating/milestones/M002/slices/S01/
+- `.gsd.migrating/milestones/M002/slices/S01/S01-PLAN.md`
+- `.gsd.migrating/milestones/M002/slices/S01/S01-PRE-EXEC-VERIFY.json`
+- `.gsd.migrating/milestones/M002/slices/S01/S01-RESEARCH.md`
+- `.gsd.migrating/milestones/M002/slices/S01/S01-SUMMARY.md`
+- `.gsd.migrating/milestones/M002/slices/S01/S01-UAT.md`
+
+### .gsd.migrating/milestones/M002/slices/S01/tasks/
+- `.gsd.migrating/milestones/M002/slices/S01/tasks/T01-PLAN.md`
+- `.gsd.migrating/milestones/M002/slices/S01/tasks/T01-SUMMARY.md`
+- `.gsd.migrating/milestones/M002/slices/S01/tasks/T01-VERIFY.json`
+- `.gsd.migrating/milestones/M002/slices/S01/tasks/T02-PLAN.md`
+- `.gsd.migrating/milestones/M002/slices/S01/tasks/T02-SUMMARY.md`
+- `.gsd.migrating/milestones/M002/slices/S01/tasks/T02-VERIFY.json`
+- `.gsd.migrating/milestones/M002/slices/S01/tasks/T03-PLAN.md`
+- `.gsd.migrating/milestones/M002/slices/S01/tasks/T03-SUMMARY.md`
+- `.gsd.migrating/milestones/M002/slices/S01/tasks/T03-VERIFY.json`
+
+### .gsd.migrating/milestones/M002/slices/S02/
+- `.gsd.migrating/milestones/M002/slices/S02/S02-PLAN.md`
+- `.gsd.migrating/milestones/M002/slices/S02/S02-PRE-EXEC-VERIFY.json`
+- `.gsd.migrating/milestones/M002/slices/S02/S02-RESEARCH.md`
+
+### .gsd.migrating/milestones/M002/slices/S02/tasks/
+- `.gsd.migrating/milestones/M002/slices/S02/tasks/T01-PLAN.md`
+- `.gsd.migrating/milestones/M002/slices/S02/tasks/T01-SUMMARY.md`
+- `.gsd.migrating/milestones/M002/slices/S02/tasks/T01-VERIFY.json`
+- `.gsd.migrating/milestones/M002/slices/S02/tasks/T02-PLAN.md`
+- `.gsd.migrating/milestones/M002/slices/S02/tasks/T02-SUMMARY.md`
+- `.gsd.migrating/milestones/M002/slices/S02/tasks/T02-VERIFY.json`
+- `.gsd.migrating/milestones/M002/slices/S02/tasks/T03-PLAN.md`
+- `.gsd.migrating/milestones/M002/slices/S02/tasks/T03-SUMMARY.md`
+- `.gsd.migrating/milestones/M002/slices/S02/tasks/T03-VERIFY.json`
+- `.gsd.migrating/milestones/M002/slices/S02/tasks/T04-PLAN.md`
+- `.gsd.migrating/milestones/M002/slices/S02/tasks/T04-SUMMARY.md`
+- `.gsd.migrating/milestones/M002/slices/S02/tasks/T04-VERIFY.json`
+- `.gsd.migrating/milestones/M002/slices/S02/tasks/T05-PLAN.md`
+- `.gsd.migrating/milestones/M002/slices/S02/tasks/T05-SUMMARY.md`
+- `.gsd.migrating/milestones/M002/slices/S02/tasks/T05-VERIFY.json`
+
+### .gsd.migrating/milestones/M002/slices/S03/
+- `.gsd.migrating/milestones/M002/slices/S03/S03-RESEARCH.md`
+
+### .gsd.migrating/milestones/M003/
+- `.gsd.migrating/milestones/M003/M003-ROADMAP.md`
+
+### .gsd.migrating/milestones/M004/
+- `.gsd.migrating/milestones/M004/M004-ROADMAP.md`
+
+### .gsd.migrating/milestones/M005/
+- `.gsd.migrating/milestones/M005/M005-ROADMAP.md`
+
+### .gsd.migrating/milestones/M006/
+- `.gsd.migrating/milestones/M006/M006-ROADMAP.md`
+
 ### .gsd.migrating/runtime/
 - `.gsd.migrating/runtime/uok-parity.jsonl`
 - `.gsd.migrating/runtime/uok-plan-v2-graph.json`
@@ -147,7 +206,7 @@ Note: Truncated to first 500 files. Run with higher --max-files to include all.
 - `.gsd.migrating/runtime/write-gate-state.json`
 
 ### .gsd.migrating/runtime/units/
-- *(28 files: 28 .json)*
+- *(42 files: 42 .json)*
 
 ### .zscripts/
 - `.zscripts/build.sh`
@@ -232,4 +291,20 @@ Note: Truncated to first 500 files. Run with higher --max-files to include all.
 - `Python/pythoncore-3.14-64/Doc/html/_sources/installing/index.rst.txt`
 
 ### Python/pythoncore-3.14-64/Doc/html/_sources/library/
-- *(97 files: 97 .txt)*
+- `Python/pythoncore-3.14-64/Doc/html/_sources/library/__future__.rst.txt`
+- `Python/pythoncore-3.14-64/Doc/html/_sources/library/__main__.rst.txt`
+- `Python/pythoncore-3.14-64/Doc/html/_sources/library/_thread.rst.txt`
+- `Python/pythoncore-3.14-64/Doc/html/_sources/library/abc.rst.txt`
+- `Python/pythoncore-3.14-64/Doc/html/_sources/library/aifc.rst.txt`
+- `Python/pythoncore-3.14-64/Doc/html/_sources/library/allos.rst.txt`
+- `Python/pythoncore-3.14-64/Doc/html/_sources/library/annotationlib.rst.txt`
+- `Python/pythoncore-3.14-64/Doc/html/_sources/library/archiving.rst.txt`
+- `Python/pythoncore-3.14-64/Doc/html/_sources/library/argparse.rst.txt`
+- `Python/pythoncore-3.14-64/Doc/html/_sources/library/array.rst.txt`
+- `Python/pythoncore-3.14-64/Doc/html/_sources/library/ast.rst.txt`
+- `Python/pythoncore-3.14-64/Doc/html/_sources/library/asynchat.rst.txt`
+- `Python/pythoncore-3.14-64/Doc/html/_sources/library/asyncio-api-index.rst.txt`
+- `Python/pythoncore-3.14-64/Doc/html/_sources/library/asyncio-dev.rst.txt`
+- `Python/pythoncore-3.14-64/Doc/html/_sources/library/asyncio-eventloop.rst.txt`
+- `Python/pythoncore-3.14-64/Doc/html/_sources/library/asyncio-exceptions.rst.txt`
+- `Python/pythoncore-3.14-64/Doc/html/_sources/library/asyncio-extending.rst.txt`

@@ -1,5 +1,5 @@
 {
-  "compiledAt": "2026-06-01T11:04:26.352Z",
+  "compiledAt": "2026-06-01T11:20:57.435Z",
   "milestoneId": "M002",
   "pipeline": {
     "clarifyRoundLimit": 3,
@@ -222,12 +222,18 @@
       "dependsOn": [
         "execute-task:M002:S03:T03"
       ],
-      "writes": [],
+      "writes": [
+        "tests/fixtures/sample_bom.xlsx",
+        "tests/fixtures/create_sample_bom.py",
+        "backend/tests/test_s03_integration.py",
+        "tests/fixtures/verify_s03.sh",
+        "tests/fixtures/verify_s03.bat"
+      ],
       "metadata": {
         "unitType": "execute-task",
         "unitId": "M002.S03.T04",
-        "title": "Create Test Excel and Verify Task End-to-End",
-        "status": "pending"
+        "title": "Created test Excel file with Russian headers and integration test script for S03 BOM extraction verification",
+        "status": "complete"
       }
     },
     {
@@ -240,6 +246,105 @@
         "unitType": "complete-slice",
         "unitId": "M002.S03",
         "title": "S03",
+        "status": "complete"
+      }
+    },
+    {
+      "id": "execute-task:M002:S04:T01",
+      "kind": "unit",
+      "dependsOn": [],
+      "writes": [
+        "backend/models.py",
+        "backend/alembic/versions/add_failed_tasks_table.py",
+        "backend/alembic/env.py"
+      ],
+      "metadata": {
+        "unitType": "execute-task",
+        "unitId": "M002.S04.T01",
+        "title": "Added FailedTask model for DLQ persistence with Alembic migration",
+        "status": "complete"
+      }
+    },
+    {
+      "id": "execute-task:M002:S04:T02",
+      "kind": "unit",
+      "dependsOn": [
+        "execute-task:M002:S04:T01"
+      ],
+      "writes": [],
+      "metadata": {
+        "unitType": "execute-task",
+        "unitId": "M002.S04.T02",
+        "title": "Create Supplier Resolver Module",
+        "status": "pending"
+      }
+    },
+    {
+      "id": "execute-task:M002:S04:T03",
+      "kind": "unit",
+      "dependsOn": [
+        "execute-task:M002:S04:T02"
+      ],
+      "writes": [],
+      "metadata": {
+        "unitType": "execute-task",
+        "unitId": "M002.S04.T03",
+        "title": "Create Telegram Notification Helper",
+        "status": "pending"
+      }
+    },
+    {
+      "id": "execute-task:M002:S04:T04",
+      "kind": "unit",
+      "dependsOn": [
+        "execute-task:M002:S04:T03"
+      ],
+      "writes": [],
+      "metadata": {
+        "unitType": "execute-task",
+        "unitId": "M002.S04.T04",
+        "title": "Implement Main Orchestration Task",
+        "status": "pending"
+      }
+    },
+    {
+      "id": "execute-task:M002:S04:T05",
+      "kind": "unit",
+      "dependsOn": [
+        "execute-task:M002:S04:T04"
+      ],
+      "writes": [],
+      "metadata": {
+        "unitType": "execute-task",
+        "unitId": "M002.S04.T05",
+        "title": "Wire Orchestration Task into Upload Flow",
+        "status": "pending"
+      }
+    },
+    {
+      "id": "execute-task:M002:S04:T06",
+      "kind": "unit",
+      "dependsOn": [
+        "execute-task:M002:S04:T05"
+      ],
+      "writes": [],
+      "metadata": {
+        "unitType": "execute-task",
+        "unitId": "M002.S04.T06",
+        "title": "Write End-to-End Integration Test",
+        "status": "pending"
+      }
+    },
+    {
+      "id": "complete-slice:M002:S04",
+      "kind": "verification",
+      "dependsOn": [
+        "execute-task:M002:S04:T06"
+      ],
+      "metadata": {
+        "unitType": "complete-slice",
+        "unitId": "M002.S04",
+        "title": "S04",
         "status": "pending"
       }
     }
