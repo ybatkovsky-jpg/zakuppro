@@ -1,0 +1,15 @@
+{
+  "version": 1,
+  "unitType": "reactive-execute",
+  "unitId": "M003/S03/reactive+T01,T02",
+  "startedAt": 1780322994438,
+  "updatedAt": 1780322994455,
+  "phase": "dispatched",
+  "wrapupWarningSent": false,
+  "continueHereFired": false,
+  "timeoutAt": null,
+  "lastProgressAt": 1780322994438,
+  "progressCount": 0,
+  "lastProgressKind": "dispatch",
+  "recoveryAttempts": 0
+}

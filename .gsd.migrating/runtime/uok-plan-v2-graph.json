@@ -1,12 +1,12 @@
 {
-  "compiledAt": "2026-06-01T13:36:30.886Z",
+  "compiledAt": "2026-06-01T14:09:53.251Z",
   "milestoneId": "M003",
   "pipeline": {
     "clarifyRoundLimit": 3,
     "researchSynthesized": true,
     "draftContextIncluded": false,
     "finalizedContextIncluded": true,
-    "sourcePhase": "summarizing"
+    "sourcePhase": "executing"
   },
   "nodes": [
     {
@@ -85,6 +85,153 @@
         "unitType": "complete-slice",
         "unitId": "M003.S01",
         "title": "S01",
+        "status": "complete"
+      }
+    },
+    {
+      "id": "execute-task:M003:S02:T01",
+      "kind": "unit",
+      "dependsOn": [],
+      "writes": [
+        "backend/services/imap_client.py",
+        "backend/tests/test_imap_client.py"
+      ],
+      "metadata": {
+        "unitType": "execute-task",
+        "unitId": "M003.S02.T01",
+        "title": "Created IMAPClient class with connect, fetch_unread_emails, extract_attachments, and disconnect methods. 35 unit tests pass with mocked IMAP server.",
+        "status": "complete"
+      }
+    },
+    {
+      "id": "execute-task:M003:S02:T02",
+      "kind": "unit",
+      "dependsOn": [
+        "execute-task:M003:S02:T01"
+      ],
+      "writes": [
+        "backend/email_worker.py",
+        "backend/tasks.py",
+        "backend/tests/test_email_worker.py"
+      ],
+      "metadata": {
+        "unitType": "execute-task",
+        "unitId": "M003.S02.T02",
+        "title": "Created EmailWorker service with poll_forever loop, duplicate detection by Message-ID, and parse_invoice task placeholder. 24 unit tests pass.",
+        "status": "complete"
+      }
+    },
+    {
+      "id": "execute-task:M003:S02:T03",
+      "kind": "unit",
+      "dependsOn": [
+        "execute-task:M003:S02:T02"
+      ],
+      "writes": [
+        "docker-compose.yml",
+        ".env"
+      ],
+      "metadata": {
+        "unitType": "execute-task",
+        "unitId": "M003.S02.T03",
+        "title": "Added email-worker service to docker-compose.yml with IMAP environment variables, healthcheck, and restart policy. Updated .env with IMAP configuration.",
+        "status": "complete"
+      }
+    },
+    {
+      "id": "execute-task:M003:S02:T04",
+      "kind": "unit",
+      "dependsOn": [
+        "execute-task:M003:S02:T03"
+      ],
+      "writes": [
+        "backend/tests/test_imap_client.py",
+        "backend/tests/test_email_worker.py"
+      ],
+      "metadata": {
+        "unitType": "execute-task",
+        "unitId": "M003.S02.T04",
+        "title": "59 unit tests pass with 89% coverage for imap_client and 78% for email_worker (average >80%). All major code paths tested.",
+        "status": "complete"
+      }
+    },
+    {
+      "id": "complete-slice:M003:S02",
+      "kind": "verification",
+      "dependsOn": [
+        "execute-task:M003:S02:T04"
+      ],
+      "metadata": {
+        "unitType": "complete-slice",
+        "unitId": "M003.S02",
+        "title": "S02",
+        "status": "complete"
+      }
+    },
+    {
+      "id": "execute-task:M003:S03:T01",
+      "kind": "unit",
+      "dependsOn": [],
+      "writes": [],
+      "metadata": {
+        "unitType": "execute-task",
+        "unitId": "M003.S03.T01",
+        "title": "Add pdfplumber dependency to requirements.txt",
+        "status": "pending"
+      }
+    },
+    {
+      "id": "execute-task:M003:S03:T02",
+      "kind": "unit",
+      "dependsOn": [
+        "execute-task:M003:S03:T01"
+      ],
+      "writes": [],
+      "metadata": {
+        "unitType": "execute-task",
+        "unitId": "M003.S03.T02",
+        "title": "Create unit tests for invoice_parser.py service",
+        "status": "pending"
+      }
+    },
+    {
+      "id": "execute-task:M003:S03:T03",
+      "kind": "unit",
+      "dependsOn": [
+        "execute-task:M003:S03:T02"
+      ],
+      "writes": [],
+      "metadata": {
+        "unitType": "execute-task",
+        "unitId": "M003.S03.T03",
+        "title": "Create test fixtures for invoice parsing",
+        "status": "pending"
+      }
+    },
+    {
+      "id": "execute-task:M003:S03:T04",
+      "kind": "unit",
+      "dependsOn": [
+        "execute-task:M003:S03:T03"
+      ],
+      "writes": [],
+      "metadata": {
+        "unitType": "execute-task",
+        "unitId": "M003.S03.T04",
+        "title": "Extend integration tests with mock LLM responses",
+        "status": "pending"
+      }
+    },
+    {
+      "id": "complete-slice:M003:S03",
+      "kind": "verification",
+      "dependsOn": [
+        "execute-task:M003:S03:T04"
+      ],
+      "metadata": {
+        "unitType": "complete-slice",
+        "unitId": "M003.S03",
+        "title": "Invoice Parsing with LLM",
         "status": "pending"
       }
     }
