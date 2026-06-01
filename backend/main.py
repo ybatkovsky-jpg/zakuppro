@@ -3,7 +3,18 @@ FastAPI application entry point for ZakupPro API.
 """
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from backend.routers import health
+from backend.routers import (
+    health,
+    projects,
+    project_items,
+    suppliers,
+    stock_items,
+    purchase_orders,
+    invoices,
+    payments,
+    unresolved_transactions,
+    production_tasks,
+)
 
 # Create FastAPI application
 app = FastAPI(
@@ -28,6 +39,15 @@ app.add_middleware(
 
 # Include routers
 app.include_router(health.router)
+app.include_router(projects.router)
+app.include_router(project_items.router)
+app.include_router(suppliers.router)
+app.include_router(stock_items.router)
+app.include_router(purchase_orders.router)
+app.include_router(invoices.router)
+app.include_router(payments.router)
+app.include_router(unresolved_transactions.router)
+app.include_router(production_tasks.router)
 
 
 @app.get("/")

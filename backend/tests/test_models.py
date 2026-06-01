@@ -6,41 +6,17 @@ Tests verify that:
 - Cascade delete works as configured
 - All models have expected relationship attributes
 - Lazy loading prevents N+1 queries
+
+Note: db_session and test_engine fixtures are imported from conftest.py
 """
 import pytest
 from datetime import datetime
-from sqlalchemy import create_engine
-from sqlalchemy.orm import Session, sessionmaker
+from sqlalchemy.orm import Session
 from backend.models import (
     Project, ProjectItem, Supplier, StockItem,
     PurchaseOrder, Invoice, Payment, UnresolvedTransaction,
     ProductionTask
 )
-from backend.database import Base
-
-
-# Use SQLite in-memory for basic relationship verification
-TEST_DATABASE_URL = "sqlite:///:memory:"
-
-
-@pytest.fixture
-def engine():
-    """Create an in-memory SQLite engine for testing."""
-    engine = create_engine(TEST_DATABASE_URL, connect_args={"check_same_thread": False})
-    Base.metadata.create_all(engine)
-    return engine
-
-
-@pytest.fixture
-def db_session(engine):
-    """Create a database session for testing."""
-    SessionLocal = sessionmaker(bind=engine)
-    session = SessionLocal()
-    try:
-        yield session
-        session.rollback()
-    finally:
-        session.close()
 
 
 class TestRelationshipTraversal:
