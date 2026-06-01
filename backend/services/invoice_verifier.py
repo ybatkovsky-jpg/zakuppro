@@ -166,7 +166,7 @@ class InvoiceVerifier:
         )
 
         # Store verification result in Invoice
-        invoice.verification_result = verification_result.model_dump()
+        invoice.verification_result = verification_result.model_dump(mode="json")
 
         # Update Invoice.status based on verdict
         invoice.status = self._map_verdict_to_status(verdict)

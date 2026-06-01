@@ -1,7 +1,7 @@
 # Codebase Map
 
-Generated: 2026-06-01T14:20:11Z | Files: 500 | Described: 0/500
-<!-- gsd:codebase-meta {"generatedAt":"2026-06-01T14:20:11Z","fingerprint":"b41b7305f695ddda43be6280688e815e959c2484","fileCount":500,"truncated":true} -->
+Generated: 2026-06-01T21:55:45Z | Files: 500 | Described: 0/500
+<!-- gsd:codebase-meta {"generatedAt":"2026-06-01T21:55:45Z","fingerprint":"83a1d32a0991059bfb1c5db030c4c33ddfac04e6","fileCount":500,"truncated":true} -->
 Note: Truncated to first 500 files. Run with higher --max-files to include all.
 
 ### (root)/
@@ -30,7 +30,7 @@ Note: Truncated to first 500 files. Run with higher --max-files to include all.
 - `.gsd.migrating/STATE.md`
 
 ### .gsd.migrating/activity/
-- *(95 files: 95 .jsonl)*
+- *(97 files: 97 .jsonl)*
 
 ### .gsd.migrating/audit/
 - `.gsd.migrating/audit/events.jsonl`
@@ -289,8 +289,12 @@ Note: Truncated to first 500 files. Run with higher --max-files to include all.
 
 ### .gsd.migrating/milestones/M003/slices/S03/tasks/
 - `.gsd.migrating/milestones/M003/slices/S03/tasks/T01-PLAN.md`
+- `.gsd.migrating/milestones/M003/slices/S03/tasks/T01-SUMMARY.md`
 - `.gsd.migrating/milestones/M003/slices/S03/tasks/T02-PLAN.md`
+- `.gsd.migrating/milestones/M003/slices/S03/tasks/T02-SUMMARY.md`
 - `.gsd.migrating/milestones/M003/slices/S03/tasks/T03-PLAN.md`
+- `.gsd.migrating/milestones/M003/slices/S03/tasks/T03-SUMMARY.md`
+- `.gsd.migrating/milestones/M003/slices/S03/tasks/T03-VERIFY.json`
 - `.gsd.migrating/milestones/M003/slices/S03/tasks/T04-PLAN.md`
 
 ### .gsd.migrating/milestones/M004/
@@ -314,7 +318,7 @@ Note: Truncated to first 500 files. Run with higher --max-files to include all.
 - `.gsd.migrating/runtime/write-gate-state.json`
 
 ### .gsd.migrating/runtime/units/
-- *(70 files: 70 .json)*
+- *(72 files: 72 .json)*
 
 ### .zscripts/
 - `.zscripts/build.sh`
@@ -336,11 +340,3 @@ Note: Truncated to first 500 files. Run with higher --max-files to include all.
 - `Python/bin/pip3.exe.__script__.py`
 - `Python/bin/pip3.exe.__target__`
 - `Python/bin/python.exe`
-- `Python/bin/python.exe.__target__`
-- `Python/bin/python3-64.exe`
-- `Python/bin/python3-64.exe.__target__`
-- `Python/bin/python3.14-64.exe`
-- `Python/bin/python3.14-64.exe.__target__`
-- `Python/bin/python3.14.exe`
-- `Python/bin/python3.14.exe.__target__`
-- `Python/bin/python3.exe`

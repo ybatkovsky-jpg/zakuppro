@@ -47,7 +47,7 @@
   - Files: `backend/tests/fixtures/test_simple_invoice.pdf`, `backend/tests/fixtures/test_dirty_invoice.xlsx`, `backend/tests/fixtures/test_russian_invoice.pdf`
   - Verify: test -f D:/CLAUDE/Project/zakuppro/zakuppro/backend/tests/fixtures/test_simple_invoice.pdf && test -f D:/CLAUDE/Project/zakuppro/zakuppro/backend/tests/fixtures/test_dirty_invoice.xlsx && test -f D:/CLAUDE/Project/zakuppro/zakuppro/backend/tests/fixtures/test_russian_invoice.pdf
 
-- [ ] **T04: Extend integration tests with mock LLM responses** `est:1h`
+- [x] **T04: Extend integration tests with mock LLM responses** `est:1h`
   Extend backend/tests/test_s03_integration.py to test the full parse_invoice Celery task pipeline with mock LLM responses. Tests must cover: full task execution with mocked LLMProvider, Invoice BLOB storage verification, InvoiceItem creation with Decimal prices, supplier auto-creation from email metadata, and FailedTask DLQ handling on errors. Use pytest fixtures for database and mock LLM to avoid real API calls.
   - Files: `backend/tests/test_s03_integration.py`
   - Verify: cd D:/CLAUDE/Project/zakuppro/zakuppro/backend && python -m pytest tests/test_s03_integration.py -v --tb=short

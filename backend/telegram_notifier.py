@@ -184,3 +184,254 @@ def send_dlq_alert(
             exc_info=True
         )
         return False
+
+
+def send_invoice_verified(
+    chat_id: int,
+    invoice_id: int,
+    stats: dict
+) -> bool:
+    """
+    Send success notification when invoice verification completes successfully.
+
+    Message format (Russian):
+        ✅ Счет сверен
+        📄 Счет #{invoice_id}
+        📊 Статистика: {stats}
+
+    Args:
+        chat_id: Telegram chat_id to send message to
+        invoice_id: ID of the verified invoice
+        stats: Dictionary with verification statistics (matched, total, confidence)
+
+    Returns:
+        bool: True if message sent successfully, False otherwise
+    """
+    bot = _get_bot()
+    if not bot:
+        return False
+
+    message = (
+        f'✅ *Счет сверен*\n\n'
+        f'📄 Счет №: `{invoice_id}`\n'
+        f'🔗 Совпадений: {stats.get("matched", 0)}/{stats.get("total", 0)}\n'
+    )
+
+    if 'confidence' in stats:
+        message += f'📈 Точность: {stats["confidence"]:.1%}\n'
+
+    try:
+        bot.send_message(
+            chat_id=chat_id,
+            text=message,
+            parse_mode='Markdown'
+        )
+        logger.info(
+            f'Invoice verified notification sent: chat_id={chat_id}, '
+            f'invoice_id={invoice_id}, matched={stats.get("matched", 0)}'
+        )
+        return True
+
+    except TelegramError as e:
+        logger.error(
+            f'Failed to send invoice verified notification: '
+            f'chat_id={chat_id}, invoice_id={invoice_id}, error={e}'
+        )
+        return False
+    except Exception as e:
+        logger.error(
+            f'Unexpected error sending invoice verified notification: '
+            f'chat_id={chat_id}, invoice_id={invoice_id}, error={e}',
+            exc_info=True
+        )
+        return False
+
+
+def send_invoice_partial(
+    chat_id: int,
+    invoice_id: int,
+    discrepancies: list
+) -> bool:
+    """
+    Send warning notification when invoice verification finds quantity discrepancies.
+
+    Message format (Russian):
+        ⚠️ Частичное совпадение
+        📄 Счет #{invoice_id}
+        📊 Расхождения: {discrepancies}
+
+    Args:
+        chat_id: Telegram chat_id to send message to
+        invoice_id: ID of the partially matched invoice
+        discrepancies: List of discrepancy descriptions
+
+    Returns:
+        bool: True if message sent successfully, False otherwise
+    """
+    bot = _get_bot()
+    if not bot:
+        return False
+
+    message = (
+        f'⚠️ *Частичное совпадение*\n\n'
+        f'📄 Счет №: `{invoice_id}`\n'
+        f'🔍 Найдены расхождения в количестве:\n'
+    )
+
+    for idx, disc in enumerate(discrepancies[:5], 1):
+        message += f'  {idx}. {disc}\n'
+
+    if len(discrepancies) > 5:
+        message += f'  ... и еще {len(discrepancies) - 5}\n'
+
+    try:
+        bot.send_message(
+            chat_id=chat_id,
+            text=message,
+            parse_mode='Markdown'
+        )
+        logger.info(
+            f'Invoice partial notification sent: chat_id={chat_id}, '
+            f'invoice_id={invoice_id}, discrepancies={len(discrepancies)}'
+        )
+        return True
+
+    except TelegramError as e:
+        logger.error(
+            f'Failed to send invoice partial notification: '
+            f'chat_id={chat_id}, invoice_id={invoice_id}, error={e}'
+        )
+        return False
+    except Exception as e:
+        logger.error(
+            f'Unexpected error sending invoice partial notification: '
+            f'chat_id={chat_id}, invoice_id={invoice_id}, error={e}',
+            exc_info=True
+        )
+        return False
+
+
+def send_invoice_clarification_needed(
+    chat_id: int,
+    invoice_id: int,
+    fuzzy_matches: list
+) -> bool:
+    """
+    Send alert when invoice requires supplier clarification via fuzzy matching.
+
+    Message format (Russian):
+        🔔 Требуется уточнение
+        📄 Счет #{invoice_id}
+        📝 Возможные совпадения: {fuzzy_matches}
+
+    Args:
+        chat_id: Telegram chat_id to send message to
+        invoice_id: ID of the invoice needing clarification
+        fuzzy_matches: List of fuzzy match candidates with confidence scores
+
+    Returns:
+        bool: True if message sent successfully, False otherwise
+    """
+    bot = _get_bot()
+    if not bot:
+        return False
+
+    message = (
+        f'🔔 *Требуется уточнение*\n\n'
+        f'📄 Счет №: `{invoice_id}`\n'
+        f'🔍 Найдены возможные совпадения (требуется подтверждение):\n'
+    )
+
+    for idx, match in enumerate(fuzzy_matches[:3], 1):
+        name = match.get('name', 'Unknown')
+        confidence = match.get('confidence', 0)
+        message += f'  {idx}. {name} ({confidence:.0%})\n'
+
+    if len(fuzzy_matches) > 3:
+        message += f'  ... и еще {len(fuzzy_matches) - 3}\n'
+
+    message += '\n💡 Отправьте письмо поставщику для уточнения.'
+
+    try:
+        bot.send_message(
+            chat_id=chat_id,
+            text=message,
+            parse_mode='Markdown'
+        )
+        logger.info(
+            f'Invoice clarification notification sent: chat_id={chat_id}, '
+            f'invoice_id={invoice_id}, matches={len(fuzzy_matches)}'
+        )
+        return True
+
+    except TelegramError as e:
+        logger.error(
+            f'Failed to send invoice clarification notification: '
+            f'chat_id={chat_id}, invoice_id={invoice_id}, error={e}'
+        )
+        return False
+    except Exception as e:
+        logger.error(
+            f'Unexpected error sending invoice clarification notification: '
+            f'chat_id={chat_id}, invoice_id={invoice_id}, error={e}',
+            exc_info=True
+        )
+        return False
+
+
+def send_invoice_failed(
+    chat_id: int,
+    invoice_id: int,
+    error: str
+) -> bool:
+    """
+    Send critical alert when invoice verification fails.
+
+    Message format (Russian):
+        🚨 Ошибка сверка счета
+        📄 Счет #{invoice_id}
+        ❌ Ошибка: {error}
+
+    Args:
+        chat_id: Telegram chat_id to send message to
+        invoice_id: ID of the failed invoice
+        error: Error message describing the failure
+
+    Returns:
+        bool: True if message sent successfully, False otherwise
+    """
+    bot = _get_bot()
+    if not bot:
+        return False
+
+    message = (
+        f'🚨 *Ошибка сверка счета*\n\n'
+        f'📄 Счет №: `{invoice_id}`\n'
+        f'\n❌ Ошибка:\n```\n{error}\n```'
+    )
+
+    try:
+        bot.send_message(
+            chat_id=chat_id,
+            text=message,
+            parse_mode='Markdown'
+        )
+        logger.info(
+            f'Invoice failed notification sent: chat_id={chat_id}, '
+            f'invoice_id={invoice_id}'
+        )
+        return True
+
+    except TelegramError as e:
+        logger.error(
+            f'Failed to send invoice failed notification: '
+            f'chat_id={chat_id}, invoice_id={invoice_id}, error={e}'
+        )
+        return False
+    except Exception as e:
+        logger.error(
+            f'Unexpected error sending invoice failed notification: '
+            f'chat_id={chat_id}, invoice_id={invoice_id}, error={e}',
+            exc_info=True
+        )
+        return False

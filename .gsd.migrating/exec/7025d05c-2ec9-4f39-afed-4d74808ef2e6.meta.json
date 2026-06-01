@@ -1,0 +1,18 @@
+{
+  "id": "7025d05c-2ec9-4f39-afed-4d74808ef2e6",
+  "runtime": "bash",
+  "purpose": "Verify test fixtures exist",
+  "script_chars": 308,
+  "started_at": "2026-06-01T15:04:56.519Z",
+  "finished_at": "2026-06-01T15:04:56.654Z",
+  "exit_code": 1,
+  "signal": null,
+  "timed_out": false,
+  "duration_ms": 135,
+  "stdout_bytes": 544,
+  "stderr_bytes": 0,
+  "stdout_truncated": false,
+  "stderr_truncated": false,
+  "stdout_path": "D:\\CLAUDE\\Project\\zakuppro\\zakuppro\\.gsd\\exec\\7025d05c-2ec9-4f39-afed-4d74808ef2e6.stdout",
+  "stderr_path": "D:\\CLAUDE\\Project\\zakuppro\\zakuppro\\.gsd\\exec\\7025d05c-2ec9-4f39-afed-4d74808ef2e6.stderr"
+}

@@ -1,5 +1,5 @@
 {
-  "compiledAt": "2026-06-01T14:21:34.328Z",
+  "compiledAt": "2026-06-01T21:56:58.382Z",
   "milestoneId": "M003",
   "pipeline": {
     "clarifyRoundLimit": 3,
@@ -222,12 +222,14 @@
       "dependsOn": [
         "execute-task:M003:S03:T03"
       ],
-      "writes": [],
+      "writes": [
+        "backend/tests/test_s03_integration.py"
+      ],
       "metadata": {
         "unitType": "execute-task",
         "unitId": "M003.S03.T04",
-        "title": "Extend integration tests with mock LLM responses",
-        "status": "pending"
+        "title": "Extended integration tests with mock LLM responses covering full parse_invoice Celery task pipeline with 12 passing tests",
+        "status": "complete"
       }
     },
     {
@@ -240,6 +242,112 @@
         "unitType": "complete-slice",
         "unitId": "M003.S03",
         "title": "S03",
+        "status": "complete"
+      }
+    },
+    {
+      "id": "execute-task:M003:S04:T01",
+      "kind": "unit",
+      "dependsOn": [],
+      "writes": [
+        "backend/requirements.txt"
+      ],
+      "metadata": {
+        "unitType": "execute-task",
+        "unitId": "M003.S04.T01",
+        "title": "Added rapidfuzz==3.9.0 dependency to backend/requirements.txt for fuzzy string matching",
+        "status": "complete"
+      }
+    },
+    {
+      "id": "execute-task:M003:S04:T02",
+      "kind": "unit",
+      "dependsOn": [
+        "execute-task:M003:S04:T01"
+      ],
+      "writes": [
+        "backend/schemas/__init__.py",
+        "backend/schemas/verification.py"
+      ],
+      "metadata": {
+        "unitType": "execute-task",
+        "unitId": "M003.S04.T02",
+        "title": "Created Pydantic verification schemas with ItemVerification, QuantityDiscrepancy, and VerificationResult models for invoice-to-BOM reconciliation",
+        "status": "complete"
+      }
+    },
+    {
+      "id": "execute-task:M003:S04:T03",
+      "kind": "unit",
+      "dependsOn": [
+        "execute-task:M003:S04:T02"
+      ],
+      "writes": [
+        "backend/services/invoice_verifier.py"
+      ],
+      "metadata": {
+        "unitType": "execute-task",
+        "unitId": "M003.S04.T03",
+        "title": "Created invoice_verifier service with exact SKU matching, RapidFuzz fuzzy name matching, quantity discrepancy detection, and structured JSONB verification result storage",
+        "status": "complete"
+      }
+    },
+    {
+      "id": "execute-task:M003:S04:T04",
+      "kind": "unit",
+      "dependsOn": [
+        "execute-task:M003:S04:T03"
+      ],
+      "writes": [
+        "backend/tasks.py"
+      ],
+      "metadata": {
+        "unitType": "execute-task",
+        "unitId": "M003.S04.T04",
+        "title": "Added verify_invoice_task Celery task with fuzzy matching BOM reconciliation and DLQ error handling",
+        "status": "complete"
+      }
+    },
+    {
+      "id": "execute-task:M003:S04:T05",
+      "kind": "unit",
+      "dependsOn": [
+        "execute-task:M003:S04:T04"
+      ],
+      "writes": [
+        "backend/tests/test_invoice_verifier.py"
+      ],
+      "metadata": {
+        "unitType": "execute-task",
+        "unitId": "M003.S04.T05",
+        "title": "Created 19 unit tests for invoice_verifier covering exact SKU matching, fuzzy matching, quantity discrepancies, and verdict logic",
+        "status": "complete"
+      }
+    },
+    {
+      "id": "execute-task:M003:S04:T06",
+      "kind": "unit",
+      "dependsOn": [
+        "execute-task:M003:S04:T05"
+      ],
+      "writes": [],
+      "metadata": {
+        "unitType": "execute-task",
+        "unitId": "M003.S04.T06",
+        "title": "Create integration tests for verification",
+        "status": "pending"
+      }
+    },
+    {
+      "id": "complete-slice:M003:S04",
+      "kind": "verification",
+      "dependsOn": [
+        "execute-task:M003:S04:T06"
+      ],
+      "metadata": {
+        "unitType": "complete-slice",
+        "unitId": "M003.S04",
+        "title": "S04",
         "status": "pending"
       }
     }

@@ -1,0 +1,18 @@
+{
+  "id": "a2b0390e-6c83-48f1-af85-8ad6a589715d",
+  "runtime": "bash",
+  "purpose": "Verify invoice parser unit tests pass",
+  "script_chars": 125,
+  "started_at": "2026-06-01T15:04:56.132Z",
+  "finished_at": "2026-06-01T15:04:56.365Z",
+  "exit_code": 1,
+  "signal": null,
+  "timed_out": false,
+  "duration_ms": 233,
+  "stdout_bytes": 544,
+  "stderr_bytes": 0,
+  "stdout_truncated": false,
+  "stderr_truncated": false,
+  "stdout_path": "D:\\CLAUDE\\Project\\zakuppro\\zakuppro\\.gsd\\exec\\a2b0390e-6c83-48f1-af85-8ad6a589715d.stdout",
+  "stderr_path": "D:\\CLAUDE\\Project\\zakuppro\\zakuppro\\.gsd\\exec\\a2b0390e-6c83-48f1-af85-8ad6a589715d.stderr"
+}
