@@ -86,10 +86,33 @@ services:
     networks:
       - zakuppro-network
 
+  # Telegram Bot
+  telegram-bot:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: zakuppro-telegram-bot
+    command: python -m backend.telegram_bot
+    environment:
+      TELEGRAM_BOT_TOKEN: ${TELEGRAM_BOT_TOKEN}
+      TELEGRAM_OWNER_CHAT_ID: ${TELEGRAM_OWNER_CHAT_ID}
+      ALLOWED_CHAT_IDS: ${ALLOWED_CHAT_IDS}
+      CELERY_BROKER_URL: pyamqp://guest:guest@rabbitmq:5672//
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+    volumes:
+      - uploads_data:/data/uploads
+    restart: unless-stopped
+    networks:
+      - zakuppro-network
+
 volumes:
   postgres_data:
     driver: local
   rabbitmq_data:
+    driver: local
+  uploads_data:
     driver: local
 
 networks:

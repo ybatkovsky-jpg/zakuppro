@@ -1,7 +1,7 @@
 # Codebase Map
 
-Generated: 2026-06-01T09:39:12Z | Files: 500 | Described: 0/500
-<!-- gsd:codebase-meta {"generatedAt":"2026-06-01T09:39:12Z","fingerprint":"3573dbce124846c398d521b28055f07263f9340c","fileCount":500,"truncated":true} -->
+Generated: 2026-06-01T10:13:49Z | Files: 500 | Described: 0/500
+<!-- gsd:codebase-meta {"generatedAt":"2026-06-01T10:13:49Z","fingerprint":"0264b9353cbc1561a65d7f815dcc22a9867138d1","fileCount":500,"truncated":true} -->
 Note: Truncated to first 500 files. Run with higher --max-files to include all.
 
 ### (root)/
@@ -23,11 +23,13 @@ Note: Truncated to first 500 files. Run with higher --max-files to include all.
 - `.gsd.migrating/last-snapshot.md`
 - `.gsd.migrating/metrics.json`
 - `.gsd.migrating/notifications.jsonl`
+- `.gsd.migrating/PROJECT.md`
+- `.gsd.migrating/REQUIREMENTS.md`
 - `.gsd.migrating/state-manifest.json`
 - `.gsd.migrating/STATE.md`
 
 ### .gsd.migrating/activity/
-- *(39 files: 39 .jsonl)*
+- *(41 files: 41 .jsonl)*
 
 ### .gsd.migrating/audit/
 - `.gsd.migrating/audit/events.jsonl`
@@ -42,9 +44,13 @@ Note: Truncated to first 500 files. Run with higher --max-files to include all.
 - `.gsd.migrating/journal/2026-05-31.jsonl`
 - `.gsd.migrating/journal/2026-06-01.jsonl`
 
+### .gsd.migrating/migrating/milestones/M001/
+- `.gsd.migrating/migrating/milestones/M001/M001-LEARNINGS.md`
+
 ### .gsd.migrating/milestones/M001/
 - `.gsd.migrating/milestones/M001/M001-CONTEXT.md`
 - `.gsd.migrating/milestones/M001/M001-ROADMAP.md`
+- `.gsd.migrating/milestones/M001/M001-SUMMARY.md`
 - `.gsd.migrating/milestones/M001/M001-VALIDATION.md`
 
 ### .gsd.migrating/milestones/M001/anchors/
@@ -130,6 +136,10 @@ Note: Truncated to first 500 files. Run with higher --max-files to include all.
 - `.gsd.migrating/milestones/M001/slices/S04/tasks/T03-SUMMARY.md`
 - `.gsd.migrating/milestones/M001/slices/S04/tasks/T03-VERIFY.json`
 
+### .gsd.migrating/milestones/M002/
+- `.gsd.migrating/milestones/M002/M002-CONTEXT.md`
+- `.gsd.migrating/milestones/M002/M002-ROADMAP.md`
+
 ### .gsd.migrating/runtime/
 - `.gsd.migrating/runtime/uok-parity.jsonl`
 - `.gsd.migrating/runtime/uok-plan-v2-graph.json`
@@ -137,7 +147,7 @@ Note: Truncated to first 500 files. Run with higher --max-files to include all.
 - `.gsd.migrating/runtime/write-gate-state.json`
 
 ### .gsd.migrating/runtime/units/
-- *(27 files: 27 .json)*
+- *(28 files: 28 .json)*
 
 ### .zscripts/
 - `.zscripts/build.sh`
@@ -222,4 +232,4 @@ Note: Truncated to first 500 files. Run with higher --max-files to include all.
 - `Python/pythoncore-3.14-64/Doc/html/_sources/installing/index.rst.txt`
 
 ### Python/pythoncore-3.14-64/Doc/html/_sources/library/
-- *(106 files: 106 .txt)*
+- *(97 files: 97 .txt)*

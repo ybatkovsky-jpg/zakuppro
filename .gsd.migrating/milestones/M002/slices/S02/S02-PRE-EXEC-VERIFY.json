@@ -1,0 +1,24 @@
+{
+  "schemaVersion": 1,
+  "milestoneId": "M002",
+  "sliceId": "S02",
+  "timestamp": 1780309387987,
+  "status": "fail",
+  "durationMs": 2,
+  "checks": [
+    {
+      "category": "tool",
+      "target": "T02 Verify",
+      "passed": false,
+      "message": "Unsafe or non-runnable Verify command: python -c 'from backend.handlers.auth import AuthMiddleware; from backend.handlers.commands import start_command, help_command; print(\"handlers module OK\")' 2>&1 (contains shell control syntax such as pipes, redirects, semicolons, backticks, or command substitution)",
+      "blocking": true
+    },
+    {
+      "category": "tool",
+      "target": "T04 Verify",
+      "passed": false,
+      "message": "Unsafe or non-runnable Verify command: python -c 'from backend.telegram_bot import main; print(\"telegram_bot module OK\")' 2>&1 (contains shell control syntax such as pipes, redirects, semicolons, backticks, or command substitution)",
+      "blocking": true
+    }
+  ]
+}

@@ -1,0 +1,18 @@
+{
+  "id": "9db86927-2865-4395-92db-81e01647e0ee",
+  "runtime": "bash",
+  "purpose": "Verify Celery app loads with tasks",
+  "script_chars": 179,
+  "started_at": "2026-06-01T10:14:31.467Z",
+  "finished_at": "2026-06-01T10:14:31.581Z",
+  "exit_code": 1,
+  "signal": null,
+  "timed_out": false,
+  "duration_ms": 114,
+  "stdout_bytes": 544,
+  "stderr_bytes": 0,
+  "stdout_truncated": false,
+  "stderr_truncated": false,
+  "stdout_path": "D:\\CLAUDE\\Project\\zakuppro\\zakuppro\\.gsd\\exec\\9db86927-2865-4395-92db-81e01647e0ee.stdout",
+  "stderr_path": "D:\\CLAUDE\\Project\\zakuppro\\zakuppro\\.gsd\\exec\\9db86927-2865-4395-92db-81e01647e0ee.stderr"
+}

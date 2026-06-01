@@ -1,0 +1,18 @@
+{
+  "id": "637a411b-6c05-40ce-abfb-aab977471f5c",
+  "runtime": "bash",
+  "purpose": "Check if ESLint applies to Python files",
+  "script_chars": 167,
+  "started_at": "2026-06-01T10:38:28.643Z",
+  "finished_at": "2026-06-01T10:38:28.757Z",
+  "exit_code": 1,
+  "signal": null,
+  "timed_out": false,
+  "duration_ms": 114,
+  "stdout_bytes": 544,
+  "stderr_bytes": 0,
+  "stdout_truncated": false,
+  "stderr_truncated": false,
+  "stdout_path": "D:\\CLAUDE\\Project\\zakuppro\\zakuppro\\.gsd\\exec\\637a411b-6c05-40ce-abfb-aab977471f5c.stdout",
+  "stderr_path": "D:\\CLAUDE\\Project\\zakuppro\\zakuppro\\.gsd\\exec\\637a411b-6c05-40ce-abfb-aab977471f5c.stderr"
+}

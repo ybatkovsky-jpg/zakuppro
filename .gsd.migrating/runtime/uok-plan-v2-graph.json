@@ -1,314 +1,171 @@
 {
-  "compiledAt": "2026-06-01T09:30:18.248Z",
-  "milestoneId": "M001",
+  "compiledAt": "2026-06-01T10:38:13.544Z",
+  "milestoneId": "M002",
   "pipeline": {
     "clarifyRoundLimit": 3,
     "researchSynthesized": true,
     "draftContextIncluded": false,
     "finalizedContextIncluded": true,
-    "sourcePhase": "completing-milestone"
+    "sourcePhase": "summarizing"
   },
   "nodes": [
     {
-      "id": "execute-task:M001:S01:T01",
+      "id": "execute-task:M002:S01:T01",
       "kind": "unit",
       "dependsOn": [],
-      "writes": [],
+      "writes": [
+        "docker-compose.yml"
+      ],
       "metadata": {
         "unitType": "execute-task",
-        "unitId": "M001.S01.T01",
-        "title": "Installed PostgreSQL dependencies (psycopg2, alembic, sqlalchemy), configured DATABASE_URL in .env, initialized Alembic with proper PostgreSQL configuration in alembic.ini and env.py, created database.py for connection management",
+        "unitId": "M002.S01.T01",
+        "title": "Added RabbitMQ 3-management service to docker-compose.yml with healthcheck, persistent volume, and management UI on ports 5672/15672",
         "status": "complete"
       }
     },
     {
-      "id": "execute-task:M001:S01:T02",
+      "id": "execute-task:M002:S01:T02",
       "kind": "unit",
       "dependsOn": [
-        "execute-task:M001:S01:T01"
+        "execute-task:M002:S01:T01"
       ],
       "writes": [
-        "backend/models.py",
-        "backend/alembic/env.py"
+        "backend/celery_app.py",
+        "backend/tasks.py"
       ],
       "metadata": {
         "unitType": "execute-task",
-        "unitId": "M001.S01.T02",
-        "title": "Created base SQLAlchemy models for all 9 tables from SPEC.md with proper data types and structure",
+        "unitId": "M002.S01.T02",
+        "title": "Created Celery app with RabbitMQ broker, DLQ configuration, and dummy health check task",
         "status": "complete"
       }
     },
     {
-      "id": "execute-task:M001:S01:T03",
+      "id": "execute-task:M002:S01:T03",
       "kind": "unit",
       "dependsOn": [
-        "execute-task:M001:S01:T02"
+        "execute-task:M002:S01:T02"
       ],
       "writes": [
-        "backend/alembic/versions/d6d07b9ba359_initial_schema.py"
+        "docker-compose.yml",
+        "backend/routers/health.py",
+        ".env"
       ],
       "metadata": {
         "unitType": "execute-task",
-        "unitId": "M001.S01.T03",
-        "title": "Created initial Alembic migration with all 9 tables from SPEC.md, including proper foreign keys and indexes",
+        "unitId": "M002.S01.T03",
+        "title": "Added celery-worker service to docker-compose.yml and extended health check with RabbitMQ and Celery worker status",
         "status": "complete"
       }
     },
     {
-      "id": "execute-task:M001:S01:T04",
-      "kind": "unit",
-      "dependsOn": [
-        "execute-task:M001:S01:T03"
-      ],
-      "writes": [
-        "backend/tests/test_migration.py",
-        "backend/tests/__init__.py",
-        "backend/alembic/versions/d6d07b9ba359_initial_schema.py"
-      ],
-      "metadata": {
-        "unitType": "execute-task",
-        "unitId": "M001.S01.T04",
-        "title": "Created comprehensive migration test suite with 7 passing tests; verified migration SQL generation for upgrade/downgrade cycles",
-        "status": "complete"
-      }
-    },
-    {
-      "id": "execute-task:M001:S01:T05",
-      "kind": "unit",
-      "dependsOn": [
-        "execute-task:M001:S01:T04"
-      ],
-      "writes": [
-        "backend/alembic/versions/e6b0df437c13_add_performance_indexes.py",
-        "backend/tests/test_migration.py"
-      ],
-      "metadata": {
-        "unitType": "execute-task",
-        "unitId": "M001.S01.T05",
-        "title": "Added performance index on project_items.status for Kanban filtering; all required indexes verified",
-        "status": "complete"
-      }
-    },
-    {
-      "id": "complete-slice:M001:S01",
+      "id": "complete-slice:M002:S01",
       "kind": "verification",
       "dependsOn": [
-        "execute-task:M001:S01:T05"
+        "execute-task:M002:S01:T03"
       ],
       "metadata": {
         "unitType": "complete-slice",
-        "unitId": "M001.S01",
+        "unitId": "M002.S01",
         "title": "S01",
         "status": "complete"
       }
     },
     {
-      "id": "execute-task:M001:S02:T01",
+      "id": "execute-task:M002:S02:T01",
       "kind": "unit",
       "dependsOn": [],
       "writes": [
-        "backend/models.py"
+        "docker-compose.yml"
       ],
       "metadata": {
         "unitType": "execute-task",
-        "unitId": "M001.S02.T01",
-        "title": "Added bidirectional SQLAlchemy relationships to all 9 models with proper cascade settings and lazy loading",
+        "unitId": "M002.S02.T01",
+        "title": "Added telegram-bot service to docker-compose.yml with RabbitMQ dependency and environment variables",
         "status": "complete"
       }
     },
     {
-      "id": "execute-task:M001:S02:T02",
+      "id": "execute-task:M002:S02:T02",
       "kind": "unit",
       "dependsOn": [
-        "execute-task:M001:S02:T01"
+        "execute-task:M002:S02:T01"
       ],
       "writes": [
-        "backend/schemas.py"
+        "backend/handlers/__init__.py",
+        "backend/handlers/auth.py",
+        "backend/handlers/commands.py"
       ],
       "metadata": {
         "unitType": "execute-task",
-        "unitId": "M001.S02.T02",
-        "title": "Created all 27 Pydantic v2 schemas with from_attributes=True for ORM mode compatibility",
+        "unitId": "M002.S02.T02",
+        "title": "Created backend/handlers package with AuthMiddleware for chat_id authorization and /start, /help command handlers",
         "status": "complete"
       }
     },
     {
-      "id": "execute-task:M001:S02:T03",
+      "id": "execute-task:M002:S02:T03",
       "kind": "unit",
       "dependsOn": [
-        "execute-task:M001:S02:T02"
+        "execute-task:M002:S02:T02"
       ],
       "writes": [
-        "backend/tests/test_models.py",
-        "backend/tests/test_schemas.py"
+        "backend/handlers/documents.py",
+        "backend/tasks.py",
+        "backend/handlers/__init__.py"
       ],
       "metadata": {
         "unitType": "execute-task",
-        "unitId": "M001.S02.T03",
-        "title": "Created 58 tests for models and schemas: 16 model tests verify bidirectional relationships, cascade delete, and lazy loading; 42 schema tests validate Pydantic v2 serialization and validation",
+        "unitId": "M002.S02.T03",
+        "title": "Created document handler for Excel upload with task publishing and Celery queue_excel_processing task",
         "status": "complete"
       }
     },
     {
-      "id": "complete-slice:M001:S02",
+      "id": "execute-task:M002:S02:T04",
+      "kind": "unit",
+      "dependsOn": [
+        "execute-task:M002:S02:T03"
+      ],
+      "writes": [
+        "backend/telegram_bot.py"
+      ],
+      "metadata": {
+        "unitType": "execute-task",
+        "unitId": "M002.S02.T04",
+        "title": "Created backend/telegram_bot.py main application entry point with Application builder, handler registration, and polling startup",
+        "status": "complete"
+      }
+    },
+    {
+      "id": "execute-task:M002:S02:T05",
+      "kind": "unit",
+      "dependsOn": [
+        "execute-task:M002:S02:T04"
+      ],
+      "writes": [
+        "backend/tasks.py",
+        ".env",
+        "docker-compose.yml"
+      ],
+      "metadata": {
+        "unitType": "execute-task",
+        "unitId": "M002.S02.T05",
+        "title": "Added ALLOWED_CHAT_IDS to .env and configured /data/uploads volume mount in telegram-bot service",
+        "status": "complete"
+      }
+    },
+    {
+      "id": "complete-slice:M002:S02",
       "kind": "verification",
       "dependsOn": [
-        "execute-task:M001:S02:T03"
+        "execute-task:M002:S02:T05"
       ],
       "metadata": {
         "unitType": "complete-slice",
-        "unitId": "M001.S02",
+        "unitId": "M002.S02",
         "title": "S02",
-        "status": "complete"
-      }
-    },
-    {
-      "id": "execute-task:M001:S03:T01",
-      "kind": "unit",
-      "dependsOn": [],
-      "writes": [
-        "backend/main.py",
-        "backend/routers/__init__.py",
-        "backend/routers/health.py"
-      ],
-      "metadata": {
-        "unitType": "execute-task",
-        "unitId": "M001.S03.T01",
-        "title": "Created FastAPI main app with health check endpoint and CORS middleware",
-        "status": "complete"
-      }
-    },
-    {
-      "id": "execute-task:M001:S03:T02",
-      "kind": "unit",
-      "dependsOn": [
-        "execute-task:M001:S03:T01"
-      ],
-      "writes": [
-        "backend/routers/projects.py",
-        "backend/main.py"
-      ],
-      "metadata": {
-        "unitType": "execute-task",
-        "unitId": "M001.S03.T02",
-        "title": "Created Project CRUD router with GET/POST/PUT/DELETE endpoints and eager-loaded items",
-        "status": "complete"
-      }
-    },
-    {
-      "id": "execute-task:M001:S03:T03",
-      "kind": "unit",
-      "dependsOn": [
-        "execute-task:M001:S03:T02"
-      ],
-      "writes": [
-        "backend/routers/project_items.py",
-        "backend/routers/suppliers.py",
-        "backend/routers/stock_items.py",
-        "backend/routers/purchase_orders.py",
-        "backend/routers/invoices.py",
-        "backend/routers/payments.py",
-        "backend/routers/unresolved_transactions.py",
-        "backend/routers/production_tasks.py",
-        "backend/main.py"
-      ],
-      "metadata": {
-        "unitType": "execute-task",
-        "unitId": "M001.S03.T03",
-        "title": "Implemented 8 entity CRUD routers (ProjectItem, Supplier, StockItem, PurchaseOrder, Invoice, Payment, UnresolvedTransaction, ProductionTask) following Project pattern with 45 total API endpoints",
-        "status": "complete"
-      }
-    },
-    {
-      "id": "execute-task:M001:S03:T04",
-      "kind": "unit",
-      "dependsOn": [
-        "execute-task:M001:S03:T03"
-      ],
-      "writes": [
-        "backend/tests/conftest.py",
-        "backend/tests/test_api/__init__.py",
-        "backend/tests/test_api/test_projects.py"
-      ],
-      "metadata": {
-        "unitType": "execute-task",
-        "unitId": "M001.S03.T04",
-        "title": "Created API integration test suite with 18 tests covering Project CRUD operations, validation, eager loading, and cascade delete behavior",
-        "status": "complete"
-      }
-    },
-    {
-      "id": "complete-slice:M001:S03",
-      "kind": "verification",
-      "dependsOn": [
-        "execute-task:M001:S03:T04"
-      ],
-      "metadata": {
-        "unitType": "complete-slice",
-        "unitId": "M001.S03",
-        "title": "S03",
-        "status": "complete"
-      }
-    },
-    {
-      "id": "execute-task:M001:S04:T01",
-      "kind": "unit",
-      "dependsOn": [],
-      "writes": [
-        "backend/Dockerfile",
-        "backend/.dockerignore"
-      ],
-      "metadata": {
-        "unitType": "execute-task",
-        "unitId": "M001.S04.T01",
-        "title": "Created multi-stage Dockerfile for FastAPI container with Python 3.11-slim, non-root user, health check, and .dockerignore",
-        "status": "complete"
-      }
-    },
-    {
-      "id": "execute-task:M001:S04:T02",
-      "kind": "unit",
-      "dependsOn": [
-        "execute-task:M001:S04:T01"
-      ],
-      "writes": [
-        "docker-compose.yml",
-        ".dockerignore"
-      ],
-      "metadata": {
-        "unitType": "execute-task",
-        "unitId": "M001.S04.T02",
-        "title": "Created docker-compose.yml with PostgreSQL and FastAPI services including healthchecks, and .dockerignore for the project root",
-        "status": "complete"
-      }
-    },
-    {
-      "id": "execute-task:M001:S04:T03",
-      "kind": "unit",
-      "dependsOn": [
-        "execute-task:M001:S04:T02"
-      ],
-      "writes": [
-        "backend/routers/health.py"
-      ],
-      "metadata": {
-        "unitType": "execute-task",
-        "unitId": "M001.S04.T03",
-        "title": "Enhanced /health endpoint with database connectivity check using SQLAlchemy text() query, returning db_status field and 503 on database errors",
-        "status": "complete"
-      }
-    },
-    {
-      "id": "complete-slice:M001:S04",
-      "kind": "verification",
-      "dependsOn": [
-        "execute-task:M001:S04:T03"
-      ],
-      "metadata": {
-        "unitType": "complete-slice",
-        "unitId": "M001.S04",
-        "title": "S04",
-        "status": "complete"
+        "status": "pending"
       }
     }
   ]

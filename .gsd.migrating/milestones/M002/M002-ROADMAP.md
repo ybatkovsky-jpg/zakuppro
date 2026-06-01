@@ -15,10 +15,10 @@
 
 ## Slices
 
-- [ ] **S01: RabbitMQ + Celery Infrastructure** `risk:medium` `depends:[]`
+- [x] **S01: S01** `risk:medium` `depends:[]`
   > After this: RabbitMQ запущен, Celery worker обрабатывает dummy задачу, health check работает
 
-- [ ] **S02: Telegram Bot Gateway** `risk:high` `depends:[S01]`
+- [ ] **S02: S02** `risk:high` `depends:[]`
   > After this: Telegram Bot принимает Excel файл от разрешённого chat_id, сохраняет локально, публикует задачу в RabbitMQ
 
 - [ ] **S03: Excel Parsing + AI-Agent** `risk:high` `depends:[S01]`

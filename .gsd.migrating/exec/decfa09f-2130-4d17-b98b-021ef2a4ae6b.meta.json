@@ -1,0 +1,18 @@
+{
+  "id": "decfa09f-2130-4d17-b98b-021ef2a4ae6b",
+  "runtime": "bash",
+  "purpose": "Run npm lint to check for issues",
+  "script_chars": 59,
+  "started_at": "2026-06-01T10:38:24.251Z",
+  "finished_at": "2026-06-01T10:38:24.387Z",
+  "exit_code": 1,
+  "signal": null,
+  "timed_out": false,
+  "duration_ms": 136,
+  "stdout_bytes": 544,
+  "stderr_bytes": 0,
+  "stdout_truncated": false,
+  "stderr_truncated": false,
+  "stdout_path": "D:\\CLAUDE\\Project\\zakuppro\\zakuppro\\.gsd\\exec\\decfa09f-2130-4d17-b98b-021ef2a4ae6b.stdout",
+  "stderr_path": "D:\\CLAUDE\\Project\\zakuppro\\zakuppro\\.gsd\\exec\\decfa09f-2130-4d17-b98b-021ef2a4ae6b.stderr"
+}

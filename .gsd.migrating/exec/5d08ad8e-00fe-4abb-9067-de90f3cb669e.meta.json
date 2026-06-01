@@ -1,0 +1,18 @@
+{
+  "id": "5d08ad8e-00fe-4abb-9067-de90f3cb669e",
+  "runtime": "bash",
+  "purpose": "Verify RabbitMQ service defined in docker-compose",
+  "script_chars": 148,
+  "started_at": "2026-06-01T10:14:31.226Z",
+  "finished_at": "2026-06-01T10:14:31.440Z",
+  "exit_code": 1,
+  "signal": null,
+  "timed_out": false,
+  "duration_ms": 214,
+  "stdout_bytes": 544,
+  "stderr_bytes": 0,
+  "stdout_truncated": false,
+  "stderr_truncated": false,
+  "stdout_path": "D:\\CLAUDE\\Project\\zakuppro\\zakuppro\\.gsd\\exec\\5d08ad8e-00fe-4abb-9067-de90f3cb669e.stdout",
+  "stderr_path": "D:\\CLAUDE\\Project\\zakuppro\\zakuppro\\.gsd\\exec\\5d08ad8e-00fe-4abb-9067-de90f3cb669e.stderr"
+}
