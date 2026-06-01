@@ -71,6 +71,21 @@ services:
     networks:
       - zakuppro-network
 
+  # Celery Worker
+  celery-worker:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: zakuppro-celery-worker
+    command: celery -A backend.celery_app worker --loglevel=info
+    environment:
+      CELERY_BROKER_URL: pyamqp://guest:guest@rabbitmq:5672//
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+    networks:
+      - zakuppro-network
+
 volumes:
   postgres_data:
     driver: local
