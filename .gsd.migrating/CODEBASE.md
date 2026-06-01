@@ -1,23 +1,18 @@
 # Codebase Map
 
-Generated: 2026-06-01T03:56:44Z | Files: 500 | Described: 0/500
-<!-- gsd:codebase-meta {"generatedAt":"2026-06-01T03:56:44Z","fingerprint":"fe0d125386c971dda6caae21aab796b756a1ed6b","fileCount":500,"truncated":true} -->
+Generated: 2026-06-01T09:22:09Z | Files: 500 | Described: 0/500
+<!-- gsd:codebase-meta {"generatedAt":"2026-06-01T09:22:09Z","fingerprint":"ba7b9f4aa078a19fdd004c16fd2216fa14ecc98b","fileCount":500,"truncated":true} -->
 Note: Truncated to first 500 files. Run with higher --max-files to include all.
 
 ### (root)/
 - `.env`
 - `.gitignore`
+- `.test_db.sqlite`
 - `Caddyfile`
-- `components.json`
-- `eslint.config.mjs`
-- `next.config.ts`
-- `package-lock.json`
-- `package.json`
-- `postcss.config.mjs`
-- `SPEC.md`
 
 ### .gsd.migrating/
 - `.gsd.migrating/CODEBASE.md`
+- `.gsd.migrating/DECISIONS.md`
 - `.gsd.migrating/doctor-history.jsonl`
 - `.gsd.migrating/event-log.jsonl`
 - `.gsd.migrating/gsd.db`
@@ -31,32 +26,27 @@ Note: Truncated to first 500 files. Run with higher --max-files to include all.
 - `.gsd.migrating/STATE.md`
 
 ### .gsd.migrating/activity/
-- `.gsd.migrating/activity/001-discuss-milestone-M001.jsonl`
-- `.gsd.migrating/activity/002-discuss-milestone-M001.jsonl`
-- `.gsd.migrating/activity/003-discuss-milestone-M001.jsonl`
-- `.gsd.migrating/activity/004-execute-task-M001-S01-T01.jsonl`
-- `.gsd.migrating/activity/005-execute-task-M001-S01-T02.jsonl`
-- `.gsd.migrating/activity/006-execute-task-M001-S01-T02.jsonl`
-- `.gsd.migrating/activity/007-execute-task-M001-S01-T03.jsonl`
-- `.gsd.migrating/activity/008-execute-task-M001-S01-T04.jsonl`
-- `.gsd.migrating/activity/009-execute-task-M001-S01-T04.jsonl`
-- `.gsd.migrating/activity/010-execute-task-M001-S01-T05.jsonl`
-- `.gsd.migrating/activity/011-execute-task-M001-S01-T05.jsonl`
-- `.gsd.migrating/activity/012-complete-slice-M001-S01.jsonl`
-- `.gsd.migrating/activity/013-complete-slice-M001-S01.jsonl`
-- `.gsd.migrating/activity/014-research-slice-M001-S02.jsonl`
-- `.gsd.migrating/activity/015-plan-slice-M001-S02.jsonl`
-- `.gsd.migrating/activity/016-execute-task-M001-S02-T01.jsonl`
-- `.gsd.migrating/activity/017-execute-task-M001-S02-T02.jsonl`
-- `.gsd.migrating/activity/018-execute-task-M001-S02-T02.jsonl`
+- *(28 files: 28 .jsonl)*
 
 ### .gsd.migrating/audit/
 - `.gsd.migrating/audit/events.jsonl`
 
 ### .gsd.migrating/exec/
+- `.gsd.migrating/exec/086c8607-9624-4142-bca7-c1da01ba8bdb.meta.json`
+- `.gsd.migrating/exec/086c8607-9624-4142-bca7-c1da01ba8bdb.stderr`
+- `.gsd.migrating/exec/086c8607-9624-4142-bca7-c1da01ba8bdb.stdout`
+- `.gsd.migrating/exec/86980f16-5862-423e-90c8-1b547e0017ab.meta.json`
+- `.gsd.migrating/exec/86980f16-5862-423e-90c8-1b547e0017ab.stderr`
+- `.gsd.migrating/exec/86980f16-5862-423e-90c8-1b547e0017ab.stdout`
 - `.gsd.migrating/exec/a52959db-966b-4a6b-944c-31e111f63af0.meta.json`
 - `.gsd.migrating/exec/a52959db-966b-4a6b-944c-31e111f63af0.stderr`
 - `.gsd.migrating/exec/a52959db-966b-4a6b-944c-31e111f63af0.stdout`
+- `.gsd.migrating/exec/ce57c045-f1c6-4fa6-98a9-7edb2c1d8d14.meta.json`
+- `.gsd.migrating/exec/ce57c045-f1c6-4fa6-98a9-7edb2c1d8d14.stderr`
+- `.gsd.migrating/exec/ce57c045-f1c6-4fa6-98a9-7edb2c1d8d14.stdout`
+- `.gsd.migrating/exec/dfd9513b-0e43-4bba-aa9f-d9ce0a4f5722.meta.json`
+- `.gsd.migrating/exec/dfd9513b-0e43-4bba-aa9f-d9ce0a4f5722.stderr`
+- `.gsd.migrating/exec/dfd9513b-0e43-4bba-aa9f-d9ce0a4f5722.stdout`
 
 ### .gsd.migrating/graphs/
 - `.gsd.migrating/graphs/graph.json`
@@ -71,6 +61,7 @@ Note: Truncated to first 500 files. Run with higher --max-files to include all.
 
 ### .gsd.migrating/milestones/M001/anchors/
 - `.gsd.migrating/milestones/M001/anchors/plan-slice.json`
+- `.gsd.migrating/milestones/M001/anchors/research-slice.json`
 
 ### .gsd.migrating/milestones/M001/slices/S01/
 - `.gsd.migrating/milestones/M001/slices/S01/S01-PLAN.md`
@@ -98,13 +89,36 @@ Note: Truncated to first 500 files. Run with higher --max-files to include all.
 - `.gsd.migrating/milestones/M001/slices/S02/S02-PLAN.md`
 - `.gsd.migrating/milestones/M001/slices/S02/S02-PRE-EXEC-VERIFY.json`
 - `.gsd.migrating/milestones/M001/slices/S02/S02-RESEARCH.md`
+- `.gsd.migrating/milestones/M001/slices/S02/S02-SUMMARY.md`
+- `.gsd.migrating/milestones/M001/slices/S02/S02-UAT.md`
 
 ### .gsd.migrating/milestones/M001/slices/S02/tasks/
 - `.gsd.migrating/milestones/M001/slices/S02/tasks/T01-PLAN.md`
 - `.gsd.migrating/milestones/M001/slices/S02/tasks/T01-SUMMARY.md`
 - `.gsd.migrating/milestones/M001/slices/S02/tasks/T01-VERIFY.json`
 - `.gsd.migrating/milestones/M001/slices/S02/tasks/T02-PLAN.md`
+- `.gsd.migrating/milestones/M001/slices/S02/tasks/T02-SUMMARY.md`
+- `.gsd.migrating/milestones/M001/slices/S02/tasks/T02-VERIFY.json`
 - `.gsd.migrating/milestones/M001/slices/S02/tasks/T03-PLAN.md`
+- `.gsd.migrating/milestones/M001/slices/S02/tasks/T03-SUMMARY.md`
+- `.gsd.migrating/milestones/M001/slices/S02/tasks/T03-VERIFY.json`
+
+### .gsd.migrating/milestones/M001/slices/S03/
+- `.gsd.migrating/milestones/M001/slices/S03/S03-PLAN.md`
+- `.gsd.migrating/milestones/M001/slices/S03/S03-PRE-EXEC-VERIFY.json`
+- `.gsd.migrating/milestones/M001/slices/S03/S03-RESEARCH.md`
+
+### .gsd.migrating/milestones/M001/slices/S03/tasks/
+- `.gsd.migrating/milestones/M001/slices/S03/tasks/T01-PLAN.md`
+- `.gsd.migrating/milestones/M001/slices/S03/tasks/T01-SUMMARY.md`
+- `.gsd.migrating/milestones/M001/slices/S03/tasks/T01-VERIFY.json`
+- `.gsd.migrating/milestones/M001/slices/S03/tasks/T02-PLAN.md`
+- `.gsd.migrating/milestones/M001/slices/S03/tasks/T02-SUMMARY.md`
+- `.gsd.migrating/milestones/M001/slices/S03/tasks/T02-VERIFY.json`
+- `.gsd.migrating/milestones/M001/slices/S03/tasks/T03-PLAN.md`
+- `.gsd.migrating/milestones/M001/slices/S03/tasks/T03-SUMMARY.md`
+- `.gsd.migrating/milestones/M001/slices/S03/tasks/T03-VERIFY.json`
+- `.gsd.migrating/milestones/M001/slices/S03/tasks/T04-PLAN.md`
 
 ### .gsd.migrating/runtime/
 - `.gsd.migrating/runtime/uok-parity.jsonl`
@@ -114,6 +128,7 @@ Note: Truncated to first 500 files. Run with higher --max-files to include all.
 
 ### .gsd.migrating/runtime/units/
 - `.gsd.migrating/runtime/units/complete-slice-M001-S01.json`
+- `.gsd.migrating/runtime/units/complete-slice-M001-S02.json`
 - `.gsd.migrating/runtime/units/discuss-milestone-M001.json`
 - `.gsd.migrating/runtime/units/execute-task-M001-S01-T01.json`
 - `.gsd.migrating/runtime/units/execute-task-M001-S01-T02.json`
@@ -122,8 +137,15 @@ Note: Truncated to first 500 files. Run with higher --max-files to include all.
 - `.gsd.migrating/runtime/units/execute-task-M001-S01-T05.json`
 - `.gsd.migrating/runtime/units/execute-task-M001-S02-T01.json`
 - `.gsd.migrating/runtime/units/execute-task-M001-S02-T02.json`
+- `.gsd.migrating/runtime/units/execute-task-M001-S02-T03.json`
+- `.gsd.migrating/runtime/units/execute-task-M001-S03-T01.json`
+- `.gsd.migrating/runtime/units/execute-task-M001-S03-T02.json`
+- `.gsd.migrating/runtime/units/execute-task-M001-S03-T03.json`
+- `.gsd.migrating/runtime/units/execute-task-M001-S03-T04.json`
 - `.gsd.migrating/runtime/units/plan-slice-M001-S02.json`
+- `.gsd.migrating/runtime/units/plan-slice-M001-S03.json`
 - `.gsd.migrating/runtime/units/research-slice-M001-S02.json`
+- `.gsd.migrating/runtime/units/research-slice-M001-S03.json`
 
 ### .zscripts/
 - `.zscripts/build.sh`
@@ -134,599 +156,78 @@ Note: Truncated to first 500 files. Run with higher --max-files to include all.
 - `.zscripts/mini-services-start.sh`
 - `.zscripts/start.sh`
 
-### agent-ctx/
-- *(24 files: 24 .md)*
-
-### backend/
-- `backend/__init__.py`
-- `backend/alembic.ini`
-- `backend/database.py`
-- `backend/main.py`
-- `backend/models.py`
-- `backend/README.md`
-- `backend/requirements.txt`
-- `backend/schemas.py`
-
-### backend/alembic/
-- `backend/alembic/env.py`
-- `backend/alembic/README`
-- `backend/alembic/script.py.mako`
-
-### backend/alembic/versions/
-- `backend/alembic/versions/d6d07b9ba359_initial_schema.py`
-- `backend/alembic/versions/e6b0df437c13_add_performance_indexes.py`
-
-### backend/routers/
-- `backend/routers/__init__.py`
-- `backend/routers/health.py`
-
-### backend/tests/
-- `backend/tests/__init__.py`
-- `backend/tests/test_migration.py`
-- `backend/tests/test_models.py`
-- `backend/tests/test_schemas.py`
-
-### download/
-- `download/README.md`
-
-### examples/websocket/
-- `examples/websocket/frontend.tsx`
-- `examples/websocket/server.ts`
-
-### mini-services/
-- `mini-services/.gitkeep`
-
-### mini-services/telegram-bot/
-- `mini-services/telegram-bot/index.ts`
-- `mini-services/telegram-bot/package.json`
-- `mini-services/telegram-bot/start.sh`
-- `mini-services/telegram-bot/tsconfig.json`
-
-### prisma/
-- `prisma/schema.prisma`
-
-### public/
-- `public/robots.txt`
-
-### skills/ASR/
-- `skills/ASR/LICENSE.txt`
-- `skills/ASR/SKILL.md`
-
-### skills/ASR/scripts/
-- `skills/ASR/scripts/asr.ts`
-
-### skills/LLM/
-- `skills/LLM/LICENSE.txt`
-- `skills/LLM/SKILL.md`
-
-### skills/LLM/scripts/
-- `skills/LLM/scripts/chat.ts`
-
-### skills/TTS/
-- `skills/TTS/LICENSE.txt`
-- `skills/TTS/SKILL.md`
-- `skills/TTS/tts.ts`
-
-### skills/VLM/
-- `skills/VLM/LICENSE.txt`
-- `skills/VLM/SKILL.md`
-
-### skills/VLM/scripts/
-- `skills/VLM/scripts/vlm.ts`
-
-### skills/agent-browser/
-- `skills/agent-browser/SKILL.md`
-
-### skills/ai-news-collectors/
-- `skills/ai-news-collectors/_meta.json`
-- `skills/ai-news-collectors/SKILL.md`
-
-### skills/ai-news-collectors/references/
-- `skills/ai-news-collectors/references/sources.md`
-
-### skills/aminer-academic-search/
-- `skills/aminer-academic-search/SKILL.md`
-
-### skills/aminer-academic-search/scripts/
-- `skills/aminer-academic-search/scripts/aminer.py`
-
-### skills/aminer-daily-paper/
-- `skills/aminer-daily-paper/README.md`
-- `skills/aminer-daily-paper/SKILL.md`
-
-### skills/aminer-daily-paper/scripts/
-- `skills/aminer-daily-paper/scripts/recommend.py`
-
-### skills/aminer-free-academic/
-- `skills/aminer-free-academic/SKILL.md`
-
-### skills/aminer-free-academic/evals/
-- `skills/aminer-free-academic/evals/evals.json`
-
-### skills/aminer-free-academic/references/
-- `skills/aminer-free-academic/references/api-catalog.md`
-
-### skills/anti-pua/
-- `skills/anti-pua/SKILL.md`
-
-### skills/auto-target-tracker/
-- `skills/auto-target-tracker/SKILL.md`
-
-### skills/blog-writer/
-- `skills/blog-writer/_meta.json`
-- `skills/blog-writer/2024-02-17-radical-transparency-sales.md`
-- `skills/blog-writer/2024-02-17-raycast-spotlight-superpowers.md`
-- `skills/blog-writer/2024-02-17-short-form-content-marketing.md`
-- `skills/blog-writer/2024-02-17-typing-speed-benefits.md`
-- `skills/blog-writer/2024-03-14-effective-ai-prompts.md`
-- `skills/blog-writer/2024-11-08-ai-revolutionizing-entry-level-sales.md`
-- `skills/blog-writer/2025-11-12-why-ai-art-is-useless.md`
-- `skills/blog-writer/manage_examples.py`
-- `skills/blog-writer/README.md`
-- `skills/blog-writer/SKILL.md`
-- `skills/blog-writer/style-guide.md`
-
-### skills/charts/
-- `skills/charts/LICENSE.txt`
-- `skills/charts/setup.sh`
-- `skills/charts/SKILL.md`
-
-### skills/charts/references/
-- `skills/charts/references/_rules.md`
-- `skills/charts/references/d3.md`
-- `skills/charts/references/echarts.md`
-- `skills/charts/references/matplotlib.md`
-- `skills/charts/references/mermaid.md`
-- `skills/charts/references/mindmap-css.md`
-- `skills/charts/references/playwright-css.md`
-- `skills/charts/references/radial-grid.md`
-- `skills/charts/references/seaborn.md`
-
-### skills/cheat-sheet/
-- `skills/cheat-sheet/SKILL.md`
-
-### skills/coding-agent/
-- `skills/coding-agent/_meta.json`
-- `skills/coding-agent/criteria.md`
-- `skills/coding-agent/execution.md`
-- `skills/coding-agent/memory-template.md`
-- `skills/coding-agent/planning.md`
-- `skills/coding-agent/SKILL.md`
-- `skills/coding-agent/state.md`
-- `skills/coding-agent/verification.md`
-
-### skills/content-strategy/
-- `skills/content-strategy/_meta.json`
-- `skills/content-strategy/SKILL.md`
-
-### skills/contentanalysis/
-- `skills/contentanalysis/SKILL.md`
-
-### skills/contentanalysis/ExtractWisdom/
-- `skills/contentanalysis/ExtractWisdom/SKILL.md`
-
-### skills/contentanalysis/ExtractWisdom/Workflows/
-- `skills/contentanalysis/ExtractWisdom/Workflows/Extract.md`
-
-### skills/docx/
-- `skills/docx/LICENSE.txt`
-- `skills/docx/setup.sh`
-- `skills/docx/SKILL.md`
-
-### skills/docx/references/
-- `skills/docx/references/chart-templates.md`
-- `skills/docx/references/common-rules.md`
-- `skills/docx/references/decorations.md`
-- `skills/docx/references/design-system.md`
-- `skills/docx/references/docx-js-advanced.md`
-- `skills/docx/references/docx-js-core.md`
-- `skills/docx/references/faq.md`
-- `skills/docx/references/math-formulas.md`
-- `skills/docx/references/ooxml.md`
-- `skills/docx/references/toc.md`
-
-### skills/docx/routes/
-- `skills/docx/routes/comment.md`
-- `skills/docx/routes/create.md`
-- `skills/docx/routes/edit.md`
-- `skills/docx/routes/format.md`
-- `skills/docx/routes/read.md`
-
-### skills/docx/scenes/
-- `skills/docx/scenes/academic.md`
-- `skills/docx/scenes/contract.md`
-- `skills/docx/scenes/copywriting.md`
-- `skills/docx/scenes/exam.md`
-- `skills/docx/scenes/official-doc.md`
-- `skills/docx/scenes/report.md`
-- `skills/docx/scenes/resume.md`
-
-### skills/docx/scripts/
-- `skills/docx/scripts/__init__.py`
-- `skills/docx/scripts/add_toc_placeholders.py`
-- `skills/docx/scripts/document.py`
-- `skills/docx/scripts/postcheck.py`
-- `skills/docx/scripts/utilities.py`
-
-### skills/docx/scripts/templates/
-- `skills/docx/scripts/templates/comments.xml`
-- `skills/docx/scripts/templates/commentsExtended.xml`
-- `skills/docx/scripts/templates/commentsExtensible.xml`
-- `skills/docx/scripts/templates/commentsIds.xml`
-- `skills/docx/scripts/templates/people.xml`
-
-### skills/dream-interpreter/
-- `skills/dream-interpreter/skill.json`
-- `skills/dream-interpreter/SKILL.md`
-
-### skills/dream-interpreter/assets/
-- `skills/dream-interpreter/assets/example_asset.txt`
-
-### skills/dream-interpreter/references/
-- `skills/dream-interpreter/references/api_reference.md`
-- `skills/dream-interpreter/references/interpretation-guide.md`
-- `skills/dream-interpreter/references/output-schema.md`
-- `skills/dream-interpreter/references/questioning-strategy.md`
-- `skills/dream-interpreter/references/visual-mapping.md`
-
-### skills/dream-interpreter/scripts/
-- `skills/dream-interpreter/scripts/example.py`
-
-### skills/finance/
-- `skills/finance/Finance_API_Doc.md`
-- `skills/finance/SKILL.md`
-
-### skills/fullstack-dev/
-- `skills/fullstack-dev/SKILL.md`
-
-### skills/get-fortune-analysis/
-- `skills/get-fortune-analysis/lunar_python.py`
-- `skills/get-fortune-analysis/SKILL.md`
-
-### skills/gift-evaluator/
-- `skills/gift-evaluator/html_tools.py`
-- `skills/gift-evaluator/SKILL.md`
-
-### skills/image-edit/
-- `skills/image-edit/LICENSE.txt`
-- `skills/image-edit/SKILL.md`
-
-### skills/image-edit/scripts/
-- `skills/image-edit/scripts/image-edit.ts`
-
-### skills/image-generation/
-- `skills/image-generation/LICENSE.txt`
-- `skills/image-generation/SKILL.md`
-
-### skills/image-generation/scripts/
-- `skills/image-generation/scripts/image-generation.ts`
-
-### skills/image-understand/
-- `skills/image-understand/LICENSE.txt`
-- `skills/image-understand/SKILL.md`
-
-### skills/image-understand/scripts/
-- `skills/image-understand/scripts/image-understand.ts`
-
-### skills/interview-designer/
-- `skills/interview-designer/_meta.json`
-- `skills/interview-designer/README.md`
-- `skills/interview-designer/SKILL.md`
-
-### skills/interview-designer/references/
-- `skills/interview-designer/references/design_rationale.md`
-
-### skills/interview-designer/templates/
-- `skills/interview-designer/templates/interview_guide_template.md`
-
-### skills/interview-prep/
-- `skills/interview-prep/SKILL.md`
-
-### skills/interview-prep/references/
-- `skills/interview-prep/references/answer_frameworks.md`
-- `skills/interview-prep/references/behavioral.md`
-- `skills/interview-prep/references/case.md`
-- `skills/interview-prep/references/hr_round.md`
-- `skills/interview-prep/references/role_finance.md`
-- `skills/interview-prep/references/role_internet.md`
-- `skills/interview-prep/references/role_tech.md`
-- `skills/interview-prep/references/salary_negotiation.md`
-- `skills/interview-prep/references/technical.md`
-
-### skills/interview-prep/scripts/
-- `skills/interview-prep/scripts/star_story_builder.py`
-
-### skills/jd-resume-tailor/
-- `skills/jd-resume-tailor/SKILL.md`
-
-### skills/jd-resume-tailor/references/
-- `skills/jd-resume-tailor/references/jd_parsing_signals.md`
-- `skills/jd-resume-tailor/references/rewrite_principles.md`
-
-### skills/jd-resume-tailor/scripts/
-- `skills/jd-resume-tailor/scripts/jd_gap.py`
-- `skills/jd-resume-tailor/scripts/parse_jd.py`
-
-### skills/job-intent-tracker/
-- `skills/job-intent-tracker/SKILL.md`
-
-### skills/job-intent-tracker/references/
-- `skills/job-intent-tracker/references/keywords_finance.md`
-- `skills/job-intent-tracker/references/keywords_general.md`
-- `skills/job-intent-tracker/references/keywords_internet.md`
-- `skills/job-intent-tracker/references/keywords_tech.md`
-- `skills/job-intent-tracker/references/target_profile_template.md`
-
-### skills/job-intent-tracker/scripts/
-- `skills/job-intent-tracker/scripts/init_tracker.py`
-- `skills/job-intent-tracker/scripts/profile_match.py`
-
-### skills/market-research-reports/
-- `skills/market-research-reports/SKILL.md`
-
-### skills/market-research-reports/assets/
-- `skills/market-research-reports/assets/FORMATTING_GUIDE.md`
-- `skills/market-research-reports/assets/market_report_template.tex`
-- `skills/market-research-reports/assets/market_research.sty`
-
-### skills/market-research-reports/references/
-- `skills/market-research-reports/references/data_analysis_patterns.md`
-- `skills/market-research-reports/references/report_structure_guide.md`
-- `skills/market-research-reports/references/visual_generation_guide.md`
-
-### skills/market-research-reports/scripts/
-- `skills/market-research-reports/scripts/generate_market_visuals.py`
-
-### skills/marketing-mode/
-- `skills/marketing-mode/_meta.json`
-- `skills/marketing-mode/mode-prompt.md`
-- `skills/marketing-mode/README.md`
-- `skills/marketing-mode/skill.json`
-- `skills/marketing-mode/SKILL.md`
-
-### skills/mindfulness-meditation/
-- `skills/mindfulness-meditation/_meta.json`
-- `skills/mindfulness-meditation/SKILL.md`
-
-### skills/multi-search-engine/
-- `skills/multi-search-engine/_meta.json`
-- `skills/multi-search-engine/CHANGELOG.md`
-- `skills/multi-search-engine/CHANNELLOG.md`
-- `skills/multi-search-engine/config.json`
-- `skills/multi-search-engine/metadata.json`
-- `skills/multi-search-engine/SKILL.md`
-
-### skills/multi-search-engine/references/
-- `skills/multi-search-engine/references/international-search.md`
-
-### skills/pdf/
-- `skills/pdf/LICENSE.txt`
-- `skills/pdf/SKILL.md`
-
-### skills/pdf/briefs/
-- `skills/pdf/briefs/academic.md`
-- `skills/pdf/briefs/creative.md`
-- `skills/pdf/briefs/poster.md`
-- `skills/pdf/briefs/process-advanced.md`
-- `skills/pdf/briefs/process.md`
-- `skills/pdf/briefs/report.md`
-
-### skills/pdf/configs/
-- `skills/pdf/configs/components.md`
-- `skills/pdf/configs/fonts.md`
-- `skills/pdf/configs/visual_framework.md`
-
-### skills/pdf/references/
-- `skills/pdf/references/resume-academic.tex`
-- `skills/pdf/references/resume-altacv.tex`
-
-### skills/pdf/scripts/
-- `skills/pdf/scripts/cover_validate.js`
-- `skills/pdf/scripts/design_engine.py`
-- `skills/pdf/scripts/html2pdf-next.js`
-- `skills/pdf/scripts/html2poster.js`
-- `skills/pdf/scripts/pdf_qa.py`
-- `skills/pdf/scripts/pdf.py`
-- `skills/pdf/scripts/poster_validate.py`
-- `skills/pdf/scripts/setup.sh`
-- `skills/pdf/scripts/toc_validate.py`
-
-### skills/pdf/typesetting/
-- `skills/pdf/typesetting/charts.md`
-- `skills/pdf/typesetting/cover-backgrounds.md`
-- `skills/pdf/typesetting/cover.md`
-- `skills/pdf/typesetting/fill-engine.md`
-- `skills/pdf/typesetting/geometry.md`
-- `skills/pdf/typesetting/overflow.md`
-- `skills/pdf/typesetting/pagination.md`
-- `skills/pdf/typesetting/palette.md`
-- `skills/pdf/typesetting/typography.md`
-
-### skills/podcast-generate/
-- `skills/podcast-generate/generate.ts`
-- `skills/podcast-generate/LICENSE.txt`
-- `skills/podcast-generate/package.json`
-- `skills/podcast-generate/readme.md`
-- `skills/podcast-generate/SKILL.md`
-- `skills/podcast-generate/tsconfig.json`
-
-### skills/podcast-generate/test_data/
-- `skills/podcast-generate/test_data/segments.jsonl`
-
-### skills/ppt/
-- `skills/ppt/beamer.md`
-- `skills/ppt/components.md`
-- `skills/ppt/data-viz-components.md`
-- `skills/ppt/design-system.md`
-- `skills/ppt/html2pptx.md`
-- `skills/ppt/LICENSE.txt`
-- `skills/ppt/ooxml.md`
-- `skills/ppt/setup.sh`
-- `skills/ppt/SKILL.md`
-- `skills/ppt/themes.md`
-
-### skills/ppt/ooxml/schemas/ISO-IEC29500-4_2016/
-- *(27 files: 27 .xsd)*
-
-### skills/ppt/ooxml/schemas/ecma/fouth-edition/
-- `skills/ppt/ooxml/schemas/ecma/fouth-edition/opc-contentTypes.xsd`
-- `skills/ppt/ooxml/schemas/ecma/fouth-edition/opc-coreProperties.xsd`
-- `skills/ppt/ooxml/schemas/ecma/fouth-edition/opc-digSig.xsd`
-- `skills/ppt/ooxml/schemas/ecma/fouth-edition/opc-relationships.xsd`
-
-### skills/ppt/ooxml/schemas/mce/
-- `skills/ppt/ooxml/schemas/mce/mc.xsd`
-
-### skills/ppt/ooxml/schemas/microsoft/
-- `skills/ppt/ooxml/schemas/microsoft/wml-2010.xsd`
-- `skills/ppt/ooxml/schemas/microsoft/wml-2012.xsd`
-- `skills/ppt/ooxml/schemas/microsoft/wml-2018.xsd`
-- `skills/ppt/ooxml/schemas/microsoft/wml-cex-2018.xsd`
-- `skills/ppt/ooxml/schemas/microsoft/wml-cid-2016.xsd`
-- `skills/ppt/ooxml/schemas/microsoft/wml-sdtdatahash-2020.xsd`
-- `skills/ppt/ooxml/schemas/microsoft/wml-symex-2015.xsd`
-
-### skills/ppt/ooxml/scripts/
-- `skills/ppt/ooxml/scripts/pack.py`
-- `skills/ppt/ooxml/scripts/unpack.py`
-- `skills/ppt/ooxml/scripts/validate.py`
-
-### skills/ppt/ooxml/scripts/validation/
-- `skills/ppt/ooxml/scripts/validation/__init__.py`
-- `skills/ppt/ooxml/scripts/validation/base.py`
-- `skills/ppt/ooxml/scripts/validation/docx.py`
-- `skills/ppt/ooxml/scripts/validation/pptx.py`
-- `skills/ppt/ooxml/scripts/validation/redlining.py`
-
-### skills/ppt/references/
-- `skills/ppt/references/beamer.md`
-- `skills/ppt/references/latex.md`
-- `skills/ppt/references/paper-navbar.tex`
-- `skills/ppt/references/progress-navbar.tex`
-
-### skills/ppt/scripts/
-- `skills/ppt/scripts/html2pptx.js`
-- `skills/ppt/scripts/inventory.py`
-- `skills/ppt/scripts/pdf.py`
-- `skills/ppt/scripts/rearrange.py`
-- `skills/ppt/scripts/replace.py`
-- `skills/ppt/scripts/tectonic`
-- `skills/ppt/scripts/thumbnail.py`
-
-### skills/qingyan-research/
-- `skills/qingyan-research/generate_html.py`
-- `skills/qingyan-research/SKILL.md`
-
-### skills/quiz-html/
-- `skills/quiz-html/README.md`
-- `skills/quiz-html/SKILL.md`
-- `skills/quiz-html/skill.yaml`
-
-### skills/quiz-html/examples/
-- `skills/quiz-html/examples/demo.html`
-
-### skills/quiz-html/scripts/
-- `skills/quiz-html/scripts/build_quiz_html.py`
-
-### skills/quiz-html/templates/
-- `skills/quiz-html/templates/quiz_template.html`
-
-### skills/quiz-mastery/
-- `skills/quiz-mastery/README.md`
-- `skills/quiz-mastery/SKILL.md`
-- `skills/quiz-mastery/skill.yaml`
-
-### skills/quiz-mastery/scripts/
-- `skills/quiz-mastery/scripts/generate_from_material.py`
-- `skills/quiz-mastery/scripts/import_quiz.py`
-- `skills/quiz-mastery/scripts/run_quiz.py`
-- `skills/quiz-mastery/scripts/submit_answers.py`
-
-### skills/quiz-mastery/src/quiz_mastery/
-- `skills/quiz-mastery/src/quiz_mastery/__init__.py`
-- `skills/quiz-mastery/src/quiz_mastery/evaluator.py`
-- `skills/quiz-mastery/src/quiz_mastery/file_parser.py`
-- `skills/quiz-mastery/src/quiz_mastery/mastery_engine.py`
-- `skills/quiz-mastery/src/quiz_mastery/models.py`
-- `skills/quiz-mastery/src/quiz_mastery/planner.py`
-- `skills/quiz-mastery/src/quiz_mastery/quiz_extractor.py`
-- `skills/quiz-mastery/src/quiz_mastery/quiz_generator.py`
-- `skills/quiz-mastery/src/quiz_mastery/repository.py`
-- `skills/quiz-mastery/src/quiz_mastery/service.py`
-- `skills/quiz-mastery/src/quiz_mastery/utils.py`
-
-### skills/resume-builder/
-- `skills/resume-builder/SKILL.md`
-
-### skills/resume-builder/references/
-- `skills/resume-builder/references/export_guide.md`
-- `skills/resume-builder/references/intake_questions.md`
-- `skills/resume-builder/references/star_rewrite_guide.md`
-
-### skills/resume-builder/references/keywords/
-- `skills/resume-builder/references/keywords/finance.txt`
-- `skills/resume-builder/references/keywords/general.txt`
-- `skills/resume-builder/references/keywords/internet.txt`
-- `skills/resume-builder/references/keywords/tech.txt`
-
-### skills/resume-builder/references/templates/
-- `skills/resume-builder/references/templates/finance.md`
-- `skills/resume-builder/references/templates/general.md`
-- `skills/resume-builder/references/templates/internet.md`
-- `skills/resume-builder/references/templates/tech.md`
-
-### skills/resume-builder/scripts/
-- `skills/resume-builder/scripts/ats_check.py`
-
-### skills/seo-content-writer/
-- `skills/seo-content-writer/_meta.json`
-- `skills/seo-content-writer/SKILL.md`
-
-### skills/seo-content-writer/references/
-- `skills/seo-content-writer/references/content-structure-templates.md`
-- `skills/seo-content-writer/references/title-formulas.md`
-
-### skills/skill-creator/
-- `skills/skill-creator/LICENSE.txt`
-- `skills/skill-creator/SKILL.md`
-
-### skills/skill-creator/agents/
-- `skills/skill-creator/agents/analyzer.md`
-- `skills/skill-creator/agents/comparator.md`
-- `skills/skill-creator/agents/grader.md`
-
-### skills/skill-creator/assets/
-- `skills/skill-creator/assets/eval_review.html`
-
-### skills/skill-creator/eval-viewer/
-- `skills/skill-creator/eval-viewer/generate_review.py`
-- `skills/skill-creator/eval-viewer/viewer.html`
-
-### skills/skill-creator/references/
-- `skills/skill-creator/references/schemas.md`
-
-### skills/skill-creator/scripts/
-- `skills/skill-creator/scripts/__init__.py`
-- `skills/skill-creator/scripts/aggregate_benchmark.py`
-- `skills/skill-creator/scripts/generate_report.py`
-- `skills/skill-creator/scripts/improve_description.py`
-- `skills/skill-creator/scripts/package_skill.py`
-- `skills/skill-creator/scripts/quick_validate.py`
-- `skills/skill-creator/scripts/run_eval.py`
-- `skills/skill-creator/scripts/run_loop.py`
-- `skills/skill-creator/scripts/utils.py`
-
-### skills/skill-finder-cn/
-- `skills/skill-finder-cn/_meta.json`
-- `skills/skill-finder-cn/package.json`
-- `skills/skill-finder-cn/SKILL.md`
-
-### skills/skill-finder-cn/scripts/
-- `skills/skill-finder-cn/scripts/search.sh`
-
-### skills/skill-vetter/
-- `skills/skill-vetter/SKILL.md`
-
-### skills/stock-analysis-skill/
-- `skills/stock-analysis-skill/package.json`
-- `skills/stock-analysis-skill/SKILL.md`
+### Python/_cache/
+- `Python/_cache/last_welcome.txt`
+
+### Python/bin/
+- *(26 files: 12 .exe, 12 .__target__, 2 .py)*
+
+### Python/pythoncore-3.14-64/DLLs/
+- *(31 files: 23 .pyd, 7 .dll, 1 .cat)*
+
+### Python/pythoncore-3.14-64/Doc/html/
+- `Python/pythoncore-3.14-64/Doc/html/.buildinfo`
+- `Python/pythoncore-3.14-64/Doc/html/404.html`
+
+### Python/pythoncore-3.14-64/Doc/html/_downloads/6dc1f3f4f0e6ca13cb42ddf4d6cbc8af/
+- `Python/pythoncore-3.14-64/Doc/html/_downloads/6dc1f3f4f0e6ca13cb42ddf4d6cbc8af/tzinfo_examples.py`
+
+### Python/pythoncore-3.14-64/Doc/html/_sources/
+- `Python/pythoncore-3.14-64/Doc/html/_sources/about.rst.txt`
+- `Python/pythoncore-3.14-64/Doc/html/_sources/bugs.rst.txt`
+- `Python/pythoncore-3.14-64/Doc/html/_sources/contents.rst.txt`
+- `Python/pythoncore-3.14-64/Doc/html/_sources/copyright.rst.txt`
+- `Python/pythoncore-3.14-64/Doc/html/_sources/glossary.rst.txt`
+- `Python/pythoncore-3.14-64/Doc/html/_sources/improve-page-nojs.rst.txt`
+- `Python/pythoncore-3.14-64/Doc/html/_sources/improve-page.rst.txt`
+
+### Python/pythoncore-3.14-64/Doc/html/_sources/c-api/
+- *(77 files: 77 .txt)*
+
+### Python/pythoncore-3.14-64/Doc/html/_sources/deprecations/
+- `Python/pythoncore-3.14-64/Doc/html/_sources/deprecations/c-api-pending-removal-in-3.14.rst.txt`
+- `Python/pythoncore-3.14-64/Doc/html/_sources/deprecations/c-api-pending-removal-in-3.15.rst.txt`
+- `Python/pythoncore-3.14-64/Doc/html/_sources/deprecations/c-api-pending-removal-in-3.16.rst.txt`
+- `Python/pythoncore-3.14-64/Doc/html/_sources/deprecations/c-api-pending-removal-in-3.18.rst.txt`
+- `Python/pythoncore-3.14-64/Doc/html/_sources/deprecations/c-api-pending-removal-in-future.rst.txt`
+- `Python/pythoncore-3.14-64/Doc/html/_sources/deprecations/index.rst.txt`
+- `Python/pythoncore-3.14-64/Doc/html/_sources/deprecations/pending-removal-in-3.13.rst.txt`
+- `Python/pythoncore-3.14-64/Doc/html/_sources/deprecations/pending-removal-in-3.14.rst.txt`
+- `Python/pythoncore-3.14-64/Doc/html/_sources/deprecations/pending-removal-in-3.15.rst.txt`
+- `Python/pythoncore-3.14-64/Doc/html/_sources/deprecations/pending-removal-in-3.16.rst.txt`
+- `Python/pythoncore-3.14-64/Doc/html/_sources/deprecations/pending-removal-in-3.17.rst.txt`
+- `Python/pythoncore-3.14-64/Doc/html/_sources/deprecations/pending-removal-in-3.18.rst.txt`
+- `Python/pythoncore-3.14-64/Doc/html/_sources/deprecations/pending-removal-in-3.19.rst.txt`
+- `Python/pythoncore-3.14-64/Doc/html/_sources/deprecations/pending-removal-in-future.rst.txt`
+
+### Python/pythoncore-3.14-64/Doc/html/_sources/distributing/
+- `Python/pythoncore-3.14-64/Doc/html/_sources/distributing/index.rst.txt`
+
+### Python/pythoncore-3.14-64/Doc/html/_sources/extending/
+- `Python/pythoncore-3.14-64/Doc/html/_sources/extending/building.rst.txt`
+- `Python/pythoncore-3.14-64/Doc/html/_sources/extending/embedding.rst.txt`
+- `Python/pythoncore-3.14-64/Doc/html/_sources/extending/extending.rst.txt`
+- `Python/pythoncore-3.14-64/Doc/html/_sources/extending/index.rst.txt`
+- `Python/pythoncore-3.14-64/Doc/html/_sources/extending/newtypes_tutorial.rst.txt`
+- `Python/pythoncore-3.14-64/Doc/html/_sources/extending/newtypes.rst.txt`
+- `Python/pythoncore-3.14-64/Doc/html/_sources/extending/windows.rst.txt`
+
+### Python/pythoncore-3.14-64/Doc/html/_sources/faq/
+- `Python/pythoncore-3.14-64/Doc/html/_sources/faq/design.rst.txt`
+- `Python/pythoncore-3.14-64/Doc/html/_sources/faq/extending.rst.txt`
+- `Python/pythoncore-3.14-64/Doc/html/_sources/faq/general.rst.txt`
+- `Python/pythoncore-3.14-64/Doc/html/_sources/faq/gui.rst.txt`
+- `Python/pythoncore-3.14-64/Doc/html/_sources/faq/index.rst.txt`
+- `Python/pythoncore-3.14-64/Doc/html/_sources/faq/installed.rst.txt`
+- `Python/pythoncore-3.14-64/Doc/html/_sources/faq/library.rst.txt`
+- `Python/pythoncore-3.14-64/Doc/html/_sources/faq/programming.rst.txt`
+- `Python/pythoncore-3.14-64/Doc/html/_sources/faq/windows.rst.txt`
+
+### Python/pythoncore-3.14-64/Doc/html/_sources/howto/
+- *(29 files: 29 .txt)*
+
+### Python/pythoncore-3.14-64/Doc/html/_sources/installing/
+- `Python/pythoncore-3.14-64/Doc/html/_sources/installing/index.rst.txt`
+
+### Python/pythoncore-3.14-64/Doc/html/_sources/library/
+- *(151 files: 151 .txt)*

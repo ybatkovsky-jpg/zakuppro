@@ -1,0 +1,80 @@
+# Python cache
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+
+# Virtual environments
+venv/
+env/
+ENV/
+.venv/
+
+# Testing
+.pytest_cache/
+.coverage
+htmlcov/
+*.cover
+.tox/
+.nox/
+
+# IDEs
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Git
+.git/
+.gitignore
+.gitattributes
+
+# GSD workflow artifacts
+.gsd/
+
+# Node modules (if any frontend)
+node_modules/
+
+# Database files
+*.db
+*.sqlite
+*.sqlite3
+
+# Logs
+*.log
+
+# Environment files (use Docker secrets instead)
+.env
+.env.local
+.env.*.local
+
+# Docker artifacts
+Dockerfile
+*.dockerfile
+docker-compose.yml
+docker-compose.*.yml
+
+# Documentation
+*.md
+!README.md
+
+# Skills and agent artifacts
+skills/
+.claude/
+.agents/
+
+# Cache directories
+cache/
+.cache/
+.pytest_cache/
+
+# Build artifacts
+dist/
+build/
+*.egg-info/

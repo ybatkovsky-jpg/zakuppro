@@ -1,8 +1,8 @@
 # GSD State
 
 **Active Milestone:** M001: Foundation: Database Schema and Core API
-**Active Slice:** S03: S03
-**Phase:** executing
+**Active Slice:** None
+**Phase:** completing-milestone
 **Requirements Status:** 0 active · 0 validated · 0 deferred · 0 out of scope
 
 ## Milestone Registry
@@ -15,4 +15,4 @@
 - None
 
 ## Next Action
-Execute T04: Write API integration tests in slice S03.
+All slices complete in M001. Write milestone summary.

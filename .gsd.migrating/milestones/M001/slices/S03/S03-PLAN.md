@@ -55,7 +55,7 @@ assert entity_count >= 45, f'Expected 45+ routes, got {entity_count}'
 "
 grep -c 'include_router' backend/main.py
 
-- [ ] **T04: Write API integration tests** `est:1.5h`
+- [x] **T04: Write API integration tests** `est:1.5h`
   ## Why
   Verify CRUD operations work end-to-end with real database. Tests catch regressions and serve as documentation for API contract.
   - Files: `backend/tests/test_api/__init__.py`, `backend/tests/test_api/test_projects.py`, `backend/tests/conftest.py`

@@ -1,0 +1,18 @@
+{
+  "id": "db0fdc89-ae26-4e47-8c34-e4e6871456cc",
+  "runtime": "python",
+  "purpose": "Verify FastAPI app imports",
+  "script_chars": 139,
+  "started_at": "2026-06-01T04:28:13.362Z",
+  "finished_at": "2026-06-01T04:28:27.813Z",
+  "exit_code": 1,
+  "signal": null,
+  "timed_out": false,
+  "duration_ms": 14451,
+  "stdout_bytes": 82,
+  "stderr_bytes": 1124,
+  "stdout_truncated": false,
+  "stderr_truncated": false,
+  "stdout_path": "D:\\CLAUDE\\Project\\zakuppro\\zakuppro\\.gsd\\exec\\db0fdc89-ae26-4e47-8c34-e4e6871456cc.stdout",
+  "stderr_path": "D:\\CLAUDE\\Project\\zakuppro\\zakuppro\\.gsd\\exec\\db0fdc89-ae26-4e47-8c34-e4e6871456cc.stderr"
+}

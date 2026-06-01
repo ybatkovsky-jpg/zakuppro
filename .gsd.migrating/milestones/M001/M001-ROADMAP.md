@@ -18,10 +18,10 @@
 - [x] **S02: S02** `risk:high` `depends:[]`
   > After this: После этого: Python модели мапятся 1:1 к таблицам; Pydantic schemas валидируют вход/выход; можно создать ORM объект и сохранить в БД
 
-- [ ] **S03: S03** `risk:medium` `depends:[]`
+- [x] **S03: S03** `risk:medium` `depends:[]`
   > After this: После этого: POST /projects создает проект; GET /projects/{id} возвращает с items; DELETE работает; Swagger UI показывает все эндпоинты
 
-- [ ] **S04: Docker + Health Checks** `risk:low` `depends:[S03]`
+- [x] **S04: S04** `risk:low` `depends:[]`
   > After this: После этого: docker-compose up запускает всё; GET /health returns 200; localhost:8000/docs открывается
 
 ## Boundary Map

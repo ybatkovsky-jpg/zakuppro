@@ -1,0 +1,59 @@
+version: '3.8'
+
+services:
+  # PostgreSQL Database
+  db:
+    image: postgres:15-alpine
+    container_name: zakuppro-db
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: zakuppro
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d zakuppro"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    networks:
+      - zakuppro-network
+
+  # FastAPI Application
+  api:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: zakuppro-api
+    environment:
+      # Database connection string for Docker network (uses service name 'db')
+      DATABASE_URL: postgresql+psycopg2://postgres:postgres@db:5432/zakuppro
+      DATABASE_URL_ASYNC: postgresql+asyncpg://postgres:postgres@db:5432/zakuppro
+      # Add other environment variables as needed
+      SECRET_KEY: your-secret-key-change-in-production
+      ALGORITHM: HS256
+      ACCESS_TOKEN_EXPIRE_MINUTES: 30
+    ports:
+      - "8000:8000"
+    depends_on:
+      db:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+    networks:
+      - zakuppro-network
+
+volumes:
+  postgres_data:
+    driver: local
+
+networks:
+  zakuppro-network:
+    driver: bridge

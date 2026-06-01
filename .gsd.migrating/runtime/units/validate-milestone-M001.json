@@ -1,0 +1,16 @@
+{
+  "version": 1,
+  "unitType": "validate-milestone",
+  "unitId": "M001",
+  "startedAt": 1780289138934,
+  "updatedAt": 1780302924845,
+  "phase": "finalized",
+  "wrapupWarningSent": true,
+  "continueHereFired": false,
+  "timeoutAt": 1780290938965,
+  "lastProgressAt": 1780302924844,
+  "progressCount": 1,
+  "lastProgressKind": "finalize-success",
+  "recoveryAttempts": 1,
+  "lastRecoveryReason": "hard"
+}

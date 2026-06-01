@@ -1,0 +1,24 @@
+{
+  "schemaVersion": 1,
+  "milestoneId": "M001",
+  "sliceId": "S04",
+  "timestamp": 1780288443749,
+  "status": "fail",
+  "durationMs": 4,
+  "checks": [
+    {
+      "category": "tool",
+      "target": "T02 Verify",
+      "passed": false,
+      "message": "Unsafe or non-runnable Verify command: timeout 60 sh -c 'until docker-compose ps | grep -q healthy; do sleep 2; done' (contains shell control syntax such as pipes, redirects, semicolons, backticks, or command substitution)",
+      "blocking": true
+    },
+    {
+      "category": "tool",
+      "target": "T03 Verify",
+      "passed": false,
+      "message": "Unsafe or non-runnable Verify command: curl http://localhost:8000/health | grep -q db_status (contains shell control syntax such as pipes, redirects, semicolons, backticks, or command substitution)",
+      "blocking": true
+    }
+  ]
+}
