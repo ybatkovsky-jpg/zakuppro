@@ -1,0 +1,18 @@
+{
+  "id": "57143e3c-206a-4175-bc47-16df0a975687",
+  "runtime": "bash",
+  "purpose": "Verify orchestration task exists in tasks.py",
+  "script_chars": 126,
+  "started_at": "2026-06-01T11:37:02.292Z",
+  "finished_at": "2026-06-01T11:37:02.429Z",
+  "exit_code": 1,
+  "signal": null,
+  "timed_out": false,
+  "duration_ms": 137,
+  "stdout_bytes": 544,
+  "stderr_bytes": 0,
+  "stdout_truncated": false,
+  "stderr_truncated": false,
+  "stdout_path": "D:\\CLAUDE\\Project\\zakuppro\\zakuppro\\.gsd\\exec\\57143e3c-206a-4175-bc47-16df0a975687.stdout",
+  "stderr_path": "D:\\CLAUDE\\Project\\zakuppro\\zakuppro\\.gsd\\exec\\57143e3c-206a-4175-bc47-16df0a975687.stderr"
+}

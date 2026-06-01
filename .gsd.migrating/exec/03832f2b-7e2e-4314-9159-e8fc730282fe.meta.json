@@ -1,0 +1,18 @@
+{
+  "id": "03832f2b-7e2e-4314-9159-e8fc730282fe",
+  "runtime": "bash",
+  "purpose": "Verify telegram_notifier module imports",
+  "script_chars": 136,
+  "started_at": "2026-06-01T11:37:02.838Z",
+  "finished_at": "2026-06-01T11:37:02.963Z",
+  "exit_code": 1,
+  "signal": null,
+  "timed_out": false,
+  "duration_ms": 125,
+  "stdout_bytes": 544,
+  "stderr_bytes": 0,
+  "stdout_truncated": false,
+  "stderr_truncated": false,
+  "stdout_path": "D:\\CLAUDE\\Project\\zakuppro\\zakuppro\\.gsd\\exec\\03832f2b-7e2e-4314-9159-e8fc730282fe.stdout",
+  "stderr_path": "D:\\CLAUDE\\Project\\zakuppro\\zakuppro\\.gsd\\exec\\03832f2b-7e2e-4314-9159-e8fc730282fe.stderr"
+}

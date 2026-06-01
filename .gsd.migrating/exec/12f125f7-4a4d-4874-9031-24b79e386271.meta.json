@@ -1,0 +1,18 @@
+{
+  "id": "12f125f7-4a4d-4874-9031-24b79e386271",
+  "runtime": "bash",
+  "purpose": "Check existing imports in tasks/services",
+  "script_chars": 74,
+  "started_at": "2026-06-01T13:14:56.720Z",
+  "finished_at": "2026-06-01T13:14:56.833Z",
+  "exit_code": 1,
+  "signal": null,
+  "timed_out": false,
+  "duration_ms": 113,
+  "stdout_bytes": 544,
+  "stderr_bytes": 0,
+  "stdout_truncated": false,
+  "stderr_truncated": false,
+  "stdout_path": "D:\\CLAUDE\\Project\\zakuppro\\zakuppro\\.gsd\\exec\\12f125f7-4a4d-4874-9031-24b79e386271.stdout",
+  "stderr_path": "D:\\CLAUDE\\Project\\zakuppro\\zakuppro\\.gsd\\exec\\12f125f7-4a4d-4874-9031-24b79e386271.stderr"
+}

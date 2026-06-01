@@ -1,0 +1,15 @@
+{
+  "version": 1,
+  "unitType": "complete-milestone",
+  "unitId": "M002",
+  "startedAt": 1780314063442,
+  "updatedAt": 1780314063459,
+  "phase": "dispatched",
+  "wrapupWarningSent": false,
+  "continueHereFired": false,
+  "timeoutAt": null,
+  "lastProgressAt": 1780314063442,
+  "progressCount": 0,
+  "lastProgressKind": "dispatch",
+  "recoveryAttempts": 0
+}

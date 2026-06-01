@@ -1,0 +1,18 @@
+{
+  "id": "0bd835e4-82fb-41bf-a21d-fce6f6f1b579",
+  "runtime": "bash",
+  "purpose": "Verify FailedTask model imports",
+  "script_chars": 95,
+  "started_at": "2026-06-01T11:37:02.576Z",
+  "finished_at": "2026-06-01T11:37:02.697Z",
+  "exit_code": 1,
+  "signal": null,
+  "timed_out": false,
+  "duration_ms": 121,
+  "stdout_bytes": 544,
+  "stderr_bytes": 0,
+  "stdout_truncated": false,
+  "stderr_truncated": false,
+  "stdout_path": "D:\\CLAUDE\\Project\\zakuppro\\zakuppro\\.gsd\\exec\\0bd835e4-82fb-41bf-a21d-fce6f6f1b579.stdout",
+  "stderr_path": "D:\\CLAUDE\\Project\\zakuppro\\zakuppro\\.gsd\\exec\\0bd835e4-82fb-41bf-a21d-fce6f6f1b579.stderr"
+}

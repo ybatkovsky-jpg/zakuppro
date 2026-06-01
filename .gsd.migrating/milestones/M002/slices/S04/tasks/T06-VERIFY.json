@@ -1,0 +1,18 @@
+{
+  "schemaVersion": 1,
+  "taskId": "T06",
+  "unitId": "M002/S04/T06",
+  "timestamp": 1780313734443,
+  "passed": false,
+  "discoverySource": "task-plan",
+  "checks": [
+    {
+      "command": "python -m pytest backend/tests/test_s04_integration.py -v",
+      "exitCode": 1,
+      "durationMs": 468,
+      "verdict": "fail"
+    }
+  ],
+  "retryAttempt": 1,
+  "maxRetries": 2
+}

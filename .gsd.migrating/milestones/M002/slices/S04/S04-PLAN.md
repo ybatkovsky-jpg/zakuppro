@@ -41,25 +41,25 @@
   - Files: `backend/supplier_resolver.py`
   - Verify: python -c "from backend.supplier_resolver import find_or_create_supplier; print('Module imported successfully')"
 
-- [ ] **T03: Create Telegram Notification Helper** `est:20m`
+- [x] **T03: Create Telegram Notification Helper** `est:20m`
   ## Why
   Celery tasks need to send outbound messages to Telegram users (completion notifications) and owner (DLQ alerts). Existing handlers only reply to inbound messages.
   - Files: `backend/telegram_notifier.py`
   - Verify: python -c "from backend.telegram_notifier import send_completion_message, send_dlq_alert; print('Module imported successfully')"
 
-- [ ] **T04: Implement Main Orchestration Task** `est:1h`
+- [x] **T04: Implement Main Orchestration Task** `est:1h`
   ## Why
   The end-to-end flow (R004) requires a Celery task that chains Excel parsing, database operations, and Telegram notifications. This is the core integration piece.
   - Files: `backend/tasks.py`
   - Verify: grep -q 'process_bom_to_project' backend/tasks.py
 
-- [ ] **T05: Wire Orchestration Task into Upload Flow** `est:20m`
+- [x] **T05: Wire Orchestration Task into Upload Flow** `est:20m`
   ## Why
   The upload handler currently calls queue_excel_processing which only validates files. It should call the new orchestration task to trigger the full end-to-end flow.
   - Files: `backend/tasks.py`, `backend/handlers/documents.py`
   - Verify: grep -q 'process_bom_to_project' backend/handlers/documents.py || grep -q 'parse_excel_bom.delay' backend/tasks.py
 
-- [ ] **T06: Write End-to-End Integration Test** `est:40m`
+- [x] **T06: Write End-to-End Integration Test** `est:40m`
   ## Why
   Verification of the complete flow (R004, R005) requires an integration test that exercises Excel upload through database creation to Telegram notification.
   - Files: `backend/tests/test_s04_integration.py`

@@ -4,22 +4,6 @@ This file is the explicit capability and coverage contract for the project.
 
 ## Active
 
-### R001 — Telegram Bot для приёма Excel файлов от владельца, авторизации по chat_id, и отправки уведомлений о статусе операций
-- Class: integration
-- Status: active
-- Description: Telegram Bot для приёма Excel файлов от владельца, авторизации по chat_id, и отправки уведомлений о статусе операций
-- Why it matters: Единый entry point для владельца. Позволяет загружать BOM мобильно и получать оповещения о проблемах.
-- Source: user
-- Primary owning slice: M002
-
-### R002 — RabbitMQ + Celery для асинхронной обработки задач (Excel parsing, LLM calls, email отправка) с retry и DLQ
-- Class: core-capability
-- Status: active
-- Description: RabbitMQ + Celery для асинхронной обработки задач (Excel parsing, LLM calls, email отправка) с retry и DLQ
-- Why it matters: Тяжёлые операции (LLM, парсинг) не должны блокировать API. Queue обеспечивает надёжность и повторную обработку при ошибках.
-- Source: user
-- Primary owning slice: M002
-
 ### R003 — AI-Agent Worker для парсинга Excel файлов с помощью pandas и распознавания структуры таблиц (артикул, название, поставщик) через GPT-4o
 - Class: core-capability
 - Status: active
@@ -28,30 +12,6 @@ This file is the explicit capability and coverage contract for the project.
 - Source: user
 - Primary owning slice: M002
 - Validation: S03 verification passed: Celery task parse_excel_bom registered with @app.task, pandas reads Excel files, OpenAI GPT-4o extracts structure with json_schema, Pydantic validates output. Test file sample_bom.xlsx with Russian headers validates dirty table handling.
-
-### R004 — Flow 1: Загрузка BOM через Telegram → парсинг Excel → создание Project + ProjectItem в БД → ответ владельцу со статистикой
-- Class: core-capability
-- Status: active
-- Description: Flow 1: Загрузка BOM через Telegram → парсинг Excel → создание Project + ProjectItem в БД → ответ владельцу со статистикой
-- Why it matters: Критический user loop. Владелец должен иметь возможность создать проект из Excel без использования UI.
-- Source: user
-- Primary owning slice: M002
-
-### R005 — DLQ (Dead Letter Queue) для задач которые не удались после retry, с сохранением контекста (промпт, ответ LLM, Excel path) и alert в Telegram
-- Class: failure-visibility
-- Status: active
-- Description: DLQ (Dead Letter Queue) для задач которые не удались после retry, с сохранением контекста (промпт, ответ LLM, Excel path) и alert в Telegram
-- Why it matters: Ничто не должно теряться. Владелец должен видеть проблемы и иметь возможность перезапустить или исправить вручную.
-- Source: user
-- Primary owning slice: M002
-
-### R006 — Telegram Bot как отдельный Docker сервис с авторизацией через ALLOWED_CHAT_IDS из .env
-- Class: operability
-- Status: active
-- Description: Telegram Bot как отдельный Docker сервис с авторизацией через ALLOWED_CHAT_IDS из .env
-- Why it matters: Изоляция сервисов. Bot может падать или рестартоваться независимо от API и workers.
-- Source: user
-- Primary owning slice: M002
 
 ### R007 — Email Worker (SMTP outbound) для отправки запросов поставщикам с копией на рабочую почту компании
 - Class: integration
@@ -119,6 +79,51 @@ This file is the explicit capability and coverage contract for the project.
 
 ## Validated
 
+### R001 — Telegram Bot для приёма Excel файлов от владельца, авторизации по chat_id, и отправки уведомлений о статусе операций
+- Class: integration
+- Status: validated
+- Description: Telegram Bot для приёма Excel файлов от владельца, авторизации по chat_id, и отправки уведомлений о статусе операций
+- Why it matters: Единый entry point для владельца. Позволяет загружать BOM мобильно и получать оповещения о проблемах.
+- Source: user
+- Primary owning slice: M002
+- Validation: S02 implemented document handler, authorization middleware (AuthMiddleware with ALLOWED_CHAT_IDS), file persistence, and outbound Telegram notifications via telegram_notifier.py. S02-UAT.md TC1-TC2 verify authorization and access.
+
+### R002 — RabbitMQ + Celery для асинхронной обработки задач (Excel parsing, LLM calls, email отправка) с retry и DLQ
+- Class: core-capability
+- Status: validated
+- Description: RabbitMQ + Celery для асинхронной обработки задач (Excel parsing, LLM calls, email отправка) с retry и DLQ
+- Why it matters: Тяжёлые операции (LLM, парсинг) не должны блокировать API. Queue обеспечивает надёжность и повторную обработку при ошибках.
+- Source: user
+- Primary owning slice: M002
+- Validation: S01 established RabbitMQ 3-management with DLQ configuration, Celery worker service with health checks. S01-UAT.md verifies RabbitMQ and Celery worker connectivity.
+
+### R004 — Flow 1: Загрузка BOM через Telegram → парсинг Excel → создание Project + ProjectItem в БД → ответ владельцу со статистикой
+- Class: core-capability
+- Status: validated
+- Description: Flow 1: Загрузка BOM через Telegram → парсинг Excel → создание Project + ProjectItem в БД → ответ владельцу со статистикой
+- Why it matters: Критический user loop. Владелец должен иметь возможность создать проект из Excel без использования UI.
+- Source: user
+- Primary owning slice: M002
+- Validation: S04 process_bom_to_project orchestrates full flow: Excel from Telegram → AI parsing → Project/ProjectItem DB creation → Telegram notifications. Integration test test_process_bom_to_project_task_success verifies.
+
+### R005 — DLQ (Dead Letter Queue) для задач которые не удались после retry, с сохранением контекста (промпт, ответ LLM, Excel path) и alert в Telegram
+- Class: failure-visibility
+- Status: validated
+- Description: DLQ (Dead Letter Queue) для задач которые не удались после retry, с сохранением контекста (промпт, ответ LLM, Excel path) и alert в Telegram
+- Why it matters: Ничто не должно теряться. Владелец должен видеть проблемы и иметь возможность перезапустить или исправить вручную.
+- Source: user
+- Primary owning slice: M002
+- Validation: S04 implemented FailedTask model with task_id, error_message, file_path, chat_id, context. DLQ alert via send_dlq_alert to TELEGRAM_OWNER_CHAT_ID. Integration test confirms error path.
+
+### R006 — Telegram Bot как отдельный Docker сервис с авторизацией через ALLOWED_CHAT_IDS из .env
+- Class: operability
+- Status: validated
+- Description: Telegram Bot как отдельный Docker сервис с авторизацией через ALLOWED_CHAT_IDS из .env
+- Why it matters: Изоляция сервисов. Bot может падать или рестартоваться независимо от API и workers.
+- Source: user
+- Primary owning slice: M002
+- Validation: S02 added telegram-bot service to docker-compose.yml with restart: unless-stopped, volume mounts, and ALLOWED_CHAT_IDS environment variable for authorization.
+
 ## Deferred
 
 ### R015 — Graceful shutdown и cleanup для всех сервисов (Celery workers, Telegram bot, FastAPI) с сохранением состояния задач
@@ -167,12 +172,12 @@ This file is the explicit capability and coverage contract for the project.
 
 | ID | Class | Status | Primary owner | Supporting | Proof |
 |---|---|---|---|---|---|
-| R001 | integration | active | M002 | none | unmapped |
-| R002 | core-capability | active | M002 | none | unmapped |
+| R001 | integration | validated | M002 | none | S02 implemented document handler, authorization middleware (AuthMiddleware with ALLOWED_CHAT_IDS), file persistence, and outbound Telegram notifications via telegram_notifier.py. S02-UAT.md TC1-TC2 verify authorization and access. |
+| R002 | core-capability | validated | M002 | none | S01 established RabbitMQ 3-management with DLQ configuration, Celery worker service with health checks. S01-UAT.md verifies RabbitMQ and Celery worker connectivity. |
 | R003 | core-capability | active | M002 | none | S03 verification passed: Celery task parse_excel_bom registered with @app.task, pandas reads Excel files, OpenAI GPT-4o extracts structure with json_schema, Pydantic validates output. Test file sample_bom.xlsx with Russian headers validates dirty table handling. |
-| R004 | core-capability | active | M002 | none | unmapped |
-| R005 | failure-visibility | active | M002 | none | unmapped |
-| R006 | operability | active | M002 | none | unmapped |
+| R004 | core-capability | validated | M002 | none | S04 process_bom_to_project orchestrates full flow: Excel from Telegram → AI parsing → Project/ProjectItem DB creation → Telegram notifications. Integration test test_process_bom_to_project_task_success verifies. |
+| R005 | failure-visibility | validated | M002 | none | S04 implemented FailedTask model with task_id, error_message, file_path, chat_id, context. DLQ alert via send_dlq_alert to TELEGRAM_OWNER_CHAT_ID. Integration test confirms error path. |
+| R006 | operability | validated | M002 | none | S02 added telegram-bot service to docker-compose.yml with restart: unless-stopped, volume mounts, and ALLOWED_CHAT_IDS environment variable for authorization. |
 | R007 | integration | active | M003 | none | unmapped |
 | R008 | core-capability | active | M003 | none | unmapped |
 | R009 | integration | active | M004 | none | unmapped |
@@ -189,7 +194,7 @@ This file is the explicit capability and coverage contract for the project.
 
 ## Coverage Summary
 
-- Active requirements: 14
-- Mapped to slices: 14
-- Validated: 0
+- Active requirements: 9
+- Mapped to slices: 9
+- Validated: 5 (R001, R002, R004, R005, R006)
 - Unmapped active requirements: 0

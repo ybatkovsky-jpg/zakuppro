@@ -4,7 +4,7 @@
 
 ZakupPro — Mini-MRP система для мебельного производства "ПРОМЕБЕЛЬ". Автоматизация закупок, управления проектами, складом и финансами.
 
-**Current state:** M001 completed (DB schema + FastAPI CRUD). M002 in planning (Async core + AI-Agent).
+**Current state:** M001 completed (DB schema + FastAPI CRUD). M002 completed (Async core + AI-Agent Foundation).
 
 ## Core Value
 
@@ -29,11 +29,15 @@ ZakupPro — Mini-MRP система для мебельного произво�
 - Базовые тесты (58 tests)
 - Health check endpoint + CORS middleware
 
-**M002 — In planning:**
-- RabbitMQ + Celery infrastructure
-- Telegram Bot Gateway
-- AI-Agent Worker (Excel parsing + OpenAI)
-- Flow 1: Загрузка BOM → создание Project
+**M002 — Completed (verdict: pass):**
+- RabbitMQ 3-management с DLQ configuration
+- Celery worker infrastructure с health check
+- Telegram Bot service (python-telegram-bot v21+)
+- AI-Agent Worker (pandas + OpenAI GPT-4o для Excel parsing)
+- End-to-end flow: Telegram upload → AI parsing → Project/ProjectItem DB creation → Telegram notification
+- FailedTask model для DLQ persistence
+- Supplier auto-creation с python-slugify
+- Telegram notifier для completion и DLQ alerts
 
 **M003-M006 — Queued:**
 - M003: Email Worker + Invoice Processing
@@ -45,9 +49,9 @@ ZakupPro — Mini-MRP система для мебельного произво�
 
 **Tech Stack:**
 - Backend: Python (FastAPI), SQLAlchemy 2.0, PostgreSQL
-- AI: LangChain/LangGraph, OpenAI GPT-4o
+- AI: OpenAI GPT-4o
 - Message Queue: RabbitMQ + Celery
-- Bot: python-telegram-bot (или aiogram)
+- Bot: python-telegram-bot v21+
 - Frontend: Next.js + React + Ant Design (планируется)
 
 **Patterns:**
@@ -55,6 +59,11 @@ ZakupPro — Mini-MRP система для мебельного произво�
 - Cascade delete только для иерархических связей
 - lazy='selectin' для предотвращения N+1
 - Docker Compose сервисы общаются по service names
+- Celery task с bind=True для retry access
+- GPT-4o response_format=json_schema для 100% valid output
+- Pandas fillna('') перед markdown conversion для AI context
+- Authorization middleware с environment-based ALLOWED_CHAT_IDS
+- Fail-fast health endpoint (503 на любой degradation)
 
 **Integration Points:**
 - Telegram Bot → RabbitMQ → Celery Workers → FastAPI → PostgreSQL
@@ -68,7 +77,7 @@ See `.gsd/REQUIREMENTS.md` for the explicit capability contract.
 ## Milestone Sequence
 
 - [x] M001: Foundation — DB schema, FastAPI CRUD, Docker
-- [ ] M002: Asynchronous Core + AI-Agent Foundation — RabbitMQ, Celery, Telegram Bot, Excel parsing
+- [x] M002: Asynchronous Core + AI-Agent Foundation — RabbitMQ, Celery, Telegram Bot, Excel parsing, DLQ
 - [ ] M003: Email + Invoice Processing — SMTP outbound, invoice verification
 - [ ] M004: Bank Integration + Financials — bank statement import, payment mapping
 - [ ] M005: Frontend UI — Next.js, Kanban, specifications tables

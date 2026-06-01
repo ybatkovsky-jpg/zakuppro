@@ -3,7 +3,7 @@ SQLAlchemy models for the Mini-MRP system.
 Based on SPEC.md requirements.
 All tables are defined without relationships (to be added later).
 """
-from sqlalchemy import Column, Integer, String, Numeric, DateTime, Text, ForeignKey, Boolean
+from sqlalchemy import Column, Integer, String, Numeric, DateTime, Text, ForeignKey, Boolean, LargeBinary, JSON
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
 
@@ -94,6 +94,8 @@ class Invoice(Base):
     purchase_order_id = Column(Integer, ForeignKey("purchase_orders.id"), nullable=False)
     file_url = Column(String(500), nullable=True)  # Path to invoice file (PDF/Excel)
     raw_text = Column(Text, nullable=True)  # Extracted text from invoice
+    raw_file = Column(LargeBinary, nullable=True)  # Binary invoice file data (BLOB storage)
+    verification_result = Column(JSON, nullable=True)  # LLM verification results (JSONB in PostgreSQL)
     status = Column(String(50), nullable=False, default="Ожидает сверки")  # Ожидает сверки, Ошибки, Сверен, Ожидает оплаты, Оплачен
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
@@ -101,6 +103,26 @@ class Invoice(Base):
     # Relationships
     purchase_order = relationship("PurchaseOrder", back_populates="invoices")
     payments = relationship("Payment", back_populates="invoice", lazy="selectin")
+    items = relationship("InvoiceItem", back_populates="invoice", cascade="all, delete-orphan", lazy="selectin")
+
+
+class InvoiceItem(Base):
+    """InvoiceItem - line items from supplier invoices with BOM mapping."""
+    __tablename__ = "invoice_items"
+
+    id = Column(Integer, primary_key=True, index=True)
+    invoice_id = Column(Integer, ForeignKey("invoices.id"), nullable=False)
+    project_item_id = Column(Integer, ForeignKey("project_items.id"), nullable=True)  # Nullable for unmapped items
+    name = Column(String(500), nullable=False)  # Item name from invoice
+    sku = Column(String(100), nullable=False)  # Stock keeping unit from invoice
+    qty = Column(Integer, nullable=False)  # Quantity from invoice
+    unit_price = Column(Numeric(12, 2), nullable=False)  # Unit price from invoice
+    total_price = Column(Numeric(12, 2), nullable=False)  # Line total (qty * unit_price)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+
+    # Relationships
+    invoice = relationship("Invoice", back_populates="items")
+    project_item = relationship("ProjectItem")  # Optional mapping to project BOM
 
 
 class Payment(Base):

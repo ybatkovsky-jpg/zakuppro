@@ -1,6 +1,6 @@
 {
-  "compiledAt": "2026-06-01T11:24:36.549Z",
-  "milestoneId": "M002",
+  "compiledAt": "2026-06-01T13:20:23.843Z",
+  "milestoneId": "M003",
   "pipeline": {
     "clarifyRoundLimit": 3,
     "researchSynthesized": true,
@@ -10,345 +10,69 @@
   },
   "nodes": [
     {
-      "id": "execute-task:M002:S01:T01",
+      "id": "execute-task:M003:S01:T01",
       "kind": "unit",
       "dependsOn": [],
-      "writes": [
-        "docker-compose.yml"
-      ],
-      "metadata": {
-        "unitType": "execute-task",
-        "unitId": "M002.S01.T01",
-        "title": "Added RabbitMQ 3-management service to docker-compose.yml with healthcheck, persistent volume, and management UI on ports 5672/15672",
-        "status": "complete"
-      }
-    },
-    {
-      "id": "execute-task:M002:S01:T02",
-      "kind": "unit",
-      "dependsOn": [
-        "execute-task:M002:S01:T01"
-      ],
-      "writes": [
-        "backend/celery_app.py",
-        "backend/tasks.py"
-      ],
-      "metadata": {
-        "unitType": "execute-task",
-        "unitId": "M002.S01.T02",
-        "title": "Created Celery app with RabbitMQ broker, DLQ configuration, and dummy health check task",
-        "status": "complete"
-      }
-    },
-    {
-      "id": "execute-task:M002:S01:T03",
-      "kind": "unit",
-      "dependsOn": [
-        "execute-task:M002:S01:T02"
-      ],
-      "writes": [
-        "docker-compose.yml",
-        "backend/routers/health.py",
-        ".env"
-      ],
-      "metadata": {
-        "unitType": "execute-task",
-        "unitId": "M002.S01.T03",
-        "title": "Added celery-worker service to docker-compose.yml and extended health check with RabbitMQ and Celery worker status",
-        "status": "complete"
-      }
-    },
-    {
-      "id": "complete-slice:M002:S01",
-      "kind": "verification",
-      "dependsOn": [
-        "execute-task:M002:S01:T03"
-      ],
-      "metadata": {
-        "unitType": "complete-slice",
-        "unitId": "M002.S01",
-        "title": "S01",
-        "status": "complete"
-      }
-    },
-    {
-      "id": "execute-task:M002:S02:T01",
-      "kind": "unit",
-      "dependsOn": [],
-      "writes": [
-        "docker-compose.yml"
-      ],
-      "metadata": {
-        "unitType": "execute-task",
-        "unitId": "M002.S02.T01",
-        "title": "Added telegram-bot service to docker-compose.yml with RabbitMQ dependency and environment variables",
-        "status": "complete"
-      }
-    },
-    {
-      "id": "execute-task:M002:S02:T02",
-      "kind": "unit",
-      "dependsOn": [
-        "execute-task:M002:S02:T01"
-      ],
-      "writes": [
-        "backend/handlers/__init__.py",
-        "backend/handlers/auth.py",
-        "backend/handlers/commands.py"
-      ],
-      "metadata": {
-        "unitType": "execute-task",
-        "unitId": "M002.S02.T02",
-        "title": "Created backend/handlers package with AuthMiddleware for chat_id authorization and /start, /help command handlers",
-        "status": "complete"
-      }
-    },
-    {
-      "id": "execute-task:M002:S02:T03",
-      "kind": "unit",
-      "dependsOn": [
-        "execute-task:M002:S02:T02"
-      ],
-      "writes": [
-        "backend/handlers/documents.py",
-        "backend/tasks.py",
-        "backend/handlers/__init__.py"
-      ],
-      "metadata": {
-        "unitType": "execute-task",
-        "unitId": "M002.S02.T03",
-        "title": "Created document handler for Excel upload with task publishing and Celery queue_excel_processing task",
-        "status": "complete"
-      }
-    },
-    {
-      "id": "execute-task:M002:S02:T04",
-      "kind": "unit",
-      "dependsOn": [
-        "execute-task:M002:S02:T03"
-      ],
-      "writes": [
-        "backend/telegram_bot.py"
-      ],
-      "metadata": {
-        "unitType": "execute-task",
-        "unitId": "M002.S02.T04",
-        "title": "Created backend/telegram_bot.py main application entry point with Application builder, handler registration, and polling startup",
-        "status": "complete"
-      }
-    },
-    {
-      "id": "execute-task:M002:S02:T05",
-      "kind": "unit",
-      "dependsOn": [
-        "execute-task:M002:S02:T04"
-      ],
-      "writes": [
-        "backend/tasks.py",
-        ".env",
-        "docker-compose.yml"
-      ],
-      "metadata": {
-        "unitType": "execute-task",
-        "unitId": "M002.S02.T05",
-        "title": "Added ALLOWED_CHAT_IDS to .env and configured /data/uploads volume mount in telegram-bot service",
-        "status": "complete"
-      }
-    },
-    {
-      "id": "complete-slice:M002:S02",
-      "kind": "verification",
-      "dependsOn": [
-        "execute-task:M002:S02:T05"
-      ],
-      "metadata": {
-        "unitType": "complete-slice",
-        "unitId": "M002.S02",
-        "title": "S02",
-        "status": "complete"
-      }
-    },
-    {
-      "id": "execute-task:M002:S03:T01",
-      "kind": "unit",
-      "dependsOn": [],
-      "writes": [
-        "backend/excel_parser.py"
-      ],
-      "metadata": {
-        "unitType": "execute-task",
-        "unitId": "M002.S03.T01",
-        "title": "Created excel_parser.py module with pandas-based Excel reading, header detection, and markdown conversion for dirty invoice tables",
-        "status": "complete"
-      }
-    },
-    {
-      "id": "execute-task:M002:S03:T02",
-      "kind": "unit",
-      "dependsOn": [
-        "execute-task:M002:S03:T01"
-      ],
-      "writes": [
-        "backend/ai_agent.py"
-      ],
-      "metadata": {
-        "unitType": "execute-task",
-        "unitId": "M002.S03.T02",
-        "title": "Created AI agent module with OpenAI GPT-4o integration for BOM extraction from Russian invoice tables",
-        "status": "complete"
-      }
-    },
-    {
-      "id": "execute-task:M002:S03:T03",
-      "kind": "unit",
-      "dependsOn": [
-        "execute-task:M002:S03:T02"
-      ],
-      "writes": [
-        "backend/tasks.py",
-        "backend/excel_parser.py",
-        "backend/ai_agent.py"
-      ],
-      "metadata": {
-        "unitType": "execute-task",
-        "unitId": "M002.S03.T03",
-        "title": "Created Celery task parse_excel_bom that integrates Excel parser and AI agent for BOM extraction with retry logic and DLQ support",
-        "status": "complete"
-      }
-    },
-    {
-      "id": "execute-task:M002:S03:T04",
-      "kind": "unit",
-      "dependsOn": [
-        "execute-task:M002:S03:T03"
-      ],
-      "writes": [
-        "tests/fixtures/sample_bom.xlsx",
-        "tests/fixtures/create_sample_bom.py",
-        "backend/tests/test_s03_integration.py",
-        "tests/fixtures/verify_s03.sh",
-        "tests/fixtures/verify_s03.bat"
-      ],
-      "metadata": {
-        "unitType": "execute-task",
-        "unitId": "M002.S03.T04",
-        "title": "Created test Excel file with Russian headers and integration test script for S03 BOM extraction verification",
-        "status": "complete"
-      }
-    },
-    {
-      "id": "complete-slice:M002:S03",
-      "kind": "verification",
-      "dependsOn": [
-        "execute-task:M002:S03:T04"
-      ],
-      "metadata": {
-        "unitType": "complete-slice",
-        "unitId": "M002.S03",
-        "title": "S03",
-        "status": "complete"
-      }
-    },
-    {
-      "id": "execute-task:M002:S04:T01",
-      "kind": "unit",
-      "dependsOn": [],
-      "writes": [
-        "backend/models.py",
-        "backend/alembic/versions/add_failed_tasks_table.py",
-        "backend/alembic/env.py"
-      ],
-      "metadata": {
-        "unitType": "execute-task",
-        "unitId": "M002.S04.T01",
-        "title": "Added FailedTask model for DLQ persistence with Alembic migration",
-        "status": "complete"
-      }
-    },
-    {
-      "id": "execute-task:M002:S04:T02",
-      "kind": "unit",
-      "dependsOn": [
-        "execute-task:M002:S04:T01"
-      ],
-      "writes": [
-        "backend/supplier_resolver.py",
-        "backend/requirements.txt",
-        "backend/tests/test_supplier_resolver.py"
-      ],
-      "metadata": {
-        "unitType": "execute-task",
-        "unitId": "M002.S04.T02",
-        "title": "Created Supplier Resolver Module for bridging AI-extracted supplier names to database supplier_id with auto-creation and placeholder email generation",
-        "status": "complete"
-      }
-    },
-    {
-      "id": "execute-task:M002:S04:T03",
-      "kind": "unit",
-      "dependsOn": [
-        "execute-task:M002:S04:T02"
-      ],
       "writes": [],
       "metadata": {
         "unitType": "execute-task",
-        "unitId": "M002.S04.T03",
-        "title": "Create Telegram Notification Helper",
+        "unitId": "M003.S01.T01",
+        "title": "Create Alembic migration for Invoice.raw_file, Invoice.verification_result, InvoiceItem table",
         "status": "pending"
       }
     },
     {
-      "id": "execute-task:M002:S04:T04",
+      "id": "execute-task:M003:S01:T02",
       "kind": "unit",
       "dependsOn": [
-        "execute-task:M002:S04:T03"
+        "execute-task:M003:S01:T01"
       ],
       "writes": [],
       "metadata": {
         "unitType": "execute-task",
-        "unitId": "M002.S04.T04",
-        "title": "Implement Main Orchestration Task",
+        "unitId": "M003.S01.T02",
+        "title": "Create llm_provider.py with provider-agnostic wrapper",
         "status": "pending"
       }
     },
     {
-      "id": "execute-task:M002:S04:T05",
+      "id": "execute-task:M003:S01:T03",
       "kind": "unit",
       "dependsOn": [
-        "execute-task:M002:S04:T04"
+        "execute-task:M003:S01:T02"
       ],
       "writes": [],
       "metadata": {
         "unitType": "execute-task",
-        "unitId": "M002.S04.T05",
-        "title": "Wire Orchestration Task into Upload Flow",
+        "unitId": "M003.S01.T03",
+        "title": "Add LLM provider configuration to .env and docker-compose.yml",
         "status": "pending"
       }
     },
     {
-      "id": "execute-task:M002:S04:T06",
+      "id": "execute-task:M003:S01:T04",
       "kind": "unit",
       "dependsOn": [
-        "execute-task:M002:S04:T05"
+        "execute-task:M003:S01:T03"
       ],
       "writes": [],
       "metadata": {
         "unitType": "execute-task",
-        "unitId": "M002.S04.T06",
-        "title": "Write End-to-End Integration Test",
+        "unitId": "M003.S01.T04",
+        "title": "Write unit tests for LLM provider with fallback",
         "status": "pending"
       }
     },
     {
-      "id": "complete-slice:M002:S04",
+      "id": "complete-slice:M003:S01",
       "kind": "verification",
       "dependsOn": [
-        "execute-task:M002:S04:T06"
+        "execute-task:M003:S01:T04"
       ],
       "metadata": {
         "unitType": "complete-slice",
-        "unitId": "M002.S04",
-        "title": "S04",
+        "unitId": "M003.S01",
+        "title": "Database Schema + LLM Provider Foundation",
         "status": "pending"
       }
     }

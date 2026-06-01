@@ -1,0 +1,18 @@
+{
+  "id": "1ee74c1a-afd5-41b8-ba94-33e0a9145797",
+  "runtime": "bash",
+  "purpose": "Verify supplier_resolver module imports",
+  "script_chars": 120,
+  "started_at": "2026-06-01T11:37:02.710Z",
+  "finished_at": "2026-06-01T11:37:02.825Z",
+  "exit_code": 1,
+  "signal": null,
+  "timed_out": false,
+  "duration_ms": 115,
+  "stdout_bytes": 544,
+  "stderr_bytes": 0,
+  "stdout_truncated": false,
+  "stderr_truncated": false,
+  "stdout_path": "D:\\CLAUDE\\Project\\zakuppro\\zakuppro\\.gsd\\exec\\1ee74c1a-afd5-41b8-ba94-33e0a9145797.stdout",
+  "stderr_path": "D:\\CLAUDE\\Project\\zakuppro\\zakuppro\\.gsd\\exec\\1ee74c1a-afd5-41b8-ba94-33e0a9145797.stderr"
+}

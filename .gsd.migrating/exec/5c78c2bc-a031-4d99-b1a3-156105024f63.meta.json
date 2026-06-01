@@ -1,0 +1,18 @@
+{
+  "id": "5c78c2bc-a031-4d99-b1a3-156105024f63",
+  "runtime": "bash",
+  "purpose": "Verify orchestration task wired in upload handler",
+  "script_chars": 143,
+  "started_at": "2026-06-01T11:37:02.451Z",
+  "finished_at": "2026-06-01T11:37:02.564Z",
+  "exit_code": 1,
+  "signal": null,
+  "timed_out": false,
+  "duration_ms": 113,
+  "stdout_bytes": 544,
+  "stderr_bytes": 0,
+  "stdout_truncated": false,
+  "stderr_truncated": false,
+  "stdout_path": "D:\\CLAUDE\\Project\\zakuppro\\zakuppro\\.gsd\\exec\\5c78c2bc-a031-4d99-b1a3-156105024f63.stdout",
+  "stderr_path": "D:\\CLAUDE\\Project\\zakuppro\\zakuppro\\.gsd\\exec\\5c78c2bc-a031-4d99-b1a3-156105024f63.stderr"
+}

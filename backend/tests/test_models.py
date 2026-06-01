@@ -14,7 +14,7 @@ from datetime import datetime
 from sqlalchemy.orm import Session
 from backend.models import (
     Project, ProjectItem, Supplier, StockItem,
-    PurchaseOrder, Invoice, Payment, UnresolvedTransaction,
+    PurchaseOrder, Invoice, InvoiceItem, Payment, UnresolvedTransaction,
     ProductionTask
 )
 
@@ -477,6 +477,11 @@ class TestModelAttributes:
         # Invoice relationships
         assert hasattr(Invoice, 'purchase_order')
         assert hasattr(Invoice, 'payments')
+        assert hasattr(Invoice, 'items')  # InvoiceItem relationship
+
+        # InvoiceItem relationships
+        assert hasattr(InvoiceItem, 'invoice')
+        assert hasattr(InvoiceItem, 'project_item')
 
         # Payment relationships
         assert hasattr(Payment, 'invoice')
@@ -581,6 +586,226 @@ class TestDefaultValues:
         db_session.commit()
 
         assert transaction.status == "Не распределено"
+
+
+class TestInvoiceExtensions:
+    """Test Invoice extensions and InvoiceItem model."""
+
+    def test_invoice_has_raw_file_column(self, db_session):
+        """Test Invoice model has raw_file column for binary storage."""
+        # Create project, supplier, and purchase order
+        project = Project(
+            name="Test Project",
+            client="Test Client",
+            status="Проектирование"
+        )
+        supplier = Supplier(
+            name="Test Supplier",
+            email="test@example.com"
+        )
+        db_session.add_all([project, supplier])
+        db_session.flush()
+
+        po = PurchaseOrder(
+            project_id=project.id,
+            supplier_id=supplier.id,
+            status="Сформирован"
+        )
+        db_session.add(po)
+        db_session.flush()
+
+        # Create invoice with raw_file
+        invoice = Invoice(
+            purchase_order_id=po.id,
+            file_url="http://example.com/invoice.pdf",
+            raw_text="Invoice text",
+            raw_file=b'\x50\x44\x46\x00',  # Mock PDF binary data
+            verification_result={"status": "verified", "confidence": 0.95},
+            status="Сверен"
+        )
+        db_session.add(invoice)
+        db_session.commit()
+
+        db_session.refresh(invoice)
+
+        # Verify raw_file column exists and stores binary data
+        assert hasattr(invoice, 'raw_file')
+        assert invoice.raw_file == b'\x50\x44\x46\x00'
+
+    def test_invoice_has_verification_result_column(self, db_session):
+        """Test Invoice model has verification_result column for JSONB storage."""
+        # Create project, supplier, and purchase order
+        project = Project(
+            name="Test Project",
+            client="Test Client",
+            status="Проектирование"
+        )
+        supplier = Supplier(
+            name="Test Supplier",
+            email="test@example.com"
+        )
+        db_session.add_all([project, supplier])
+        db_session.flush()
+
+        po = PurchaseOrder(
+            project_id=project.id,
+            supplier_id=supplier.id,
+            status="Сформирован"
+        )
+        db_session.add(po)
+        db_session.flush()
+
+        # Create invoice with verification_result
+        verification_data = {
+            "status": "verified",
+            "confidence": 0.95,
+            "items_matched": 3,
+            "items_total": 3,
+            "discrepancies": []
+        }
+        invoice = Invoice(
+            purchase_order_id=po.id,
+            verification_result=verification_data,
+            status="Сверен"
+        )
+        db_session.add(invoice)
+        db_session.commit()
+
+        db_session.refresh(invoice)
+
+        # Verify verification_result column exists and stores JSON
+        assert hasattr(invoice, 'verification_result')
+        assert invoice.verification_result["status"] == "verified"
+        assert invoice.verification_result["confidence"] == 0.95
+        assert invoice.verification_result["items_matched"] == 3
+
+    def test_invoice_item_creation(self, db_session):
+        """Test InvoiceItem model can be created and persisted."""
+        # Create project, supplier, PO, and invoice
+        project = Project(
+            name="Test Project",
+            client="Test Client",
+            status="Проектирование"
+        )
+        supplier = Supplier(
+            name="Test Supplier",
+            email="test@example.com"
+        )
+        db_session.add_all([project, supplier])
+        db_session.flush()
+
+        po = PurchaseOrder(
+            project_id=project.id,
+            supplier_id=supplier.id,
+            status="Сформирован"
+        )
+        db_session.add(po)
+        db_session.flush()
+
+        invoice = Invoice(
+            purchase_order_id=po.id,
+            status="Ожидает сверки"
+        )
+        db_session.add(invoice)
+        db_session.flush()
+
+        # Create invoice item
+        item = InvoiceItem(
+            invoice_id=invoice.id,
+            project_item_id=None,  # Not mapped to project item yet
+            name="Test Item",
+            sku="SKU-001",
+            qty=10,
+            unit_price=100.00,
+            total_price=1000.00
+        )
+        db_session.add(item)
+        db_session.commit()
+
+        db_session.refresh(item)
+
+        # Verify item was created
+        assert item.id is not None
+        assert item.name == "Test Item"
+        assert item.sku == "SKU-001"
+        assert item.qty == 10
+        assert item.unit_price == 100.00
+        assert item.total_price == 1000.00
+
+    def test_invoice_item_relationships(self, db_session):
+        """Test InvoiceItem -> Invoice and ProjectItem relationships."""
+        # Create project with items
+        project = Project(
+            name="Test Project",
+            client="Test Client",
+            status="Проектирование"
+        )
+        db_session.add(project)
+        db_session.flush()
+
+        project_item = ProjectItem(
+            project_id=project.id,
+            name="Project Item",
+            sku="PROJ-SKU-001",
+            qty=10,
+            status="К закупке"
+        )
+        db_session.add(project_item)
+        db_session.flush()
+
+        # Create supplier and PO
+        supplier = Supplier(
+            name="Test Supplier",
+            email="test@example.com"
+        )
+        db_session.add(supplier)
+        db_session.flush()
+
+        po = PurchaseOrder(
+            project_id=project.id,
+            supplier_id=supplier.id,
+            status="Сформирован"
+        )
+        db_session.add(po)
+        db_session.flush()
+
+        # Create invoice
+        invoice = Invoice(
+            purchase_order_id=po.id,
+            status="Ожидает сверки"
+        )
+        db_session.add(invoice)
+        db_session.flush()
+
+        # Create invoice item mapped to project item
+        invoice_item = InvoiceItem(
+            invoice_id=invoice.id,
+            project_item_id=project_item.id,
+            name="Invoice Item",
+            sku="INV-SKU-001",
+            qty=5,
+            unit_price=50.00,
+            total_price=250.00
+        )
+        db_session.add(invoice_item)
+        db_session.commit()
+
+        # Refresh all
+        db_session.refresh(invoice_item)
+        db_session.refresh(invoice)
+        db_session.refresh(project_item)
+
+        # Test invoice_item -> invoice relationship
+        assert invoice_item.invoice == invoice
+        assert invoice_item.invoice.status == "Ожидает сверки"
+
+        # Test invoice_item -> project_item relationship
+        assert invoice_item.project_item == project_item
+        assert invoice_item.project_item.name == "Project Item"
+
+        # Test invoice -> items (bidirectional)
+        assert len(invoice.items) == 1
+        assert invoice.items[0] == invoice_item
 
 
 if __name__ == "__main__":

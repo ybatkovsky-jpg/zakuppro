@@ -9,8 +9,8 @@
       "sourceFile": "STATE.md"
     },
     {
-      "id": "concept:phase:planning",
-      "label": "Phase: planning",
+      "id": "concept:phase:validating-milestone",
+      "label": "Phase: validating-milestone",
       "type": "concept",
       "confidence": "EXTRACTED",
       "sourceFile": "STATE.md"
@@ -230,6 +230,49 @@
     {
       "id": "task:M002:S03:T04",
       "label": "T04: Create Test Excel and Verify Task End-to-End",
+      "type": "task",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "id": "slice:M002:S04",
+      "label": "S04: Project Creation + DLQ",
+      "type": "slice",
+      "confidence": "EXTRACTED",
+      "sourceFile": "milestones/M002/slices/S04/S04-PLAN.md"
+    },
+    {
+      "id": "task:M002:S04:T01",
+      "label": "T01: Create FailedTask Model and Database Migration",
+      "type": "task",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "id": "task:M002:S04:T02",
+      "label": "T02: Create Supplier Resolver Module",
+      "type": "task",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "id": "task:M002:S04:T03",
+      "label": "T03: Create Telegram Notification Helper",
+      "type": "task",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "id": "task:M002:S04:T04",
+      "label": "T04: Implement Main Orchestration Task",
+      "type": "task",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "id": "task:M002:S04:T05",
+      "label": "T05: Wire Orchestration Task into Upload Flow",
+      "type": "task",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "id": "task:M002:S04:T06",
+      "label": "T06: Write End-to-End Integration Test",
       "type": "task",
       "confidence": "EXTRACTED"
     },
@@ -466,7 +509,49 @@
       "to": "task:M002:S03:T04",
       "type": "contains",
       "confidence": "EXTRACTED"
+    },
+    {
+      "from": "milestone:M002",
+      "to": "slice:M002:S04",
+      "type": "contains",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "from": "slice:M002:S04",
+      "to": "task:M002:S04:T01",
+      "type": "contains",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "from": "slice:M002:S04",
+      "to": "task:M002:S04:T02",
+      "type": "contains",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "from": "slice:M002:S04",
+      "to": "task:M002:S04:T03",
+      "type": "contains",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "from": "slice:M002:S04",
+      "to": "task:M002:S04:T04",
+      "type": "contains",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "from": "slice:M002:S04",
+      "to": "task:M002:S04:T05",
+      "type": "contains",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "from": "slice:M002:S04",
+      "to": "task:M002:S04:T06",
+      "type": "contains",
+      "confidence": "EXTRACTED"
     }
   ],
-  "builtAt": "2026-06-01T11:12:08.084Z"
+  "builtAt": "2026-06-01T11:38:36.600Z"
 }

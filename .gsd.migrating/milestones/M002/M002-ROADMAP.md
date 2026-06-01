@@ -24,7 +24,7 @@
 - [x] **S03: S03** `risk:high` `depends:[]`
   > After this: Celery task парсит Excel с pandas, вызывает GPT-4o для распознавания структуры, возвращает JSON с данными
 
-- [ ] **S04: S04** `risk:high` `depends:[]`
+- [x] **S04: S04** `risk:high` `depends:[]`
   > After this: End-to-end: Excel из Telegram → Project в БД → ответ в Telegram со статистикой. DLQ работает при ошибках.
 
 ## Boundary Map
