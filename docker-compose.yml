@@ -80,6 +80,20 @@ services:
     command: celery -A backend.celery_app worker --loglevel=info
     environment:
       CELERY_BROKER_URL: pyamqp://guest:guest@rabbitmq:5672//
+      # LLM Provider Configuration
+      LLM_PRIMARY_PROVIDER: ${LLM_PRIMARY_PROVIDER:-openai}
+      LLM_SECONDARY_PROVIDER: ${LLM_SECONDARY_PROVIDER:-anthropic}
+      LLM_TIMEOUT_SECONDS: ${LLM_TIMEOUT_SECONDS:-30}
+      LLM_MAX_RETRIES: ${LLM_MAX_RETRIES:-3}
+      # OpenAI API
+      OPENAI_API_KEY: ${OPENAI_API_KEY}
+      OPENAI_MODEL: ${OPENAI_MODEL:-gpt-4o}
+      # Anthropic Claude API
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY}
+      ANTHROPIC_MODEL: ${ANTHROPIC_MODEL:-claude-3-5-sonnet-20241022}
+      # Google Gemini API
+      GEMINI_API_KEY: ${GEMINI_API_KEY}
+      GEMINI_MODEL: ${GEMINI_MODEL:-gemini-2.0-flash-exp}
     depends_on:
       rabbitmq:
         condition: service_healthy
@@ -98,6 +112,20 @@ services:
       TELEGRAM_OWNER_CHAT_ID: ${TELEGRAM_OWNER_CHAT_ID}
       ALLOWED_CHAT_IDS: ${ALLOWED_CHAT_IDS}
       CELERY_BROKER_URL: pyamqp://guest:guest@rabbitmq:5672//
+      # LLM Provider Configuration
+      LLM_PRIMARY_PROVIDER: ${LLM_PRIMARY_PROVIDER:-openai}
+      LLM_SECONDARY_PROVIDER: ${LLM_SECONDARY_PROVIDER:-anthropic}
+      LLM_TIMEOUT_SECONDS: ${LLM_TIMEOUT_SECONDS:-30}
+      LLM_MAX_RETRIES: ${LLM_MAX_RETRIES:-3}
+      # OpenAI API
+      OPENAI_API_KEY: ${OPENAI_API_KEY}
+      OPENAI_MODEL: ${OPENAI_MODEL:-gpt-4o}
+      # Anthropic Claude API
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY}
+      ANTHROPIC_MODEL: ${ANTHROPIC_MODEL:-claude-3-5-sonnet-20241022}
+      # Google Gemini API
+      GEMINI_API_KEY: ${GEMINI_API_KEY}
+      GEMINI_MODEL: ${GEMINI_MODEL:-gemini-2.0-flash-exp}
     depends_on:
       rabbitmq:
         condition: service_healthy
