@@ -7,6 +7,9 @@ Tasks are automatically registered with the Celery app.
 
 from backend.celery_app import app
 import logging
+import json
+import traceback
+from typing import Optional
 
 from openai import RateLimitError
 from backend.excel_parser import read_excel_file, clean_dataframe, dataframe_to_markdown
@@ -251,3 +254,211 @@ def parse_excel_bom(self, file_path: str, chat_id: int) -> dict:
             exc_info=True
         )
         raise
+
+
+@app.task(name='tasks.process_bom_to_project', bind=True, max_retries=2)
+def process_bom_to_project(self, file_path: str, chat_id: int) -> dict:
+    """
+    Main orchestration task for BOM to Project workflow.
+
+    This task chains the entire flow:
+    1. Parse Excel file with AI (calls parse_excel_bom synchronously)
+    2. Create Supplier records (auto-create if needed)
+    3. Create Project record
+    4. Create ProjectItem records for each extracted item
+    5. Send Telegram completion message
+    6. Handle errors with DLQ persistence and alerts
+
+    On transient errors, task retries with exponential backoff.
+    After max_retries=2, task goes to DLQ with FailedTask record.
+
+    Args:
+        file_path: Absolute path to the uploaded Excel file
+        chat_id: Telegram chat_id of the user who uploaded the file
+
+    Returns:
+        dict: Result with keys:
+            - status: 'success' or 'error'
+            - project_id: ID of created project
+            - items_count: Number of ProjectItems created
+            - reserved_count: Number of reserved items (always 0 for now)
+            - task_id: Celery task ID
+
+    Raises:
+        FileNotFoundError: If Excel file doesn't exist
+        ValueError: If validation fails or no items extracted
+        RateLimitError: Triggers retry with exponential backoff
+    """
+    task_id = self.request.id
+    logger.info(
+        f"Task {task_id}: process_bom_to_project started - "
+        f"file={file_path}, chat_id={chat_id}, retry={self.request.retries}"
+    )
+
+    db = None
+
+    try:
+        # Step 1: Parse Excel with AI (blocking call)
+        logger.info(f"Task {task_id}: Calling parse_excel_bom")
+        parse_result = parse_excel_bom.apply(args=(file_path, chat_id)).get()
+
+        if parse_result.get('status') != 'success':
+            error_msg = f"parse_excel_bom failed: {parse_result}"
+            logger.error(f"Task {task_id}: {error_msg}")
+            raise ValueError(error_msg)
+
+        items = parse_result.get('items', [])
+        metadata = parse_result.get('metadata', {})
+
+        if not items:
+            error_msg = "No items extracted from Excel file"
+            logger.error(f"Task {task_id}: {error_msg}")
+            raise ValueError(error_msg)
+
+        logger.info(f"Task {task_id}: Extracted {len(items)} items")
+
+        # Step 2: Database operations
+        from backend.database import SessionLocal
+        from backend.models import Project, ProjectItem, FailedTask
+        from backend.supplier_resolver import find_or_create_supplier
+        from backend.telegram_notifier import send_completion_message, send_dlq_alert
+
+        db = SessionLocal()
+
+        # Step 3: Resolve suppliers (auto-create if needed)
+        supplier_map = {}  # Maps supplier name to supplier_id
+        unique_suppliers = set(item.get('supplier') for item in items if item.get('supplier'))
+
+        for supplier_name in unique_suppliers:
+            supplier_id = find_or_create_supplier(db, supplier_name)
+            if supplier_id:
+                supplier_map[supplier_name] = supplier_id
+                logger.info(f"Task {task_id}: Resolved supplier '{supplier_name}' -> ID {supplier_id}")
+            else:
+                logger.warning(f"Task {task_id}: Failed to resolve supplier '{supplier_name}'")
+
+        # Step 4: Create Project record
+        import os
+        file_stem = os.path.splitext(os.path.basename(file_path))[0]
+        project_name = metadata.get('project_name') or file_stem
+        client = metadata.get('client') or 'Не указан'
+
+        project = Project(
+            name=project_name,
+            client=client,
+            status='Проектирование'
+        )
+        db.add(project)
+        db.commit()
+        db.refresh(project)
+
+        logger.info(
+            f"Task {task_id}: Created project '{project_name}' "
+            f"(ID: {project.id}, client: {client})"
+        )
+
+        # Step 5: Create ProjectItem records
+        items_created = 0
+        for item in items:
+            supplier_name = item.get('supplier')
+            supplier_id = supplier_map.get(supplier_name) if supplier_name else None
+
+            project_item = ProjectItem(
+                project_id=project.id,
+                name=item.get('name'),
+                sku=item.get('sku'),
+                qty=item.get('qty'),
+                supplier_id=supplier_id,
+                status='К закупке'
+            )
+            db.add(project_item)
+            items_created += 1
+
+        db.commit()
+        logger.info(f"Task {task_id}: Created {items_created} ProjectItem records")
+
+        # Step 6: Send Telegram completion message
+        telegram_sent = send_completion_message(
+            chat_id=chat_id,
+            project_name=project_name,
+            items_count=items_created,
+            reserved_count=0
+        )
+
+        if telegram_sent:
+            logger.info(f"Task {task_id}: Telegram completion message sent")
+        else:
+            logger.warning(f"Task {task_id}: Failed to send Telegram completion message")
+
+        result = {
+            'status': 'success',
+            'project_id': project.id,
+            'items_count': items_created,
+            'reserved_count': 0,
+            'task_id': task_id,
+        }
+
+        logger.info(f"Task {task_id}: process_bom_to_project completed successfully")
+        return result
+
+    except RateLimitError as e:
+        # Retry with exponential backoff
+        retry_count = self.request.retries
+        countdown = 2 ** retry_count  # 1, 2, 4...
+        logger.warning(
+            f"Task {task_id}: Rate limit hit, "
+            f"retrying in {countdown}s (attempt {retry_count + 1}/3)"
+        )
+        raise self.retry(exc=e, countdown=countdown, max_retries=2)
+
+    except Exception as e:
+        # Handle error: create FailedTask, send DLQ alert
+        error_message = f"{type(e).__name__}: {str(e)}\n\n{traceback.format_exc()}"
+
+        logger.error(f"Task {task_id}: Error occurred - {error_message}")
+
+        try:
+            # Import here to avoid circular dependency
+            from backend.database import SessionLocal
+            from backend.models import FailedTask
+            from backend.telegram_notifier import send_dlq_alert
+
+            if db is None:
+                db = SessionLocal()
+
+            # Create FailedTask record for DLQ
+            failed_task = FailedTask(
+                task_id=task_id,
+                task_name='tasks.process_bom_to_project',
+                error_message=error_message,
+                error_type=type(e).__name__,
+                file_path=file_path,
+                chat_id=chat_id,
+                context=json.dumps({'chat_id': chat_id, 'file_path': file_path})
+            )
+            db.add(failed_task)
+            db.commit()
+            logger.info(f"Task {task_id}: FailedTask record created")
+
+            # Send DLQ alert to owner
+            send_dlq_alert(
+                task_id=task_id,
+                error_message=str(e),
+                file_path=file_path,
+                chat_id=chat_id
+            )
+
+        except Exception as inner_error:
+            logger.error(
+                f"Task {task_id}: Failed to create FailedTask or send alert - {inner_error}",
+                exc_info=True
+            )
+
+        # Re-raise original exception for Celery DLQ handling
+        raise
+
+    finally:
+        # Always close database session
+        if db is not None:
+            db.close()
+            logger.info(f"Task {task_id}: Database session closed")

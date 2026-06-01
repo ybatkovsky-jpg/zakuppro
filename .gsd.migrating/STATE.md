@@ -20,4 +20,4 @@
 - None
 
 ## Next Action
-Execute T02: Create Supplier Resolver Module in slice S04.
+Execute T03: Create Telegram Notification Helper in slice S04.

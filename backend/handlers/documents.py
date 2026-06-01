@@ -12,7 +12,7 @@ from telegram import Update
 from telegram.ext import ContextTypes, filters
 
 from backend.handlers.auth import AuthMiddleware
-from backend.tasks import queue_excel_processing
+from backend.tasks import process_bom_to_project
 
 logger = logging.getLogger(__name__)
 
@@ -104,7 +104,7 @@ async def handle_document(update: Update, context: ContextTypes.DEFAULT_TYPE) ->
         logger.info(f'File saved: {file_path}')
 
         # Publish Celery task for async processing
-        result = queue_excel_processing.delay(str(file_path), chat_id)
+        result = process_bom_to_project.delay(str(file_path), chat_id)
         task_id = result.id
 
         logger.info(

@@ -35,7 +35,7 @@
   - Files: `backend/models.py`, `backend/alembic/versions/*.py`
   - Verify: python -c "from backend.models import FailedTask; print('FailedTask imported successfully')"
 
-- [ ] **T02: Create Supplier Resolver Module** `est:20m`
+- [x] **T02: Create Supplier Resolver Module** `est:20m`
   ## Why
   AI extraction returns supplier names (strings), but ProjectItem requires supplier_id (integer). This module bridges the gap by finding existing suppliers or auto-creating them with placeholder email addresses.
   - Files: `backend/supplier_resolver.py`

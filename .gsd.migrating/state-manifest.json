@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "exported_at": "2026-06-01T11:20:21.275Z",
+  "exported_at": "2026-06-01T11:23:59.755Z",
   "milestones": [
     {
       "id": "M001",
@@ -1677,19 +1677,27 @@
       "milestone_id": "M002",
       "slice_id": "S04",
       "id": "T02",
-      "title": "Create Supplier Resolver Module",
-      "status": "pending",
-      "one_liner": "",
-      "narrative": "",
-      "verification_result": "",
+      "title": "Created Supplier Resolver Module for bridging AI-extracted supplier names to database supplier_id with auto-creation and placeholder email generation",
+      "status": "complete",
+      "one_liner": "Created Supplier Resolver Module for bridging AI-extracted supplier names to database supplier_id with auto-creation and placeholder email generation",
+      "narrative": "Implemented `backend/supplier_resolver.py` with `find_or_create_supplier(db, name)` function that:\n- Queries existing Supplier by exact name match (case-sensitive)\n- Auto-creates new suppliers with placeholder email format `auto-{slugify(name)}@placeholder.com`\n- Returns supplier_id or None for empty/invalid names\n- Includes read-only `find_supplier_by_name()` helper\n\nAdded `python-slugify==8.0.4` dependency to requirements.txt for safe email generation from supplier names (handles Russian transliteration and special characters).\n\nCreated comprehensive test suite (`backend/tests/test_supplier_resolver.py`) with 15 tests covering:\n- New supplier creation with placeholder email\n- Exact name matching (case-sensitive)\n- Duplicate calls returning same ID\n- Whitespace handling\n- Empty/None input handling\n- Russian company names and special characters\n\nAll tests pass.",
+      "verification_result": "1. Module import verification: `python -c \"from backend.supplier_resolver import find_or_create_supplier; print('Module imported successfully')\"` - PASS\n2. Test suite: `pytest backend/tests/test_supplier_resolver.py -v` - 15/15 PASS\n\nKey behaviors verified:\n- Exact name match finds existing suppliers\n- Non-matching names create new suppliers with `auto-{slug}@placeholder.com` email\n- Duplicate calls for same name return same ID\n- Russian names are correctly transliterated (e.g., \"ООО Вектор\" → \"auto-ooo-vektor@placeholder.com\")\n- Empty/None inputs return None gracefully",
       "duration": "",
-      "completed_at": null,
+      "completed_at": "2026-06-01T11:23:59.699Z",
       "blocker_discovered": false,
-      "deviations": "",
-      "known_issues": "",
-      "key_files": [],
-      "key_decisions": [],
-      "full_summary_md": "",
+      "deviations": "None.",
+      "known_issues": "None.",
+      "key_files": [
+        "backend/supplier_resolver.py",
+        "backend/requirements.txt",
+        "backend/tests/test_supplier_resolver.py"
+      ],
+      "key_decisions": [
+        "Used python-slugify for safe email generation instead of manual string manipulation - handles Russian transliteration, special characters, and edge cases",
+        "Returned None for empty names instead of raising exception - allows graceful handling in downstream code",
+        "Added read-only find_supplier_by_name() helper to support query-only use cases without side effects"
+      ],
+      "full_summary_md": "---\nid: T02\nparent: S04\nmilestone: M002\nkey_files:\n  - backend/supplier_resolver.py\n  - backend/requirements.txt\n  - backend/tests/test_supplier_resolver.py\nkey_decisions:\n  - Used python-slugify for safe email generation instead of manual string manipulation - handles Russian transliteration, special characters, and edge cases\n  - Returned None for empty names instead of raising exception - allows graceful handling in downstream code\n  - Added read-only find_supplier_by_name() helper to support query-only use cases without side effects\nduration: \nverification_result: passed\ncompleted_at: 2026-06-01T11:23:59.695Z\nblocker_discovered: false\n---\n\n# T02: Created Supplier Resolver Module for bridging AI-extracted supplier names to database supplier_id with auto-creation and placeholder email generation\n\n**Created Supplier Resolver Module for bridging AI-extracted supplier names to database supplier_id with auto-creation and placeholder email generation**\n\n## What Happened\n\nImplemented `backend/supplier_resolver.py` with `find_or_create_supplier(db, name)` function that:\n- Queries existing Supplier by exact name match (case-sensitive)\n- Auto-creates new suppliers with placeholder email format `auto-{slugify(name)}@placeholder.com`\n- Returns supplier_id or None for empty/invalid names\n- Includes read-only `find_supplier_by_name()` helper\n\nAdded `python-slugify==8.0.4` dependency to requirements.txt for safe email generation from supplier names (handles Russian transliteration and special characters).\n\nCreated comprehensive test suite (`backend/tests/test_supplier_resolver.py`) with 15 tests covering:\n- New supplier creation with placeholder email\n- Exact name matching (case-sensitive)\n- Duplicate calls returning same ID\n- Whitespace handling\n- Empty/None input handling\n- Russian company names and special characters\n\nAll tests pass.\n\n## Verification\n\n1. Module import verification: `python -c \"from backend.supplier_resolver import find_or_create_supplier; print('Module imported successfully')\"` - PASS\n2. Test suite: `pytest backend/tests/test_supplier_resolver.py -v` - 15/15 PASS\n\nKey behaviors verified:\n- Exact name match finds existing suppliers\n- Non-matching names create new suppliers with `auto-{slug}@placeholder.com` email\n- Duplicate calls for same name return same ID\n- Russian names are correctly transliterated (e.g., \"ООО Вектор\" → \"auto-ooo-vektor@placeholder.com\")\n- Empty/None inputs return None gracefully\n\n## Verification Evidence\n\n| # | Command | Exit Code | Verdict | Duration |\n|---|---------|-----------|---------|----------|\n| 1 | `python -c \"from backend.supplier_resolver import find_or_create_supplier; print('Module imported successfully')\"` | 0 | PASS | 1200ms |\n| 2 | `python -m pytest backend/tests/test_supplier_resolver.py -v` | 0 | PASS - 15/15 tests passed | 1800ms |\n\n## Deviations\n\nNone.\n\n## Known Issues\n\nNone.\n\n## Files Created/Modified\n\n- `backend/supplier_resolver.py`\n- `backend/requirements.txt`\n- `backend/tests/test_supplier_resolver.py`\n",
       "description": "## Why\nAI extraction returns supplier names (strings), but ProjectItem requires supplier_id (integer). This module bridges the gap by finding existing suppliers or auto-creating them with placeholder email addresses.\n\n## Do\n1. Create `backend/supplier_resolver.py` with function:\n   ```python\n   def find_or_create_supplier(db: Session, name: str) -> Optional[int]:\n   ```\n2. Query existing Supplier by exact name match (case-sensitive)\n3. If not found, create with:\n   - name: provided value\n   - email: `auto-{slugify(name)}@placeholder.com` placeholder format\n4. Commit and return supplier.id\n5. Import from `backend.models` for Supplier model\n6. Use python-slugify for safe email generation\n\n## Done when\n- Module imports successfully\n- Function returns valid supplier_id\n- Duplicate calls for same name return same ID",
       "estimate": "20m",
       "files": [
@@ -2647,6 +2655,28 @@
       "verdict": "PASS",
       "duration_ms": 1200,
       "created_at": "2026-06-01T11:20:21.220Z"
+    },
+    {
+      "id": 71,
+      "task_id": "T02",
+      "slice_id": "S04",
+      "milestone_id": "M002",
+      "command": "python -c \"from backend.supplier_resolver import find_or_create_supplier; print('Module imported successfully')\"",
+      "exit_code": 0,
+      "verdict": "PASS",
+      "duration_ms": 1200,
+      "created_at": "2026-06-01T11:23:59.700Z"
+    },
+    {
+      "id": 72,
+      "task_id": "T02",
+      "slice_id": "S04",
+      "milestone_id": "M002",
+      "command": "python -m pytest backend/tests/test_supplier_resolver.py -v",
+      "exit_code": 0,
+      "verdict": "PASS - 15/15 tests passed",
+      "duration_ms": 1800,
+      "created_at": "2026-06-01T11:23:59.700Z"
     }
   ]
 }
