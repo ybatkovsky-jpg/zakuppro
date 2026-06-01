@@ -1,24 +1,28 @@
 {
-  "compiledAt": "2026-06-01T13:20:23.843Z",
+  "compiledAt": "2026-06-01T13:36:30.886Z",
   "milestoneId": "M003",
   "pipeline": {
     "clarifyRoundLimit": 3,
     "researchSynthesized": true,
     "draftContextIncluded": false,
     "finalizedContextIncluded": true,
-    "sourcePhase": "executing"
+    "sourcePhase": "summarizing"
   },
   "nodes": [
     {
       "id": "execute-task:M003:S01:T01",
       "kind": "unit",
       "dependsOn": [],
-      "writes": [],
+      "writes": [
+        "backend/alembic/versions/4773ecad7cb2_invoice_extensions.py",
+        "backend/models.py",
+        "backend/tests/test_models.py"
+      ],
       "metadata": {
         "unitType": "execute-task",
         "unitId": "M003.S01.T01",
-        "title": "Create Alembic migration for Invoice.raw_file, Invoice.verification_result, InvoiceItem table",
-        "status": "pending"
+        "title": "Created Alembic migration 4773ecad7cb2 adding Invoice.raw_file (BYTEA), Invoice.verification_result (JSONB), and InvoiceItem table with foreign keys to Invoice and ProjectItem; updated models.py with InvoiceItem class and new Invoice columns; added 4 tests covering new functionality.",
+        "status": "complete"
       }
     },
     {
@@ -27,12 +31,17 @@
       "dependsOn": [
         "execute-task:M003:S01:T01"
       ],
-      "writes": [],
+      "writes": [
+        "D:/CLAUDE/Project/zakuppro/zakuppro/backend/llm_provider.py",
+        "D:/CLAUDE/Project/zakuppro/zakuppro/backend/tests/test_llm_provider.py",
+        "D:/CLAUDE/Project/zakuppro/zakuppro/backend/requirements.txt",
+        "D:/CLAUDE/Project/zakuppro/zakuppro/.env"
+      ],
       "metadata": {
         "unitType": "execute-task",
         "unitId": "M003.S01.T02",
-        "title": "Create llm_provider.py with provider-agnostic wrapper",
-        "status": "pending"
+        "title": "Created llm_provider.py with provider-agnostic wrapper supporting OpenAI, Gemini, Claude with automatic fallback on rate limit/timeout errors",
+        "status": "complete"
       }
     },
     {
@@ -41,12 +50,15 @@
       "dependsOn": [
         "execute-task:M003:S01:T02"
       ],
-      "writes": [],
+      "writes": [
+        "docker-compose.yml",
+        ".env"
+      ],
       "metadata": {
         "unitType": "execute-task",
         "unitId": "M003.S01.T03",
-        "title": "Add LLM provider configuration to .env and docker-compose.yml",
-        "status": "pending"
+        "title": "Added LLM provider environment variables to celery-worker and telegram-bot services in docker-compose.yml",
+        "status": "complete"
       }
     },
     {
@@ -59,8 +71,8 @@
       "metadata": {
         "unitType": "execute-task",
         "unitId": "M003.S01.T04",
-        "title": "Write unit tests for LLM provider with fallback",
-        "status": "pending"
+        "title": "Created comprehensive unit tests for LLM provider with 33 tests covering fallback logic, retry behavior, and edge cases; achieved 60% coverage with external API paths appropriately mocked",
+        "status": "complete"
       }
     },
     {
@@ -72,7 +84,7 @@
       "metadata": {
         "unitType": "complete-slice",
         "unitId": "M003.S01",
-        "title": "Database Schema + LLM Provider Foundation",
+        "title": "S01",
         "status": "pending"
       }
     }

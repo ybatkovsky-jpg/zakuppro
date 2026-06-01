@@ -1,0 +1,18 @@
+{
+  "id": "fa359445-443e-43ae-98d6-dd7bcd5d54e1",
+  "runtime": "bash",
+  "purpose": "Verify LLM config in .env",
+  "script_chars": 122,
+  "started_at": "2026-06-01T13:36:56.707Z",
+  "finished_at": "2026-06-01T13:36:57.020Z",
+  "exit_code": 1,
+  "signal": null,
+  "timed_out": false,
+  "duration_ms": 313,
+  "stdout_bytes": 544,
+  "stderr_bytes": 0,
+  "stdout_truncated": false,
+  "stderr_truncated": false,
+  "stdout_path": "D:\\CLAUDE\\Project\\zakuppro\\zakuppro\\.gsd\\exec\\fa359445-443e-43ae-98d6-dd7bcd5d54e1.stdout",
+  "stderr_path": "D:\\CLAUDE\\Project\\zakuppro\\zakuppro\\.gsd\\exec\\fa359445-443e-43ae-98d6-dd7bcd5d54e1.stderr"
+}

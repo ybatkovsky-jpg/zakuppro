@@ -1,16 +1,16 @@
 {
   "nodes": [
     {
-      "id": "milestone:M002",
-      "label": "M002: Asynchronous Core + AI-Agent Foundation",
+      "id": "milestone:M003",
+      "label": "M003: Email + Invoice Processing",
       "type": "milestone",
-      "description": "Active milestone: M002",
+      "description": "Active milestone: M003",
       "confidence": "EXTRACTED",
       "sourceFile": "STATE.md"
     },
     {
-      "id": "concept:phase:validating-milestone",
-      "label": "Phase: validating-milestone",
+      "id": "concept:phase:planning",
+      "label": "Phase: planning",
       "type": "concept",
       "confidence": "EXTRACTED",
       "sourceFile": "STATE.md"
@@ -139,6 +139,13 @@
       "label": "T03: Enhance health check with database connectivity",
       "type": "task",
       "confidence": "EXTRACTED"
+    },
+    {
+      "id": "milestone:M002",
+      "label": "M002: Asynchronous Core + AI-Agent Foundation",
+      "type": "milestone",
+      "confidence": "EXTRACTED",
+      "sourceFile": "milestones/M002/M002-ROADMAP.md"
     },
     {
       "id": "slice:M002:S01",
@@ -277,11 +284,66 @@
       "confidence": "EXTRACTED"
     },
     {
-      "id": "milestone:M003",
-      "label": "M003: Email + Invoice Processing",
-      "type": "milestone",
+      "id": "slice:M003:S01",
+      "label": "S01: Database Schema + LLM Provider Foundation",
+      "type": "slice",
       "confidence": "EXTRACTED",
-      "sourceFile": "milestones/M003/M003-ROADMAP.md"
+      "sourceFile": "milestones/M003/slices/S01/S01-PLAN.md"
+    },
+    {
+      "id": "task:M003:S01:T01",
+      "label": "T01: Create Alembic migration for Invoice.raw_file, Invoice.verification_result, InvoiceItem table",
+      "type": "task",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "id": "task:M003:S01:T02",
+      "label": "T02: Create llm_provider.py with provider-agnostic wrapper",
+      "type": "task",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "id": "task:M003:S01:T03",
+      "label": "T03: Add LLM provider configuration to .env and docker-compose.yml",
+      "type": "task",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "id": "task:M003:S01:T04",
+      "label": "T04: Write unit tests for LLM provider with fallback",
+      "type": "task",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "id": "slice:M003:S02",
+      "label": "S02: IMAP Ingest + Email Worker Service",
+      "type": "slice",
+      "confidence": "EXTRACTED",
+      "sourceFile": "milestones/M003/slices/S02/S02-PLAN.md"
+    },
+    {
+      "id": "task:M003:S02:T01",
+      "label": "T01: IMAP Client Module",
+      "type": "task",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "id": "task:M003:S02:T02",
+      "label": "T02: Email Worker Service",
+      "type": "task",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "id": "task:M003:S02:T03",
+      "label": "T03: Docker Service Configuration",
+      "type": "task",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "id": "task:M003:S02:T04",
+      "label": "T04: Unit + Integration Tests",
+      "type": "task",
+      "confidence": "EXTRACTED"
     },
     {
       "id": "milestone:M004",
@@ -303,6 +365,867 @@
       "type": "milestone",
       "confidence": "EXTRACTED",
       "sourceFile": "milestones/M006/M006-ROADMAP.md"
+    },
+    {
+      "id": "milestone:M007",
+      "label": "M007: M007",
+      "type": "milestone",
+      "confidence": "EXTRACTED",
+      "sourceFile": "milestones/M007/M007-ROADMAP.md"
+    },
+    {
+      "id": "decision:M002:1",
+      "label": "**Decision:** Modular routers per entity with dedicated router files (e.g., projects.py)",
+      "type": "decision",
+      "confidence": "EXTRACTED",
+      "sourceFile": "milestones/M002/M002-LEARNINGS.md"
+    },
+    {
+      "id": "decision:M002:2",
+      "label": "**Choice:** Separate router files for each entity vs monolithic main.py router",
+      "type": "decision",
+      "confidence": "EXTRACTED",
+      "sourceFile": "milestones/M002/M002-LEARNINGS.md"
+    },
+    {
+      "id": "decision:M002:3",
+      "label": "**Rationale:** Keeps code organized as API grows; each entity has its own router file with standard CRUD endpoints; easier testing and better scalability",
+      "type": "decision",
+      "confidence": "EXTRACTED",
+      "sourceFile": "milestones/M002/M002-LEARNINGS.md"
+    },
+    {
+      "id": "decision:M002:4",
+      "label": "**Revisable:** No",
+      "type": "decision",
+      "confidence": "EXTRACTED",
+      "sourceFile": "milestones/M002/M002-LEARNINGS.md"
+    },
+    {
+      "id": "decision:M002:5",
+      "label": "**Source:** .gsd.migrating/DECISIONS.md",
+      "type": "decision",
+      "confidence": "EXTRACTED",
+      "sourceFile": "milestones/M002/M002-LEARNINGS.md"
+    },
+    {
+      "id": "decision:M002:6",
+      "label": "**Decision:** 4 отдельных Docker сервиса: fastapi, celery-worker, telegram-bot, rabbitmq",
+      "type": "decision",
+      "confidence": "EXTRACTED",
+      "sourceFile": "milestones/M002/M002-LEARNINGS.md"
+    },
+    {
+      "id": "decision:M002:7",
+      "label": "**Choice:** Separate isolated services vs monolithic container",
+      "type": "decision",
+      "confidence": "EXTRACTED",
+      "sourceFile": "milestones/M002/M002-LEARNINGS.md"
+    },
+    {
+      "id": "decision:M002:8",
+      "label": "**Rationale:** Isolation: падение worker'а не останавливает API и Bot. Scaling: можно запустить несколько worker'ов для параллельной обработки. Restart policies: разные настройки для разных типов сервисов.",
+      "type": "decision",
+      "confidence": "EXTRACTED",
+      "sourceFile": "milestones/M002/M002-LEARNINGS.md"
+    },
+    {
+      "id": "decision:M002:9",
+      "label": "**Revisable:** Yes",
+      "type": "decision",
+      "confidence": "EXTRACTED",
+      "sourceFile": "milestones/M002/M002-LEARNINGS.md"
+    },
+    {
+      "id": "decision:M002:10",
+      "label": "**Source:** .gsd.migrating/DECISIONS.md",
+      "type": "decision",
+      "confidence": "EXTRACTED",
+      "sourceFile": "milestones/M002/M002-LEARNINGS.md"
+    },
+    {
+      "id": "decision:M002:11",
+      "label": "**Decision:** Retry 2x с exponential backoff (1s, 5s) → DLQ с сохранением контекста → Telegram alert",
+      "type": "decision",
+      "confidence": "EXTRACTED",
+      "sourceFile": "milestones/M002/M002-LEARNINGS.md"
+    },
+    {
+      "id": "decision:M002:12",
+      "label": "**Choice:** Retry with DLQ fallback vs fail-fast",
+      "type": "decision",
+      "confidence": "EXTRACTED",
+      "sourceFile": "milestones/M002/M002-LEARNINGS.md"
+    },
+    {
+      "id": "decision:M002:13",
+      "label": "**Rationale:** Retry handles temporary API failures. DLQ гарантирует что ничего не теряется. Alert даёт владельцу visibility на проблемы.",
+      "type": "decision",
+      "confidence": "EXTRACTED",
+      "sourceFile": "milestones/M002/M002-LEARNINGS.md"
+    },
+    {
+      "id": "decision:M002:14",
+      "label": "**Revisable:** Yes",
+      "type": "decision",
+      "confidence": "EXTRACTED",
+      "sourceFile": "milestones/M002/M002-LEARNINGS.md"
+    },
+    {
+      "id": "decision:M002:15",
+      "label": "**Source:** .gsd.migrating/DECISIONS.md",
+      "type": "decision",
+      "confidence": "EXTRACTED",
+      "sourceFile": "milestones/M002/M002-LEARNINGS.md"
+    },
+    {
+      "id": "decision:M002:16",
+      "label": "**Decision:** python-telegram-bot library",
+      "type": "decision",
+      "confidence": "EXTRACTED",
+      "sourceFile": "milestones/M002/M002-LEARNINGS.md"
+    },
+    {
+      "id": "decision:M002:17",
+      "label": "**Choice:** python-telegram-bot vs other bot frameworks",
+      "type": "decision",
+      "confidence": "EXTRACTED",
+      "sourceFile": "milestones/M002/M002-LEARNINGS.md"
+    },
+    {
+      "id": "decision:M002:18",
+      "label": "**Rationale:** Зрелая библиотека с хорошей документацией. Поддержка webhook и long polling. Легкая интеграция с RabbitMQ.",
+      "type": "decision",
+      "confidence": "EXTRACTED",
+      "sourceFile": "milestones/M002/M002-LEARNINGS.md"
+    },
+    {
+      "id": "decision:M002:19",
+      "label": "**Revisable:** Yes",
+      "type": "decision",
+      "confidence": "EXTRACTED",
+      "sourceFile": "milestones/M002/M002-LEARNINGS.md"
+    },
+    {
+      "id": "decision:M002:20",
+      "label": "**Source:** .gsd.migrating/DECISIONS.md",
+      "type": "decision",
+      "confidence": "EXTRACTED",
+      "sourceFile": "milestones/M002/M002-LEARNINGS.md"
+    },
+    {
+      "id": "decision:M002:21",
+      "label": "**Decision:** RabbitMQ DLQ + отдельная таблица в БД для failed tasks с контекстом",
+      "type": "decision",
+      "confidence": "EXTRACTED",
+      "sourceFile": "milestones/M002/M002-LEARNINGS.md"
+    },
+    {
+      "id": "decision:M002:22",
+      "label": "**Choice:** Hybrid approach (RabbitMQ + DB) vs RabbitMQ-only or DB-only",
+      "type": "decision",
+      "confidence": "EXTRACTED",
+      "sourceFile": "milestones/M002/M002-LEARNINGS.md"
+    },
+    {
+      "id": "decision:M002:23",
+      "label": "**Rationale:** RabbitMQ DLQ из коробки для retry logic. БД таблица для персистентности и возможности перезапустить через UI later. Контекст нужен для debugging.",
+      "type": "decision",
+      "confidence": "EXTRACTED",
+      "sourceFile": "milestones/M002/M002-LEARNINGS.md"
+    },
+    {
+      "id": "decision:M002:24",
+      "label": "**Revisable:** Yes",
+      "type": "decision",
+      "confidence": "EXTRACTED",
+      "sourceFile": "milestones/M002/M002-LEARNINGS.md"
+    },
+    {
+      "id": "decision:M002:25",
+      "label": "**Source:** .gsd.migrating/DECISIONS.md",
+      "type": "decision",
+      "confidence": "EXTRACTED",
+      "sourceFile": "milestones/M002/M002-LEARNINGS.md"
+    },
+    {
+      "id": "decision:M002:26",
+      "label": "**Decision:** pandas для чтения + OpenAI GPT-4o для распознавания структуры dirty таблиц",
+      "type": "decision",
+      "confidence": "EXTRACTED",
+      "sourceFile": "milestones/M002/M002-LEARNINGS.md"
+    },
+    {
+      "id": "decision:M002:27",
+      "label": "**Choice:** pandas + GPT-4o vs pure LLM or custom parsing",
+      "type": "decision",
+      "confidence": "EXTRACTED",
+      "sourceFile": "milestones/M002/M002-LEARNINGS.md"
+    },
+    {
+      "id": "decision:M002:28",
+      "label": "**Rationale:** pandas reliably читает Excel. LLM нужна для dirty таблиц (объединенные ячейки, многоэтажные шапки). GPT-4o недорогой и отлично работает со структурированным текстом.",
+      "type": "decision",
+      "confidence": "EXTRACTED",
+      "sourceFile": "milestones/M002/M002-LEARNINGS.md"
+    },
+    {
+      "id": "decision:M002:29",
+      "label": "**Revisable:** Yes",
+      "type": "decision",
+      "confidence": "EXTRACTED",
+      "sourceFile": "milestones/M002/M002-LEARNINGS.md"
+    },
+    {
+      "id": "decision:M002:30",
+      "label": "**Source:** .gsd.migrating/DECISIONS.md",
+      "type": "decision",
+      "confidence": "EXTRACTED",
+      "sourceFile": "milestones/M002/M002-LEARNINGS.md"
+    },
+    {
+      "id": "decision:M002:31",
+      "label": "**Decision:** Structured JSON via OpenAI JSON Schema (strict mode)",
+      "type": "decision",
+      "confidence": "EXTRACTED",
+      "sourceFile": "milestones/M002/M002-LEARNINGS.md"
+    },
+    {
+      "id": "decision:M002:32",
+      "label": "**Choice:** JSON Schema strict mode vs text parsing",
+      "type": "decision",
+      "confidence": "EXTRACTED",
+      "sourceFile": "milestones/M002/M002-LEARNINGS.md"
+    },
+    {
+      "id": "decision:M002:33",
+      "label": "**Rationale:** JSON Schema strict mode guarantees 100% valid output. Eliminates parsing errors and downstream validation complexity. Direct mapping to Pydantic models for type safety.",
+      "type": "decision",
+      "confidence": "EXTRACTED",
+      "sourceFile": "milestones/M002/M002-LEARNINGS.md"
+    },
+    {
+      "id": "decision:M002:34",
+      "label": "**Revisable:** Yes",
+      "type": "decision",
+      "confidence": "EXTRACTED",
+      "sourceFile": "milestones/M002/M002-LEARNINGS.md"
+    },
+    {
+      "id": "decision:M002:35",
+      "label": "**Source:** .gsd.migrating/DECISIONS.md",
+      "type": "decision",
+      "confidence": "EXTRACTED",
+      "sourceFile": "milestones/M002/M002-LEARNINGS.md"
+    },
+    {
+      "id": "decision:M002:36",
+      "label": "**Decision:** Use python-slugify library for safe email local-part generation from Russian company names",
+      "type": "decision",
+      "confidence": "EXTRACTED",
+      "sourceFile": "milestones/M002/M002-LEARNINGS.md"
+    },
+    {
+      "id": "decision:M002:37",
+      "label": "**Choice:** python-slugify vs manual string manipulation",
+      "type": "decision",
+      "confidence": "EXTRACTED",
+      "sourceFile": "milestones/M002/M002-LEARNINGS.md"
+    },
+    {
+      "id": "decision:M002:38",
+      "label": "**Rationale:** Handles Russian transliteration, special characters, and edge cases (e.g., \"ООО Вектор\" → \"ooo-vektor\"). Safer than manual string manipulation.",
+      "type": "decision",
+      "confidence": "EXTRACTED",
+      "sourceFile": "milestones/M002/M002-LEARNINGS.md"
+    },
+    {
+      "id": "decision:M002:39",
+      "label": "**Revisable:** Yes",
+      "type": "decision",
+      "confidence": "EXTRACTED",
+      "sourceFile": "milestones/M002/M002-LEARNINGS.md"
+    },
+    {
+      "id": "decision:M002:40",
+      "label": "**Source:** .gsd.migrating/DECISIONS.md",
+      "type": "decision",
+      "confidence": "EXTRACTED",
+      "sourceFile": "milestones/M002/M002-LEARNINGS.md"
+    },
+    {
+      "id": "decision:M002:41",
+      "label": "**Decision:** Return False instead of raising exceptions when Telegram API calls fail",
+      "type": "decision",
+      "confidence": "EXTRACTED",
+      "sourceFile": "milestones/M002/M002-LEARNINGS.md"
+    },
+    {
+      "id": "decision:M002:42",
+      "label": "**Choice:** Return bool vs raise exception",
+      "type": "decision",
+      "confidence": "EXTRACTED",
+      "sourceFile": "milestones/M002/M002-LEARNINGS.md"
+    },
+    {
+      "id": "decision:M002:43",
+      "label": "**Rationale:** Celery tasks should continue processing even if notifications fail. Failed notifications are non-critical vs data persistence.",
+      "type": "decision",
+      "confidence": "EXTRACTED",
+      "sourceFile": "milestones/M002/M002-LEARNINGS.md"
+    },
+    {
+      "id": "decision:M002:44",
+      "label": "**Revisable:** Yes",
+      "type": "decision",
+      "confidence": "EXTRACTED",
+      "sourceFile": "milestones/M002/M002-LEARNINGS.md"
+    },
+    {
+      "id": "decision:M002:45",
+      "label": "**Source:** .gsd.migrating/DECISIONS.md",
+      "type": "decision",
+      "confidence": "EXTRACTED",
+      "sourceFile": "milestones/M002/M002-LEARNINGS.md"
+    },
+    {
+      "id": "lesson:M002:1",
+      "label": "**What Happened:** OpenAI SDK 1.54+ changed exception type from JSONDecodeError to APIResponseValidationError",
+      "type": "lesson",
+      "confidence": "EXTRACTED",
+      "sourceFile": "milestones/M002/M002-LEARNINGS.md"
+    },
+    {
+      "id": "lesson:M002:2",
+      "label": "**Root Cause:** SDK refactoring in newer versions",
+      "type": "lesson",
+      "confidence": "EXTRACTED",
+      "sourceFile": "milestones/M002/M002-LEARNINGS.md"
+    },
+    {
+      "id": "lesson:M002:3",
+      "label": "**Fix:** Updated error handling to catch APIResponseValidationError instead of JSONDecodeError",
+      "type": "lesson",
+      "confidence": "EXTRACTED",
+      "sourceFile": "milestones/M002/M002-LEARNINGS.md"
+    },
+    {
+      "id": "lesson:M002:4",
+      "label": "**Source:** .gsd.milestones/M002/slices/S03/S03-SUMMARY.md",
+      "type": "lesson",
+      "confidence": "EXTRACTED",
+      "sourceFile": "milestones/M002/M002-LEARNINGS.md"
+    },
+    {
+      "id": "lesson:M002:5",
+      "label": "**What Happened:** Initial tests showed CSV confused GPT-4o's table structure recognition",
+      "type": "lesson",
+      "confidence": "EXTRACTED",
+      "sourceFile": "milestones/M002/M002-LEARNINGS.md"
+    },
+    {
+      "id": "lesson:M002:6",
+      "label": "**Root Cause:** CSV loses column alignment and visual structure cues",
+      "type": "lesson",
+      "confidence": "EXTRACTED",
+      "sourceFile": "milestones/M002/M002-LEARNINGS.md"
+    },
+    {
+      "id": "lesson:M002:7",
+      "label": "**Fix:** Convert pandas DataFrame to markdown table format for AI input",
+      "type": "lesson",
+      "confidence": "EXTRACTED",
+      "sourceFile": "milestones/M002/M002-LEARNINGS.md"
+    },
+    {
+      "id": "lesson:M002:8",
+      "label": "**Source:** .gsd.milestones/M002/slices/S03/S03-SUMMARY.md",
+      "type": "lesson",
+      "confidence": "EXTRACTED",
+      "sourceFile": "milestones/M002/M002-LEARNINGS.md"
+    },
+    {
+      "id": "lesson:M002:9",
+      "label": "**What Happened:** \"NaN\" markers appeared in AI prompts, confusing GPT-4o",
+      "type": "lesson",
+      "confidence": "EXTRACTED",
+      "sourceFile": "milestones/M002/M002-LEARNINGS.md"
+    },
+    {
+      "id": "lesson:M002:10",
+      "label": "**Root Cause:** pandas fillna() not called before markdown conversion",
+      "type": "lesson",
+      "confidence": "EXTRACTED",
+      "sourceFile": "milestones/M002/M002-LEARNINGS.md"
+    },
+    {
+      "id": "lesson:M002:11",
+      "label": "**Fix:** Use fillna('') to replace NaN with empty strings before markdown conversion",
+      "type": "lesson",
+      "confidence": "EXTRACTED",
+      "sourceFile": "milestones/M002/M002-LEARNINGS.md"
+    },
+    {
+      "id": "lesson:M002:12",
+      "label": "**Source:** .gsd.milestones/M002/slices/S03/S03-SUMMARY.md",
+      "type": "lesson",
+      "confidence": "EXTRACTED",
+      "sourceFile": "milestones/M002/M002-LEARNINGS.md"
+    },
+    {
+      "id": "lesson:M002:13",
+      "label": "**What Happened:** OpenAI API rate limits caused transient failures",
+      "type": "lesson",
+      "confidence": "EXTRACTED",
+      "sourceFile": "milestones/M002/M002-LEARNINGS.md"
+    },
+    {
+      "id": "lesson:M002:14",
+      "label": "**Root Cause:** API rate limits on rapid requests",
+      "type": "lesson",
+      "confidence": "EXTRACTED",
+      "sourceFile": "milestones/M002/M002-LEARNINGS.md"
+    },
+    {
+      "id": "lesson:M002:15",
+      "label": "**Fix:** Implement exponential backoff with countdown=2**retry_count (1s, 2s, 4s) and max_retries=2",
+      "type": "lesson",
+      "confidence": "EXTRACTED",
+      "sourceFile": "milestones/M002/M002-LEARNINGS.md"
+    },
+    {
+      "id": "lesson:M002:16",
+      "label": "**Source:** .gsd.milestones/M002/slices/S03/S03-SUMMARY.md",
+      "type": "lesson",
+      "confidence": "EXTRACTED",
+      "sourceFile": "milestones/M002/M002-LEARNINGS.md"
+    },
+    {
+      "id": "lesson:M002:17",
+      "label": "**What Happened:** Empty supplier names caused database errors",
+      "type": "lesson",
+      "confidence": "EXTRACTED",
+      "sourceFile": "milestones/M002/M002-LEARNINGS.md"
+    },
+    {
+      "id": "lesson:M002:18",
+      "label": "**Root Cause:** Missing validation for empty string inputs",
+      "type": "lesson",
+      "confidence": "EXTRACTED",
+      "sourceFile": "milestones/M002/M002-LEARNINGS.md"
+    },
+    {
+      "id": "lesson:M002:19",
+      "label": "**Fix:** Return None instead of attempting database operation for empty names",
+      "type": "lesson",
+      "confidence": "EXTRACTED",
+      "sourceFile": "milestones/M002/M002-LEARNINGS.md"
+    },
+    {
+      "id": "lesson:M002:20",
+      "label": "**Source:** .gsd.milestones/M002/slices/S04/S04-SUMMARY.md",
+      "type": "lesson",
+      "confidence": "EXTRACTED",
+      "sourceFile": "milestones/M002/M002-LEARNINGS.md"
+    },
+    {
+      "id": "lesson:M002:21",
+      "label": "**What Happened:** Import errors occurred when task modules loaded at startup",
+      "type": "lesson",
+      "confidence": "EXTRACTED",
+      "sourceFile": "milestones/M002/M002-LEARNINGS.md"
+    },
+    {
+      "id": "lesson:M002:22",
+      "label": "**Root Cause:** Optional dependencies (telegram) not available in all environments",
+      "type": "lesson",
+      "confidence": "EXTRACTED",
+      "sourceFile": "milestones/M002/M002-LEARNINGS.md"
+    },
+    {
+      "id": "lesson:M002:23",
+      "label": "**Fix:** Use deferred imports inside try block within Celery task for graceful degradation",
+      "type": "lesson",
+      "confidence": "EXTRACTED",
+      "sourceFile": "milestones/M002/M002-LEARNINGS.md"
+    },
+    {
+      "id": "lesson:M002:24",
+      "label": "**Source:** .gsd.milestones/M002/slices/S04/S04-SUMMARY.md",
+      "type": "lesson",
+      "confidence": "EXTRACTED",
+      "sourceFile": "milestones/M002/M002-LEARNINGS.md"
+    },
+    {
+      "id": "lesson:M002:25",
+      "label": "**What Happened:** Health check could block indefinitely on unresponsive workers",
+      "type": "lesson",
+      "confidence": "EXTRACTED",
+      "sourceFile": "milestones/M002/M002-LEARNINGS.md"
+    },
+    {
+      "id": "lesson:M002:26",
+      "label": "**Root Cause:** inspect().ping() has no default timeout",
+      "type": "lesson",
+      "confidence": "EXTRACTED",
+      "sourceFile": "milestones/M002/M002-LEARNINGS.md"
+    },
+    {
+      "id": "lesson:M002:27",
+      "label": "**Fix:** Use 2s timeout for inspect().ping() to prevent blocking",
+      "type": "lesson",
+      "confidence": "EXTRACTED",
+      "sourceFile": "milestones/M002/M002-LEARNINGS.md"
+    },
+    {
+      "id": "lesson:M002:28",
+      "label": "**Source:** .gsd.milestones/M002/slices/S01/S01-SUMMARY.md",
+      "type": "lesson",
+      "confidence": "EXTRACTED",
+      "sourceFile": "milestones/M002/M002-LEARNINGS.md"
+    },
+    {
+      "id": "lesson:M002:29",
+      "label": "**What Happened:** Concurrent uploads with same filename could cause collisions",
+      "type": "lesson",
+      "confidence": "EXTRACTED",
+      "sourceFile": "milestones/M002/M002-LEARNINGS.md"
+    },
+    {
+      "id": "lesson:M002:30",
+      "label": "**Root Cause:** No collision handling in initial implementation",
+      "type": "lesson",
+      "confidence": "EXTRACTED",
+      "sourceFile": "milestones/M002/M002-LEARNINGS.md"
+    },
+    {
+      "id": "lesson:M002:31",
+      "label": "**Fix:** Append Unix timestamp suffix to duplicate filenames",
+      "type": "lesson",
+      "confidence": "EXTRACTED",
+      "sourceFile": "milestones/M002/M002-LEARNINGS.md"
+    },
+    {
+      "id": "lesson:M002:32",
+      "label": "**Source:** .gsd.milestones/M002/slices/S02/S02-SUMMARY.md",
+      "type": "lesson",
+      "confidence": "EXTRACTED",
+      "sourceFile": "milestones/M002/M002-LEARNINGS.md"
+    },
+    {
+      "id": "pattern:M002:1",
+      "label": "**Description:** Docker services use healthcheck dependency conditions; each service has explicit healthcheck command",
+      "type": "pattern",
+      "confidence": "EXTRACTED",
+      "sourceFile": "milestones/M002/M002-LEARNINGS.md"
+    },
+    {
+      "id": "pattern:M002:2",
+      "label": "**Where:** docker-compose.yml service definitions",
+      "type": "pattern",
+      "confidence": "EXTRACTED",
+      "sourceFile": "milestones/M002/M002-LEARNINGS.md"
+    },
+    {
+      "id": "pattern:M002:3",
+      "label": "**Source:** .gsd.milestones/M002/slices/S01/S01-SUMMARY.md",
+      "type": "pattern",
+      "confidence": "EXTRACTED",
+      "sourceFile": "milestones/M002/M002-LEARNINGS.md"
+    },
+    {
+      "id": "pattern:M002:4",
+      "label": "**Description:** Configure DLQ with x-dead-letter-exchange binding and separate queue for failed tasks",
+      "type": "pattern",
+      "confidence": "EXTRACTED",
+      "sourceFile": "milestones/M002/M002-LEARNINGS.md"
+    },
+    {
+      "id": "pattern:M002:5",
+      "label": "**Where:** backend/celery_app.py",
+      "type": "pattern",
+      "confidence": "EXTRACTED",
+      "sourceFile": "milestones/M002/M002-LEARNINGS.md"
+    },
+    {
+      "id": "pattern:M002:6",
+      "label": "**Source:** .gsd.milestones/M002/slices/S01/S01-SUMMARY.md",
+      "type": "pattern",
+      "confidence": "EXTRACTED",
+      "sourceFile": "milestones/M002/M002-LEARNINGS.md"
+    },
+    {
+      "id": "pattern:M002:7",
+      "label": "**Description:** Register tasks via @app.task decorator with module import; tasks auto-register on worker startup",
+      "type": "pattern",
+      "confidence": "EXTRACTED",
+      "sourceFile": "milestones/M002/M002-LEARNINGS.md"
+    },
+    {
+      "id": "pattern:M002:8",
+      "label": "**Where:** backend/tasks.py",
+      "type": "pattern",
+      "confidence": "EXTRACTED",
+      "sourceFile": "milestones/M002/M002-LEARNINGS.md"
+    },
+    {
+      "id": "pattern:M002:9",
+      "label": "**Source:** .gsd.milestones/M002/slices/S01/S01-SUMMARY.md",
+      "type": "pattern",
+      "confidence": "EXTRACTED",
+      "sourceFile": "milestones/M002/M002-LEARNINGS.md"
+    },
+    {
+      "id": "pattern:M002:10",
+      "label": "**Description:** Return 503 HTTP status when ANY service is degraded; load balancers stop routing to unhealthy instances",
+      "type": "pattern",
+      "confidence": "EXTRACTED",
+      "sourceFile": "milestones/M002/M002-LEARNINGS.md"
+    },
+    {
+      "id": "pattern:M002:11",
+      "label": "**Where:** backend/routers/health.py",
+      "type": "pattern",
+      "confidence": "EXTRACTED",
+      "sourceFile": "milestones/M002/M002-LEARNINGS.md"
+    },
+    {
+      "id": "pattern:M002:12",
+      "label": "**Source:** .gsd.milestones/M002/slices/S01/S01-SUMMARY.md",
+      "type": "pattern",
+      "confidence": "EXTRACTED",
+      "sourceFile": "milestones/M002/M002-LEARNINGS.md"
+    },
+    {
+      "id": "pattern:M002:13",
+      "label": "**Description:** check_access() method called before any handler logic; load allowed IDs from environment",
+      "type": "pattern",
+      "confidence": "EXTRACTED",
+      "sourceFile": "milestones/M002/M002-LEARNINGS.md"
+    },
+    {
+      "id": "pattern:M002:14",
+      "label": "**Where:** backend/handlers/auth.py",
+      "type": "pattern",
+      "confidence": "EXTRACTED",
+      "sourceFile": "milestones/M002/M002-LEARNINGS.md"
+    },
+    {
+      "id": "pattern:M002:15",
+      "label": "**Source:** .gsd.milestones/M002/slices/S02/S02-SUMMARY.md",
+      "type": "pattern",
+      "confidence": "EXTRACTED",
+      "sourceFile": "milestones/M002/M002-LEARNINGS.md"
+    },
+    {
+      "id": "pattern:M002:16",
+      "label": "**Description:** Validate extension, size, then download, then publish task",
+      "type": "pattern",
+      "confidence": "EXTRACTED",
+      "sourceFile": "milestones/M002/M002-LEARNINGS.md"
+    },
+    {
+      "id": "pattern:M002:17",
+      "label": "**Where:** backend/handlers/documents.py",
+      "type": "pattern",
+      "confidence": "EXTRACTED",
+      "sourceFile": "milestones/M002/M002-LEARNINGS.md"
+    },
+    {
+      "id": "pattern:M002:18",
+      "label": "**Source:** .gsd.milestones/M002/slices/S02/S02-SUMMARY.md",
+      "type": "pattern",
+      "confidence": "EXTRACTED",
+      "sourceFile": "milestones/M002/M002-LEARNINGS.md"
+    },
+    {
+      "id": "pattern:M002:19",
+      "label": "**Description:** Use bind=True for task functions to access self.request for retry logic",
+      "type": "pattern",
+      "confidence": "EXTRACTED",
+      "sourceFile": "milestones/M002/M002-LEARNINGS.md"
+    },
+    {
+      "id": "pattern:M002:20",
+      "label": "**Where:** backend/tasks.py parse_excel_bom task",
+      "type": "pattern",
+      "confidence": "EXTRACTED",
+      "sourceFile": "milestones/M002/M002-LEARNINGS.md"
+    },
+    {
+      "id": "pattern:M002:21",
+      "label": "**Source:** .gsd.milestones/M002/slices/S03/S03-SUMMARY.md",
+      "type": "pattern",
+      "confidence": "EXTRACTED",
+      "sourceFile": "milestones/M002/M002-LEARNINGS.md"
+    },
+    {
+      "id": "pattern:M002:22",
+      "label": "**Description:** Use response_format=json_schema for 100% valid JSON output",
+      "type": "pattern",
+      "confidence": "EXTRACTED",
+      "sourceFile": "milestones/M002/M002-LEARNINGS.md"
+    },
+    {
+      "id": "pattern:M002:23",
+      "label": "**Where:** backend/ai_agent.py extract_bom_structure",
+      "type": "pattern",
+      "confidence": "EXTRACTED",
+      "sourceFile": "milestones/M002/M002-LEARNINGS.md"
+    },
+    {
+      "id": "pattern:M002:24",
+      "label": "**Source:** .gsd.milestones/M002/slices/S03/S03-SUMMARY.md",
+      "type": "pattern",
+      "confidence": "EXTRACTED",
+      "sourceFile": "milestones/M002/M002-LEARNINGS.md"
+    },
+    {
+      "id": "pattern:M002:25",
+      "label": "**Description:** Log at each step: row counts, markdown char count, AI extraction start/finish",
+      "type": "pattern",
+      "confidence": "EXTRACTED",
+      "sourceFile": "milestones/M002/M002-LEARNINGS.md"
+    },
+    {
+      "id": "pattern:M002:26",
+      "label": "**Where:** backend/tasks.py parse_excel_bom",
+      "type": "pattern",
+      "confidence": "EXTRACTED",
+      "sourceFile": "milestones/M002/M002-LEARNINGS.md"
+    },
+    {
+      "id": "pattern:M002:27",
+      "label": "**Source:** .gsd.milestones/M002/slices/S03/S03-SUMMARY.md",
+      "type": "pattern",
+      "confidence": "EXTRACTED",
+      "sourceFile": "milestones/M002/M002-LEARNINGS.md"
+    },
+    {
+      "id": "pattern:M002:28",
+      "label": "**Description:** Use python-slugify for safe identifier generation from Unicode input (Russian names)",
+      "type": "pattern",
+      "confidence": "EXTRACTED",
+      "sourceFile": "milestones/M002/M002-LEARNINGS.md"
+    },
+    {
+      "id": "pattern:M002:29",
+      "label": "**Where:** backend/supplier_resolver.py",
+      "type": "pattern",
+      "confidence": "EXTRACTED",
+      "sourceFile": "milestones/M002/M002-LEARNINGS.md"
+    },
+    {
+      "id": "pattern:M002:30",
+      "label": "**Source:** .gsd.milestones/M002/slices/S04/S04-SUMMARY.md",
+      "type": "pattern",
+      "confidence": "EXTRACTED",
+      "sourceFile": "milestones/M002/M002-LEARNINGS.md"
+    },
+    {
+      "id": "pattern:M002:31",
+      "label": "**Description:** Return None for non-critical validation failures instead of raising exceptions",
+      "type": "pattern",
+      "confidence": "EXTRACTED",
+      "sourceFile": "milestones/M002/M002-LEARNINGS.md"
+    },
+    {
+      "id": "pattern:M002:32",
+      "label": "**Where:** backend/supplier_resolver.py find_or_create_supplier",
+      "type": "pattern",
+      "confidence": "EXTRACTED",
+      "sourceFile": "milestones/M002/M002-LEARNINGS.md"
+    },
+    {
+      "id": "pattern:M002:33",
+      "label": "**Source:** .gsd.milestones/M002/slices/S04/S04-SUMMARY.md",
+      "type": "pattern",
+      "confidence": "EXTRACTED",
+      "sourceFile": "milestones/M002/M002-LEARNINGS.md"
+    },
+    {
+      "id": "pattern:M002:34",
+      "label": "**Description:** Import optional dependencies inside try block within Celery task for graceful degradation",
+      "type": "pattern",
+      "confidence": "EXTRACTED",
+      "sourceFile": "milestones/M002/M002-LEARNINGS.md"
+    },
+    {
+      "id": "pattern:M002:35",
+      "label": "**Where:** backend/tasks.py process_bom_to_project",
+      "type": "pattern",
+      "confidence": "EXTRACTED",
+      "sourceFile": "milestones/M002/M002-LEARNINGS.md"
+    },
+    {
+      "id": "pattern:M002:36",
+      "label": "**Source:** .gsd.milestones/M002/slices/S04/S04-SUMMARY.md",
+      "type": "pattern",
+      "confidence": "EXTRACTED",
+      "sourceFile": "milestones/M002/M002-LEARNINGS.md"
+    },
+    {
+      "id": "pattern:M002:37",
+      "label": "**Description:** Use .apply().get() for blocking execution of chained tasks within orchestration task",
+      "type": "pattern",
+      "confidence": "EXTRACTED",
+      "sourceFile": "milestones/M002/M002-LEARNINGS.md"
+    },
+    {
+      "id": "pattern:M002:38",
+      "label": "**Where:** backend/tasks.py process_bom_to_project calling parse_excel_bom",
+      "type": "pattern",
+      "confidence": "EXTRACTED",
+      "sourceFile": "milestones/M002/M002-LEARNINGS.md"
+    },
+    {
+      "id": "pattern:M002:39",
+      "label": "**Source:** .gsd.milestones/M002/slices/S04/S04-SUMMARY.md",
+      "type": "pattern",
+      "confidence": "EXTRACTED",
+      "sourceFile": "milestones/M002/M002-LEARNINGS.md"
+    },
+    {
+      "id": "surprise:M002:1",
+      "label": "**Discovery:** Webhook not required initially; long polling works in Docker without additional infrastructure",
+      "type": "lesson",
+      "confidence": "EXTRACTED",
+      "sourceFile": "milestones/M002/M002-LEARNINGS.md"
+    },
+    {
+      "id": "surprise:M002:2",
+      "label": "**Impact:** Simplified deployment; webhook can be added later for scalability",
+      "type": "lesson",
+      "confidence": "EXTRACTED",
+      "sourceFile": "milestones/M002/M002-LEARNINGS.md"
+    },
+    {
+      "id": "surprise:M002:3",
+      "label": "**Source:** .gsd.migrating/DECISIONS.md (D010)",
+      "type": "lesson",
+      "confidence": "EXTRACTED",
+      "sourceFile": "milestones/M002/M002-LEARNINGS.md"
+    },
+    {
+      "id": "surprise:M002:4",
+      "label": "**Discovery:** Initial assumption that BOM files might be larger was incorrect",
+      "type": "lesson",
+      "confidence": "EXTRACTED",
+      "sourceFile": "milestones/M002/M002-LEARNINGS.md"
+    },
+    {
+      "id": "surprise:M002:5",
+      "label": "**Impact:** 20MB limit prevents abuse while accommodating substantial real-world BOM files",
+      "type": "lesson",
+      "confidence": "EXTRACTED",
+      "sourceFile": "milestones/M002/M002-LEARNINGS.md"
+    },
+    {
+      "id": "surprise:M002:6",
+      "label": "**Source:** .gsd.milestones/M002/slices/S02/S02-SUMMARY.md",
+      "type": "lesson",
+      "confidence": "EXTRACTED",
+      "sourceFile": "milestones/M002/M002-LEARNINGS.md"
     }
   ],
   "edges": [
@@ -551,7 +1474,799 @@
       "to": "task:M002:S04:T06",
       "type": "contains",
       "confidence": "EXTRACTED"
+    },
+    {
+      "from": "milestone:M003",
+      "to": "slice:M003:S01",
+      "type": "contains",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "from": "slice:M003:S01",
+      "to": "task:M003:S01:T01",
+      "type": "contains",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "from": "slice:M003:S01",
+      "to": "task:M003:S01:T02",
+      "type": "contains",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "from": "slice:M003:S01",
+      "to": "task:M003:S01:T03",
+      "type": "contains",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "from": "slice:M003:S01",
+      "to": "task:M003:S01:T04",
+      "type": "contains",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "from": "milestone:M003",
+      "to": "slice:M003:S02",
+      "type": "contains",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "from": "slice:M003:S02",
+      "to": "task:M003:S02:T01",
+      "type": "contains",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "from": "slice:M003:S02",
+      "to": "task:M003:S02:T02",
+      "type": "contains",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "from": "slice:M003:S02",
+      "to": "task:M003:S02:T03",
+      "type": "contains",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "from": "slice:M003:S02",
+      "to": "task:M003:S02:T04",
+      "type": "contains",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "from": "milestone:M002",
+      "to": "decision:M002:1",
+      "type": "relates_to",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "from": "milestone:M002",
+      "to": "decision:M002:2",
+      "type": "relates_to",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "from": "milestone:M002",
+      "to": "decision:M002:3",
+      "type": "relates_to",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "from": "milestone:M002",
+      "to": "decision:M002:4",
+      "type": "relates_to",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "from": "milestone:M002",
+      "to": "decision:M002:5",
+      "type": "relates_to",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "from": "milestone:M002",
+      "to": "decision:M002:6",
+      "type": "relates_to",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "from": "milestone:M002",
+      "to": "decision:M002:7",
+      "type": "relates_to",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "from": "milestone:M002",
+      "to": "decision:M002:8",
+      "type": "relates_to",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "from": "milestone:M002",
+      "to": "decision:M002:9",
+      "type": "relates_to",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "from": "milestone:M002",
+      "to": "decision:M002:10",
+      "type": "relates_to",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "from": "milestone:M002",
+      "to": "decision:M002:11",
+      "type": "relates_to",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "from": "milestone:M002",
+      "to": "decision:M002:12",
+      "type": "relates_to",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "from": "milestone:M002",
+      "to": "decision:M002:13",
+      "type": "relates_to",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "from": "milestone:M002",
+      "to": "decision:M002:14",
+      "type": "relates_to",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "from": "milestone:M002",
+      "to": "decision:M002:15",
+      "type": "relates_to",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "from": "milestone:M002",
+      "to": "decision:M002:16",
+      "type": "relates_to",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "from": "milestone:M002",
+      "to": "decision:M002:17",
+      "type": "relates_to",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "from": "milestone:M002",
+      "to": "decision:M002:18",
+      "type": "relates_to",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "from": "milestone:M002",
+      "to": "decision:M002:19",
+      "type": "relates_to",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "from": "milestone:M002",
+      "to": "decision:M002:20",
+      "type": "relates_to",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "from": "milestone:M002",
+      "to": "decision:M002:21",
+      "type": "relates_to",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "from": "milestone:M002",
+      "to": "decision:M002:22",
+      "type": "relates_to",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "from": "milestone:M002",
+      "to": "decision:M002:23",
+      "type": "relates_to",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "from": "milestone:M002",
+      "to": "decision:M002:24",
+      "type": "relates_to",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "from": "milestone:M002",
+      "to": "decision:M002:25",
+      "type": "relates_to",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "from": "milestone:M002",
+      "to": "decision:M002:26",
+      "type": "relates_to",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "from": "milestone:M002",
+      "to": "decision:M002:27",
+      "type": "relates_to",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "from": "milestone:M002",
+      "to": "decision:M002:28",
+      "type": "relates_to",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "from": "milestone:M002",
+      "to": "decision:M002:29",
+      "type": "relates_to",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "from": "milestone:M002",
+      "to": "decision:M002:30",
+      "type": "relates_to",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "from": "milestone:M002",
+      "to": "decision:M002:31",
+      "type": "relates_to",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "from": "milestone:M002",
+      "to": "decision:M002:32",
+      "type": "relates_to",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "from": "milestone:M002",
+      "to": "decision:M002:33",
+      "type": "relates_to",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "from": "milestone:M002",
+      "to": "decision:M002:34",
+      "type": "relates_to",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "from": "milestone:M002",
+      "to": "decision:M002:35",
+      "type": "relates_to",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "from": "milestone:M002",
+      "to": "decision:M002:36",
+      "type": "relates_to",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "from": "milestone:M002",
+      "to": "decision:M002:37",
+      "type": "relates_to",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "from": "milestone:M002",
+      "to": "decision:M002:38",
+      "type": "relates_to",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "from": "milestone:M002",
+      "to": "decision:M002:39",
+      "type": "relates_to",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "from": "milestone:M002",
+      "to": "decision:M002:40",
+      "type": "relates_to",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "from": "milestone:M002",
+      "to": "decision:M002:41",
+      "type": "relates_to",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "from": "milestone:M002",
+      "to": "decision:M002:42",
+      "type": "relates_to",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "from": "milestone:M002",
+      "to": "decision:M002:43",
+      "type": "relates_to",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "from": "milestone:M002",
+      "to": "decision:M002:44",
+      "type": "relates_to",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "from": "milestone:M002",
+      "to": "decision:M002:45",
+      "type": "relates_to",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "from": "milestone:M002",
+      "to": "lesson:M002:1",
+      "type": "relates_to",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "from": "milestone:M002",
+      "to": "lesson:M002:2",
+      "type": "relates_to",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "from": "milestone:M002",
+      "to": "lesson:M002:3",
+      "type": "relates_to",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "from": "milestone:M002",
+      "to": "lesson:M002:4",
+      "type": "relates_to",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "from": "milestone:M002",
+      "to": "lesson:M002:5",
+      "type": "relates_to",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "from": "milestone:M002",
+      "to": "lesson:M002:6",
+      "type": "relates_to",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "from": "milestone:M002",
+      "to": "lesson:M002:7",
+      "type": "relates_to",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "from": "milestone:M002",
+      "to": "lesson:M002:8",
+      "type": "relates_to",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "from": "milestone:M002",
+      "to": "lesson:M002:9",
+      "type": "relates_to",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "from": "milestone:M002",
+      "to": "lesson:M002:10",
+      "type": "relates_to",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "from": "milestone:M002",
+      "to": "lesson:M002:11",
+      "type": "relates_to",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "from": "milestone:M002",
+      "to": "lesson:M002:12",
+      "type": "relates_to",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "from": "milestone:M002",
+      "to": "lesson:M002:13",
+      "type": "relates_to",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "from": "milestone:M002",
+      "to": "lesson:M002:14",
+      "type": "relates_to",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "from": "milestone:M002",
+      "to": "lesson:M002:15",
+      "type": "relates_to",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "from": "milestone:M002",
+      "to": "lesson:M002:16",
+      "type": "relates_to",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "from": "milestone:M002",
+      "to": "lesson:M002:17",
+      "type": "relates_to",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "from": "milestone:M002",
+      "to": "lesson:M002:18",
+      "type": "relates_to",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "from": "milestone:M002",
+      "to": "lesson:M002:19",
+      "type": "relates_to",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "from": "milestone:M002",
+      "to": "lesson:M002:20",
+      "type": "relates_to",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "from": "milestone:M002",
+      "to": "lesson:M002:21",
+      "type": "relates_to",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "from": "milestone:M002",
+      "to": "lesson:M002:22",
+      "type": "relates_to",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "from": "milestone:M002",
+      "to": "lesson:M002:23",
+      "type": "relates_to",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "from": "milestone:M002",
+      "to": "lesson:M002:24",
+      "type": "relates_to",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "from": "milestone:M002",
+      "to": "lesson:M002:25",
+      "type": "relates_to",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "from": "milestone:M002",
+      "to": "lesson:M002:26",
+      "type": "relates_to",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "from": "milestone:M002",
+      "to": "lesson:M002:27",
+      "type": "relates_to",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "from": "milestone:M002",
+      "to": "lesson:M002:28",
+      "type": "relates_to",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "from": "milestone:M002",
+      "to": "lesson:M002:29",
+      "type": "relates_to",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "from": "milestone:M002",
+      "to": "lesson:M002:30",
+      "type": "relates_to",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "from": "milestone:M002",
+      "to": "lesson:M002:31",
+      "type": "relates_to",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "from": "milestone:M002",
+      "to": "lesson:M002:32",
+      "type": "relates_to",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "from": "milestone:M002",
+      "to": "pattern:M002:1",
+      "type": "relates_to",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "from": "milestone:M002",
+      "to": "pattern:M002:2",
+      "type": "relates_to",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "from": "milestone:M002",
+      "to": "pattern:M002:3",
+      "type": "relates_to",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "from": "milestone:M002",
+      "to": "pattern:M002:4",
+      "type": "relates_to",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "from": "milestone:M002",
+      "to": "pattern:M002:5",
+      "type": "relates_to",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "from": "milestone:M002",
+      "to": "pattern:M002:6",
+      "type": "relates_to",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "from": "milestone:M002",
+      "to": "pattern:M002:7",
+      "type": "relates_to",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "from": "milestone:M002",
+      "to": "pattern:M002:8",
+      "type": "relates_to",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "from": "milestone:M002",
+      "to": "pattern:M002:9",
+      "type": "relates_to",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "from": "milestone:M002",
+      "to": "pattern:M002:10",
+      "type": "relates_to",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "from": "milestone:M002",
+      "to": "pattern:M002:11",
+      "type": "relates_to",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "from": "milestone:M002",
+      "to": "pattern:M002:12",
+      "type": "relates_to",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "from": "milestone:M002",
+      "to": "pattern:M002:13",
+      "type": "relates_to",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "from": "milestone:M002",
+      "to": "pattern:M002:14",
+      "type": "relates_to",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "from": "milestone:M002",
+      "to": "pattern:M002:15",
+      "type": "relates_to",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "from": "milestone:M002",
+      "to": "pattern:M002:16",
+      "type": "relates_to",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "from": "milestone:M002",
+      "to": "pattern:M002:17",
+      "type": "relates_to",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "from": "milestone:M002",
+      "to": "pattern:M002:18",
+      "type": "relates_to",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "from": "milestone:M002",
+      "to": "pattern:M002:19",
+      "type": "relates_to",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "from": "milestone:M002",
+      "to": "pattern:M002:20",
+      "type": "relates_to",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "from": "milestone:M002",
+      "to": "pattern:M002:21",
+      "type": "relates_to",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "from": "milestone:M002",
+      "to": "pattern:M002:22",
+      "type": "relates_to",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "from": "milestone:M002",
+      "to": "pattern:M002:23",
+      "type": "relates_to",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "from": "milestone:M002",
+      "to": "pattern:M002:24",
+      "type": "relates_to",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "from": "milestone:M002",
+      "to": "pattern:M002:25",
+      "type": "relates_to",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "from": "milestone:M002",
+      "to": "pattern:M002:26",
+      "type": "relates_to",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "from": "milestone:M002",
+      "to": "pattern:M002:27",
+      "type": "relates_to",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "from": "milestone:M002",
+      "to": "pattern:M002:28",
+      "type": "relates_to",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "from": "milestone:M002",
+      "to": "pattern:M002:29",
+      "type": "relates_to",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "from": "milestone:M002",
+      "to": "pattern:M002:30",
+      "type": "relates_to",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "from": "milestone:M002",
+      "to": "pattern:M002:31",
+      "type": "relates_to",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "from": "milestone:M002",
+      "to": "pattern:M002:32",
+      "type": "relates_to",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "from": "milestone:M002",
+      "to": "pattern:M002:33",
+      "type": "relates_to",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "from": "milestone:M002",
+      "to": "pattern:M002:34",
+      "type": "relates_to",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "from": "milestone:M002",
+      "to": "pattern:M002:35",
+      "type": "relates_to",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "from": "milestone:M002",
+      "to": "pattern:M002:36",
+      "type": "relates_to",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "from": "milestone:M002",
+      "to": "pattern:M002:37",
+      "type": "relates_to",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "from": "milestone:M002",
+      "to": "pattern:M002:38",
+      "type": "relates_to",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "from": "milestone:M002",
+      "to": "pattern:M002:39",
+      "type": "relates_to",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "from": "milestone:M002",
+      "to": "surprise:M002:1",
+      "type": "relates_to",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "from": "milestone:M002",
+      "to": "surprise:M002:2",
+      "type": "relates_to",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "from": "milestone:M002",
+      "to": "surprise:M002:3",
+      "type": "relates_to",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "from": "milestone:M002",
+      "to": "surprise:M002:4",
+      "type": "relates_to",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "from": "milestone:M002",
+      "to": "surprise:M002:5",
+      "type": "relates_to",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "from": "milestone:M002",
+      "to": "surprise:M002:6",
+      "type": "relates_to",
+      "confidence": "EXTRACTED"
     }
   ],
-  "builtAt": "2026-06-01T11:38:36.600Z"
+  "builtAt": "2026-06-01T13:57:41.776Z"
 }

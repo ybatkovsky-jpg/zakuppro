@@ -1,0 +1,18 @@
+{
+  "id": "025811b0-f989-4ebc-98c6-f6e8bd88ee59",
+  "runtime": "bash",
+  "purpose": "Run LLM provider unit tests",
+  "script_chars": 112,
+  "started_at": "2026-06-01T13:36:56.531Z",
+  "finished_at": "2026-06-01T13:36:56.688Z",
+  "exit_code": 1,
+  "signal": null,
+  "timed_out": false,
+  "duration_ms": 157,
+  "stdout_bytes": 544,
+  "stderr_bytes": 0,
+  "stdout_truncated": false,
+  "stderr_truncated": false,
+  "stdout_path": "D:\\CLAUDE\\Project\\zakuppro\\zakuppro\\.gsd\\exec\\025811b0-f989-4ebc-98c6-f6e8bd88ee59.stdout",
+  "stderr_path": "D:\\CLAUDE\\Project\\zakuppro\\zakuppro\\.gsd\\exec\\025811b0-f989-4ebc-98c6-f6e8bd88ee59.stderr"
+}

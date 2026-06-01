@@ -1,0 +1,18 @@
+{
+  "id": "10ca5b92-aff9-47fc-a681-d8e22853a88d",
+  "runtime": "bash",
+  "purpose": "Verify models pass with new Invoice extensions",
+  "script_chars": 106,
+  "started_at": "2026-06-01T13:36:57.032Z",
+  "finished_at": "2026-06-01T13:36:57.194Z",
+  "exit_code": 1,
+  "signal": null,
+  "timed_out": false,
+  "duration_ms": 162,
+  "stdout_bytes": 544,
+  "stderr_bytes": 0,
+  "stdout_truncated": false,
+  "stderr_truncated": false,
+  "stdout_path": "D:\\CLAUDE\\Project\\zakuppro\\zakuppro\\.gsd\\exec\\10ca5b92-aff9-47fc-a681-d8e22853a88d.stdout",
+  "stderr_path": "D:\\CLAUDE\\Project\\zakuppro\\zakuppro\\.gsd\\exec\\10ca5b92-aff9-47fc-a681-d8e22853a88d.stderr"
+}

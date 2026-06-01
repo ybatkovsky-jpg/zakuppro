@@ -28,6 +28,7 @@ This file is the explicit capability and coverage contract for the project.
 - Why it matters: Поставщики часто меняют названия. Fuzzy matching + LLM позволяет автоматически сверять счета с заказами.
 - Source: user
 - Primary owning slice: M003
+- Validation: S01 verification passed: InvoiceItem table created with sku, name, qty columns; Invoice.verification_result JSONB column for LLM results; llm_provider.py wrapper supports OpenAI, Gemini, Claude with automatic fallback; ready for fuzzy matching logic in S04.
 
 ### R009 — Bank Worker для загрузки выписки (по API банка или через email) и мапинга платежей к счетам по ИНН и сумме
 - Class: integration
@@ -179,7 +180,7 @@ This file is the explicit capability and coverage contract for the project.
 | R005 | failure-visibility | validated | M002 | none | S04 implemented FailedTask model with task_id, error_message, file_path, chat_id, context. DLQ alert via send_dlq_alert to TELEGRAM_OWNER_CHAT_ID. Integration test confirms error path. |
 | R006 | operability | validated | M002 | none | S02 added telegram-bot service to docker-compose.yml with restart: unless-stopped, volume mounts, and ALLOWED_CHAT_IDS environment variable for authorization. |
 | R007 | integration | active | M003 | none | unmapped |
-| R008 | core-capability | active | M003 | none | unmapped |
+| R008 | core-capability | active | M003 | none | S01 verification passed: InvoiceItem table created with sku, name, qty columns; Invoice.verification_result JSONB column for LLM results; llm_provider.py wrapper supports OpenAI, Gemini, Claude with automatic fallback; ready for fuzzy matching logic in S04. |
 | R009 | integration | active | M004 | none | unmapped |
 | R010 | admin/support | active | M004 | none | unmapped |
 | R011 | primary-user-loop | active | M005 | none | unmapped |

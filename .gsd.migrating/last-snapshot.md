@@ -1,4 +1,4 @@
-# GSD context snapshot (2026-06-01T13:20:22.218Z)
+# GSD context snapshot (2026-06-01T13:57:48.925Z)
 
 ## Top project memories
 - [MEM005] (architecture) SQLAlchemy 2.0 uses relationship(back_populates=...) for bidirectional relationships, not backref. This makes relationships explicit on both sides for clearer code.
@@ -9,8 +9,7 @@
 - [MEM004] (pattern) Pydantic v2 requires model_config = ConfigDict(from_attributes=True) for ORM mode, not the inner Config class from v1.
 
 ## Recent gsd_exec runs
-- [12f125f7-4a4d-4874-9031-24b79e386271] bash exit:1 — Check existing imports in tasks/services
-- [5bac3eba-57ea-49b4-b750-356a2188a168] bash exit:1 — List docker-compose services
-- [525d00f7-2154-454c-ae88-d538a923ab73] bash exit:1 — List existing Python modules in app/
-- [03832f2b-7e2e-4314-9159-e8fc730282fe] bash exit:1 — Verify telegram_notifier module imports
-- [1ee74c1a-afd5-41b8-ba94-33e0a9145797] bash exit:1 — Verify supplier_resolver module imports
+- [10ca5b92-aff9-47fc-a681-d8e22853a88d] bash exit:1 — Verify models pass with new Invoice extensions
+- [fa359445-443e-43ae-98d6-dd7bcd5d54e1] bash exit:1 — Verify LLM config in .env
+- [025811b0-f989-4ebc-98c6-f6e8bd88ee59] bash exit:1 — Run LLM provider unit tests
+- [0b45333e-266f-4b5b-aae5-6b67d74ab07f] bash exit:1 — Verify migration SQL generation for schema changes

@@ -1,10 +1,11 @@
 # Codebase Map
 
-Generated: 2026-06-01T13:20:22Z | Files: 500 | Described: 0/500
-<!-- gsd:codebase-meta {"generatedAt":"2026-06-01T13:20:22Z","fingerprint":"46e83dfe42a8257797af5dc6987c041f07ee424e","fileCount":500,"truncated":true} -->
+Generated: 2026-06-01T14:01:37Z | Files: 500 | Described: 0/500
+<!-- gsd:codebase-meta {"generatedAt":"2026-06-01T14:01:37Z","fingerprint":"59e459008a655cd5ab5727fd872036f3776271b4","fileCount":500,"truncated":true} -->
 Note: Truncated to first 500 files. Run with higher --max-files to include all.
 
 ### (root)/
+- `.coverage`
 - `.dockerignore`
 - `.env`
 - `.gitignore`
@@ -29,13 +30,13 @@ Note: Truncated to first 500 files. Run with higher --max-files to include all.
 - `.gsd.migrating/STATE.md`
 
 ### .gsd.migrating/activity/
-- *(72 files: 72 .jsonl)*
+- *(87 files: 87 .jsonl)*
 
 ### .gsd.migrating/audit/
 - `.gsd.migrating/audit/events.jsonl`
 
 ### .gsd.migrating/exec/
-- *(51 files: 17 .json, 17 .stderr, 17 .stdout)*
+- *(75 files: 25 .json, 25 .stderr, 25 .stdout)*
 
 ### .gsd.migrating/graphs/
 - `.gsd.migrating/graphs/graph.json`
@@ -138,7 +139,10 @@ Note: Truncated to first 500 files. Run with higher --max-files to include all.
 
 ### .gsd.migrating/milestones/M002/
 - `.gsd.migrating/milestones/M002/M002-CONTEXT.md`
+- `.gsd.migrating/milestones/M002/M002-LEARNINGS.md`
 - `.gsd.migrating/milestones/M002/M002-ROADMAP.md`
+- `.gsd.migrating/milestones/M002/M002-SUMMARY.md`
+- `.gsd.migrating/milestones/M002/M002-VALIDATION.md`
 
 ### .gsd.migrating/milestones/M002/anchors/
 - `.gsd.migrating/milestones/M002/anchors/plan-slice.json`
@@ -211,6 +215,8 @@ Note: Truncated to first 500 files. Run with higher --max-files to include all.
 - `.gsd.migrating/milestones/M002/slices/S04/S04-PLAN.md`
 - `.gsd.migrating/milestones/M002/slices/S04/S04-PRE-EXEC-VERIFY.json`
 - `.gsd.migrating/milestones/M002/slices/S04/S04-RESEARCH.md`
+- `.gsd.migrating/milestones/M002/slices/S04/S04-SUMMARY.md`
+- `.gsd.migrating/milestones/M002/slices/S04/S04-UAT.md`
 
 ### .gsd.migrating/milestones/M002/slices/S04/tasks/
 - `.gsd.migrating/milestones/M002/slices/S04/tasks/T01-PLAN.md`
@@ -220,12 +226,36 @@ Note: Truncated to first 500 files. Run with higher --max-files to include all.
 - `.gsd.migrating/milestones/M002/slices/S04/tasks/T02-SUMMARY.md`
 - `.gsd.migrating/milestones/M002/slices/S04/tasks/T02-VERIFY.json`
 - `.gsd.migrating/milestones/M002/slices/S04/tasks/T03-PLAN.md`
+- `.gsd.migrating/milestones/M002/slices/S04/tasks/T03-SUMMARY.md`
+- `.gsd.migrating/milestones/M002/slices/S04/tasks/T03-VERIFY.json`
 - `.gsd.migrating/milestones/M002/slices/S04/tasks/T04-PLAN.md`
+- `.gsd.migrating/milestones/M002/slices/S04/tasks/T04-SUMMARY.md`
+- `.gsd.migrating/milestones/M002/slices/S04/tasks/T04-VERIFY.json`
 - `.gsd.migrating/milestones/M002/slices/S04/tasks/T05-PLAN.md`
+- `.gsd.migrating/milestones/M002/slices/S04/tasks/T05-SUMMARY.md`
+- `.gsd.migrating/milestones/M002/slices/S04/tasks/T05-VERIFY.json`
 - `.gsd.migrating/milestones/M002/slices/S04/tasks/T06-PLAN.md`
+- `.gsd.migrating/milestones/M002/slices/S04/tasks/T06-SUMMARY.md`
+- `.gsd.migrating/milestones/M002/slices/S04/tasks/T06-VERIFY.json`
 
 ### .gsd.migrating/milestones/M003/
+- `.gsd.migrating/milestones/M003/M003-CONTEXT.md`
+- `.gsd.migrating/milestones/M003/M003-RESEARCH.md`
 - `.gsd.migrating/milestones/M003/M003-ROADMAP.md`
+- `.gsd.migrating/milestones/M003/M003-SECRETS.md`
+
+### .gsd.migrating/milestones/M003/anchors/
+- `.gsd.migrating/milestones/M003/anchors/plan-milestone.json`
+- `.gsd.migrating/milestones/M003/anchors/research-milestone.json`
+
+### .gsd.migrating/milestones/M003/slices/S01/
+- `.gsd.migrating/milestones/M003/slices/S01/S01-PLAN.md`
+
+### .gsd.migrating/milestones/M003/slices/S01/tasks/
+- `.gsd.migrating/milestones/M003/slices/S01/tasks/T01-PLAN.md`
+- `.gsd.migrating/milestones/M003/slices/S01/tasks/T02-PLAN.md`
+- `.gsd.migrating/milestones/M003/slices/S01/tasks/T03-PLAN.md`
+- `.gsd.migrating/milestones/M003/slices/S01/tasks/T04-PLAN.md`
 
 ### .gsd.migrating/milestones/M004/
 - `.gsd.migrating/milestones/M004/M004-ROADMAP.md`
@@ -236,14 +266,18 @@ Note: Truncated to first 500 files. Run with higher --max-files to include all.
 ### .gsd.migrating/milestones/M006/
 - `.gsd.migrating/milestones/M006/M006-ROADMAP.md`
 
+### .gsd.migrating/milestones/M007/
+- `.gsd.migrating/milestones/M007/M007-ROADMAP.md`
+
 ### .gsd.migrating/runtime/
+- `.gsd.migrating/runtime/M003-S01-reactive.json`
 - `.gsd.migrating/runtime/uok-parity.jsonl`
 - `.gsd.migrating/runtime/uok-plan-v2-graph.json`
 - `.gsd.migrating/runtime/uok-writer-sequence.json`
 - `.gsd.migrating/runtime/write-gate-state.json`
 
 ### .gsd.migrating/runtime/units/
-- *(53 files: 53 .json)*
+- *(63 files: 63 .json)*
 
 ### .zscripts/
 - `.zscripts/build.sh`
@@ -273,15 +307,14 @@ Note: Truncated to first 500 files. Run with higher --max-files to include all.
 ### Python/pythoncore-3.14-64/Doc/html/_sources/
 - `Python/pythoncore-3.14-64/Doc/html/_sources/about.rst.txt`
 - `Python/pythoncore-3.14-64/Doc/html/_sources/bugs.rst.txt`
-- `Python/pythoncore-3.14-64/Doc/html/_sources/contents.rst.txt`
-- `Python/pythoncore-3.14-64/Doc/html/_sources/copyright.rst.txt`
 
 ### Python/pythoncore-3.14-64/Doc/html/_sources/c-api/
-- *(77 files: 77 .txt)*
-
-### Python/pythoncore-3.14-64/Doc/html/_sources/deprecations/
-- `Python/pythoncore-3.14-64/Doc/html/_sources/deprecations/c-api-pending-removal-in-3.14.rst.txt`
-- `Python/pythoncore-3.14-64/Doc/html/_sources/deprecations/c-api-pending-removal-in-3.15.rst.txt`
-- `Python/pythoncore-3.14-64/Doc/html/_sources/deprecations/c-api-pending-removal-in-3.16.rst.txt`
-- `Python/pythoncore-3.14-64/Doc/html/_sources/deprecations/c-api-pending-removal-in-3.18.rst.txt`
-- `Python/pythoncore-3.14-64/Doc/html/_sources/deprecations/c-api-pending-removal-in-future.rst.txt`
+- `Python/pythoncore-3.14-64/Doc/html/_sources/c-api/abstract.rst.txt`
+- `Python/pythoncore-3.14-64/Doc/html/_sources/c-api/allocation.rst.txt`
+- `Python/pythoncore-3.14-64/Doc/html/_sources/c-api/apiabiversion.rst.txt`
+- `Python/pythoncore-3.14-64/Doc/html/_sources/c-api/arg.rst.txt`
+- `Python/pythoncore-3.14-64/Doc/html/_sources/c-api/bool.rst.txt`
+- `Python/pythoncore-3.14-64/Doc/html/_sources/c-api/buffer.rst.txt`
+- `Python/pythoncore-3.14-64/Doc/html/_sources/c-api/bytearray.rst.txt`
+- `Python/pythoncore-3.14-64/Doc/html/_sources/c-api/bytes.rst.txt`
+- `Python/pythoncore-3.14-64/Doc/html/_sources/c-api/call.rst.txt`

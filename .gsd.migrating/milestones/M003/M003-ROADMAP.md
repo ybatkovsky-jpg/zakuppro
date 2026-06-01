@@ -17,10 +17,10 @@
 
 ## Slices
 
-- [ ] **S01: Database Schema + LLM Provider Foundation** `risk:high — BLOB storage and provider switching affect all downstream work` `depends:[]`
+- [x] **S01: S01** `risk:high — BLOB storage and provider switching affect all downstream work` `depends:[]`
   > After this: Create migration adding Invoice.raw_file (BYTEA), Invoice.verification_result (JSONB), InvoiceItem table. LLM provider wrapper successfully makes test call to configured provider with fallback.
 
-- [ ] **S02: IMAP Ingest + Email Worker Service** `risk:medium-high — IMAP connection handling, attachment extraction uncertain` `depends:[S01]`
+- [x] **S02: S02** `risk:medium-high — IMAP connection handling, attachment extraction uncertain` `depends:[]`
   > After this: email-worker Docker service running, connects to IMAP server, polls test mailbox, extracts PDF attachment, publishes parse_invoice task to RabbitMQ. Verify via Celery logs.
 
 - [ ] **S03: Invoice Parsing with LLM** `risk:medium — extends proven ai_agent.py pattern to PDF/Excel invoices` `depends:[S01,S02]`

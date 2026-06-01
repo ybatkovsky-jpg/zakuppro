@@ -462,3 +462,236 @@ def process_bom_to_project(self, file_path: str, chat_id: int) -> dict:
         if db is not None:
             db.close()
             logger.info(f"Task {task_id}: Database session closed")
+
+
+@app.task(name='tasks.parse_invoice', bind=True, max_retries=2)
+def parse_invoice(self, filename: str, file_content: bytes, metadata: dict) -> dict:
+    """
+    Parse invoice file (PDF/Excel) and extract line items using LLM.
+
+    This task is the entry point for invoice processing from the email worker.
+    It receives the file content and metadata from an email attachment and
+    processes it using the LLM provider to extract structured invoice data.
+
+    Full implementation for S03:
+    1. Parses PDF/Excel file with InvoiceParser service
+    2. Extracts structured line items (sku, name, qty, unit_price, total_price)
+    3. Creates Invoice record with raw_file BLOB and metadata
+    4. Creates InvoiceItem records for each extracted line item
+    5. Handles errors with FailedTask DLQ persistence
+
+    Args:
+        filename: Original attachment filename (e.g., 'invoice.pdf')
+        file_content: Binary file content (PDF or Excel bytes)
+        metadata: Email metadata dict with keys:
+            - message_id: Email Message-ID
+            - subject: Email subject line
+            - from: Sender email address
+            - date: Email date header
+            - to: Recipient email address
+            - uid: IMAP UID of the email
+
+    Returns:
+        dict: Result with keys:
+            - status: 'success' or 'error'
+            - filename: Processed filename
+            - invoice_id: ID of created Invoice record
+            - items_count: Number of extracted line items
+            - message_id: Email Message-ID from metadata
+
+    Raises:
+        ValueError: If file format is not supported
+        RateLimitError: Triggers retry with exponential backoff
+    """
+    task_id = self.request.id
+    logger.info(
+        f"Task {task_id}: parse_invoice started - "
+        f"filename={filename}, size={len(file_content)}, message_id={metadata.get('message_id')}"
+    )
+
+    db = None
+
+    try:
+        # Import InvoiceParser service
+        from backend.services.invoice_parser import create_invoice_parser
+        from backend.database import SessionLocal
+        from backend.models import Invoice, InvoiceItem, FailedTask
+        from backend.supplier_resolver import find_or_create_supplier
+        from decimal import Decimal
+
+        # Step 1: Parse file with InvoiceParser
+        logger.info(f"Task {task_id}: Parsing file with InvoiceParser")
+        parser = create_invoice_parser()
+        parse_result = parser.parse_file(filename, file_content, metadata)
+
+        if parse_result.get('status') != 'success':
+            error_msg = f"Invoice parsing failed: {parse_result.get('error')}"
+            logger.error(f"Task {task_id}: {error_msg}")
+            raise ValueError(error_msg)
+
+        items = parse_result.get('items', [])
+        extracted_metadata = parse_result.get('metadata', {})
+        raw_text = parse_result.get('raw_text', '')
+
+        if not items:
+            error_msg = "No items extracted from invoice file"
+            logger.error(f"Task {task_id}: {error_msg}")
+            raise ValueError(error_msg)
+
+        logger.info(f"Task {task_id}: Extracted {len(items)} items from invoice")
+
+        # Step 2: Create database records
+        db = SessionLocal()
+
+        # Step 3: Find or create supplier from email metadata
+        supplier_id = None
+        from_email = metadata.get('from', '')
+        if from_email:
+            # Extract supplier name from email (before @)
+            supplier_name = from_email.split('@')[0].strip()
+            supplier_id = find_or_create_supplier(db, supplier_name)
+            if supplier_id:
+                logger.info(f"Task {task_id}: Resolved supplier '{supplier_name}' -> ID {supplier_id}")
+
+        # Step 4: Find or create PurchaseOrder
+        # For now, create a placeholder PurchaseOrder if none exists
+        # In production, this would be linked to an existing PO
+        from backend.models import PurchaseOrder, Project
+        project_name = extracted_metadata.get('project_name') or f"Invoice-{filename}"
+        client = extracted_metadata.get('client') or 'Не указан'
+
+        # Find or create project
+        project = db.query(Project).filter(Project.name == project_name).first()
+        if not project:
+            project = Project(name=project_name, client=client, status='Проектирование')
+            db.add(project)
+            db.commit()
+            db.refresh(project)
+            logger.info(f"Task {task_id}: Created project '{project_name}' (ID: {project.id})")
+
+        # Find or create purchase order
+        purchase_order = db.query(PurchaseOrder).filter(
+            PurchaseOrder.project_id == project.id,
+            PurchaseOrder.supplier_id == supplier_id if supplier_id else True
+        ).first()
+
+        if not purchase_order:
+            po_status = 'Сформирован'
+            purchase_order = PurchaseOrder(
+                project_id=project.id,
+                supplier_id=supplier_id,
+                status=po_status
+            )
+            db.add(purchase_order)
+            db.commit()
+            db.refresh(purchase_order)
+            logger.info(f"Task {task_id}: Created purchase order (ID: {purchase_order.id})")
+
+        # Step 5: Create Invoice record
+        invoice = Invoice(
+            purchase_order_id=purchase_order.id,
+            file_url=filename,
+            raw_text=raw_text[:10000] if raw_text else None,  # Truncate for raw_text field
+            raw_file=file_content,  # BLOB storage
+            verification_result=None,  # Will be set by verification in S04
+            status='Ожидает сверки'
+        )
+        db.add(invoice)
+        db.commit()
+        db.refresh(invoice)
+
+        logger.info(
+            f"Task {task_id}: Created invoice record (ID: {invoice.id}) "
+            f"linked to PO {purchase_order.id}"
+        )
+
+        # Step 6: Create InvoiceItem records
+        items_created = 0
+        for item_data in items:
+            # Convert prices to Decimal
+            unit_price = Decimal(str(item_data.get('unit_price', 0)))
+            qty = item_data.get('qty', 1)
+            total_price = Decimal(str(item_data.get('total_price', unit_price * qty)))
+
+            invoice_item = InvoiceItem(
+                invoice_id=invoice.id,
+                project_item_id=None,  # Will be linked during verification in S04
+                name=item_data.get('name', ''),
+                sku=item_data.get('sku', ''),
+                qty=qty,
+                unit_price=unit_price,
+                total_price=total_price
+            )
+            db.add(invoice_item)
+            items_created += 1
+
+        db.commit()
+        logger.info(f"Task {task_id}: Created {items_created} InvoiceItem records")
+
+        result = {
+            'status': 'success',
+            'filename': filename,
+            'invoice_id': invoice.id,
+            'items_count': items_created,
+            'message_id': metadata.get('message_id'),
+            'task_id': task_id,
+        }
+
+        logger.info(f"Task {task_id}: parse_invoice completed successfully")
+        return result
+
+    except RateLimitError as e:
+        # Retry with exponential backoff
+        retry_count = self.request.retries
+        countdown = 2 ** retry_count  # 1, 2, 4...
+        logger.warning(
+            f"Task {task_id}: Rate limit hit, "
+            f"retrying in {countdown}s (attempt {retry_count + 1}/3)"
+        )
+        raise self.retry(exc=e, countdown=countdown, max_retries=2)
+
+    except Exception as e:
+        # Handle error: create FailedTask for DLQ
+        error_message = f"{type(e).__name__}: {str(e)}\n\n{traceback.format_exc()}"
+
+        logger.error(f"Task {task_id}: Error occurred - {error_message}")
+
+        try:
+            from backend.database import SessionLocal
+            from backend.models import FailedTask
+
+            if db is None:
+                db = SessionLocal()
+
+            # Create FailedTask record for DLQ
+            failed_task = FailedTask(
+                task_id=task_id,
+                task_name='tasks.parse_invoice',
+                error_message=error_message,
+                error_type=type(e).__name__,
+                file_path=filename,
+                chat_id=None,  # Email tasks don't have chat_id
+                context=json.dumps({
+                    'filename': filename,
+                    'file_size': len(file_content),
+                    'metadata': metadata
+                })
+            )
+            db.add(failed_task)
+            db.commit()
+            logger.info(f"Task {task_id}: FailedTask record created")
+
+        except Exception as inner_error:
+            logger.error(
+                f"Task {task_id}: Failed to create FailedTask - {inner_error}",
+                exc_info=True
+            )
+
+        # Re-raise original exception for Celery DLQ handling
+        raise
+
+    finally:
+        # Always close database session
+        if db is not None:
+            db.close()
+            logger.info(f"Task {task_id}: Database session closed")

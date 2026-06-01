@@ -1,8 +1,8 @@
 # GSD State
 
 **Active Milestone:** M003: Email + Invoice Processing
-**Active Slice:** S01: Database Schema + LLM Provider Foundation
-**Phase:** executing
+**Active Slice:** S03: Invoice Parsing with LLM
+**Phase:** planning
 **Requirements Status:** 9 active · 5 validated · 5 deferred · 0 out of scope
 
 ## Milestone Registry
@@ -21,4 +21,4 @@
 - None
 
 ## Next Action
-Execute T01: Create Alembic migration for Invoice.raw_file, Invoice.verification_result, InvoiceItem table in slice S01.
+Slice S03 has no DB tasks. Plan slice tasks before execution.

@@ -1,0 +1,18 @@
+{
+  "id": "0b45333e-266f-4b5b-aae5-6b67d74ab07f",
+  "runtime": "bash",
+  "purpose": "Verify migration SQL generation for schema changes",
+  "script_chars": 92,
+  "started_at": "2026-06-01T13:36:56.294Z",
+  "finished_at": "2026-06-01T13:36:56.501Z",
+  "exit_code": 1,
+  "signal": null,
+  "timed_out": false,
+  "duration_ms": 207,
+  "stdout_bytes": 544,
+  "stderr_bytes": 0,
+  "stdout_truncated": false,
+  "stderr_truncated": false,
+  "stdout_path": "D:\\CLAUDE\\Project\\zakuppro\\zakuppro\\.gsd\\exec\\0b45333e-266f-4b5b-aae5-6b67d74ab07f.stdout",
+  "stderr_path": "D:\\CLAUDE\\Project\\zakuppro\\zakuppro\\.gsd\\exec\\0b45333e-266f-4b5b-aae5-6b67d74ab07f.stderr"
+}
