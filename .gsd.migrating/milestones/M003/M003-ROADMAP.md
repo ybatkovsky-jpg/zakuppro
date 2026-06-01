@@ -23,7 +23,7 @@
 - [x] **S02: S02** `risk:medium-high — IMAP connection handling, attachment extraction uncertain` `depends:[]`
   > After this: email-worker Docker service running, connects to IMAP server, polls test mailbox, extracts PDF attachment, publishes parse_invoice task to RabbitMQ. Verify via Celery logs.
 
-- [ ] **S03: Invoice Parsing with LLM** `risk:medium — extends proven ai_agent.py pattern to PDF/Excel invoices` `depends:[S01,S02]`
+- [ ] **S03: S03** `risk:medium — extends proven ai_agent.py pattern to PDF/Excel invoices` `depends:[]`
   > After this: parse_invoice Celery task receives PDF/Excel file, calls LLM via llm_provider.py, extracts structured line items (sku, name, qty, price), saves to InvoiceItem table with raw_file BLOB. Verify via database query.
 
 - [ ] **S04: Verification Logic + Fuzzy Matching** `risk:medium — fuzzy matching reconciliation logic is new core business logic` `depends:[S03]`

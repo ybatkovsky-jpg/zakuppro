@@ -1,0 +1,30 @@
+{
+  "schemaVersion": 1,
+  "taskId": "T03",
+  "unitId": "M003/S03/T03",
+  "timestamp": 1780323691323,
+  "passed": false,
+  "discoverySource": "task-plan",
+  "checks": [
+    {
+      "command": "test -f D:/CLAUDE/Project/zakuppro/zakuppro/backend/tests/fixtures/test_simple_invoice.pdf",
+      "exitCode": 1,
+      "durationMs": 107,
+      "verdict": "fail"
+    },
+    {
+      "command": "test -f D:/CLAUDE/Project/zakuppro/zakuppro/backend/tests/fixtures/test_dirty_invoice.xlsx",
+      "exitCode": 1,
+      "durationMs": 26,
+      "verdict": "fail"
+    },
+    {
+      "command": "test -f D:/CLAUDE/Project/zakuppro/zakuppro/backend/tests/fixtures/test_russian_invoice.pdf",
+      "exitCode": 1,
+      "durationMs": 30,
+      "verdict": "fail"
+    }
+  ],
+  "retryAttempt": 1,
+  "maxRetries": 2
+}

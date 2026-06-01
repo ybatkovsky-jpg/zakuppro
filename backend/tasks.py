@@ -695,3 +695,140 @@ def parse_invoice(self, filename: str, file_content: bytes, metadata: dict) -> d
         if db is not None:
             db.close()
             logger.info(f"Task {task_id}: Database session closed")
+
+
+@app.task(name='tasks.verify_invoice', bind=True, max_retries=2)
+def verify_invoice_task(self, invoice_id: int) -> dict:
+    """
+    Verify invoice items against project BOM using fuzzy matching.
+
+    This task performs invoice-to-BOM reconciliation by:
+    1. Matching invoice items to ProjectItems via exact SKU or RapidFuzz
+    2. Detecting quantity discrepancies
+    3. Linking InvoiceItems to ProjectItems
+    4. Storing structured verification result in Invoice.verification_result JSONB
+    5. Updating Invoice.status based on verification verdict
+
+    Intended to be chained after parse_invoice completes:
+        parse_invoice.apply_async(args=(filename, content, metadata)) \\
+            .link(verify_invoice_task.si(invoice_id))
+
+    Args:
+        invoice_id: ID of the Invoice record to verify
+
+    Returns:
+        dict: Result with keys:
+            - status: 'success' or 'error'
+            - invoice_id: ID of verified invoice
+            - verdict: Verification verdict (verified/partial/clarification_needed/failed)
+            - matched_count: Number of exact SKU matches
+            - fuzzy_count: Number of fuzzy name matches
+            - unmapped_count: Number of unmapped invoice items
+            - discrepancies: Number of quantity discrepancies
+            - extra_items: Count of extra invoice items (no BOM match)
+            - missing_items: Count of missing BOM items (no invoice match)
+            - task_id: Celery task ID
+
+    Raises:
+        ValueError: If invoice not found (goes to DLQ)
+        Exception: Other unexpected errors (goes to DLQ)
+    """
+    task_id = self.request.id
+    logger.info(
+        f"Task {task_id}: verify_invoice started - "
+        f"invoice_id={invoice_id}, retry={self.request.retries}"
+    )
+
+    db = None
+
+    try:
+        # Import invoice verifier service
+        from backend.services.invoice_verifier import verify_invoice
+        from backend.database import SessionLocal
+        from backend.models import FailedTask
+
+        # Step 1: Create database session
+        db = SessionLocal()
+
+        # Step 2: Call invoice verifier service
+        logger.info(f"Task {task_id}: Calling verify_invoice service")
+        verification_result = verify_invoice(invoice_id, db)
+
+        # Step 3: Extract verification summary for result
+        verdict = verification_result.verdict
+        matched_count = len(verification_result.matched_items)
+        fuzzy_count = len(verification_result.fuzzy_matched_items)
+        unmapped_count = len(verification_result.unmapped_items)
+        discrepancies = len(verification_result.quantity_discrepancies)
+        extra_count = len(verification_result.extra_items)
+        missing_count = len(verification_result.missing_items)
+
+        logger.info(
+            f"Task {task_id}: Verification complete - "
+            f"verdict={verdict}, {matched_count} exact, {fuzzy_count} fuzzy, "
+            f"{unmapped_count} unmapped, {discrepancies} discrepancies, "
+            f"{extra_count} extra, {missing_count} missing"
+        )
+
+        result = {
+            'status': 'success',
+            'invoice_id': invoice_id,
+            'verdict': verdict,
+            'matched_count': matched_count,
+            'fuzzy_count': fuzzy_count,
+            'unmapped_count': unmapped_count,
+            'discrepancies': discrepancies,
+            'extra_items': extra_count,
+            'missing_items': missing_count,
+            'task_id': task_id,
+        }
+
+        logger.info(f"Task {task_id}: verify_invoice completed successfully")
+        return result
+
+    except ValueError as e:
+        # Validation error - don't retry, goes to DLQ
+        logger.error(f"Task {task_id}: Validation failed - {e}")
+        raise
+
+    except Exception as e:
+        # Handle error: create FailedTask for DLQ
+        error_message = f"{type(e).__name__}: {str(e)}\n\n{traceback.format_exc()}"
+
+        logger.error(f"Task {task_id}: Error occurred - {error_message}")
+
+        try:
+            from backend.database import SessionLocal
+            from backend.models import FailedTask
+
+            if db is None:
+                db = SessionLocal()
+
+            # Create FailedTask record for DLQ
+            failed_task = FailedTask(
+                task_id=task_id,
+                task_name='tasks.verify_invoice',
+                error_message=error_message,
+                error_type=type(e).__name__,
+                file_path=None,
+                chat_id=None,
+                context=json.dumps({'invoice_id': invoice_id})
+            )
+            db.add(failed_task)
+            db.commit()
+            logger.info(f"Task {task_id}: FailedTask record created")
+
+        except Exception as inner_error:
+            logger.error(
+                f"Task {task_id}: Failed to create FailedTask - {inner_error}",
+                exc_info=True
+            )
+
+        # Re-raise original exception for Celery DLQ handling
+        raise
+
+    finally:
+        # Always close database session
+        if db is not None:
+            db.close()
+            logger.info(f"Task {task_id}: Database session closed")

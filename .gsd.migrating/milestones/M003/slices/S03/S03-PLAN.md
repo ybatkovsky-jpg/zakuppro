@@ -32,17 +32,17 @@
 
 ## Tasks
 
-- [ ] **T01: Add pdfplumber dependency to requirements.txt** `est:5m`
+- [x] **T01: Add pdfplumber dependency to requirements.txt** `est:5m`
   Add pdfplumber==0.11.4 to requirements.txt. This library is required by invoice_parser.py for PDF text extraction with table support. The invoice_parser.py service already imports and uses pdfplumber in its _extract_pdf_text() method (line 176), but the dependency is missing from requirements.txt, causing ImportError at runtime.
   - Files: `backend/requirements.txt`
   - Verify: grep -q 'pdfplumber==0.11.4' D:/CLAUDE/Project/zakuppro/zakuppro/backend/requirements.txt
 
-- [ ] **T02: Create unit tests for invoice_parser.py service** `est:1h`
+- [x] **T02: Create unit tests for invoice_parser.py service** `est:1h`
   Create backend/tests/test_invoice_parser.py with comprehensive unit tests for the InvoiceParser service. Tests must mock external dependencies (LLMProvider, pdfplumber, pandas) to avoid real file I/O and API calls. Cover: factory function creation, Excel/PDF parsing with mock LLM, unsupported format errors, transient error propagation, non-retryable error handling, PDF table-to-markdown conversion, Excel multi-sheet extraction, empty file handling, and metadata passing.
   - Files: `backend/tests/test_invoice_parser.py`
   - Verify: cd D:/CLAUDE/Project/zakuppro/zakuppro/backend && python -m pytest tests/test_invoice_parser.py -v --tb=short
 
-- [ ] **T03: Create test fixtures for invoice parsing** `est:30m`
+- [x] **T03: Create test fixtures for invoice parsing** `est:30m`
   Create backend/tests/fixtures/ directory and add test invoice files: test_simple_invoice.pdf (single-page PDF with sample table), test_dirty_invoice.xlsx (Excel with multiple sheets and merged cells for dirty table handling), and test_russian_invoice.pdf (PDF with Russian headers). These fixtures are required for integration tests and manual verification of PDF/Excel extraction.
   - Files: `backend/tests/fixtures/test_simple_invoice.pdf`, `backend/tests/fixtures/test_dirty_invoice.xlsx`, `backend/tests/fixtures/test_russian_invoice.pdf`
   - Verify: test -f D:/CLAUDE/Project/zakuppro/zakuppro/backend/tests/fixtures/test_simple_invoice.pdf && test -f D:/CLAUDE/Project/zakuppro/zakuppro/backend/tests/fixtures/test_dirty_invoice.xlsx && test -f D:/CLAUDE/Project/zakuppro/zakuppro/backend/tests/fixtures/test_russian_invoice.pdf

@@ -1,7 +1,7 @@
 # GSD State
 
 **Active Milestone:** M003: Email + Invoice Processing
-**Active Slice:** S03: Invoice Parsing with LLM
+**Active Slice:** S03: S03
 **Phase:** executing
 **Requirements Status:** 9 active · 5 validated · 5 deferred · 0 out of scope
 
@@ -21,4 +21,4 @@
 - None
 
 ## Next Action
-Execute T01: Add pdfplumber dependency to requirements.txt in slice S03.
+Execute T04: Extend integration tests with mock LLM responses in slice S03.
