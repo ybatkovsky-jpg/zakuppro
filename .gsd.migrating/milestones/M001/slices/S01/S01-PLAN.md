@@ -55,7 +55,7 @@ integration: реальная PostgreSQL БД (через docker или лока
   - Files: `tests/test_migration.py`
   - Verify: pytest tests/test_migration.py проходит; миграция применяется и откатывается; foreign keys работают
 
-- [ ] **T05: Add indexes for performance** `est:15m`
+- [x] **T05: Add indexes for performance** `est:15m`
   Добавить индексы на часто запрашиваемые поля:
   - project.status (для Kanban фильтрации)
   - project_item.project_id

@@ -1,7 +1,7 @@
 {
-  "pid": 14380,
-  "startedAt": "2026-05-31T22:51:53.973Z",
+  "pid": 17200,
+  "startedAt": "2026-06-01T03:31:00.048Z",
   "unitType": "starting",
   "unitId": "bootstrap",
-  "unitStartedAt": "2026-05-31T22:51:53.973Z"
+  "unitStartedAt": "2026-06-01T03:31:00.048Z"
 }

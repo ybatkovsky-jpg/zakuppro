@@ -1,7 +1,7 @@
 # GSD State
 
 **Active Milestone:** M001: Foundation: Database Schema and Core API
-**Active Slice:** S01: S01
+**Active Slice:** S02: S02
 **Phase:** executing
 **Requirements Status:** 0 active · 0 validated · 0 deferred · 0 out of scope
 
@@ -15,4 +15,4 @@
 - None
 
 ## Next Action
-Execute T05: Add indexes for performance in slice S01.
+Execute T02: Create Pydantic v2 schemas in schemas.py in slice S02.

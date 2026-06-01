@@ -1,7 +1,7 @@
 # Codebase Map
 
-Generated: 2026-05-31T22:38:04Z | Files: 500 | Described: 0/500
-<!-- gsd:codebase-meta {"generatedAt":"2026-05-31T22:38:04Z","fingerprint":"b02eb30fd5898d29cbfa6c99b7f114afe2db6564","fileCount":500,"truncated":true} -->
+Generated: 2026-05-31T23:11:03Z | Files: 500 | Described: 0/500
+<!-- gsd:codebase-meta {"generatedAt":"2026-05-31T23:11:03Z","fingerprint":"129eb40ebe0bcd77b6f5b6db936c48d7332051ec","fileCount":500,"truncated":true} -->
 Note: Truncated to first 500 files. Run with higher --max-files to include all.
 
 ### (root)/
@@ -23,6 +23,7 @@ Note: Truncated to first 500 files. Run with higher --max-files to include all.
 - `.gsd.migrating/gsd.db-shm`
 - `.gsd.migrating/gsd.db-wal`
 - `.gsd.migrating/KNOWLEDGE.md`
+- `.gsd.migrating/last-snapshot.md`
 - `.gsd.migrating/metrics.json`
 - `.gsd.migrating/notifications.jsonl`
 - `.gsd.migrating/state-manifest.json`
@@ -32,6 +33,11 @@ Note: Truncated to first 500 files. Run with higher --max-files to include all.
 - `.gsd.migrating/activity/001-discuss-milestone-M001.jsonl`
 - `.gsd.migrating/activity/002-discuss-milestone-M001.jsonl`
 - `.gsd.migrating/activity/003-discuss-milestone-M001.jsonl`
+- `.gsd.migrating/activity/004-execute-task-M001-S01-T01.jsonl`
+- `.gsd.migrating/activity/005-execute-task-M001-S01-T02.jsonl`
+- `.gsd.migrating/activity/006-execute-task-M001-S01-T02.jsonl`
+- `.gsd.migrating/activity/007-execute-task-M001-S01-T03.jsonl`
+- `.gsd.migrating/activity/008-execute-task-M001-S01-T04.jsonl`
 
 ### .gsd.migrating/audit/
 - `.gsd.migrating/audit/events.jsonl`
@@ -48,18 +54,29 @@ Note: Truncated to first 500 files. Run with higher --max-files to include all.
 
 ### .gsd.migrating/milestones/M001/slices/S01/tasks/
 - `.gsd.migrating/milestones/M001/slices/S01/tasks/T01-PLAN.md`
+- `.gsd.migrating/milestones/M001/slices/S01/tasks/T01-SUMMARY.md`
+- `.gsd.migrating/milestones/M001/slices/S01/tasks/T01-VERIFY.json`
 - `.gsd.migrating/milestones/M001/slices/S01/tasks/T02-PLAN.md`
+- `.gsd.migrating/milestones/M001/slices/S01/tasks/T02-SUMMARY.md`
+- `.gsd.migrating/milestones/M001/slices/S01/tasks/T02-VERIFY.json`
 - `.gsd.migrating/milestones/M001/slices/S01/tasks/T03-PLAN.md`
+- `.gsd.migrating/milestones/M001/slices/S01/tasks/T03-SUMMARY.md`
+- `.gsd.migrating/milestones/M001/slices/S01/tasks/T03-VERIFY.json`
 - `.gsd.migrating/milestones/M001/slices/S01/tasks/T04-PLAN.md`
 - `.gsd.migrating/milestones/M001/slices/S01/tasks/T05-PLAN.md`
 
 ### .gsd.migrating/runtime/
 - `.gsd.migrating/runtime/uok-parity.jsonl`
+- `.gsd.migrating/runtime/uok-plan-v2-graph.json`
 - `.gsd.migrating/runtime/uok-writer-sequence.json`
 - `.gsd.migrating/runtime/write-gate-state.json`
 
 ### .gsd.migrating/runtime/units/
 - `.gsd.migrating/runtime/units/discuss-milestone-M001.json`
+- `.gsd.migrating/runtime/units/execute-task-M001-S01-T01.json`
+- `.gsd.migrating/runtime/units/execute-task-M001-S01-T02.json`
+- `.gsd.migrating/runtime/units/execute-task-M001-S01-T03.json`
+- `.gsd.migrating/runtime/units/execute-task-M001-S01-T04.json`
 
 ### .zscripts/
 - `.zscripts/build.sh`
@@ -77,6 +94,7 @@ Note: Truncated to first 500 files. Run with higher --max-files to include all.
 - `backend/__init__.py`
 - `backend/alembic.ini`
 - `backend/database.py`
+- `backend/models.py`
 - `backend/README.md`
 - `backend/requirements.txt`
 
@@ -84,6 +102,13 @@ Note: Truncated to first 500 files. Run with higher --max-files to include all.
 - `backend/alembic/env.py`
 - `backend/alembic/README`
 - `backend/alembic/script.py.mako`
+
+### backend/alembic/versions/
+- `backend/alembic/versions/d6d07b9ba359_initial_schema.py`
+
+### backend/tests/
+- `backend/tests/__init__.py`
+- `backend/tests/test_migration.py`
 
 ### download/
 - `download/README.md`
@@ -711,28 +736,3 @@ Note: Truncated to first 500 files. Run with higher --max-files to include all.
 - `skills/ui-ux-pro-max/assets/data/stacks/svelte.csv`
 - `skills/ui-ux-pro-max/assets/data/stacks/swiftui.csv`
 - `skills/ui-ux-pro-max/assets/data/stacks/vue.csv`
-
-### skills/ui-ux-pro-max/data/
-- `skills/ui-ux-pro-max/data/charts.csv`
-- `skills/ui-ux-pro-max/data/colors.csv`
-- `skills/ui-ux-pro-max/data/icons.csv`
-- `skills/ui-ux-pro-max/data/landing.csv`
-- `skills/ui-ux-pro-max/data/products.csv`
-- `skills/ui-ux-pro-max/data/react-performance.csv`
-- `skills/ui-ux-pro-max/data/styles.csv`
-- `skills/ui-ux-pro-max/data/typography.csv`
-
-### skills/ui-ux-pro-max/data/stacks/
-- `skills/ui-ux-pro-max/data/stacks/astro.csv`
-- `skills/ui-ux-pro-max/data/stacks/flutter.csv`
-- `skills/ui-ux-pro-max/data/stacks/html-tailwind.csv`
-- `skills/ui-ux-pro-max/data/stacks/jetpack-compose.csv`
-- `skills/ui-ux-pro-max/data/stacks/nextjs.csv`
-- `skills/ui-ux-pro-max/data/stacks/nuxt-ui.csv`
-- `skills/ui-ux-pro-max/data/stacks/nuxtjs.csv`
-- `skills/ui-ux-pro-max/data/stacks/react-native.csv`
-- `skills/ui-ux-pro-max/data/stacks/react.csv`
-- `skills/ui-ux-pro-max/data/stacks/shadcn.csv`
-- `skills/ui-ux-pro-max/data/stacks/svelte.csv`
-- `skills/ui-ux-pro-max/data/stacks/swiftui.csv`
-- `skills/ui-ux-pro-max/data/stacks/vue.csv`

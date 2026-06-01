@@ -1,0 +1,18 @@
+{
+  "schemaVersion": 1,
+  "taskId": "T05",
+  "unitId": "M001/S01/T05",
+  "timestamp": 1780268055167,
+  "passed": false,
+  "discoverySource": "package-json",
+  "checks": [
+    {
+      "command": "npm run lint",
+      "exitCode": 1,
+      "durationMs": 577,
+      "verdict": "fail"
+    }
+  ],
+  "retryAttempt": 1,
+  "maxRetries": 2
+}

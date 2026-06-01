@@ -1,9 +1,9 @@
 {
-  "compiledAt": "2026-05-31T22:48:04.443Z",
+  "compiledAt": "2026-05-31T23:26:14.139Z",
   "milestoneId": "M001",
   "pipeline": {
     "clarifyRoundLimit": 3,
-    "researchSynthesized": false,
+    "researchSynthesized": true,
     "draftContextIncluded": false,
     "finalizedContextIncluded": true,
     "sourcePhase": "executing"
@@ -78,12 +78,15 @@
       "dependsOn": [
         "execute-task:M001:S01:T04"
       ],
-      "writes": [],
+      "writes": [
+        "backend/alembic/versions/e6b0df437c13_add_performance_indexes.py",
+        "backend/tests/test_migration.py"
+      ],
       "metadata": {
         "unitType": "execute-task",
         "unitId": "M001.S01.T05",
-        "title": "Add indexes for performance",
-        "status": "pending"
+        "title": "Added performance index on project_items.status for Kanban filtering; all required indexes verified",
+        "status": "complete"
       }
     },
     {
@@ -96,6 +99,61 @@
         "unitType": "complete-slice",
         "unitId": "M001.S01",
         "title": "S01",
+        "status": "complete"
+      }
+    },
+    {
+      "id": "execute-task:M001:S02:T01",
+      "kind": "unit",
+      "dependsOn": [],
+      "writes": [
+        "backend/models.py"
+      ],
+      "metadata": {
+        "unitType": "execute-task",
+        "unitId": "M001.S02.T01",
+        "title": "Added bidirectional SQLAlchemy relationships to all 9 models with proper cascade settings and lazy loading",
+        "status": "complete"
+      }
+    },
+    {
+      "id": "execute-task:M001:S02:T02",
+      "kind": "unit",
+      "dependsOn": [
+        "execute-task:M001:S02:T01"
+      ],
+      "writes": [],
+      "metadata": {
+        "unitType": "execute-task",
+        "unitId": "M001.S02.T02",
+        "title": "Create Pydantic v2 schemas in schemas.py",
+        "status": "pending"
+      }
+    },
+    {
+      "id": "execute-task:M001:S02:T03",
+      "kind": "unit",
+      "dependsOn": [
+        "execute-task:M001:S02:T02"
+      ],
+      "writes": [],
+      "metadata": {
+        "unitType": "execute-task",
+        "unitId": "M001.S02.T03",
+        "title": "Write tests for models and schemas",
+        "status": "pending"
+      }
+    },
+    {
+      "id": "complete-slice:M001:S02",
+      "kind": "verification",
+      "dependsOn": [
+        "execute-task:M001:S02:T03"
+      ],
+      "metadata": {
+        "unitType": "complete-slice",
+        "unitId": "M001.S02",
+        "title": "S02",
         "status": "pending"
       }
     }

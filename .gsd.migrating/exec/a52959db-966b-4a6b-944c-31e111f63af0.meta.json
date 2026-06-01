@@ -1,0 +1,18 @@
+{
+  "id": "a52959db-966b-4a6b-944c-31e111f63af0",
+  "runtime": "bash",
+  "purpose": "Run migration tests to verify slice S01 completion",
+  "script_chars": 85,
+  "started_at": "2026-05-31T23:09:29.620Z",
+  "finished_at": "2026-05-31T23:09:29.854Z",
+  "exit_code": 1,
+  "signal": null,
+  "timed_out": false,
+  "duration_ms": 234,
+  "stdout_bytes": 544,
+  "stderr_bytes": 0,
+  "stdout_truncated": false,
+  "stderr_truncated": false,
+  "stdout_path": "D:\\CLAUDE\\Project\\zakuppro\\zakuppro\\.gsd\\exec\\a52959db-966b-4a6b-944c-31e111f63af0.stdout",
+  "stderr_path": "D:\\CLAUDE\\Project\\zakuppro\\zakuppro\\.gsd\\exec\\a52959db-966b-4a6b-944c-31e111f63af0.stderr"
+}
