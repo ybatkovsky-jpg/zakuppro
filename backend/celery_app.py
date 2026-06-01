@@ -1,0 +1,123 @@
+"""
+Celery application configuration for ZakupPro.
+
+Configures Celery with RabbitMQ broker, DLQ setup, and task settings.
+"""
+
+from celery import Celery
+import os
+
+# Broker URL - uses pyamqp for RabbitMQ connection
+# In Docker, 'rabbitmq' is the service name from docker-compose.yml
+broker_url = os.getenv(
+    'CELERY_BROKER_URL',
+    'pyamqp://guest:guest@rabbitmq:5672//'
+)
+
+# Backend URL for result storage (uses Redis)
+result_backend = os.getenv(
+    'CELERY_RESULT_BACKEND',
+    'redis://redis:6379/0'
+)
+
+# Create Celery app instance
+app = Celery(
+    'zakuppro',
+    broker=broker_url,
+    backend=result_backend,
+)
+
+# Task serialization and security settings
+app.conf.update(
+    # Use JSON for serialization (fast and secure)
+    task_serializer='json',
+    accept_content=['json'],
+    result_serializer='json',
+
+    # Timezone configuration
+    timezone='Europe/Moscow',
+    enable_utc=True,
+
+    # Task execution time limits
+    # Hard limit: task will be killed after 30 minutes
+    task_time_limit=30 * 60,  # 30 minutes in seconds
+    # Soft limit: raises Exception after 25 minutes (allows cleanup)
+    task_soft_time_limit=25 * 60,  # 25 minutes in seconds
+
+    # Task result expiration (1 day)
+    result_expires=86400,  # 24 hours in seconds
+
+    # Task routing configuration
+    task_routes={
+        'tasks.*': {'queue': 'default'},
+    },
+
+    # Worker prefetch multiplier (tasks per worker)
+    worker_prefetch_multiplier=1,
+
+    # Acknowledgements mode - acknowledge after task execution
+    task_acks_late=True,
+
+    # Disable task compression for simplicity
+    task_compression=None,
+)
+
+# Dead Letter Queue (DLQ) Configuration
+# Tasks that fail will be moved to the DLQ for inspection
+from kombu import Exchange, Queue
+
+# DLQ Exchange (direct type for DLQ routing)
+dlq_exchange = Exchange(
+    'dlq',
+    type='direct',
+    durable=True
+)
+
+# DLQ Queue (holds failed tasks)
+dlq_queue = Queue(
+    'dlq',
+    exchange=dlq_exchange,
+    routing_key='dlq',
+    durable=True
+)
+
+# Main default queue with DLQ binding
+# Failed tasks will be routed to 'dlq' exchange
+default_exchange = Exchange(
+    'default',
+    type='direct',
+    durable=True
+)
+
+default_queue = Queue(
+    'default',
+    exchange=default_exchange,
+    routing_key='default',
+    durable=True,
+    queue_arguments={
+        # Dead letter exchange: where failed messages go
+        'x-dead-letter-exchange': 'dlq',
+        # Dead letter routing key: routes to DLQ
+        'x-dead-letter-routing-key': 'dlq',
+        # Message TTL: how long messages stay in queue before expiry
+        'x-message-ttl': 86400000,  # 24 hours in milliseconds
+    }
+)
+
+# Configure queues
+app.conf.task_queues = [
+    default_queue,
+    dlq_queue,
+]
+
+# Default queue for tasks without explicit routing
+app.conf.task_default_queue = 'default'
+app.conf.task_default_exchange = 'default'
+app.conf.task_default_routing_key = 'default'
+
+# Import tasks module to register tasks
+# Celery tasks are registered when the module is imported
+from backend import tasks  # noqa: F401
+
+if __name__ == '__main__':
+    app.start()
