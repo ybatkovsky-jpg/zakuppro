@@ -4,7 +4,7 @@
 
 ZakupPro — Mini-MRP система для мебельного производства "ПРОМЕБЕЛЬ". Автоматизация закупок, управления проектами, складом и финансами.
 
-**Current state:** M001 completed (DB schema + FastAPI CRUD). M002 completed (Async core + AI-Agent Foundation). M003 completed (Email + Invoice Processing).
+**Current state:** M001 completed (DB schema + FastAPI CRUD). M002 completed (Async core + AI-Agent Foundation). M003 completed (Email + Invoice Processing). M004 completed (Bank Integration + Financials).
 
 ## Core Value
 
@@ -52,8 +52,18 @@ ZakupPro — Mini-MRP система для мебельного произво�
 - E2E integration tests (13 tests) validating parse → verify → notify pipeline
 - Dirty invoice fixtures validated (merged cells, Russian content)
 
-**M004-M006 — Queued:**
-- M004: Bank Integration + Financials
+**M004 — Completed (verdict: pass):**
+- BankStatement, BankTransaction, TransactionMatchingAudit models with indexes and relationships
+- 1C ClientBank parser for Tinkoff/Ozon formats with CP1251/UTF-8 encoding support (56 tests)
+- Email Worker extension for .txt attachment routing to bank.statement exchange (29 tests)
+- PaymentMatcher auto-matching by INN + amount ±5% + date proximity (84 tests)
+- UnresolvedTransaction CRUD API with filters/search/bulk operations/audit trail (55 tests)
+- Analytics endpoints: dashboard metrics, payment dynamics time-series, Excel export
+- Manual bank statement upload endpoint as fallback
+- End-to-end integration: upload → parsing → auto-matching → manual resolution → audit retrieval
+- Total: 237 tests passing for M004 components
+
+**M005-M006 — Queued:**
 - M005: Frontend UI (Next.js + Ant Design)
 - M006: Business Logic Polish (Kanban, комплектация, склад)
 
@@ -81,12 +91,17 @@ ZakupPro — Mini-MRP система для мебельного произво�
 - Non-blocking notification pattern (log errors, return False, don't block pipeline)
 - IMAP polling with Message-ID persistence for duplicate detection
 - Graceful shutdown via SIGTERM/SIGINT handlers
-- call_task() helpers for testing Celery tasks without @app.task wrapper
+- call_task() helpers for testing Celery tasks без @app.task wrapper
+- Bank statement processing: status transition Обрабатывается → Готов
+- FailedTask DLQ pattern для inspecting failed messages
+- Multi-tier matching algorithm with confidence scoring
+- Unified audit trail: TransactionMatchingAudit tracks auto and manual matches
+- Database dialect detection for SQLite vs PostgreSQL compatibility
 
 **Integration Points:**
 - Telegram Bot → RabbitMQ → Celery Workers → FastAPI → PostgreSQL
 - Email Worker → IMAP/SMTP → RabbitMQ → AI-Agent
-- Bank Worker → Bank API → PostgreSQL
+- Bank Worker → 1C ClientBank parsing → Auto-matching → UnresolvedTransaction API
 
 ## Capability Contract
 
@@ -97,6 +112,6 @@ See `.gsd/REQUIREMENTS.md` for the explicit capability contract.
 - [x] M001: Foundation — DB schema, FastAPI CRUD, Docker
 - [x] M002: Asynchronous Core + AI-Agent Foundation — RabbitMQ, Celery, Telegram Bot, Excel parsing, DLQ
 - [x] M003: Email + Invoice Processing — IMAP ingest, invoice parsing/verification, notifications
-- [ ] M004: Bank Integration + Financials — bank statement import, payment mapping
+- [x] M004: Bank Integration + Financials — bank statement import, payment mapping, analytics, export
 - [ ] M005: Frontend UI — Next.js, Kanban, specifications tables
 - [ ] M006: Business Logic Polish — Kanban transitions, stock reservation, readiness matrix

@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "exported_at": "2026-06-02T21:58:35.320Z",
+  "exported_at": "2026-06-02T23:13:46.369Z",
   "milestones": [
     {
       "id": "M001",
@@ -220,10 +220,10 @@
     {
       "id": "M004",
       "title": "Bank Integration + Financials",
-      "status": "pending",
+      "status": "complete",
       "depends_on": [],
       "created_at": "2026-06-01T09:52:52.608Z",
-      "completed_at": null,
+      "completed_at": "2026-06-02T22:34:20.219Z",
       "vision": "Automatic bank statement ingestion and payment reconciliation with manual fallback for unmatched transactions. The system processes 1C ClientBank statements from Tinkoff and Ozon Bank via email, auto-matches payments to invoices by INN and amount, and provides full accounting UI for resolving unmatched transactions.",
       "success_criteria": [
         "Email Worker detects bank statements and routes to new exchange",
@@ -275,22 +275,74 @@
     },
     {
       "id": "M005",
-      "title": "Frontend UI",
-      "status": "queued",
+      "title": "Frontend UI Integration",
+      "status": "active",
       "depends_on": [],
       "created_at": "2026-06-01T09:52:52.609Z",
       "completed_at": null,
-      "vision": "",
-      "success_criteria": [],
-      "key_risks": [],
-      "proof_strategy": [],
-      "verification_contract": "",
-      "verification_integration": "",
-      "verification_operational": "",
-      "verification_uat": "",
-      "definition_of_done": [],
-      "requirement_coverage": "",
-      "boundary_map_markdown": "",
+      "vision": "Интегрировать Next.js frontend с FastAPI backend, добавить drag-and-drop для Kanban доски проектов, реализовать базовую ролевую модель для разграничения доступа.",
+      "success_criteria": [
+        "Frontend интегрирован с FastAPI backend через API проксирование",
+        "Kanban доска поддерживает drag-and-drop с валидацией переходов",
+        "Analytics дашборд показывает реальные данные из PostgreSQL",
+        "Базовая ролевая модель (owner/manager/warehouse) реализована",
+        "Приложение готово к deployment в Docker Compose"
+      ],
+      "key_risks": [
+        {
+          "risk": "Интеграция Next.js + FastAPI требует корректной настройки CORS и проксирования",
+          "whyItMatters": "Без правильной конфигурации frontend не сможет общаться с backend из-за CORS ошибок"
+        },
+        {
+          "risk": "DnD может конфликтовать с существующей state логикой",
+          "whyItMatters": "При drag карточки status обновляется, но компонент может перерендериться и потерять анимацию"
+        },
+        {
+          "risk": "Ролевая модель требует миграции БД и переработки auth",
+          "whyItMatters": "Нужно добавить users таблицу, JWT токены, middleware — затрагивает всю архитектуру security"
+        },
+        {
+          "risk": "Production build Next.js standalone может иметь проблемы с путями",
+          "whyItMatters": "Статические файлы и API routes могут не работать в standalone режиме без additional config"
+        }
+      ],
+      "proof_strategy": [
+        {
+          "riskOrUnknown": "Next.js и FastAPI могут конфликтовать при портах и routing",
+          "retireIn": "S01",
+          "whatWillBeProven": "Проксирование работает. Next.js /api/* → FastAPI :8000 без конфликтов. CORS настроен корректно."
+        },
+        {
+          "riskOrUnknown": "DnD библиотека может работать плохо на mobile",
+          "retireIn": "S02",
+          "whatWillBeProven": "@dnd-kit работает на touch devices. Анимации smooth. Нет race conditions при быстрых drag."
+        },
+        {
+          "riskOrUnknown": "Analytics queries могут быть медленными на больших данных",
+          "retireIn": "S03",
+          "whatWillBeProven": "Aggregate queries возвращают < 500ms. Индексы на payment_date, amount, status работают."
+        },
+        {
+          "riskOrUnknown": "RBAC может пропускать неавторизованные запросы",
+          "retireIn": "S04",
+          "whatWillBeProven": "Middleware проверяет JWT на всех защищенных endpoints. 401 при отсутствии токена, 403 при insufficient role."
+        }
+      ],
+      "verification_contract": "S01: curl -f http://localhost:3000/api/projects → 200, массив проектов из PostgreSQL через FastAPI. S02: браузер — drag карточки между колонками → статус меняется в БД. S03: браузер — открыть /analytics → видны метрики из /api/analytics/dashboard. S04: создать user с role manager → логин → токен содержит role → GET чужого проекта → 403. S05: docker-compose up → smoke test проходит.",
+      "verification_integration": "Frontend-Backend: Next.js на 3000 проксирует /api/* на FastAPI :8000 через Docker network. Auth: JWT токены от FastAPI используются в Next.js Authorization header. RBAC: middleware в FastAPI проверяет role claim. DnD: @dnd-kit onDragEnd вызывает PATCH /api/projects/:id/status.",
+      "verification_operational": "Health checks: GET /health (FastAPI), GET /api/health (Next.js). Logs: structured JSON в stdout для всех сервисов. Docker restart: frontend и backend восстанавливаются < 10 сек. Graceful shutdown: SIGTERM → cleanup → exit.",
+      "verification_uat": "1. Менеджер создаёт проект через UI → видит в списке. 2. Менеджер拖动 карточку в 'В обработке' → статус меняется. 3. Менеджер открывает аналитику → видит графики реальных данных. 4. Складworker логинится → видит только склад. 5. Owner видит все данные всех пользователей.",
+      "definition_of_done": [
+        "Все 5 слайсов завершены с SUMMARY.md",
+        "Frontend использует FastAPI endpoints вместо Prisma",
+        "Kanban DnD работает на desktop и mobile",
+        "RBAC middleware проверяет роли на всех защищенных endpoints",
+        "Docker compose orchestrates все сервисы без warnings",
+        "E2E тест coverage для critical paths",
+        "Документация для deployment (README, docker-compose, env variables)"
+      ],
+      "requirement_coverage": "**Requirements Coverage for M005:**\n\n- **R011 (primary-user-loop, owner: M005)** — Frontend UI с Kanban, спецификациями, комплектацией\n  - S01: Frontend-Backend Integration обеспечивает данные для всех экранов\n  - S02: Kanban DnD реализует интерактивную доску проектов\n  - S03: Analytics Dashboard реальными данными\n  - S04: RBAC обеспечивает разграничение доступа\n  - S05: Production Polish завершает UI готовность\n  - **Статус:** Будет validated после завершения milestone\n\n- **R017 (admin/support, deferred, owner: M005)** — DLQ UI/админка\n  - **Не в scope M005** — это административный экран, может быть реализован позже как отдельная задача\n\n- **R018 (compliance/security, deferred, owner: M005)** — Ролевая модель\n  - S04 полностью покрывает это требование\n  - **Статус:** Будет validated после завершения S04\n\n**Supporting requirements (не owned M005, но затронуты):**\n- **R003, R008** — active, owned M002/M003 — frontend использует результаты этих milestone\n- **R009** — validated, owned M004 — frontend использует bank statement данные через FastAPI\n\n**Coverage summary:**\n- Primary requirement (R011): 5/5 слайсов работают\n- Deferred requirements в M005 scope: R018 будет validated\n- Deferred requirements out of scope: R017 (отложена)\n\n**Unmapped active requirements после M005:** R012, R013, R014 → owned M006 (Business Logic Polish)",
+      "boundary_map_markdown": "## Boundary Map: M005 Frontend UI Integration\n\n### Входные границы (контракт от предыдущих milestone)\n\n**От M001 (DB + FastAPI CRUD):**\n- SQLAlchemy ORM модели с relationships\n- FastAPI CRUD endpoints для всех entities\n- PostgreSQL schema с indexes\n\n**От M002 (Async Core + AI-Agent):**\n- RabbitMQ + Celery infrastructure\n- Telegram Bot service\n- FailedTask модель для DLQ\n\n**От M003 (Email + Invoice Processing):**\n- Invoice, InvoiceItem модели\n- Invoice verification API\n- Email notifications\n\n**От M004 (Bank Integration):**\n- BankStatement, BankTransaction модели\n- UnresolvedTransaction CRUD API\n- Analytics endpoints (/api/analytics/dashboard, /api/analytics/payment-dynamics)\n\n### Выходные границы (контракт для следующих milestone)\n\n**К M006 (Business Logic Polish):**\n- Frontend компоненты готовы для Kanban бизнес-логики\n- RBAC middleware можно расширить для finer-grained permissions\n- Аналитика готова для матрицы готовности проекта\n\n### Интеграционные границы (внутри M005)\n\n**S01 → S02/S03/S04:**\n- API клиент с TypeScript типами используется всеми последующими слайсами\n- Проксирование Next.js → FastAPI настроено один раз в S01\n\n**S02 → S04:**\n- DnD изменения статуса проходят через RBAC middleware\n\n**S01/S03 → S05:**\n- Production build использует реальные API endpoints\n- Docker compose конфиг включает все сервисы",
       "sequence": 0
     },
     {
@@ -771,6 +823,127 @@
       "integration_closure": "New analytics router registered in main.py. Excel export and upload endpoints use existing patterns (unresolved_transactions filters, bank_statement_parser, payment_matcher). No new wiring required beyond router registration.",
       "observability_impact": "Structured logging at all analytics/export/upload operations (filter parameters, result counts, file metadata). Integration tests verify audit trail creation for auto-matching from uploaded statements.",
       "sequence": 6,
+      "replan_triggered_at": null,
+      "is_sketch": 0,
+      "sketch_scope": ""
+    },
+    {
+      "milestone_id": "M005",
+      "id": "S01",
+      "title": "Frontend-Backend API Integration",
+      "status": "pending",
+      "risk": "high",
+      "depends": [],
+      "demo": "Frontend компоненты (Projects, Invoices, Analytics) получают данные через FastAPI endpoints. Проверяется curl-ом к /api/projects, /api/invoices, /api/analytics/dashboard.",
+      "created_at": "2026-06-02T23:13:46.340Z",
+      "completed_at": null,
+      "full_summary_md": "",
+      "full_uat_md": "",
+      "goal": "Настроить проксирование Next.js API routes в FastAPI backend. Создать API клиент для типизированных запросов. Переписать key компоненты для использования FastAPI вместо Prisma.",
+      "success_criteria": "- Next.js /api/* проксирует в FastAPI backend\n- Projects компонент использует GET /api/projects\n- Invoices компонент использует GET /api/invoices\n- Analytics использует /api/analytics/dashboard\n- Типизированные TypeScript интерфейсы для всех DTO",
+      "proof_level": "API-level: curl к FastAPI endpoints возвращает валидные JSON с данными из PostgreSQL. Frontend рендерит реальные данные из backend.",
+      "integration_closure": "Next.js (порт 3000) → FastAPI (порт 8000) через internal Docker network. В production nginx будет проксировать /api/* на FastAPI.",
+      "observability_impact": "Добавить логирование в Next.js API routes для отслеживания запросов к FastAPI. Логировать ошибки проксирования.",
+      "sequence": 1,
+      "replan_triggered_at": null,
+      "is_sketch": 0,
+      "sketch_scope": ""
+    },
+    {
+      "milestone_id": "M005",
+      "id": "S02",
+      "title": "Kanban Drag-and-Drop",
+      "status": "pending",
+      "risk": "medium",
+      "depends": [
+        "S01"
+      ],
+      "demo": "Пользователь может перетащить карточку проекта из колонки 'Новые' в 'В обработке'. Статус обновляется в БД через FastAPI. Переходы подчиняются правилам VALID_TRANSITIONS.",
+      "created_at": "2026-06-02T23:13:46.340Z",
+      "completed_at": null,
+      "full_summary_md": "",
+      "full_uat_md": "",
+      "goal": "Реализовать drag-and-drop для Kanban доски проектов с использованием @dnd-kit. Добавить валидацию переходов статусов на бэкенде. Обновлять проект через PATCH /api/projects/{id}/status.",
+      "success_criteria": "- DnD работает на desktop и mobile\n- Карточки перетаскиваются между колонками\n- Статус сохраняется в БД через API\n- Недопустимые переходы блокируются с визуальным фидбеком\n- Анимации smooth",
+      "proof_level": "UI-level: drag карточки → статус меняется → обновление видно после reload. Проверка в браузере.",
+      "integration_closure": "Frontend @dnd-kit → FastAPI PATCH endpoint → PostgreSQL. Использовать существующий VALID_TRANSITIONS с backend.",
+      "observability_impact": "Логировать все изменения статуса с project_id, old_status, new_status, user_id.",
+      "sequence": 2,
+      "replan_triggered_at": null,
+      "is_sketch": 0,
+      "sketch_scope": ""
+    },
+    {
+      "milestone_id": "M005",
+      "id": "S03",
+      "title": "Analytics Dashboard Real Data",
+      "status": "pending",
+      "risk": "medium",
+      "depends": [
+        "S01"
+      ],
+      "demo": "Дашборд показывает метрики из FastAPI: paid_invoices_count, unpaid_invoices_count, total_paid_amount, total_unpaid_amount. Графики payment dynamics рендерятся данными из /api/analytics/payment-dynamics.",
+      "created_at": "2026-06-02T23:13:46.340Z",
+      "completed_at": null,
+      "full_summary_md": "",
+      "full_uat_md": "",
+      "goal": "Подключить компоненты Dashboard и Analytics к FastAPI endpoints для финансовых метрик. Добавить графики для payment dynamics с группировкой по day/week/month.",
+      "success_criteria": "- Dashboard показывает реальные метрики из backend\n- Графики рендерятся через Recharts\n- Фильтры period_start/period_end работают\n- Excel export для транзакций работает\n- Payment dynamics с группировкой",
+      "proof_level": "UI-level: открыть /analytics → видны реальные числа из БД. Экспорт в Excel скачивает файл с данными.",
+      "integration_closure": "Frontend → FastAPI /api/analytics/* → PostgreSQL aggregated queries. Excel export через StreamingResponse.",
+      "observability_impact": "Логировать параметры фильтров и результирующие метрики для аналитики использования.",
+      "sequence": 3,
+      "replan_triggered_at": null,
+      "is_sketch": 0,
+      "sketch_scope": ""
+    },
+    {
+      "milestone_id": "M005",
+      "id": "S04",
+      "title": "Role-Based Access Control (RBAC)",
+      "status": "pending",
+      "risk": "high",
+      "depends": [
+        "S01"
+      ],
+      "demo": "Пользователь 'manager' видит только свои проекты. Пользователь 'warehouse' видит только склад. Пользователь 'owner' видит всё. Попытка доступа к чужим данным возвращает 403.",
+      "created_at": "2026-06-02T23:13:46.340Z",
+      "completed_at": null,
+      "full_summary_md": "",
+      "full_uat_md": "",
+      "goal": "Реализовать базовую ролевую модель в FastAPI middleware. Роли: owner (все), manager (свои проекты), warehouse (склад). Добавить users таблицу и role field. JWT токены с role claim.",
+      "success_criteria": "- User модель с role field в БД\n- JWT токены включают role claim\n- Middleware проверяет permissions по endpoint\n- Frontend скрывает элементы по роли\n- 403 на несанкционированный доступ",
+      "proof_level": "API-level: create user с role manager → логин → токен содержит role. Запрос чужого проекта → 403. Frontend UI скрывает недоступное.",
+      "integration_closure": "Frontend login → FastAPI auth → JWT с role → RBAC middleware → endpoints. Роль в токене проверяется на каждом запросе.",
+      "observability_impact": "Логировать все access denied события с user_id, role, endpoint, action. Алерты на множественные попытки.",
+      "sequence": 4,
+      "replan_triggered_at": null,
+      "is_sketch": 0,
+      "sketch_scope": ""
+    },
+    {
+      "milestone_id": "M005",
+      "id": "S05",
+      "title": "Production Readiness Polish",
+      "status": "pending",
+      "risk": "low",
+      "depends": [
+        "S01",
+        "S02",
+        "S03",
+        "S04"
+      ],
+      "demo": "Приложение запускается в Docker Compose. Frontend на порту 3000, backend на 8000. Все healthchecks green. Smoke test проходит: создать проект → обновить статус → удалить.",
+      "created_at": "2026-06-02T23:13:46.341Z",
+      "completed_at": null,
+      "full_summary_md": "",
+      "full_uat_md": "",
+      "goal": "Финальный полировку для production readiness: error boundaries, loading states, toast notifications, responsive design fixes, environment configuration.",
+      "success_criteria": "- Error boundaries для всех компонентов\n- Loading skeletons везде\n- Toast уведомления для всех операций\n- Responsive design для mobile\n- Environment переменные документированы\n- Docker compose production-ready",
+      "proof_level": "E2E: npm run build → docker-compose up → smoke test в браузере. Все endpoints возвращают 2xx или корректные 4xx.",
+      "integration_closure": "Docker composeorchestrates все сервисы: frontend (Next.js standalone), backend (FastAPI), PostgreSQL, RabbitMQ. Nginx конфиг для production.",
+      "observability_impact": "Health check endpoints для frontend и backend. Structured logging для всех errors. Metrics для response times.",
+      "sequence": 5,
       "replan_triggered_at": null,
       "is_sketch": 0,
       "sketch_scope": ""

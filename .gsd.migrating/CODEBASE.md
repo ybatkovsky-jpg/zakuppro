@@ -1,7 +1,7 @@
 # Codebase Map
 
-Generated: 2026-06-02T22:08:46Z | Files: 500 | Described: 0/500
-<!-- gsd:codebase-meta {"generatedAt":"2026-06-02T22:08:46Z","fingerprint":"6162737f237e1fa8f93f7973634ec1e53049614f","fileCount":500,"truncated":true} -->
+Generated: 2026-06-02T22:35:25Z | Files: 500 | Described: 0/500
+<!-- gsd:codebase-meta {"generatedAt":"2026-06-02T22:35:25Z","fingerprint":"27c39011dc91ceb51b20b7154d33358728be2fc0","fileCount":500,"truncated":true} -->
 Note: Truncated to first 500 files. Run with higher --max-files to include all.
 
 ### (root)/
@@ -27,13 +27,13 @@ Note: Truncated to first 500 files. Run with higher --max-files to include all.
 - `.gsd.migrating/STATE.md`
 
 ### .gsd.migrating/activity/
-- *(191 files: 191 .jsonl)*
+- *(195 files: 195 .jsonl)*
 
 ### .gsd.migrating/audit/
 - `.gsd.migrating/audit/events.jsonl`
 
 ### .gsd.migrating/exec/
-- *(174 files: 58 .json, 58 .stderr, 58 .stdout)*
+- *(183 files: 61 .json, 61 .stderr, 61 .stdout)*
 
 ### .gsd.migrating/graphs/
 - `.gsd.migrating/graphs/graph.json`
@@ -175,18 +175,3 @@ Note: Truncated to first 500 files. Run with higher --max-files to include all.
 - `.gsd.migrating/milestones/M002/slices/S02/tasks/T01-PLAN.md`
 - `.gsd.migrating/milestones/M002/slices/S02/tasks/T01-SUMMARY.md`
 - `.gsd.migrating/milestones/M002/slices/S02/tasks/T01-VERIFY.json`
-- `.gsd.migrating/milestones/M002/slices/S02/tasks/T02-PLAN.md`
-- `.gsd.migrating/milestones/M002/slices/S02/tasks/T02-SUMMARY.md`
-- `.gsd.migrating/milestones/M002/slices/S02/tasks/T02-VERIFY.json`
-- `.gsd.migrating/milestones/M002/slices/S02/tasks/T03-PLAN.md`
-- `.gsd.migrating/milestones/M002/slices/S02/tasks/T03-SUMMARY.md`
-- `.gsd.migrating/milestones/M002/slices/S02/tasks/T03-VERIFY.json`
-- `.gsd.migrating/milestones/M002/slices/S02/tasks/T04-PLAN.md`
-- `.gsd.migrating/milestones/M002/slices/S02/tasks/T04-SUMMARY.md`
-- `.gsd.migrating/milestones/M002/slices/S02/tasks/T04-VERIFY.json`
-- `.gsd.migrating/milestones/M002/slices/S02/tasks/T05-PLAN.md`
-- `.gsd.migrating/milestones/M002/slices/S02/tasks/T05-SUMMARY.md`
-- `.gsd.migrating/milestones/M002/slices/S02/tasks/T05-VERIFY.json`
-
-### .gsd.migrating/milestones/M002/slices/S03/
-- `.gsd.migrating/milestones/M002/slices/S03/S03-PLAN.md`

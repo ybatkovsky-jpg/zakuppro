@@ -22,22 +22,6 @@ This file is the explicit capability and coverage contract for the project.
 - Primary owning slice: M003
 - Validation: S01: InvoiceItem table created with sku, name, qty columns; Invoice.verification_result JSONB column; llm_provider.py wrapper supports OpenAI, Gemini, Claude with automatic fallback. S04: 9 integration tests verify exact SKU matching, RapidFuzz fuzzy name matching (>85% threshold), quantity discrepancy detection. Fuzzy matching logic complete with multi-tier strategy: exact SKU → OK, SKU differs + 85% similarity → clarification, quantity differs → partial.
 
-### R009 — Bank Worker для загрузки выписки (по API банка или через email) и мапинга платежей к счетам по ИНН и сумме
-- Class: integration
-- Status: active
-- Description: Bank Worker для загрузки выписки (по API банка или через email) и мапинга платежей к счетам по ИНН и сумме
-- Why it matters: Автоматическое сверки财务管理. Платежи должны привязываться к счетам без ручного труда.
-- Source: user
-- Primary owning slice: M004
-
-### R010 — UnresolvedTransaction таблица для платежей которые не удалось привязать автоматически, с UI для ручной сортировки
-- Class: admin/support
-- Status: active
-- Description: UnresolvedTransaction таблица для платежей которые не удалось привязать автоматически, с UI для ручной сортировки
-- Why it matters: Не все платежи маппятся автоматически. Бухгалтер должен иметь возможность разобрать несопоставленные операции.
-- Source: user
-- Primary owning slice: M004
-
 ### R011 — Frontend UI (Next.js + Ant Design) с Kanban-досками проектов, таблицами спецификаций и экраном комплектации
 - Class: primary-user-loop
 - Status: active
@@ -126,6 +110,24 @@ This file is the explicit capability and coverage contract for the project.
 - Primary owning slice: M003
 - Validation: S05 verification passed: email_notifier.py implements SMTP outbound with aiosmtplib async client. 19 tests covering config validation, email building, async SMTP operations, Russian content. send_clarification_email sends to supplier with BCC to company. Non-blocking pattern matches telegram_notifier.
 
+### R009 — Bank Worker для загрузки выписки (по API банка или через email) и мапинга платежей к счетам по ИНН и сумме
+- Class: integration
+- Status: validated
+- Description: Bank Worker для загрузки выписки (по API банка или через email) и мапинга платежей к счетам по ИНН и сумме
+- Why it matters: Автоматическое сверки财务管理. Платежи должны привязываться к счетам без ручного труда.
+- Source: user
+- Primary owning slice: M004
+- Validation: M004 Complete: S02 1C ClientBank parser with INN extraction (56 tests). S03 Email Worker routes .txt to parse_bank_statement task (29 tests). S04 PaymentMatcher auto-matches by INN + amount ±5% (84 tests). S06 Manual upload fallback (13 tests). Total: 187 tests passing. End-to-end flow verified: manual upload → parsing → auto-matching → manual resolution → audit retrieval.
+
+### R010 — UnresolvedTransaction таблица для платежей которые не удалось привязать автоматически, с UI для ручной сортировки
+- Class: admin/support
+- Status: validated
+- Description: UnresolvedTransaction таблица для платежей которые не удалось привязать автоматически, с UI для ручной сортировки
+- Why it matters: Не все платежи маппятся автоматически. Бухгалтер должен иметь возможность разобрать несопоставленные операции.
+- Source: user
+- Primary owning slice: M004
+- Validation: M004 Complete: S04 creates UnresolvedTransaction for unmatched payments. S05 provides full CRUD API with filters/search/bulk operations/audit trail. 55 tests (38 unit + 17 integration) verify manual reconciliation workflow.
+
 ## Deferred
 
 ### R015 — Graceful shutdown и cleanup для всех сервисов (Celery workers, Telegram bot, FastAPI) с сохранением состояния задач
@@ -182,8 +184,8 @@ This file is the explicit capability and coverage contract for the project.
 | R006 | operability | validated | M002 | none | S02 added telegram-bot service to docker-compose.yml with restart: unless-stopped, volume mounts, and ALLOWED_CHAT_IDS environment variable for authorization. |
 | R007 | integration | validated | M003 | none | S05 verification passed: email_notifier.py implements SMTP outbound with aiosmtplib async client. 19 tests covering config validation, email building, async SMTP operations, Russian content. send_clarification_email sends to supplier with BCC to company. Non-blocking pattern matches telegram_notifier. |
 | R008 | core-capability | active | M003 | none | S01: InvoiceItem table created with sku, name, qty columns; Invoice.verification_result JSONB column; llm_provider.py wrapper supports OpenAI, Gemini, Claude with automatic fallback. S04: 9 integration tests verify exact SKU matching, RapidFuzz fuzzy name matching (>85% threshold), quantity discrepancy detection. Fuzzy matching logic complete with multi-tier strategy: exact SKU → OK, SKU differs + 85% similarity → clarification, quantity differs → partial. |
-| R009 | integration | active | M004 | none | unmapped |
-| R010 | admin/support | active | M004 | none | unmapped |
+| R009 | integration | validated | M004 | none | M004 Complete: S02 1C ClientBank parser with INN extraction (56 tests). S03 Email Worker routes .txt to parse_bank_statement task (29 tests). S04 PaymentMatcher auto-matches by INN + amount ±5% (84 tests). S06 Manual upload fallback (13 tests). Total: 187 tests passing. End-to-end flow verified: manual upload → parsing → auto-matching → manual resolution → audit retrieval. |
+| R010 | admin/support | validated | M004 | none | M004 Complete: S04 creates UnresolvedTransaction for unmatched payments. S05 provides full CRUD API with filters/search/bulk operations/audit trail. 55 tests (38 unit + 17 integration) verify manual reconciliation workflow. |
 | R011 | primary-user-loop | active | M005 | none | unmapped |
 | R012 | core-capability | active | M006 | none | unmapped |
 | R013 | core-capability | active | M006 | none | unmapped |
@@ -196,7 +198,7 @@ This file is the explicit capability and coverage contract for the project.
 
 ## Coverage Summary
 
-- Active requirements: 8
-- Mapped to slices: 8
-- Validated: 6 (R001, R002, R004, R005, R006, R007)
+- Active requirements: 6
+- Mapped to slices: 6
+- Validated: 8 (R001, R002, R004, R005, R006, R007, R009, R010)
 - Unmapped active requirements: 0
