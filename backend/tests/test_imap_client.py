@@ -36,8 +36,12 @@ class TestAttachmentExtractor:
     def test_is_supported_file_unsupported(self):
         """Test unsupported files return False."""
         assert AttachmentExtractor.is_supported_file('image.jpg') is False
-        assert AttachmentExtractor.is_supported_file('text.txt') is False
         assert AttachmentExtractor.is_supported_file('archive.zip') is False
+
+    def test_is_supported_file_txt(self):
+        """Test .txt files are now supported (for 1C ClientBank format)."""
+        assert AttachmentExtractor.is_supported_file('statement.txt') is True
+        assert AttachmentExtractor.is_supported_file('data.TXT') is True  # Case insensitive
 
     def test_extract_attachments_pdf(self):
         """Test extracting PDF attachment from email."""

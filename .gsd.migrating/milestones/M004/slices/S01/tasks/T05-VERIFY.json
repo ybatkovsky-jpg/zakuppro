@@ -1,0 +1,16 @@
+{
+  "schemaVersion": 1,
+  "taskId": "T05",
+  "unitId": "M004/S01/T05",
+  "timestamp": 1780385480787,
+  "passed": true,
+  "discoverySource": "task-plan",
+  "checks": [
+    {
+      "command": "pytest backend/tests/test_models.py::TestBankStatementModels -v",
+      "exitCode": 0,
+      "durationMs": 1992,
+      "verdict": "pass"
+    }
+  ]
+}

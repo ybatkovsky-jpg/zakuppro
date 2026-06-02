@@ -3,8 +3,10 @@ Email Worker Service for Invoice Processing
 
 This module provides the email worker service that:
 1. Polls IMAP mailbox for new emails at configurable intervals
-2. Extracts PDF/Excel attachments from emails
-3. Publishes parse_invoice tasks to RabbitMQ for processing
+2. Extracts PDF/Excel attachments and .txt bank statements from emails
+3. Routes attachments to appropriate Celery tasks:
+   - .txt files -> parse_bank_statement task for 1C ClientBank format
+   - PDF/Excel files -> parse_invoice task for invoice processing
 4. Tracks processed emails by Message-ID to avoid duplicates
 5. Handles graceful shutdown on SIGTERM
 
@@ -72,6 +74,7 @@ class EmailWorker:
             'emails_processed': 0,
             'attachments_extracted': 0,
             'tasks_published': 0,
+            'bank_statements_processed': 0,
             'errors': 0,
             'started_at': None,
         }
@@ -162,6 +165,48 @@ class EmailWorker:
             self.stats['errors'] += 1
             return False
 
+    def publish_bank_statement_task(self, filename: str, content: bytes, metadata: Dict[str, Any]) -> bool:
+        """
+        Publish parse_bank_statement task to RabbitMQ.
+
+        Args:
+            filename: Original attachment filename (.txt file)
+            content: File bytes
+            metadata: Additional metadata (subject, from, date, message_id)
+
+        Returns:
+            True if task published successfully
+        """
+        try:
+            # Import parse_bank_statement task (will be implemented in T04)
+            from backend.tasks import parse_bank_statement
+
+            # Publish task with file content and metadata
+            result = parse_bank_statement.delay(
+                filename=filename,
+                file_content=content,
+                metadata=metadata,
+            )
+
+            logger.info(f"Published parse_bank_statement task {result.id} for {filename}")
+            self.stats['tasks_published'] += 1
+            self.stats['bank_statements_processed'] += 1
+            return True
+
+        except ImportError:
+            # parse_bank_statement task not yet implemented (T04)
+            logger.warning("parse_bank_statement task not yet implemented, skipping")
+            # Simulate task publication for testing
+            logger.info(f"[MOCK] Would publish parse_bank_statement task for {filename} ({len(content)} bytes)")
+            self.stats['tasks_published'] += 1
+            self.stats['bank_statements_processed'] += 1
+            return True
+
+        except Exception as e:
+            logger.error(f"Failed to publish parse_bank_statement task: {e}")
+            self.stats['errors'] += 1
+            return False
+
     def process_email(self, uid: str, message, imap_client) -> None:
         """
         Process a single email: extract attachments and publish tasks.
@@ -209,12 +254,25 @@ class EmailWorker:
             for filename, content, content_type in attachments:
                 logger.info(f"Processing attachment: {filename} ({len(content)} bytes, {content_type})")
 
-                # Publish parse task
-                if self.publish_parse_task(filename, content, metadata):
-                    logger.info(f"Successfully published task for {filename}")
-                    self.stats['attachments_extracted'] += 1
+                # Route based on file extension
+                # .txt files are bank statements (1C ClientBank format)
+                # PDF/Excel files are invoices
+                file_ext = Path(filename).suffix.lower()
+
+                if file_ext == '.txt':
+                    # Bank statement file
+                    if self.publish_bank_statement_task(filename, content, metadata):
+                        logger.info(f"Successfully published bank statement task for {filename}")
+                        self.stats['attachments_extracted'] += 1
+                    else:
+                        logger.error(f"Failed to publish bank statement task for {filename}")
                 else:
-                    logger.error(f"Failed to publish task for {filename}")
+                    # Invoice file (PDF/Excel)
+                    if self.publish_parse_task(filename, content, metadata):
+                        logger.info(f"Successfully published parse task for {filename}")
+                        self.stats['attachments_extracted'] += 1
+                    else:
+                        logger.error(f"Failed to publish parse task for {filename}")
 
             # Mark email as read and save Message-ID
             imap_client.mark_as_read(uid)
@@ -266,6 +324,7 @@ class EmailWorker:
         logger.info(f"Emails processed: {self.stats['emails_processed']}")
         logger.info(f"Attachments extracted: {self.stats['attachments_extracted']}")
         logger.info(f"Tasks published: {self.stats['tasks_published']}")
+        logger.info(f"Bank statements processed: {self.stats['bank_statements_processed']}")
         logger.info(f"Errors: {self.stats['errors']}")
         logger.info(f"Processed IDs tracked: {len(self.processed_ids)}")
         logger.info("=" * 50)

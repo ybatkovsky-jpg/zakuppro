@@ -15,10 +15,10 @@
 
 ## Slices
 
-- [ ] **S01: Database Schema + BankStatement Models** `risk:low` `depends:[]`
+- [x] **S01: S01** `risk:low` `depends:[]`
   > After this: Alembic migration creates BankStatement, BankTransaction, TransactionMatchingAudit tables with relationships. Test fixtures verify schema constraints and cascade behavior.
 
-- [ ] **S02: 1C ClientBank Parser** `risk:high` `depends:[S01]`
+- [ ] **S02: S02** `risk:high` `depends:[]`
   > After this: Parser processes Tinkoff and Ozon .txt files, extracts СекцияДокумент transactions. Unit tests verify parsing of real bank statements with Russian content and merged lines.
 
 - [ ] **S03: Email Worker Extension + RabbitMQ Exchange** `risk:medium` `depends:[S02]`

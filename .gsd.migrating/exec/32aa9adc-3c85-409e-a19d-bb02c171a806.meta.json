@@ -1,0 +1,18 @@
+{
+  "id": "32aa9adc-3c85-409e-a19d-bb02c171a806",
+  "runtime": "bash",
+  "purpose": "T01 verification: Models can be imported",
+  "script_chars": 148,
+  "started_at": "2026-06-02T07:31:50.843Z",
+  "finished_at": "2026-06-02T07:31:50.928Z",
+  "exit_code": 1,
+  "signal": null,
+  "timed_out": false,
+  "duration_ms": 85,
+  "stdout_bytes": 544,
+  "stderr_bytes": 0,
+  "stdout_truncated": false,
+  "stderr_truncated": false,
+  "stdout_path": "D:\\CLAUDE\\Project\\zakuppro\\zakuppro\\.gsd\\exec\\32aa9adc-3c85-409e-a19d-bb02c171a806.stdout",
+  "stderr_path": "D:\\CLAUDE\\Project\\zakuppro\\zakuppro\\.gsd\\exec\\32aa9adc-3c85-409e-a19d-bb02c171a806.stderr"
+}

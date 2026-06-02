@@ -37,7 +37,7 @@ class AttachmentExtractor:
     """Handles extraction of attachments from email messages."""
 
     # Supported invoice file extensions
-    SUPPORTED_EXTENSIONS = {'.pdf', '.xls', '.xlsx', '.xlsm'}
+    SUPPORTED_EXTENSIONS = {'.pdf', '.xls', '.xlsx', '.xlsm', '.txt'}
 
     @classmethod
     def is_supported_file(cls, filename: str) -> bool:

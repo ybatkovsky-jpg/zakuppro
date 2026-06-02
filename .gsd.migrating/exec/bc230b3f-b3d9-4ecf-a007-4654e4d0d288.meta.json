@@ -1,0 +1,18 @@
+{
+  "id": "bc230b3f-b3d9-4ecf-a007-4654e4d0d288",
+  "runtime": "python",
+  "purpose": "T01 verification: Models can be imported",
+  "script_chars": 366,
+  "started_at": "2026-06-02T07:32:12.308Z",
+  "finished_at": "2026-06-02T07:32:13.114Z",
+  "exit_code": 1,
+  "signal": null,
+  "timed_out": false,
+  "duration_ms": 806,
+  "stdout_bytes": 0,
+  "stderr_bytes": 512,
+  "stdout_truncated": false,
+  "stderr_truncated": false,
+  "stdout_path": "D:\\CLAUDE\\Project\\zakuppro\\zakuppro\\.gsd\\exec\\bc230b3f-b3d9-4ecf-a007-4654e4d0d288.stdout",
+  "stderr_path": "D:\\CLAUDE\\Project\\zakuppro\\zakuppro\\.gsd\\exec\\bc230b3f-b3d9-4ecf-a007-4654e4d0d288.stderr"
+}

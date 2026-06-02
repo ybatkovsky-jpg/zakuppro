@@ -1,0 +1,7 @@
+[WARNING] Failed to read unmanaged installs: expected str, bytes or os.PathLike object, not NoneType
+Traceback (most recent call last):
+  File "<string>", line 3, in <module>
+    from models import BankStatement, BankTransaction, TransactionMatchingAudit
+  File "D:\CLAUDE/Project/zakuppro/zakuppro/backend\models.py", line 6, in <module>
+    from sqlalchemy import Column, Integer, String, Numeric, DateTime, Text, ForeignKey, Boolean, LargeBinary, JSON
+ModuleNotFoundError: No module named 'sqlalchemy'

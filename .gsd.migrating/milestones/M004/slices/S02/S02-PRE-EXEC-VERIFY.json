@@ -1,0 +1,17 @@
+{
+  "schemaVersion": 1,
+  "milestoneId": "M004",
+  "sliceId": "S02",
+  "timestamp": 1780386766215,
+  "status": "fail",
+  "durationMs": 4,
+  "checks": [
+    {
+      "category": "tool",
+      "target": "T01 Verify",
+      "passed": false,
+      "message": "Unsafe or non-runnable Verify command: python -c \"from backend.services.bank_statement_parser import BankStatementParser, create_bank_statement_parser, parse_bank_statement_file; print('OK')\" (contains shell control syntax such as pipes, redirects, semicolons, backticks, or command substitution)",
+      "blocking": true
+    }
+  ]
+}

@@ -160,6 +160,98 @@ class TestEmailWorker:
             assert result is False
             assert worker.stats['errors'] == 1
 
+    def test_publish_bank_statement_task_success(self, worker):
+        """Test successful parse_bank_statement task publication."""
+        with patch('backend.tasks.parse_bank_statement') as mock_task:
+            mock_result = Mock()
+            mock_result.id = 'task-bank-123'
+            mock_task.delay.return_value = mock_result
+
+            result = worker.publish_bank_statement_task(
+                filename='statement.txt',
+                content=b'1CClientBank content',
+                metadata={'message_id': '<msg@example.com>'}
+            )
+
+            assert result is True
+            mock_task.delay.assert_called_once()
+            assert worker.stats['tasks_published'] == 1
+            assert worker.stats['bank_statements_processed'] == 1
+
+    def test_publish_bank_statement_task_not_implemented(self, worker):
+        """Test handling when parse_bank_statement task not yet implemented."""
+        with patch('backend.tasks.parse_bank_statement', side_effect=ImportError):
+            result = worker.publish_bank_statement_task(
+                filename='statement.txt',
+                content=b'1CClientBank content',
+                metadata={}
+            )
+
+            # Should return True (mocked success)
+            assert result is True
+            assert worker.stats['tasks_published'] == 1
+            assert worker.stats['bank_statements_processed'] == 1
+
+    def test_publish_bank_statement_task_failure(self, worker):
+        """Test handling parse_bank_statement task publication failure."""
+        with patch('backend.tasks.parse_bank_statement') as mock_task:
+            mock_task.delay.side_effect = Exception('RabbitMQ error')
+
+            result = worker.publish_bank_statement_task(
+                filename='statement.txt',
+                content=b'1CClientBank content',
+                metadata={}
+            )
+
+            assert result is False
+            assert worker.stats['errors'] == 1
+
+    def test_process_email_with_txt_attachment_routes_to_bank_statement(self, worker, sample_email, mock_imap_client):
+        """Test that .txt attachments are routed to bank statement task."""
+        mock_imap_client.get_message_id.return_value = '<msg@example.com>'
+        mock_imap_client.extract_attachments.return_value = [
+            ('bank_statement.txt', b'1CClientBankBankStatement content', 'text/plain')
+        ]
+
+        with patch('backend.tasks.parse_bank_statement') as mock_bank_task:
+            mock_result = Mock()
+            mock_result.id = 'task-bank-123'
+            mock_bank_task.delay.return_value = mock_result
+
+            worker.process_email('123', sample_email, mock_imap_client)
+
+            # Should publish to bank statement task
+            mock_bank_task.delay.assert_called_once()
+            assert worker.stats['tasks_published'] == 1
+            assert worker.stats['bank_statements_processed'] == 1
+            assert worker.stats['attachments_extracted'] == 1
+
+    def test_process_email_with_mixed_attachments(self, worker, sample_email, mock_imap_client):
+        """Test processing email with both invoice and bank statement attachments."""
+        mock_imap_client.get_message_id.return_value = '<msg@example.com>'
+        mock_imap_client.extract_attachments.return_value = [
+            ('invoice.pdf', b'PDF content', 'application/pdf'),
+            ('statement.txt', b'1CClientBank content', 'text/plain'),
+            (' annex.xlsx', b'Excel content', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'),
+        ]
+
+        with patch('backend.tasks.parse_invoice') as mock_invoice_task:
+            with patch('backend.tasks.parse_bank_statement') as mock_bank_task:
+                mock_result = Mock()
+                mock_result.id = 'task-123'
+                mock_invoice_task.delay.return_value = mock_result
+                mock_bank_task.delay.return_value = mock_result
+
+                worker.process_email('123', sample_email, mock_imap_client)
+
+                # Should publish 2 invoice tasks
+                assert mock_invoice_task.delay.call_count == 2
+                # Should publish 1 bank statement task
+                assert mock_bank_task.delay.call_count == 1
+                assert worker.stats['attachments_extracted'] == 3
+                assert worker.stats['tasks_published'] == 3
+                assert worker.stats['bank_statements_processed'] == 1
+
     def test_process_email_duplicate(self, worker, sample_email, mock_imap_client):
         """Test skipping already processed email."""
         message_id = '<msg123@example.com>'

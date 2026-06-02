@@ -5,298 +5,176 @@
 
 ## Project Description
 
-M004 реализует автоматическую загрузку банковских выписок и сопоставление платежей со счетами. Выписки приходят от банков Тинькофф и Озон в формате 1С ClientBank (.txt) через email. Система автоматически распознаёт тип письма (выписка или счёт), парсит выписку, и выполняет мапинг платежей на счета по ИНН поставщика. Платежи, которые не удалось сопоставить автоматически, попадают в интерфейс ручной сортировки для бухгалтера.
+Build a Bank Worker service that automatically imports bank statements from email and matches payments to invoices. The system polls an IMAP mailbox for bank statement emails in 1С ClientBank format (standardized across Russian banks), parses transactions, matches payments to existing invoices using Supplier.INN + amount + date proximity, and creates Payment records linked to Invoices. Payments that cannot be auto-matched are preserved as UnresolvedTransaction records for manual reconciliation. The service emits RabbitMQ events and sends Telegram alerts for unresolved transactions.
 
 ## Why This Milestone
 
-M001-M003 создали фундамент: базу данных, API, Telegram bot, Email Worker для счётов, и DLQ инфраструктуру. M004 добавляет критический финансовый контур:
-
-- **Безопасность:** Выписки из банка подтверждают реальные платежи — система может детектировать расхождения между счётами и оплатой
-- **Экономия времени:** Авто-мап по ИНН исключает ручную сортировку для большинства платежей
-- **Audit trail:** История изменений привязок позволяет отслеживать кто и когда сопоставил транзакцию
-
-Это второй "живой" flow после M002, но с фокусом на бухгалтерию и финансовую свёрстку.
+After M003 completes invoice verification (Invoice.status moves to "В работе", "Оплачено", etc.), the financial loop needs closure. When a supplier is paid, that payment should be automatically linked to the corresponding invoice. Without this automation, accountants must manually match payments, which is error-prone and time-consuming. This milestone closes the loop: bank statement → payment detection → invoice linkage → financial visibility.
 
 ## User-Visible Outcome
 
 ### When this milestone is complete, the user can:
 
-1. **Получать выписки автоматически:** Банк отправляет выписку на email → Email Worker детектирует тип → выписка парсится и загружается в БД
-2. **Вручную загрузить выписку:** Загрузить .txt файл через UI (fallback если email не пришёл или был потерян)
-3. **Видеть автоматически сопоставленные платежи:** Транзакции с ИНН поставщика + сумма ±5% + дата в диапазоне срока оплаты → привязаны к счету
-4. **Сортировать unresolved вручную:** UI со списком несопоставленных транзакций, фильтрами, поиском, bulk операциями
-5. **Просматривать историю изменений:** Видеть кто/когда/что привязал, с возможностью отката
-6. **Аналитika:** Дашборд с оплачено/неоплачено, динамикой платежей, экспортом в Excel
+- Connect an IMAP mailbox to automatically receive bank statements from their bank
+- See payments automatically matched to invoices in the system
+- View unresolved transactions that require manual reconciliation
+- Receive Telegram notifications when payments cannot be auto-matched
 
 ### Entry point / environment
 
-- Entry point: Email Worker (IMAP polling) + UI upload endpoint
-- Environment: local dev (Docker Compose: fastapi, celery-worker, rabbitmq, postgres)
-- Live dependencies involved: IMAP mailbox, Telegram Bot (только для ошибок), RabbitMQ, PostgreSQL
+- Entry point: Bank Worker background service (FastAPI app with APScheduler/CELERY-like polling)
+- Environment: Production server with IMAP access, RabbitMQ, PostgreSQL, Telegram Bot
+- Live dependencies involved: IMAP mailbox, RabbitMQ (bank.statement exchange), Telegram Bot, PostgreSQL
 
 ## Completion Class
 
-- Contract complete means: Выписка 1С ClientBank парсится корректно для Тинькофф и Озон банк, авто-мап работает по ИНН + сумма ±5% + даты, unresolved UI поддерживает фильтры, поиск, bulk, комментарии, audit log
-- Integration complete means: Выписка из email → Celery task → парсинг → BankStatement + BankTransaction в БД → авто-мап на Invoice → результат в UI
-- Operational complete means: Ошибка парсинга → DLQ → Telegram alert владельцу; manually uploaded файл обрабатывается через тот же flow
+- Contract complete means: Bank Worker can download 1С ClientBank files from IMAP, parse transactions, match payments to invoices by Supplier.INN + amount, create Payment records, and create UnresolvedTransaction for unmatched payments. Unit tests cover parsing and matching logic; integration tests cover IMAP download and database persistence.
+- Integration complete means: End-to-end flow works: email arrives → Bank Worker processes it → Payment/UnresolvedTransaction created → RabbitMQ event emitted → Telegram alert sent (if unresolved). Invoice.status updates to "Оплачен" when fully matched.
+- Operational complete means: Service runs continuously, handles IMAP reconnection, retries failed processing, persists failed transactions for recovery, and exposes health metrics.
 
 ## Final Integrated Acceptance
 
 To call this milestone complete, we must prove:
 
-1. **Full Flow (email):** Выписка Тинькофф/Озон с email → детекция типа → парсинг 1С ClientBank → BankStatement + BankTransaction в БД → авто-мап на Invoice по ИНН → результат в UI
-2. **Full Flow (manual upload):** Загрузка .txt через UI → парсинг → тот же outcome
-3. **Auto-mapping accuracy:** Платёж с ИНН поставщика + сумма в диапазоне ±5% + дата в диапазоне срока оплаты счета → автоматически привязан
-4. **Unresolved UI:** Список unresolved транзакций с фильтрами (банк, контрагент, дата, сумма), поиском (ИНН, сумма, дата), bulk привязкой, комментариями
-5. **Audit history:** Привязка отображается в `transaction_matching_audit` с user_id, timestamp, action; откат через UI работает
-6. **Error path:** Невалидный формат выписки → retry 2x → DLQ → Telegram alert владельцу
-7. **Аналитика:** Дашборд показывает оплачено/неоплачено, динамику платежей; экспорт в Excel работает
+- A real 1С ClientBank file from a Russian bank can be emailed to the test mailbox, processed by Bank Worker, and results in correct Payment records linked to existing Invoices.
+- When payment cannot be matched (unknown Supplier.INN or amount mismatch), it creates UnresolvedTransaction and sends Telegram alert.
+- RabbitMQ `bank.statement` exchange emits events consumed by downstream services.
+- Service recovers from IMAP disconnection and processing errors without data loss.
 
 ## Architectural Decisions
 
-### Email Type Detection Strategy
+### Email Polling Strategy
 
-**Decision:** Email Worker расширяется для детекции типа письма по attachment filename, subject pattern, и sender domain
+**Decision:** Use IMAP IDLE or polling with APScheduler to detect new bank statement emails. Download attachments, parse 1С ClientBank format, mark emails as processed.
 
-**Rationale:**
-- Формат 1С ClientBank (.txt) отличается от PDF/Excel счетов
-- Subject для выписок обычно содержит "Выписка" / "Statement" / "Bank statement"
-- Sender domain для банков известен (tinkoff.ru, ozon.ru)
-- Детекция позволяет route'ить в правильный Celery task (parse_invoice vs parse_bank_statement)
+**Rationale:** 1С ClientBank is standardized across Russian banks — no format variation between banks. IMAP is universally supported by Russian banks for statement delivery.
 
 **Alternatives Considered:**
-- Отдельный mailbox для выписок — требует настройки второго IMAP account, усложняет инфраструктуру
-- LLM для классификации — overkill, достаточно эвристик
-- Ручной выбор типа через UI — не работает для email ingest
+- Bank API integration — Not chosen: Russian banks have inconsistent APIs; many only support email delivery.
+- Webhook-based statement delivery — Not chosen: Most Russian banks don't support webhooks; email is the standard delivery method.
 
-### Bank Statement Parser Architecture
+### Payment Matching Algorithm
 
-**Decision:** Отдельный Celery task `parse_bank_statement` с парсером 1С ClientBank формата
+**Decision:** Match payments to invoices using Supplier.INN (primary key) + amount (exact match or within tolerance) + date proximity (payment within reasonable window after invoice date). Multiple candidates create UnresolvedTransaction for manual review.
 
-**Rationale:**
-- 1С ClientBank — стандартизированный формат с секциями (СекцияДокумент, СекцияСчет)
-- Парсер детектит банк по содержимому (поля специфичны для Тинькофф/Озон)
-- Выписка сохраняется в БД как BLOB (BYTEA), аналогично Invoice.raw_file
-- Отдельная задача позволяет independent retry и DLQ
+**Rationale:** INN uniquely identifies suppliers in Russia. Amount matching with tolerance handles minor differences (fees, rounding). Date proximity prevents matching ancient invoices.
 
 **Alternatives Considered:**
--Reuse InvoiceProcessor — слишком разные форматы, хуже читаемость кода
-- Синхронная обработка в Email Worker — блокирует polling, нарушает архитектуру M002
+- Invoice number matching — Not chosen: Bank statements often lack invoice numbers; INN+amount is more reliable.
+- ML-based matching — Not chosen: Overkill for this scope; rule-based matching is sufficient and explainable.
 
-### RabbitMQ Exchange Structure
+### Unresolved Transaction Handling
 
-**Decision:** Новый exchange `bank.statement` с routing key "bank.statement.received", DLQ для failed парсинга
+**Decision:** Payments that cannot be auto-matched create UnresolvedTransaction records with Supplier.INN, amount, date, and raw transaction data. Accountants manually reconcile via UI (out of scope for M004).
 
-**Rationale:**
-- Чистое разделение доменов: invoice vs bank statement
-- Легче мониторить и отлаживать (отдельные queue, metrics)
-- DLQ из коробки через RabbitMQ policy
+**Rationale:** Some payments will always need manual review (new suppliers, partial payments, split payments). Persisting them with full context enables reconciliation.
 
 **Alternatives Considered:**
-- Существующий email.raw_data exchange — смешивает домены, сложнее фильтровать
-- Без RabbitMQ (синхронно) — блокирует polling, нет retry logic
+- Auto-create new suppliers — Not chosen: Risk of duplicate suppliers; requires human verification.
+- Discard unmatched — Not chosen: Every payment must be accounted for; losing data is unacceptable.
 
-### Auto-Matching Strategy
+### Error Notification Strategy
 
-**Decision:** Авто-мап по ИНН поставщика + сумма ±5% + диапазон дат (создание счета + срок оплаты)
+**Decision:** Telegram alerts for unresolved transactions and processing failures. RabbitMQ events for all processed statements (matched and unmatched).
 
-**Rationale:**
-- ИНН — уникальный идентификатор поставщика в России
-- Сумма с допуск ±5% учитывает частичную оплату или округления
-- Диапазон дат (создание счета → срок оплаты) исключает ложные срабатывания на старые счета
-- Платежи без ИНН → UnresolvedTransaction (только ручная сортировка)
+**Rationale:** Telegram provides immediate visibility for issues requiring human attention. RabbitMQ enables downstream consumers (reporting, analytics) to receive all payment events.
 
 **Alternatives Considered:**
-- LLM для fuzzy matching — исключено (user confirmed)
-- Только по сумме — слишком много false positives
-- Строгое совпадение суммы — частичные оплаты не детектируются
-
-### UnresolvedTransaction UI Scope
-
-**Decision:** Полноценный UI для бухгалтерии с фильтрами, поиском, bulk операциями, комментариями, audit history, аналитикой, Excel export
-
-**Rationale:**
-- Бухгалтерия требует мощный инструмент для сортировки
-- Bulk операции критичны для большого количества транзакций
-- Комментарии позволяют документировать решения
-- Audit history нужен для compliance и отката
-- Аналитика и экспорт — стандартные требования accounting
-
-**Alternatives Considered:**
-- Только API + таблица в БД — недостаточно для M004, откладывает UI
-- Минимальный inline UI — не решает реальный use case бухгалтера
-
-### Audit History Storage
-
-**Decision:** Отдельная таблица `transaction_matching_audit` с полями: transaction_id, invoice_id, user_id, action (matched/unmatched), timestamp, comment
-
-**Rationale:**
-- История всех перепривязок (non-destructive)
-- Возможность отката через UI
-- Отдельная сущность для чистой архитектуры
-- Расширяемо для других сущностей (будущие milestones)
-
-**Alternatives Considered:**
-- Поля в Transaction — не хранит историю перепривязок
-- Generic AuditLog mixin — overkill для M004, можно рефакторить позже
-
-### Telegram Notification Scope
-
-**Decision:** Telegram alerts только для ошибок (выписка не получена, не загружена, загружена с ошибкой)
-
-**Rationale:**
-- Успешная обработка не требует уведомления (шум)
-- Owner должен знать о проблемах с финансовыми данными
-- Reuse существующего telegram_notifier.py из M003
-
-**Alternatives Considered:**
-- Уведомления о каждой выписке — слишком много шума
-- Никаких уведомлений — потеря visibility на проблемы
+- Email alerts — Not chosen: Slower than Telegram; accountants may not monitor email constantly.
+- Silent failure with logs only — Not chosen: Unresolved payments require immediate attention; passive logging is insufficient.
 
 ## Error Handling Strategy
 
-### Component Failures
-
-| Component | Failure Mode | Handling |
-|-----------|---------------|----------|
-| IMAP connection | Down | Email Worker retry с exponential backoff (как в M003) |
-| 1С ClientBank parsing | Invalid format | Retry 2x → DLQ → Telegram alert |
-| Bank detection | Unknown bank format | DLQ с контекстом → Telegram alert |
-| Auto-matching | DB error | Celery task retry → DLQ при exhausted retries |
-| Manual upload | Invalid file | 400 error пользователю с описанием |
-| RabbitMQ | Down | Email Worker возвращает ошибку, задача не публикуется |
-
-### Retry Policy
-
-- **Bank statement parsing:** 2 retries, exponential backoff (1s, 5s)
-- **Database operations:** SQLAlchemy retry on connection errors
-- **Auto-matching:** Не retry'ется (детерминированно упадёт или сработает)
-
-### Dead Letter Queue
-
-- Задачи после исчерпания retry попадают в DLQ
-- Сохраняется: task_id, error message, bank statement content, parsing context
-- Telegram alert отправляется владельцу с task_id
-
-### User-Facing Errors
-
-| Scenario | User sees |
-|----------|-----------|
-| Выписка получена и распарсена | Ничего (silent success, видно в UI) |
-| Auto-mapped successfully | Транзакция привязана в UI (зеленый индикатор) |
-| Parsing failed | "Выписка не удалась. Задача #{id} в очереди ошибок." (Telegram) |
-| Manual upload failed | "Неверный формат файла. Ожидается 1С ClientBank (.txt)" |
-| Service down | "Сервис временно недоступен. Попробуйте позже." |
+- **IMAP connection failure:** Exponential backoff retry, log errors, alert after N consecutive failures. Persist last-seen UID to avoid reprocessing.
+- **Parsing failure:** Save raw attachment to disk, log error, alert via Telegram. Mark email as processed to avoid infinite retry loop.
+- **Database failure:** Retry with exponential backoff, queue failed operations for recovery.
+- **RabbitMQ failure:** Retry publishing, persist events to dead-letter queue after max retries.
+- **Matching ambiguity:** If multiple invoices match criteria, create UnresolvedTransaction for manual review.
 
 ## Risks and Unknowns
 
-| Risk/Unknown | Why it matters | Mitigation |
-|--------------|----------------|------------|
-| **1С ClientBank format variations** | Банки могут менять формат, нарушая парсер | Тестовые fixtures для Тинькофф и Озон, fallback в DLQ |
-| **Email type detection false positives** | Счёт может быть детектирован как выписка (или наоборот) | Multi-layer проверка: filename + subject + sender |
-| **Auto-mapping false positives** | Неправильная привязка создаёт финансовые расхождения | Strict критерии (ИНН + сумма + даты), manual review в UI |
-| **Performance bulk operations** | Большое количество unresolved транзакций может тормозить UI | Pagination, lazy loading, batch size limits |
-| **Audit history size** | Много изменений может раздуть таблицу | Partitioning по timestamp (future milestone) |
+- **Email type detection false positives** — Bank statement emails might be misclassified as invoices or vice versa. Matters because wrong processing type skips payment detection or creates errors.
+- **Auto-matching false positives** — Wrong invoice gets marked as paid. Matters because financial discrepancies could go unnoticed; requires audit trail.
+- **IMAP mailbox security** — Credentials stored in environment variables. Matters because compromise exposes financial data; requires secure secret management.
 
 ## Existing Codebase / Prior Art
 
-| File/Module | How it relates |
-|-------------|----------------|
-| `backend/email_worker.py` | Reuse IMAP polling, processed Message-ID tracking, task publishing |
-| `backend/tasks.py` | Добавить `parse_bank_statement` task, reuse DLQ pattern |
-| `backend/models.py` | Использует Invoice, Supplier модели. Добавить BankStatement, BankTransaction, TransactionMatchingAudit |
-| `backend/telegram_notifier.py` | Reuse для error alerts (не для успешных выписок) |
-| `backend/services/imap_client.py` | Reuse для IMAP connection и attachment extraction |
-| `docker-compose.yml` | Добавить bank.statement exchange configuration |
+- `app/models/payment.py` — Payment ORM model with links to Invoice
+- `app/models/unresolved_transaction.py` — UnresolvedTransaction model for manual reconciliation
+- `app/models/supplier.py` — Supplier model with INN field (primary matching key)
+- `app/models/invoice.py` — Invoice model with status field ("Оплачен")
+- `app/workers/email_worker.py` — Reference for email polling pattern (used for invoices)
+- `app/rabbitmq/` — Existing RabbitMQ infrastructure for event emission
 
 ## Relevant Requirements
 
-- **R006** — Выписки из банка (1С ClientBank format, Тинькофф/Озон)
-- **R007** — Авто-мап платежей по ИНН + сумма ±5% + даты
-- **R008** — UnresolvedTransaction UI (фильтры, поиск, bulk, комментарии)
-- **R009** — Audit history (transaction_matching_audit)
-- **R010** — Аналитика (оплачено/неоплачено, динамика платежей, Excel export)
-- **R011** — Manual upload endpoint (fallback)
-- **R012** — Telegram alerts только для ошибок
+- **R-FIN-001** — Automatic payment matching against invoices
+- **R-FIN-002** — Bank statement import via email
+- **R-FIN-003** — Unresolved transaction handling for manual reconciliation
+- **R-AUDIT-001** — Audit trail for all financial transactions
 
 ## Scope
 
 ### In Scope
 
-- **Email Worker extension:** Детекция типа письма (invoice vs bank statement) по attachment, subject, sender
-- **Bank statement parsing:** 1С ClientBank format parser для Тинькофф и Озон банк
-- **New RabbitMQ exchange:** `bank.statement` с routing keys и DLQ
-- **Database models:** BankStatement, BankTransaction, TransactionMatching, TransactionMatchingAudit
-- **Auto-matching logic:** По ИНН поставщика + сумма ±5% + диапазон дат
-- **Manual upload endpoint:** POST /api/bank-statements/upload для .txt файлов
-- **Unresolved UI:** Список unresolved транзакций с фильтрами, поиском, bulk привязкой, комментариями
-- **Audit history:** Таблица transaction_matching_audit с UI для просмотра и отката
-- **Аналитика dashboard:** Оплачено/неоплачено, динамика платежей, графики
-- **Excel export:** Экспорт unresolved transactions и audit history
-- **Telegram error alerts:** Parse failures, DLQ events
-- **Tests:** Unit tests для 1С parser, integration tests для flow, e2e test для email → DB
+- IMAP email polling for bank statement emails
+- 1С ClientBank format parsing
+- Payment matching by Supplier.INN + amount + date proximity
+- Payment record creation linked to Invoices
+- UnresolvedTransaction creation for unmatched payments
+- Invoice.status update to "Оплачен" when fully matched
+- RabbitMQ `bank.statement` exchange event emission
+- Telegram alerts for unresolved transactions and processing failures
+- IMAP reconnection and error recovery
+- Health endpoint and metrics exposure
 
 ### Out of Scope / Non-Goals
 
-- Web dashboard UI (M005) — M004 строит только API для accounting frontend
-- Ручной UI для счётов (M005) — M004 фокусируется на транзакциях
-- Автоматическая оплата через банк API (future milestone)
-- ML/AI для fuzzy matching (excluded by user decision)
--_multi-bank support beyond Тинькофф/Озон (future milestone)
-- Reconciliation reports (M005 analytics)
+- Manual reconciliation UI for UnresolvedTransaction (future milestone)
+- Bank API integrations (beyond email-based statement delivery)
+- Partial payment handling (future milestone)
+- Split payment handling (future milestone)
+- Multi-currency support (future milestone)
 
 ## Technical Constraints
 
-- Python 3.14+ (existing)
-- FastAPI (existing)
-- SQLAlchemy 2.0 (existing)
-- PostgreSQL (existing)
-- RabbitMQ (existing from M002)
-- 1С ClientBank format specification
-- IMAP mailbox (existing from M003)
+- Must support standard 1С ClientBank format (all Russian banks)
+- IMAP mailbox must be accessible (SSL/TLS required)
+- RabbitMQ must be available for event emission
+- Telegram Bot token must be configured
+- Service must run continuously (daemon/background worker)
 
 ## Integration Points
 
-| System/Service | Interaction |
-|----------------|-------------|
-| **IMAP mailbox** | Polling для писем с выписками (reuse Email Worker) |
-| **RabbitMQ** | New exchange `bank.statement` для parsing tasks |
-| **PostgreSQL** | Хранение BankStatement, BankTransaction, TransactionMatchingAudit |
-| **Telegram Bot** | Error alerts (не успешные выписки) |
-| **Invoice model** | Auto-mapping BankTransaction → Invoice по supplier INN |
+- **IMAP Mailbox** — Polling for bank statement emails with 1С ClientBank attachments
+- **RabbitMQ** — `bank.statement` exchange for payment events (matched and unmatched)
+- **Telegram Bot** — Error alerts for unresolved transactions and processing failures
+- **PostgreSQL** — Payment, UnresolvedTransaction, Invoice, Supplier persistence
+- **Supplier Service** — Supplier lookup by INN for matching
 
 ## Testing Requirements
 
-- Unit tests для 1С ClientBank parser (Тинькофф и Озон fixtures)
-- Unit tests для auto-matching logic (ИНН + сумма ±5% + даты)
-- Integration tests для parse_bank_statement Celery task
-- Integration tests для manual upload endpoint
-- E2E test: Email с выпиской → parsing → auto-mapping → результат в UI
-- E2E test: Manual upload → parsing → auto-mapping → результат
-- DLQ scenario test: Invalid format → retry → DLQ → Telegram alert
-- UI tests (если есть frontend): Фильтры, поиск, bulk operations
+- Unit tests for 1С ClientBank parsing logic
+- Unit tests for payment matching algorithm (INN + amount + date)
+- Integration tests for IMAP download and email marking
+- Integration tests for database persistence (Payment, UnresolvedTransaction)
+- Integration tests for RabbitMQ event emission
+- End-to-end test with fixture 1С ClientBank file
+- Coverage threshold: 80% for Bank Worker code
 
 ## Acceptance Criteria
 
-- Email Worker детектирует выписку от счёта по attachment/subject/sender
-- parse_bank_statement Celery task парсит 1С ClientBank format
-- BankStatement и BankTransaction создаются в БД с корректными полями
-- Оригинальный файл выписки сохраняется в BankStatement.raw_file (BYTEA)
-- Auto-matching срабатывает для платежей с ИНН поставщика + сумма ±5% + даты в диапазоне
-- UnresolvedTransaction создаётся для непривязанных платежей
-- Manual upload endpoint принимает .txt файлы и возвращают BankStatement
-- Unresolved UI поддерживает фильтры (банк, контрагент, дата, сумма)
-- Unresolved UI поддерживает поиск (ИНН, сумма, дата)
-- Unresolved UI поддерживает bulk привязку к счетам
-- Комментарии сохраняются к привязкам
-- Audit history показывает все изменения с user_id и timestamp
-- Откат через UI работает (undo last match)
-- Аналитика dashboard показывает оплачено/неоплачено, динамику платежей
-- Excel export работает для unresolved transactions и audit history
-- Telegram alert отправляется при parse failure
-- DLQ содержит контекст ошибки для debugging
-- Health check включает bank statement parsing status
+- Bank Worker downloads and processes bank statement emails from IMAP
+- 1С ClientBank files are parsed correctly across all standard fields
+- Payments are matched to existing invoices by Supplier.INN + amount
+- Matched payments create Payment records linked to Invoice
+- Invoice.status updates to "Оплачен" when payment matches
+- Unmatched payments create UnresolvedTransaction records
+- Telegram alerts sent for unresolved transactions
+- RabbitMQ emits `bank.statement.payment.matched` and `.unmatched` events
+- Service recovers from IMAP disconnection without data loss
+- Health endpoint returns service status
 
 ## Open Questions
 
-None resolved. All scope questions answered during discussion.
+None — all technical decisions are clear from requirements.

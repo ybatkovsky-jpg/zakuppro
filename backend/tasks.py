@@ -1017,3 +1017,197 @@ def dispatch_invoice_notifications(verification_result, invoice_id: int, db) -> 
 
     else:
         logger.warning(f"Unknown verdict '{verdict}', skipping notifications")
+
+
+@app.task(name='tasks.parse_bank_statement', bind=True, max_retries=2)
+def parse_bank_statement(self, filename: str, file_content: bytes, metadata: dict) -> dict:
+    """
+    Parse 1C ClientBank .txt file and persist to BankStatement/BankTransaction tables.
+
+    This task is the entry point for bank statement processing from the email worker.
+    It receives a .txt attachment containing 1C ClientBank formatted bank statement
+    data and processes it using the BankStatementParser service.
+
+    Processing pipeline:
+    1. Parses .txt file with BankStatementParser service (CP1251/UTF-8 support)
+    2. Creates BankStatement record with bank_name, dates, raw_file, status='Обрабатывается'
+    3. Creates BankTransaction records for each extracted transaction
+    4. Updates BankStatement.status to 'Готов' on success
+    5. Handles errors with FailedTask DLQ persistence
+    6. Retries with exponential backoff on RateLimitError
+
+    Args:
+        filename: Original attachment filename (e.g., 'statement.txt')
+        file_content: Binary file content (1C ClientBank .txt bytes, typically CP1251)
+        metadata: Email metadata dict with keys:
+            - message_id: Email Message-ID
+            - subject: Email subject line
+            - from: Sender email address
+            - date: Email date header
+            - to: Recipient email address
+            - uid: IMAP UID of the email
+
+    Returns:
+        dict: Result with keys:
+            - status: 'success' or 'error'
+            - filename: Processed filename
+            - bank_statement_id: ID of created BankStatement record
+            - transactions_count: Number of BankTransaction records created
+            - bank_name: Extracted bank name (e.g., 'TINKOFF', 'OZON')
+            - period_start: Statement period start date
+            - period_end: Statement period end date
+            - message_id: Email Message-ID from metadata
+            - task_id: Celery task ID
+
+    Raises:
+        ValueError: If file format is invalid or no transactions found
+        RateLimitError: Triggers retry with exponential backoff
+    """
+    task_id = self.request.id
+    logger.info(
+        f"Task {task_id}: parse_bank_statement started - "
+        f"filename={filename}, size={len(file_content)}, message_id={metadata.get('message_id')}"
+    )
+
+    db = None
+
+    try:
+        # Import BankStatementParser service
+        from backend.services.bank_statement_parser import parse_bank_statement_file
+        from backend.database import SessionLocal
+        from backend.models import BankStatement, BankTransaction, FailedTask
+
+        # Step 1: Parse file with BankStatementParser
+        logger.info(f"Task {task_id}: Parsing file with BankStatementParser")
+        parse_result = parse_bank_statement_file(file_content)
+
+        # Extract parsed data
+        bank_name = parse_result.get('bank_name', 'Unknown')
+        statement_date = parse_result.get('statement_date')
+        period_start = parse_result.get('period_start')
+        period_end = parse_result.get('period_end')
+        transactions = parse_result.get('transactions', [])
+
+        if not transactions:
+            error_msg = f"No transactions found in bank statement file {filename}"
+            logger.error(f"Task {task_id}: {error_msg}")
+            raise ValueError(error_msg)
+
+        logger.info(
+            f"Task {task_id}: Parsed {len(transactions)} transactions from {bank_name}, "
+            f"period {period_start} to {period_end}"
+        )
+
+        # Step 2: Create database records
+        db = SessionLocal()
+
+        # Step 3: Create BankStatement record with status='Обрабатывается'
+        bank_statement = BankStatement(
+            bank_name=bank_name,
+            statement_date=statement_date,
+            period_start=period_start,
+            period_end=period_end,
+            raw_file=file_content,  # BLOB storage
+            status='Обрабатывается'
+        )
+        db.add(bank_statement)
+        db.commit()
+        db.refresh(bank_statement)
+
+        logger.info(
+            f"Task {task_id}: Created BankStatement record (ID: {bank_statement.id}) "
+            f"for bank={bank_name}"
+        )
+
+        # Step 4: Create BankTransaction records
+        transactions_created = 0
+        for txn_data in transactions:
+            transaction = BankTransaction(
+                bank_statement_id=bank_statement.id,
+                transaction_date=txn_data.get('transaction_date'),
+                amount=txn_data.get('amount'),
+                supplier_inn=txn_data.get('supplier_inn'),
+                description=txn_data.get('description'),
+                operation_type=txn_data.get('operation_type', 'Debit')
+            )
+            db.add(transaction)
+            transactions_created += 1
+
+        db.commit()
+        logger.info(f"Task {task_id}: Created {transactions_created} BankTransaction records")
+
+        # Step 5: Update BankStatement status to 'Готов'
+        bank_statement.status = 'Готов'
+        db.commit()
+        logger.info(f"Task {task_id}: Updated BankStatement {bank_statement.id} status to 'Готов'")
+
+        result = {
+            'status': 'success',
+            'filename': filename,
+            'bank_statement_id': bank_statement.id,
+            'transactions_count': transactions_created,
+            'bank_name': bank_name,
+            'period_start': period_start.isoformat() if period_start else None,
+            'period_end': period_end.isoformat() if period_end else None,
+            'message_id': metadata.get('message_id'),
+            'task_id': task_id,
+        }
+
+        logger.info(f"Task {task_id}: parse_bank_statement completed successfully")
+        return result
+
+    except RateLimitError as e:
+        # Retry with exponential backoff
+        retry_count = self.request.retries
+        countdown = 2 ** retry_count  # 1, 2, 4...
+        logger.warning(
+            f"Task {task_id}: Rate limit hit, "
+            f"retrying in {countdown}s (attempt {retry_count + 1}/3)"
+        )
+        raise self.retry(exc=e, countdown=countdown, max_retries=2)
+
+    except Exception as e:
+        # Handle error: create FailedTask for DLQ
+        error_message = f"{type(e).__name__}: {str(e)}\n\n{traceback.format_exc()}"
+
+        logger.error(f"Task {task_id}: Error occurred - {error_message}")
+
+        try:
+            from backend.database import SessionLocal
+            from backend.models import FailedTask
+
+            if db is None:
+                db = SessionLocal()
+
+            # Create FailedTask record for DLQ
+            failed_task = FailedTask(
+                task_id=task_id,
+                task_name='tasks.parse_bank_statement',
+                error_message=error_message,
+                error_type=type(e).__name__,
+                file_path=filename,
+                chat_id=None,  # Email tasks don't have chat_id
+                context=json.dumps({
+                    'filename': filename,
+                    'file_size': len(file_content),
+                    'metadata': metadata
+                })
+            )
+            db.add(failed_task)
+            db.commit()
+            logger.info(f"Task {task_id}: FailedTask record created")
+
+        except Exception as inner_error:
+            logger.error(
+                f"Task {task_id}: Failed to create FailedTask - {inner_error}",
+                exc_info=True
+            )
+
+        # Re-raise original exception for Celery DLQ handling
+        raise
+
+    finally:
+        # Always close database session
+        if db is not None:
+            db.close()
+            logger.info(f"Task {task_id}: Database session closed")

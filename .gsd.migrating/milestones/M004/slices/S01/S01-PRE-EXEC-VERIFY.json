@@ -1,0 +1,24 @@
+{
+  "schemaVersion": 1,
+  "milestoneId": "M004",
+  "sliceId": "S01",
+  "timestamp": 1780380385644,
+  "status": "fail",
+  "durationMs": 5,
+  "checks": [
+    {
+      "category": "tool",
+      "target": "T01 Verify",
+      "passed": false,
+      "message": "Unsafe or non-runnable Verify command: python -c \"from backend.models import BankStatement, BankTransaction, TransactionMatchingAudit; print('Models imported successfully')\" (contains shell control syntax such as pipes, redirects, semicolons, backticks, or command substitution)",
+      "blocking": true
+    },
+    {
+      "category": "tool",
+      "target": "T02 Verify",
+      "passed": false,
+      "message": "Unsafe or non-runnable Verify command: python -c \"from backend.database import engine; from sqlalchemy import inspect; print([t for t in inspect(engine).get_table_names() if 'bank' in t or 'transaction_matching' in t])\" (contains shell control syntax such as pipes, redirects, semicolons, backticks, or command substitution)",
+      "blocking": true
+    }
+  ]
+}

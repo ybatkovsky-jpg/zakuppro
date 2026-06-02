@@ -49,6 +49,7 @@ app.conf.update(
 
     # Task routing configuration
     task_routes={
+        'tasks.parse_bank_statement': {'queue': 'bank_statement'},
         'tasks.*': {'queue': 'default'},
     },
 
@@ -104,9 +105,30 @@ default_queue = Queue(
     }
 )
 
+# Bank Statement Exchange (topic type for future event types)
+bank_statement_exchange = Exchange(
+    'bank.statement',
+    type='topic',
+    durable=True
+)
+
+# Bank Statement Queue with DLQ binding
+bank_statement_queue = Queue(
+    'bank_statement',
+    exchange=bank_statement_exchange,
+    routing_key='bank.statement',
+    durable=True,
+    queue_arguments={
+        'x-dead-letter-exchange': 'dlq',
+        'x-dead-letter-routing-key': 'dlq',
+        'x-message-ttl': 86400000,  # 24 hours
+    }
+)
+
 # Configure queues
 app.conf.task_queues = [
     default_queue,
+    bank_statement_queue,
     dlq_queue,
 ]
 

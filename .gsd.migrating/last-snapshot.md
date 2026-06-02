@@ -1,4 +1,7 @@
-# GSD context snapshot (2026-06-02T05:18:36.890Z)
+# GSD context snapshot (2026-06-02T06:51:12.335Z)
+
+## Active context
+Active: M004 / S01 / T04 - Extend test_migration.py with bank statement migration tests
 
 ## Top project memories
 - [MEM005] (architecture) SQLAlchemy 2.0 uses relationship(back_populates=...) for bidirectional relationships, not backref. This makes relationships explicit on both sides for clearer code.

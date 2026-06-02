@@ -1,494 +1,140 @@
 {
-  "compiledAt": "2026-06-02T03:21:53.837Z",
-  "milestoneId": "M003",
+  "compiledAt": "2026-06-02T08:08:22.299Z",
+  "milestoneId": "M004",
   "pipeline": {
     "clarifyRoundLimit": 3,
     "researchSynthesized": true,
     "draftContextIncluded": false,
     "finalizedContextIncluded": true,
-    "sourcePhase": "completing-milestone"
+    "sourcePhase": "executing"
   },
   "nodes": [
     {
-      "id": "execute-task:M003:S01:T01",
+      "id": "execute-task:M004:S01:T01",
       "kind": "unit",
       "dependsOn": [],
       "writes": [
-        "backend/alembic/versions/4773ecad7cb2_invoice_extensions.py",
-        "backend/models.py",
-        "backend/tests/test_models.py"
+        "backend/models.py"
       ],
       "metadata": {
         "unitType": "execute-task",
-        "unitId": "M003.S01.T01",
-        "title": "Created Alembic migration 4773ecad7cb2 adding Invoice.raw_file (BYTEA), Invoice.verification_result (JSONB), and InvoiceItem table with foreign keys to Invoice and ProjectItem; updated models.py with InvoiceItem class and new Invoice columns; added 4 tests covering new functionality.",
+        "unitId": "M004.S01.T01",
+        "title": "Added BankStatement, BankTransaction, TransactionMatchingAudit SQLAlchemy models with bidirectional relationships and indexes",
         "status": "complete"
       }
     },
     {
-      "id": "execute-task:M003:S01:T02",
+      "id": "execute-task:M004:S01:T02",
       "kind": "unit",
       "dependsOn": [
-        "execute-task:M003:S01:T01"
-      ],
-      "writes": [
-        "D:/CLAUDE/Project/zakuppro/zakuppro/backend/llm_provider.py",
-        "D:/CLAUDE/Project/zakuppro/zakuppro/backend/tests/test_llm_provider.py",
-        "D:/CLAUDE/Project/zakuppro/zakuppro/backend/requirements.txt",
-        "D:/CLAUDE/Project/zakuppro/zakuppro/.env"
-      ],
-      "metadata": {
-        "unitType": "execute-task",
-        "unitId": "M003.S01.T02",
-        "title": "Created llm_provider.py with provider-agnostic wrapper supporting OpenAI, Gemini, Claude with automatic fallback on rate limit/timeout errors",
-        "status": "complete"
-      }
-    },
-    {
-      "id": "execute-task:M003:S01:T03",
-      "kind": "unit",
-      "dependsOn": [
-        "execute-task:M003:S01:T02"
-      ],
-      "writes": [
-        "docker-compose.yml",
-        ".env"
-      ],
-      "metadata": {
-        "unitType": "execute-task",
-        "unitId": "M003.S01.T03",
-        "title": "Added LLM provider environment variables to celery-worker and telegram-bot services in docker-compose.yml",
-        "status": "complete"
-      }
-    },
-    {
-      "id": "execute-task:M003:S01:T04",
-      "kind": "unit",
-      "dependsOn": [
-        "execute-task:M003:S01:T03"
+        "execute-task:M004:S01:T01"
       ],
       "writes": [],
       "metadata": {
         "unitType": "execute-task",
-        "unitId": "M003.S01.T04",
-        "title": "Created comprehensive unit tests for LLM provider with 33 tests covering fallback logic, retry behavior, and edge cases; achieved 60% coverage with external API paths appropriately mocked",
+        "unitId": "M004.S01.T02",
+        "title": "Created Alembic migration m0h4akx9s41v for BankStatement, BankTransaction, and TransactionMatchingAudit tables with proper FKs, indexes, and downgrade support",
         "status": "complete"
       }
     },
     {
-      "id": "complete-slice:M003:S01",
+      "id": "execute-task:M004:S01:T03",
+      "kind": "unit",
+      "dependsOn": [
+        "execute-task:M004:S01:T02"
+      ],
+      "writes": [],
+      "metadata": {
+        "unitType": "execute-task",
+        "unitId": "M004.S01.T03",
+        "title": "Created Tinkoff and Ozon Bank 1C ClientBank test fixtures with Russian format samples and documentation",
+        "status": "complete"
+      }
+    },
+    {
+      "id": "execute-task:M004:S01:T04",
+      "kind": "unit",
+      "dependsOn": [
+        "execute-task:M004:S01:T03"
+      ],
+      "writes": [
+        "backend/tests/test_migration.py"
+      ],
+      "metadata": {
+        "unitType": "execute-task",
+        "unitId": "M004.S01.T04",
+        "title": "Added 4 test methods to TestMigrationStructure class verifying bank statement migration file, tables, FKs, and indexes",
+        "status": "complete"
+      }
+    },
+    {
+      "id": "execute-task:M004:S01:T05",
+      "kind": "unit",
+      "dependsOn": [
+        "execute-task:M004:S01:T04"
+      ],
+      "writes": [
+        "backend/tests/test_models.py"
+      ],
+      "metadata": {
+        "unitType": "execute-task",
+        "unitId": "M004.S01.T05",
+        "title": "TestBankStatementModels class with bidirectional relationship, cascade delete, and lazy-loading tests passing",
+        "status": "complete"
+      }
+    },
+    {
+      "id": "complete-slice:M004:S01",
       "kind": "verification",
       "dependsOn": [
-        "execute-task:M003:S01:T04"
+        "execute-task:M004:S01:T05"
       ],
       "metadata": {
         "unitType": "complete-slice",
-        "unitId": "M003.S01",
+        "unitId": "M004.S01",
         "title": "S01",
         "status": "complete"
       }
     },
     {
-      "id": "execute-task:M003:S02:T01",
+      "id": "execute-task:M004:S02:T01",
       "kind": "unit",
       "dependsOn": [],
       "writes": [
-        "backend/services/imap_client.py",
-        "backend/tests/test_imap_client.py"
+        "backend/services/bank_statement_parser.py"
       ],
       "metadata": {
         "unitType": "execute-task",
-        "unitId": "M003.S02.T01",
-        "title": "Created IMAPClient class with connect, fetch_unread_emails, extract_attachments, and disconnect methods. 35 unit tests pass with mocked IMAP server.",
+        "unitId": "M004.S02.T01",
+        "title": "Created BankStatementParser service for 1C ClientBank .txt files with CP1251/UTF-8 encoding support and field variation handling",
         "status": "complete"
       }
     },
     {
-      "id": "execute-task:M003:S02:T02",
+      "id": "execute-task:M004:S02:T02",
       "kind": "unit",
       "dependsOn": [
-        "execute-task:M003:S02:T01"
+        "execute-task:M004:S02:T01"
       ],
-      "writes": [
-        "backend/email_worker.py",
-        "backend/tasks.py",
-        "backend/tests/test_email_worker.py"
-      ],
+      "writes": [],
       "metadata": {
         "unitType": "execute-task",
-        "unitId": "M003.S02.T02",
-        "title": "Created EmailWorker service with poll_forever loop, duplicate detection by Message-ID, and parse_invoice task placeholder. 24 unit tests pass.",
-        "status": "complete"
+        "unitId": "M004.S02.T02",
+        "title": "Bank Statement Parser Tests",
+        "status": "pending"
       }
     },
     {
-      "id": "execute-task:M003:S02:T03",
-      "kind": "unit",
-      "dependsOn": [
-        "execute-task:M003:S02:T02"
-      ],
-      "writes": [
-        "docker-compose.yml",
-        ".env"
-      ],
-      "metadata": {
-        "unitType": "execute-task",
-        "unitId": "M003.S02.T03",
-        "title": "Added email-worker service to docker-compose.yml with IMAP environment variables, healthcheck, and restart policy. Updated .env with IMAP configuration.",
-        "status": "complete"
-      }
-    },
-    {
-      "id": "execute-task:M003:S02:T04",
-      "kind": "unit",
-      "dependsOn": [
-        "execute-task:M003:S02:T03"
-      ],
-      "writes": [
-        "backend/tests/test_imap_client.py",
-        "backend/tests/test_email_worker.py"
-      ],
-      "metadata": {
-        "unitType": "execute-task",
-        "unitId": "M003.S02.T04",
-        "title": "59 unit tests pass with 89% coverage for imap_client and 78% for email_worker (average >80%). All major code paths tested.",
-        "status": "complete"
-      }
-    },
-    {
-      "id": "complete-slice:M003:S02",
+      "id": "complete-slice:M004:S02",
       "kind": "verification",
       "dependsOn": [
-        "execute-task:M003:S02:T04"
+        "execute-task:M004:S02:T02"
       ],
       "metadata": {
         "unitType": "complete-slice",
-        "unitId": "M003.S02",
+        "unitId": "M004.S02",
         "title": "S02",
-        "status": "complete"
-      }
-    },
-    {
-      "id": "execute-task:M003:S03:T01",
-      "kind": "unit",
-      "dependsOn": [],
-      "writes": [
-        "D:/CLAUDE/Project/zakuppro/zakuppro/backend/requirements.txt"
-      ],
-      "metadata": {
-        "unitType": "execute-task",
-        "unitId": "M003.S03.T01",
-        "title": "Added pdfplumber==0.11.4 to requirements.txt",
-        "status": "complete"
-      }
-    },
-    {
-      "id": "execute-task:M003:S03:T02",
-      "kind": "unit",
-      "dependsOn": [
-        "execute-task:M003:S03:T01"
-      ],
-      "writes": [
-        "D:/CLAUDE/Project/zakuppro/zakuppro/backend/tests/test_invoice_parser.py"
-      ],
-      "metadata": {
-        "unitType": "execute-task",
-        "unitId": "M003.S03.T02",
-        "title": "Created comprehensive unit tests for invoice_parser.py with 50 passing tests covering all required scenarios",
-        "status": "complete"
-      }
-    },
-    {
-      "id": "execute-task:M003:S03:T03",
-      "kind": "unit",
-      "dependsOn": [
-        "execute-task:M003:S03:T02"
-      ],
-      "writes": [
-        "backend/tests/fixtures/test_simple_invoice.pdf",
-        "backend/tests/fixtures/test_dirty_invoice.xlsx",
-        "backend/tests/fixtures/test_russian_invoice.pdf"
-      ],
-      "metadata": {
-        "unitType": "execute-task",
-        "unitId": "M003.S03.T03",
-        "title": "Created three test fixture files for invoice parsing: simple PDF, dirty Excel with multiple sheets/merged cells, and Russian PDF",
-        "status": "complete"
-      }
-    },
-    {
-      "id": "execute-task:M003:S03:T04",
-      "kind": "unit",
-      "dependsOn": [
-        "execute-task:M003:S03:T03"
-      ],
-      "writes": [
-        "backend/tests/test_s03_integration.py"
-      ],
-      "metadata": {
-        "unitType": "execute-task",
-        "unitId": "M003.S03.T04",
-        "title": "Extended integration tests with mock LLM responses covering full parse_invoice Celery task pipeline with 12 passing tests",
-        "status": "complete"
-      }
-    },
-    {
-      "id": "complete-slice:M003:S03",
-      "kind": "verification",
-      "dependsOn": [
-        "execute-task:M003:S03:T04"
-      ],
-      "metadata": {
-        "unitType": "complete-slice",
-        "unitId": "M003.S03",
-        "title": "S03",
-        "status": "complete"
-      }
-    },
-    {
-      "id": "execute-task:M003:S04:T01",
-      "kind": "unit",
-      "dependsOn": [],
-      "writes": [
-        "backend/requirements.txt"
-      ],
-      "metadata": {
-        "unitType": "execute-task",
-        "unitId": "M003.S04.T01",
-        "title": "Added rapidfuzz==3.9.0 dependency to backend/requirements.txt for fuzzy string matching",
-        "status": "complete"
-      }
-    },
-    {
-      "id": "execute-task:M003:S04:T02",
-      "kind": "unit",
-      "dependsOn": [
-        "execute-task:M003:S04:T01"
-      ],
-      "writes": [
-        "backend/schemas/__init__.py",
-        "backend/schemas/verification.py"
-      ],
-      "metadata": {
-        "unitType": "execute-task",
-        "unitId": "M003.S04.T02",
-        "title": "Created Pydantic verification schemas with ItemVerification, QuantityDiscrepancy, and VerificationResult models for invoice-to-BOM reconciliation",
-        "status": "complete"
-      }
-    },
-    {
-      "id": "execute-task:M003:S04:T03",
-      "kind": "unit",
-      "dependsOn": [
-        "execute-task:M003:S04:T02"
-      ],
-      "writes": [
-        "backend/services/invoice_verifier.py"
-      ],
-      "metadata": {
-        "unitType": "execute-task",
-        "unitId": "M003.S04.T03",
-        "title": "Created invoice_verifier service with exact SKU matching, RapidFuzz fuzzy name matching, quantity discrepancy detection, and structured JSONB verification result storage",
-        "status": "complete"
-      }
-    },
-    {
-      "id": "execute-task:M003:S04:T04",
-      "kind": "unit",
-      "dependsOn": [
-        "execute-task:M003:S04:T03"
-      ],
-      "writes": [
-        "backend/tasks.py"
-      ],
-      "metadata": {
-        "unitType": "execute-task",
-        "unitId": "M003.S04.T04",
-        "title": "Added verify_invoice_task Celery task with fuzzy matching BOM reconciliation and DLQ error handling",
-        "status": "complete"
-      }
-    },
-    {
-      "id": "execute-task:M003:S04:T05",
-      "kind": "unit",
-      "dependsOn": [
-        "execute-task:M003:S04:T04"
-      ],
-      "writes": [
-        "backend/tests/test_invoice_verifier.py"
-      ],
-      "metadata": {
-        "unitType": "execute-task",
-        "unitId": "M003.S04.T05",
-        "title": "Created 19 unit tests for invoice_verifier covering exact SKU matching, fuzzy matching, quantity discrepancies, and verdict logic",
-        "status": "complete"
-      }
-    },
-    {
-      "id": "execute-task:M003:S04:T06",
-      "kind": "unit",
-      "dependsOn": [
-        "execute-task:M003:S04:T05"
-      ],
-      "writes": [
-        "backend/tests/test_s04_integration.py"
-      ],
-      "metadata": {
-        "unitType": "execute-task",
-        "unitId": "M003.S04.T06",
-        "title": "Created 9 integration tests for invoice verification service in test_s04_integration.py",
-        "status": "complete"
-      }
-    },
-    {
-      "id": "complete-slice:M003:S04",
-      "kind": "verification",
-      "dependsOn": [
-        "execute-task:M003:S04:T06"
-      ],
-      "metadata": {
-        "unitType": "complete-slice",
-        "unitId": "M003.S04",
-        "title": "S04",
-        "status": "complete"
-      }
-    },
-    {
-      "id": "execute-task:M003:S05:T01",
-      "kind": "unit",
-      "dependsOn": [],
-      "writes": [
-        "backend/telegram_notifier.py",
-        "backend/tests/test_telegram_notifications.py"
-      ],
-      "metadata": {
-        "unitType": "execute-task",
-        "unitId": "M003.S05.T01",
-        "title": "Added 4 invoice-specific notification functions to telegram_notifier.py with full test coverage",
-        "status": "complete"
-      }
-    },
-    {
-      "id": "execute-task:M003:S05:T02",
-      "kind": "unit",
-      "dependsOn": [
-        "execute-task:M003:S05:T01"
-      ],
-      "writes": [
-        "backend/email_notifier.py",
-        "backend/tests/test_email_notifier.py",
-        "backend/requirements.txt"
-      ],
-      "metadata": {
-        "unitType": "execute-task",
-        "unitId": "M003.S05.T02",
-        "title": "Created email_notifier.py with async SMTP client for supplier clarification emails",
-        "status": "complete"
-      }
-    },
-    {
-      "id": "execute-task:M003:S05:T03",
-      "kind": "unit",
-      "dependsOn": [
-        "execute-task:M003:S05:T02"
-      ],
-      "writes": [
-        "backend/tasks.py",
-        "backend/tests/test_s05_notifications_integration.py"
-      ],
-      "metadata": {
-        "unitType": "execute-task",
-        "unitId": "M003.S05.T03",
-        "title": "Integrated notification dispatch with verify_invoice_task - dispatch_invoice_notifications routes to Telegram/email based on verdict, with full test coverage",
-        "status": "complete"
-      }
-    },
-    {
-      "id": "complete-slice:M003:S05",
-      "kind": "verification",
-      "dependsOn": [
-        "execute-task:M003:S05:T03"
-      ],
-      "metadata": {
-        "unitType": "complete-slice",
-        "unitId": "M003.S05",
-        "title": "S05",
-        "status": "complete"
-      }
-    },
-    {
-      "id": "execute-task:M003:S06:T01",
-      "kind": "unit",
-      "dependsOn": [],
-      "writes": [
-        "backend/tests/test_s06_e2e_integration.py"
-      ],
-      "metadata": {
-        "unitType": "execute-task",
-        "unitId": "M003.S06.T01",
-        "title": "Created end-to-end integration tests for the invoice processing pipeline (parse → verify → notify) with 6 passing tests covering happy path flows and error handling",
-        "status": "complete"
-      }
-    },
-    {
-      "id": "execute-task:M003:S06:T02",
-      "kind": "unit",
-      "dependsOn": [
-        "execute-task:M003:S06:T01"
-      ],
-      "writes": [
-        "backend/tests/test_s06_e2e_integration.py"
-      ],
-      "metadata": {
-        "unitType": "execute-task",
-        "unitId": "M003.S06.T02",
-        "title": "Added 4 error path E2E tests validating DLQ persistence and non-blocking notification pattern",
-        "status": "complete"
-      }
-    },
-    {
-      "id": "execute-task:M003:S06:T03",
-      "kind": "unit",
-      "dependsOn": [
-        "execute-task:M003:S06:T02"
-      ],
-      "writes": [
-        "backend/tests/test_s06_e2e_integration.py"
-      ],
-      "metadata": {
-        "unitType": "execute-task",
-        "unitId": "M003.S06.T03",
-        "title": "Added dirty fixture validation tests (TestDirtyFixtureValidation) for merged cells and Russian content handling through the full pipeline",
-        "status": "complete"
-      }
-    },
-    {
-      "id": "execute-task:M003:S06:T04",
-      "kind": "unit",
-      "dependsOn": [
-        "execute-task:M003:S06:T03"
-      ],
-      "writes": [
-        "backend/tests/test_s06_e2e_integration.py"
-      ],
-      "metadata": {
-        "unitType": "execute-task",
-        "unitId": "M003.S06.T04",
-        "title": "Verified all S06 E2E integration tests passing with 95% coverage and confirmed S03-S05 regression tests pass",
-        "status": "complete"
-      }
-    },
-    {
-      "id": "complete-slice:M003:S06",
-      "kind": "verification",
-      "dependsOn": [
-        "execute-task:M003:S06:T04"
-      ],
-      "metadata": {
-        "unitType": "complete-slice",
-        "unitId": "M003.S06",
-        "title": "S06",
-        "status": "complete"
+        "status": "pending"
       }
     }
   ]
