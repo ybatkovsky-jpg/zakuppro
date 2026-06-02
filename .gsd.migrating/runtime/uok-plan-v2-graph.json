@@ -1,5 +1,5 @@
 {
-  "compiledAt": "2026-06-02T08:08:22.299Z",
+  "compiledAt": "2026-06-02T09:21:29.309Z",
   "milestoneId": "M004",
   "pipeline": {
     "clarifyRoundLimit": 3,
@@ -116,12 +116,15 @@
       "dependsOn": [
         "execute-task:M004:S02:T01"
       ],
-      "writes": [],
+      "writes": [
+        "backend/tests/test_bank_statement_parser.py",
+        "backend/services/bank_statement_parser.py"
+      ],
       "metadata": {
         "unitType": "execute-task",
         "unitId": "M004.S02.T02",
-        "title": "Bank Statement Parser Tests",
-        "status": "pending"
+        "title": "Created comprehensive tests for BankStatementParser covering both Tinkoff and Ozon formats, encoding handling, field variations, date/amount parsing, and edge cases",
+        "status": "complete"
       }
     },
     {
@@ -134,6 +137,87 @@
         "unitType": "complete-slice",
         "unitId": "M004.S02",
         "title": "S02",
+        "status": "complete"
+      }
+    },
+    {
+      "id": "execute-task:M004:S03:T01",
+      "kind": "unit",
+      "dependsOn": [],
+      "writes": [],
+      "metadata": {
+        "unitType": "execute-task",
+        "unitId": "M004.S03.T01",
+        "title": "Configure RabbitMQ bank.statement exchange and queue",
+        "status": "pending"
+      }
+    },
+    {
+      "id": "execute-task:M004:S03:T02",
+      "kind": "unit",
+      "dependsOn": [
+        "execute-task:M004:S03:T01"
+      ],
+      "writes": [],
+      "metadata": {
+        "unitType": "execute-task",
+        "unitId": "M004.S03.T02",
+        "title": "Add .txt support to AttachmentExtractor",
+        "status": "pending"
+      }
+    },
+    {
+      "id": "execute-task:M004:S03:T03",
+      "kind": "unit",
+      "dependsOn": [
+        "execute-task:M004:S03:T02"
+      ],
+      "writes": [],
+      "metadata": {
+        "unitType": "execute-task",
+        "unitId": "M004.S03.T03",
+        "title": "Add routing logic to Email Worker for .txt files",
+        "status": "pending"
+      }
+    },
+    {
+      "id": "execute-task:M004:S03:T04",
+      "kind": "unit",
+      "dependsOn": [
+        "execute-task:M004:S03:T03"
+      ],
+      "writes": [],
+      "metadata": {
+        "unitType": "execute-task",
+        "unitId": "M004.S03.T04",
+        "title": "Implement parse_bank_statement Celery task",
+        "status": "pending"
+      }
+    },
+    {
+      "id": "execute-task:M004:S03:T05",
+      "kind": "unit",
+      "dependsOn": [
+        "execute-task:M004:S03:T04"
+      ],
+      "writes": [],
+      "metadata": {
+        "unitType": "execute-task",
+        "unitId": "M004.S03.T05",
+        "title": "Write integration test for end-to-end bank statement flow",
+        "status": "pending"
+      }
+    },
+    {
+      "id": "complete-slice:M004:S03",
+      "kind": "verification",
+      "dependsOn": [
+        "execute-task:M004:S03:T05"
+      ],
+      "metadata": {
+        "unitType": "complete-slice",
+        "unitId": "M004.S03",
+        "title": "Email Worker Extension + RabbitMQ Exchange",
         "status": "pending"
       }
     }

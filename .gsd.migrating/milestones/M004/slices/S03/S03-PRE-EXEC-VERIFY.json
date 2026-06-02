@@ -1,0 +1,31 @@
+{
+  "schemaVersion": 1,
+  "milestoneId": "M004",
+  "sliceId": "S03",
+  "timestamp": 1780392050893,
+  "status": "fail",
+  "durationMs": 5,
+  "checks": [
+    {
+      "category": "tool",
+      "target": "T01 Verify",
+      "passed": false,
+      "message": "Unsafe or non-runnable Verify command: python -c \"from backend.celery_app import app, bank_statement_exchange, bank_statement_queue; print('Exchange:', bank_statement_exchange.name); print('Queue:', bank_statement_queue.name); print('Queues:', len(app.conf.task_queues))\" (contains shell control syntax such as pipes, redirects, semicolons, backticks, or command substitution)",
+      "blocking": true
+    },
+    {
+      "category": "tool",
+      "target": "T02 Verify",
+      "passed": false,
+      "message": "Unsafe or non-runnable Verify command: python -c \"from backend.services.imap_client import AttachmentExtractor; print('Supported:', AttachmentExtractor.SUPPORTED_EXTENSIONS); print('test.txt:', AttachmentExtractor.is_supported_file('test.txt'))\" (contains shell control syntax such as pipes, redirects, semicolons, backticks, or command substitution)",
+      "blocking": true
+    },
+    {
+      "category": "tool",
+      "target": "T04 Verify",
+      "passed": false,
+      "message": "Unsafe or non-runnable Verify command: python -c \"from backend.tasks import parse_bank_statement; print('Task registered:', parse_bank_statement.name)\" (contains shell control syntax such as pipes, redirects, semicolons, backticks, or command substitution)",
+      "blocking": true
+    }
+  ]
+}

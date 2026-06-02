@@ -1,0 +1,15 @@
+{
+  "sliceId": "S03",
+  "completed": [],
+  "dispatched": [
+    "T01",
+    "T02"
+  ],
+  "graphSnapshot": {
+    "taskCount": 5,
+    "edgeCount": 0,
+    "readySetSize": 5,
+    "ambiguous": false
+  },
+  "updatedAt": "2026-06-02T09:21:29.437Z"
+}

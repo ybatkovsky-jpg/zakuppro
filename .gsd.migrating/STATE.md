@@ -1,8 +1,8 @@
 # GSD State
 
 **Active Milestone:** M004: Bank Integration + Financials
-**Active Slice:** S02: S02
-**Phase:** executing
+**Active Slice:** S04: Auto-Matching Service
+**Phase:** planning
 **Requirements Status:** 8 active · 6 validated · 5 deferred · 0 out of scope
 
 ## Milestone Registry
@@ -21,4 +21,4 @@
 - None
 
 ## Next Action
-Execute T02: Bank Statement Parser Tests in slice S02.
+Slice S04 has no DB tasks. Plan slice tasks before execution.

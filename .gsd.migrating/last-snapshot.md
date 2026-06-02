@@ -1,7 +1,4 @@
-# GSD context snapshot (2026-06-02T06:51:12.335Z)
-
-## Active context
-Active: M004 / S01 / T04 - Extend test_migration.py with bank statement migration tests
+# GSD context snapshot (2026-06-02T08:56:40.133Z)
 
 ## Top project memories
 - [MEM005] (architecture) SQLAlchemy 2.0 uses relationship(back_populates=...) for bidirectional relationships, not backref. This makes relationships explicit on both sides for clearer code.
@@ -10,3 +7,6 @@ Active: M004 / S01 / T04 - Extend test_migration.py with bank statement migratio
 - [MEM003] (pattern) SQLAlchemy lazy="selectin" prevents N+1 queries by fetching related objects in a single additional query. Use for one-to-many relationships.
 - [MEM002] (pattern) Pydantic v2 requires model_config = ConfigDict(from_attributes=True) for ORM mode, not the inner Config class from v1.
 - [MEM004] (pattern) Pydantic v2 requires model_config = ConfigDict(from_attributes=True) for ORM mode, not the inner Config class from v1.
+
+## Recent gsd_exec runs
+- [b766625a-eb0b-4bca-838e-8dd78eadf6e7] bash exit:1 — Run bank statement parser tests

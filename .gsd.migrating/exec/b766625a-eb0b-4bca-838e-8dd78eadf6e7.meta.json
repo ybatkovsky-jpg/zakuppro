@@ -1,0 +1,18 @@
+{
+  "id": "b766625a-eb0b-4bca-838e-8dd78eadf6e7",
+  "runtime": "bash",
+  "purpose": "Run bank statement parser tests",
+  "script_chars": 123,
+  "started_at": "2026-06-02T08:52:18.553Z",
+  "finished_at": "2026-06-02T08:52:18.622Z",
+  "exit_code": 1,
+  "signal": null,
+  "timed_out": false,
+  "duration_ms": 69,
+  "stdout_bytes": 544,
+  "stderr_bytes": 0,
+  "stdout_truncated": false,
+  "stderr_truncated": false,
+  "stdout_path": "D:\\CLAUDE\\Project\\zakuppro\\zakuppro\\.gsd\\exec\\b766625a-eb0b-4bca-838e-8dd78eadf6e7.stdout",
+  "stderr_path": "D:\\CLAUDE\\Project\\zakuppro\\zakuppro\\.gsd\\exec\\b766625a-eb0b-4bca-838e-8dd78eadf6e7.stderr"
+}

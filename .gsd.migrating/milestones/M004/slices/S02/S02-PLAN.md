@@ -34,7 +34,7 @@ S02 unblocks S03 (Email Worker) which will call parse_bank_statement_file() in C
   - Files: `backend/services/bank_statement_parser.py`
   - Verify: python -c "from backend.services.bank_statement_parser import BankStatementParser, create_bank_statement_parser, parse_bank_statement_file; print('OK')"
 
-- [ ] **T02: Bank Statement Parser Tests** `est:3h`
+- [x] **T02: Bank Statement Parser Tests** `est:3h`
   ### Why
   Ensure parser correctly handles both Tinkoff and Ozon formats, CP1251 Cyrillic text, field variations, and edge cases before S03 integration.
   - Files: `backend/tests/test_bank_statement_parser.py`

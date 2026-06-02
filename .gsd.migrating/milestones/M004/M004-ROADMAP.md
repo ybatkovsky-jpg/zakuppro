@@ -18,10 +18,10 @@
 - [x] **S01: S01** `risk:low` `depends:[]`
   > After this: Alembic migration creates BankStatement, BankTransaction, TransactionMatchingAudit tables with relationships. Test fixtures verify schema constraints and cascade behavior.
 
-- [ ] **S02: S02** `risk:high` `depends:[]`
+- [x] **S02: S02** `risk:high` `depends:[]`
   > After this: Parser processes Tinkoff and Ozon .txt files, extracts СекцияДокумент transactions. Unit tests verify parsing of real bank statements with Russian content and merged lines.
 
-- [ ] **S03: Email Worker Extension + RabbitMQ Exchange** `risk:medium` `depends:[S02]`
+- [x] **S03: S03** `risk:medium` `depends:[]`
   > After this: Email Worker detects .txt attachments, routes to bank.statement exchange. parse_bank_statement Celery task processes statement and persists to DB. Integration test verifies end-to-end flow.
 
 - [ ] **S04: Auto-Matching Service** `risk:high` `depends:[S03]`
