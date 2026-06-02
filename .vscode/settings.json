@@ -1,4 +1,8 @@
 {
     "gsd.autoStart": false,
-    "gsd.binaryPath": ""
+    "gsd.binaryPath": "",
+    "python.defaultInterpreterPath": "C:\\Users\\Yura\\AppData\\Local\\Programs\\Python\\Python312\\python.exe",
+    "python.analysis.extraPaths": [
+        "${workspaceFolder}/backend"
+    ]
 }

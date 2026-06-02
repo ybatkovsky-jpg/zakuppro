@@ -31,7 +31,7 @@ New analytics router registered in main.py. Excel export and upload endpoints us
   - Files: `backend/routers/analytics.py`, `backend/schemas.py`, `backend/schemas/__init__.py`, `backend/main.py`, `backend/tests/test_api/test_analytics.py`
   - Verify: pytest backend/tests/test_api/test_analytics.py -v -k dashboard
 
-- [ ] **T02: Add payment dynamics time-series endpoint and Excel export for transactions** `est:1h`
+- [x] **T02: Add payment dynamics time-series endpoint and Excel export for transactions** `est:1h`
   ## Why
   Payment dynamics endpoint provides time-series data for frontend charts (payments over time grouped by day/week/month). Excel export allows accountants to download transaction data for offline analysis.
   - Files: `backend/routers/analytics.py`, `backend/schemas.py`, `backend/schemas/__init__.py`, `backend/tests/test_api/test_analytics.py`

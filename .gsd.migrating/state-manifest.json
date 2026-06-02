@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "exported_at": "2026-06-02T13:11:49.114Z",
+  "exported_at": "2026-06-02T13:19:26.735Z",
   "milestones": [
     {
       "id": "M001",
@@ -4673,19 +4673,26 @@
       "milestone_id": "M004",
       "slice_id": "S06",
       "id": "T02",
-      "title": "Add payment dynamics time-series endpoint and Excel export for transactions",
-      "status": "pending",
-      "one_liner": "",
-      "narrative": "",
-      "verification_result": "",
+      "title": "Added payment dynamics time-series endpoint and Excel export for transactions with date filtering, grouping options, and comprehensive test coverage",
+      "status": "complete",
+      "one_liner": "Added payment dynamics time-series endpoint and Excel export for transactions with date filtering, grouping options, and comprehensive test coverage",
+      "narrative": "Implemented two new analytics endpoints:\n\n1. GET /api/analytics/payment-dynamics: Returns time-series payment data grouped by day/week/month. Uses database-agnostic date truncation (PostgreSQL date_trunc vs SQLite strftime) for compatibility. Validates date range (max 1 year), defaults to last 30 days, and logs grouping period and date range.\n\n2. GET /api/analytics/export/transactions: Exports payment data to Excel (.xlsx) with columns: date, amount, invoice_id, supplier, project, description. Uses SQLAlchemy joinedload/selectinload for efficient nested data fetching. Supports date_from/date_to filtering and limit (max 1000 rows). Returns proper Content-Type and Content-Disposition headers.\n\nBoth endpoints added to backend/routers/analytics.py with schemas (PaymentDynamicsResponse, PaymentDynamicsPoint) already in backend/schemas.py. Created comprehensive unit tests in backend/tests/test_api/test_analytics.py covering empty DB, single records, grouping, date validation, filtering, and Excel parsing with pandas.\n\nKey implementation details:\n- Database dialect detection for SQLite vs PostgreSQL compatibility\n- BytesIO for in-memory Excel file generation\n- Nested eager loading to prevent N+1 queries\n- Structured logging for observability",
+      "verification_result": "pytest backend/tests/test_api/test_analytics.py -v -k \"dynamics or export\" --tb=short\n\nAll 9 new tests passed:\n- TestPaymentDynamicsEmptyDB::test_payment_dynamics_empty_db\n- TestPaymentDynamicsSingleRecord::test_payment_dynamics_single_payment\n- TestPaymentDynamicsGrouping::test_payment_dynamics_group_by_day\n- TestPaymentDynamicsDateRangeValidation::test_payment_dynamics_range_exceeds_one_year\n- TestPaymentDynamicsDateRangeValidation::test_payment_dynamics_invalid_group_by\n- TestExportTransactionsEmptyDB::test_export_transactions_empty_db\n- TestExportTransactionsWithRecords::test_export_transactions_with_data\n- TestExportTransactionsWithRecords::test_export_transactions_with_date_filter\n- TestExportTransactionsWithRecords::test_export_transactions_limit\n\nAll 19 analytics tests passed (10 existing dashboard tests + 9 new tests).",
       "duration": "",
-      "completed_at": null,
+      "completed_at": "2026-06-02T13:19:26.475Z",
       "blocker_discovered": false,
-      "deviations": "",
-      "known_issues": "",
-      "key_files": [],
-      "key_decisions": [],
-      "full_summary_md": "",
+      "deviations": "None.",
+      "known_issues": "None.",
+      "key_files": [
+        "backend/routers/analytics.py",
+        "backend/tests/test_api/test_analytics.py"
+      ],
+      "key_decisions": [
+        "Use database dialect detection (db.bind.dialect.name) for SQLite vs PostgreSQL compatibility in date truncation",
+        "Use BytesIO for in-memory Excel generation instead of temporary files",
+        "Use joinedload/selectinload combination for nested relationship eager loading (Payment->Invoice->PurchaseOrder->Supplier/Project)"
+      ],
+      "full_summary_md": "---\nid: T02\nparent: S06\nmilestone: M004\nkey_files:\n  - backend/routers/analytics.py\n  - backend/tests/test_api/test_analytics.py\nkey_decisions:\n  - Use database dialect detection (db.bind.dialect.name) for SQLite vs PostgreSQL compatibility in date truncation\n  - Use BytesIO for in-memory Excel generation instead of temporary files\n  - Use joinedload/selectinload combination for nested relationship eager loading (Payment->Invoice->PurchaseOrder->Supplier/Project)\nduration: \nverification_result: mixed\ncompleted_at: 2026-06-02T13:19:26.469Z\nblocker_discovered: false\n---\n\n# T02: Added payment dynamics time-series endpoint and Excel export for transactions with date filtering, grouping options, and comprehensive test coverage\n\n**Added payment dynamics time-series endpoint and Excel export for transactions with date filtering, grouping options, and comprehensive test coverage**\n\n## What Happened\n\nImplemented two new analytics endpoints:\n\n1. GET /api/analytics/payment-dynamics: Returns time-series payment data grouped by day/week/month. Uses database-agnostic date truncation (PostgreSQL date_trunc vs SQLite strftime) for compatibility. Validates date range (max 1 year), defaults to last 30 days, and logs grouping period and date range.\n\n2. GET /api/analytics/export/transactions: Exports payment data to Excel (.xlsx) with columns: date, amount, invoice_id, supplier, project, description. Uses SQLAlchemy joinedload/selectinload for efficient nested data fetching. Supports date_from/date_to filtering and limit (max 1000 rows). Returns proper Content-Type and Content-Disposition headers.\n\nBoth endpoints added to backend/routers/analytics.py with schemas (PaymentDynamicsResponse, PaymentDynamicsPoint) already in backend/schemas.py. Created comprehensive unit tests in backend/tests/test_api/test_analytics.py covering empty DB, single records, grouping, date validation, filtering, and Excel parsing with pandas.\n\nKey implementation details:\n- Database dialect detection for SQLite vs PostgreSQL compatibility\n- BytesIO for in-memory Excel file generation\n- Nested eager loading to prevent N+1 queries\n- Structured logging for observability\n\n## Verification\n\npytest backend/tests/test_api/test_analytics.py -v -k \"dynamics or export\" --tb=short\n\nAll 9 new tests passed:\n- TestPaymentDynamicsEmptyDB::test_payment_dynamics_empty_db\n- TestPaymentDynamicsSingleRecord::test_payment_dynamics_single_payment\n- TestPaymentDynamicsGrouping::test_payment_dynamics_group_by_day\n- TestPaymentDynamicsDateRangeValidation::test_payment_dynamics_range_exceeds_one_year\n- TestPaymentDynamicsDateRangeValidation::test_payment_dynamics_invalid_group_by\n- TestExportTransactionsEmptyDB::test_export_transactions_empty_db\n- TestExportTransactionsWithRecords::test_export_transactions_with_data\n- TestExportTransactionsWithRecords::test_export_transactions_with_date_filter\n- TestExportTransactionsWithRecords::test_export_transactions_limit\n\nAll 19 analytics tests passed (10 existing dashboard tests + 9 new tests).\n\n## Verification Evidence\n\n| # | Command | Exit Code | Verdict | Duration |\n|---|---------|-----------|---------|----------|\n| 1 | `pytest backend/tests/test_api/test_analytics.py -v -k \"dynamics or export\" --tb=short | exit 0 | 5s | pass` | -1 | unknown (coerced from string) | 0ms |\n\n## Deviations\n\nNone.\n\n## Known Issues\n\nNone.\n\n## Files Created/Modified\n\n- `backend/routers/analytics.py`\n- `backend/tests/test_api/test_analytics.py`\n",
       "description": "## Why\nPayment dynamics endpoint provides time-series data for frontend charts (payments over time grouped by day/week/month). Excel export allows accountants to download transaction data for offline analysis.\n\n## Do\n1. Extend `backend/routers/analytics.py` with:\n   - GET /api/analytics/payment-dynamics - query params: period_start, period_end, group_by (day/week/month, default 'day')\n   - Use SQLAlchemy func.date() or date_trunc() for grouping\n   - Return [{date, paid_amount, unpaid_amount}, ...]\n   - Add PaymentDynamicsResponse schema\n2. Add GET /api/analytics/export/transactions:\n   - Query parameters: date_from, date_to (same filters as unresolved-transactions list)\n   - Query using joinedload for nested Invoice/Supplier data\n   - Convert to pandas DataFrame with columns: date, amount, invoice_id, supplier, project, description\n   - Use io.BytesIO() + df.to_excel(engine='openpyxl', index=False)\n   - Return Response with media_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', Content-Disposition='attachment; filename=transactions.xlsx'\n   - Limit to 1000 rows max\n   - Log export date range and row count\n3. Create unit tests for both endpoints in `backend/tests/test_api/test_analytics.py`\n\n## Done when\n- /api/analytics/payment-dynamics returns grouped time-series data\n- /api/analytics/export/transactions returns downloadable .xlsx file\n- Content-Type and Content-Disposition headers are correct\n- Tests verify pandas can parse the exported Excel",
       "estimate": "1h",
       "files": [
@@ -6799,6 +6806,17 @@
       "verdict": "pass",
       "duration_ms": 500,
       "created_at": "2026-06-02T13:11:48.986Z"
+    },
+    {
+      "id": 188,
+      "task_id": "T02",
+      "slice_id": "S06",
+      "milestone_id": "M004",
+      "command": "pytest backend/tests/test_api/test_analytics.py -v -k \"dynamics or export\" --tb=short | exit 0 | 5s | pass",
+      "exit_code": -1,
+      "verdict": "unknown (coerced from string)",
+      "duration_ms": 0,
+      "created_at": "2026-06-02T13:19:26.476Z"
     }
   ]
 }

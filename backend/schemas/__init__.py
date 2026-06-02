@@ -99,6 +99,7 @@ ProductionTaskResponse = _schemas.ProductionTaskResponse
 DashboardMetricsResponse = _schemas.DashboardMetricsResponse
 PaymentDynamicsPoint = _schemas.PaymentDynamicsPoint
 PaymentDynamicsResponse = _schemas.PaymentDynamicsResponse
+UploadBankStatementResponse = _schemas.UploadBankStatementResponse
 
 __all__ = [
     # Verification
@@ -170,4 +171,5 @@ __all__ = [
     "DashboardMetricsResponse",
     "PaymentDynamicsPoint",
     "PaymentDynamicsResponse",
+    "UploadBankStatementResponse",
 ]

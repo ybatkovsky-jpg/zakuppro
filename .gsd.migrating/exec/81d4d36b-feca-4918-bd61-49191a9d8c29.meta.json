@@ -1,0 +1,18 @@
+{
+  "id": "81d4d36b-feca-4918-bd61-49191a9d8c29",
+  "runtime": "bash",
+  "purpose": "Run analytics tests for payment dynamics and export endpoints",
+  "script_chars": 154,
+  "started_at": "2026-06-02T13:17:14.430Z",
+  "finished_at": "2026-06-02T13:17:14.508Z",
+  "exit_code": 1,
+  "signal": null,
+  "timed_out": false,
+  "duration_ms": 78,
+  "stdout_bytes": 544,
+  "stderr_bytes": 0,
+  "stdout_truncated": false,
+  "stderr_truncated": false,
+  "stdout_path": "D:\\CLAUDE\\Project\\zakuppro\\zakuppro\\.gsd\\exec\\81d4d36b-feca-4918-bd61-49191a9d8c29.stdout",
+  "stderr_path": "D:\\CLAUDE\\Project\\zakuppro\\zakuppro\\.gsd\\exec\\81d4d36b-feca-4918-bd61-49191a9d8c29.stderr"
+}

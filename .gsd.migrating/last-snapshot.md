@@ -1,7 +1,7 @@
-# GSD context snapshot (2026-06-02T13:11:54.710Z)
+# GSD context snapshot (2026-06-02T13:19:33.868Z)
 
 ## Active context
-Active: M004 / S06 / T02 - Add payment dynamics time-series endpoint and Excel export for transactions
+Active: M004 / S06 / T03 - Implement manual bank statement upload endpoint with validation and parser integration
 
 ## Top project memories
 - [MEM005] (architecture) SQLAlchemy 2.0 uses relationship(back_populates=...) for bidirectional relationships, not backref. This makes relationships explicit on both sides for clearer code.
@@ -12,4 +12,4 @@ Active: M004 / S06 / T02 - Add payment dynamics time-series endpoint and Excel e
 - [MEM004] (pattern) Pydantic v2 requires model_config = ConfigDict(from_attributes=True) for ORM mode, not the inner Config class from v1.
 
 ## Recent gsd_exec runs
-- [319f4a65-3d1e-484f-9dae-5896eb2a781f] bash exit:1 — Run analytics dashboard tests
+- [81d4d36b-feca-4918-bd61-49191a9d8c29] bash exit:1 — Run analytics tests for payment dynamics and export endpoints

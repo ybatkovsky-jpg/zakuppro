@@ -21,4 +21,4 @@
 - None
 
 ## Next Action
-Execute T02: Add payment dynamics time-series endpoint and Excel export for transactions in slice S06.
+Execute T03: Implement manual bank statement upload endpoint with validation and parser integration in slice S06.

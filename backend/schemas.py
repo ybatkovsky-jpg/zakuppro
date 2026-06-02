@@ -470,3 +470,14 @@ class PaymentDynamicsResponse(BaseSchema):
     total_count: int
     period_start: datetime
     period_end: datetime
+
+
+class UploadBankStatementResponse(BaseSchema):
+    """Schema for bank statement upload response."""
+    bank_statement_id: int
+    parsed_transactions: int
+    matched_count: int
+    bank_name: str
+    statement_date: datetime
+    period_start: datetime
+    period_end: datetime
