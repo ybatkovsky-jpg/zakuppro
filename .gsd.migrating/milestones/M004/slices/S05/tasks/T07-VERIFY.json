@@ -1,0 +1,16 @@
+{
+  "schemaVersion": 1,
+  "taskId": "T07",
+  "unitId": "M004/S05/T07",
+  "timestamp": 1780402302510,
+  "passed": true,
+  "discoverySource": "task-plan",
+  "checks": [
+    {
+      "command": "pytest backend/tests/test_unresolved_matching_integration.py -v",
+      "exitCode": 0,
+      "durationMs": 3426,
+      "verdict": "pass"
+    }
+  ]
+}

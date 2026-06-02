@@ -1,8 +1,8 @@
 # GSD State
 
 **Active Milestone:** M004: Bank Integration + Financials
-**Active Slice:** S05: S05
-**Phase:** executing
+**Active Slice:** S06: Analytics + Export + Manual Upload
+**Phase:** planning
 **Requirements Status:** 8 active · 6 validated · 5 deferred · 0 out of scope
 
 ## Milestone Registry
@@ -21,4 +21,4 @@
 - None
 
 ## Next Action
-Execute T05: Add Audit History Endpoint and Extend TransactionMatchingAudit in slice S05.
+Slice S06 has no DB tasks. Plan slice tasks before execution.

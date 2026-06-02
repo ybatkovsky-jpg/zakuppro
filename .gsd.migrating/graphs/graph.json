@@ -619,6 +619,61 @@
       "confidence": "EXTRACTED"
     },
     {
+      "id": "slice:M004:S05",
+      "label": "S05: Transaction Matching API",
+      "type": "slice",
+      "confidence": "EXTRACTED",
+      "sourceFile": "milestones/M004/slices/S05/S05-PLAN.md"
+    },
+    {
+      "id": "task:M004:S05:T01",
+      "label": "T01: Add Filter and Search to UnresolvedTransaction List Endpoint",
+      "type": "task",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "id": "task:M004:S05:T02",
+      "label": "T02: Add Invoice Candidate Suggestion Endpoint",
+      "type": "task",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "id": "task:M004:S05:T03",
+      "label": "T03: Add Single Manual Match Endpoint",
+      "type": "task",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "id": "task:M004:S05:T04",
+      "label": "T04: Add Bulk Manual Match Endpoint",
+      "type": "task",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "id": "task:M004:S05:T05",
+      "label": "T05: Add Audit History Endpoint and Extend TransactionMatchingAudit",
+      "type": "task",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "id": "task:M004:S05:T06",
+      "label": "T06: Write API Unit Tests",
+      "type": "task",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "id": "task:M004:S05:T07",
+      "label": "T07: Write Integration Test for Manual Matching Workflow",
+      "type": "task",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "id": "task:M004:S05:T08",
+      "label": "T08: Restore test_client Fixture and Run Full Test Suite",
+      "type": "task",
+      "confidence": "EXTRACTED"
+    },
+    {
       "id": "milestone:M005",
       "label": "M005: Frontend UI",
       "type": "milestone",
@@ -2060,6 +2115,60 @@
       "confidence": "EXTRACTED"
     },
     {
+      "from": "milestone:M004",
+      "to": "slice:M004:S05",
+      "type": "contains",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "from": "slice:M004:S05",
+      "to": "task:M004:S05:T01",
+      "type": "contains",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "from": "slice:M004:S05",
+      "to": "task:M004:S05:T02",
+      "type": "contains",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "from": "slice:M004:S05",
+      "to": "task:M004:S05:T03",
+      "type": "contains",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "from": "slice:M004:S05",
+      "to": "task:M004:S05:T04",
+      "type": "contains",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "from": "slice:M004:S05",
+      "to": "task:M004:S05:T05",
+      "type": "contains",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "from": "slice:M004:S05",
+      "to": "task:M004:S05:T06",
+      "type": "contains",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "from": "slice:M004:S05",
+      "to": "task:M004:S05:T07",
+      "type": "contains",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "from": "slice:M004:S05",
+      "to": "task:M004:S05:T08",
+      "type": "contains",
+      "confidence": "EXTRACTED"
+    },
+    {
       "from": "milestone:M002",
       "to": "decision:M002:1",
       "type": "relates_to",
@@ -2792,5 +2901,5 @@
       "confidence": "EXTRACTED"
     }
   ],
-  "builtAt": "2026-06-02T11:12:00.077Z"
+  "builtAt": "2026-06-02T12:15:28.755Z"
 }
