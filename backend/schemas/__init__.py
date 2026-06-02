@@ -74,6 +74,7 @@ UnresolvedTransactionCreate = _schemas.UnresolvedTransactionCreate
 UnresolvedTransactionUpdate = _schemas.UnresolvedTransactionUpdate
 UnresolvedTransactionResponse = _schemas.UnresolvedTransactionResponse
 UnresolvedTransactionListResponse = _schemas.UnresolvedTransactionListResponse
+InvoiceCandidateResponse = _schemas.InvoiceCandidateResponse
 
 # ProductionTask schemas
 ProductionTaskBase = _schemas.ProductionTaskBase
@@ -129,6 +130,7 @@ __all__ = [
     "UnresolvedTransactionUpdate",
     "UnresolvedTransactionResponse",
     "UnresolvedTransactionListResponse",
+    "InvoiceCandidateResponse",
     # ProductionTasks
     "ProductionTaskBase",
     "ProductionTaskCreate",

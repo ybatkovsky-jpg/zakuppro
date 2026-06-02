@@ -3,15 +3,21 @@ UnresolvedTransaction CRUD router for ZakupPro API.
 Provides endpoints for managing unresolved bank transactions.
 """
 from fastapi import APIRouter, Depends, HTTPException, status, Query
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, joinedload
 from sqlalchemy import or_, and_
 from typing import List, Optional
-from datetime import datetime
+from datetime import datetime, timedelta
+from decimal import Decimal
 import logging
 
 from backend.database import get_db
-from backend.models import UnresolvedTransaction
-from backend.schemas import UnresolvedTransactionCreate, UnresolvedTransactionUpdate, UnresolvedTransactionResponse
+from backend.models import UnresolvedTransaction, Supplier, PurchaseOrder, Invoice, InvoiceItem
+from backend.schemas import (
+    UnresolvedTransactionCreate,
+    UnresolvedTransactionUpdate,
+    UnresolvedTransactionResponse,
+    InvoiceCandidateResponse
+)
 
 logger = logging.getLogger(__name__)
 
@@ -164,3 +170,122 @@ def delete_unresolved_transaction(transaction_id: int, db: Session = Depends(get
 
     db.delete(transaction)
     db.commit()
+
+
+@router.get("/{transaction_id}/candidates", response_model=List[InvoiceCandidateResponse])
+def get_invoice_candidates(transaction_id: int, db: Session = Depends(get_db)):
+    """
+    Get invoice candidate suggestions for an unresolved transaction.
+
+    Uses relaxed matching tolerances (10% amount, 90 days) to suggest
+    potential invoices for manual reconciliation.
+
+    Returns candidates with invoice_id, supplier_name, invoice_total,
+    amount_difference, and confidence_score.
+    """
+    logger.info(f"get_invoice_candidates called for transaction_id={transaction_id}")
+
+    # Fetch the unresolved transaction
+    transaction = db.query(UnresolvedTransaction).filter(UnresolvedTransaction.id == transaction_id).first()
+    if not transaction:
+        logger.warning(f"UnresolvedTransaction with id {transaction_id} not found")
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"UnresolvedTransaction with id {transaction_id} not found"
+        )
+
+    # Relaxed tolerances for suggestions
+    amount_tolerance_percent = 10.0
+    date_window_days = 90
+
+    transaction_amount = Decimal(str(transaction.amount))
+    transaction_date = transaction.bank_date
+
+    logger.debug(
+        f"Searching candidates: amount={transaction_amount}, date={transaction_date}, "
+        f"tolerance={amount_tolerance_percent}%, window={date_window_days} days"
+    )
+
+    # Find all invoices with items (need invoice total from items)
+    # Only consider invoices with relevant statuses
+    invoices = (
+        db.query(Invoice)
+        .filter(Invoice.status.in_(["Сверен", "Ожидает оплаты", "Оплачен"]))
+        .options(joinedload(Invoice.items).joinedload(InvoiceItem.project_item))
+        .all()
+    )
+
+    logger.debug(f"Found {len(invoices)} invoices with relevant statuses")
+
+    candidates = []
+
+    for invoice in invoices:
+        # Calculate invoice total from items
+        invoice_total = Decimal("0")
+        if invoice.items:
+            for item in invoice.items:
+                if item.total_price:
+                    invoice_total += Decimal(str(item.total_price))
+        else:
+            continue  # Skip invoices without items
+
+        # Calculate tolerance bounds from invoice total
+        tolerance = invoice_total * Decimal(str(amount_tolerance_percent / 100))
+        tolerance_min = invoice_total - tolerance
+        tolerance_max = invoice_total + tolerance
+
+        # Check if transaction amount is within tolerance range
+        if not (tolerance_min <= transaction_amount <= tolerance_max):
+            continue
+
+        # Check date proximity
+        # Use invoice.created_at as proxy for invoice date
+        # Ensure transaction_date is a date object for comparison
+        transaction_date_only = transaction_date.date() if isinstance(transaction_date, datetime) else transaction_date
+        invoice_date_only = invoice.created_at.date() if isinstance(invoice.created_at, datetime) else invoice.created_at
+
+        date_min = transaction_date_only - timedelta(days=date_window_days)
+        date_max = transaction_date_only + timedelta(days=date_window_days)
+
+        if not (date_min <= invoice_date_only <= date_max):
+            # Date is outside window but still include candidate
+            # (just log it - suggestions are meant to be permissive)
+            logger.debug(
+                f"Invoice {invoice.id} outside date window: {invoice_date_only} "
+                f"not in [{date_min}, {date_max}]"
+            )
+
+        # Calculate confidence score
+        if transaction_amount == invoice_total:
+            confidence = 1.00
+        else:
+            # Scale confidence based on amount proximity
+            amount_diff = abs(transaction_amount - invoice_total)
+            tolerance_range = tolerance_max - tolerance_min
+            if tolerance_range > 0:
+                proximity_score = 1 - float(amount_diff / tolerance_range)
+                confidence = 0.75 + (proximity_score * 0.25)  # Scale to 0.75-1.00 range
+            else:
+                confidence = 0.75
+
+        # Get supplier name
+        supplier_name = "Unknown"
+        if invoice.purchase_order and invoice.purchase_order.supplier:
+            supplier_name = invoice.purchase_order.supplier.name
+
+        amount_difference = float(abs(transaction_amount - invoice_total))
+
+        candidates.append(InvoiceCandidateResponse(
+            invoice_id=invoice.id,
+            supplier_name=supplier_name,
+            invoice_total=float(invoice_total),
+            amount_difference=amount_difference,
+            confidence_score=round(confidence, 2)
+        ))
+
+    # Sort by confidence score descending
+    candidates.sort(key=lambda x: x.confidence_score, reverse=True)
+
+    logger.info(f"Returning {len(candidates)} candidates for transaction_id={transaction_id}")
+
+    return candidates

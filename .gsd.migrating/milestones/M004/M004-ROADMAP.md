@@ -27,7 +27,7 @@
 - [x] **S04: S04** `risk:high` `depends:[]`
   > After this: Auto-matcher links BankTransactions to Invoices by supplier INN + amount ±5% + date range. Unmatched transactions go to UnresolvedTransaction. Unit tests verify matching logic.
 
-- [ ] **S05: Transaction Matching API** `risk:medium` `depends:[S04]`
+- [ ] **S05: S05** `risk:medium` `depends:[]`
   > After this: API endpoints support unresolved transaction CRUD, bulk manual matching, and audit history. Integration test verifies full workflow from unmatched to matched state.
 
 - [ ] **S06: Analytics + Export + Manual Upload** `risk:low` `depends:[S05]`

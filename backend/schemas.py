@@ -310,6 +310,15 @@ class UnresolvedTransactionListResponse(BaseSchema):
     limit: int
 
 
+class InvoiceCandidateResponse(BaseSchema):
+    """Schema for invoice candidate suggestion response."""
+    invoice_id: int
+    supplier_name: str
+    invoice_total: float
+    amount_difference: float
+    confidence_score: float
+
+
 # =============================================================================
 # ProductionTask Schemas
 # =============================================================================

@@ -1,8 +1,8 @@
 # GSD State
 
 **Active Milestone:** M004: Bank Integration + Financials
-**Active Slice:** S05: Transaction Matching API
-**Phase:** evaluating-gates
+**Active Slice:** S05: S05
+**Phase:** executing
 **Requirements Status:** 8 active · 6 validated · 5 deferred · 0 out of scope
 
 ## Milestone Registry
@@ -21,4 +21,4 @@
 - None
 
 ## Next Action
-Evaluate 2 quality gate(s) for S05 before execution.
+Execute T02: Add Invoice Candidate Suggestion Endpoint in slice S05.

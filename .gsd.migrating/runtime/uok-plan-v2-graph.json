@@ -1,12 +1,12 @@
 {
-  "compiledAt": "2026-06-02T11:10:11.174Z",
+  "compiledAt": "2026-06-02T11:30:21.803Z",
   "milestoneId": "M004",
   "pipeline": {
     "clarifyRoundLimit": 3,
     "researchSynthesized": true,
     "draftContextIncluded": false,
     "finalizedContextIncluded": true,
-    "sourcePhase": "summarizing"
+    "sourcePhase": "executing"
   },
   "nodes": [
     {
@@ -342,6 +342,135 @@
         "unitType": "complete-slice",
         "unitId": "M004.S04",
         "title": "S04",
+        "status": "complete"
+      }
+    },
+    {
+      "id": "execute-task:M004:S05:T01",
+      "kind": "unit",
+      "dependsOn": [],
+      "writes": [
+        "backend/routers/unresolved_transactions.py",
+        "backend/schemas.py",
+        "backend/tests/test_api/test_unresolved_transactions.py",
+        "backend/tests/conftest.py",
+        "backend/schemas/__init__.py"
+      ],
+      "metadata": {
+        "unitType": "execute-task",
+        "unitId": "M004.S05.T01",
+        "title": "Extended GET /api/unresolved-transactions with query parameter filtering (status, amount range, date range), description search, and flexible ordering. Added UnresolvedTransactionListResponse schema for paginated results.",
+        "status": "complete"
+      }
+    },
+    {
+      "id": "execute-task:M004:S05:T02",
+      "kind": "unit",
+      "dependsOn": [
+        "execute-task:M004:S05:T01"
+      ],
+      "writes": [],
+      "metadata": {
+        "unitType": "execute-task",
+        "unitId": "M004.S05.T02",
+        "title": "Add Invoice Candidate Suggestion Endpoint",
+        "status": "pending"
+      }
+    },
+    {
+      "id": "execute-task:M004:S05:T03",
+      "kind": "unit",
+      "dependsOn": [
+        "execute-task:M004:S05:T02"
+      ],
+      "writes": [],
+      "metadata": {
+        "unitType": "execute-task",
+        "unitId": "M004.S05.T03",
+        "title": "Add Single Manual Match Endpoint",
+        "status": "pending"
+      }
+    },
+    {
+      "id": "execute-task:M004:S05:T04",
+      "kind": "unit",
+      "dependsOn": [
+        "execute-task:M004:S05:T03"
+      ],
+      "writes": [],
+      "metadata": {
+        "unitType": "execute-task",
+        "unitId": "M004.S05.T04",
+        "title": "Add Bulk Manual Match Endpoint",
+        "status": "pending"
+      }
+    },
+    {
+      "id": "execute-task:M004:S05:T05",
+      "kind": "unit",
+      "dependsOn": [
+        "execute-task:M004:S05:T04"
+      ],
+      "writes": [],
+      "metadata": {
+        "unitType": "execute-task",
+        "unitId": "M004.S05.T05",
+        "title": "Add Audit History Endpoint and Extend TransactionMatchingAudit",
+        "status": "pending"
+      }
+    },
+    {
+      "id": "execute-task:M004:S05:T06",
+      "kind": "unit",
+      "dependsOn": [
+        "execute-task:M004:S05:T05"
+      ],
+      "writes": [],
+      "metadata": {
+        "unitType": "execute-task",
+        "unitId": "M004.S05.T06",
+        "title": "Write API Unit Tests",
+        "status": "pending"
+      }
+    },
+    {
+      "id": "execute-task:M004:S05:T07",
+      "kind": "unit",
+      "dependsOn": [
+        "execute-task:M004:S05:T06"
+      ],
+      "writes": [],
+      "metadata": {
+        "unitType": "execute-task",
+        "unitId": "M004.S05.T07",
+        "title": "Write Integration Test for Manual Matching Workflow",
+        "status": "pending"
+      }
+    },
+    {
+      "id": "execute-task:M004:S05:T08",
+      "kind": "unit",
+      "dependsOn": [
+        "execute-task:M004:S05:T07"
+      ],
+      "writes": [],
+      "metadata": {
+        "unitType": "execute-task",
+        "unitId": "M004.S05.T08",
+        "title": "Restore test_client Fixture and Run Full Test Suite",
+        "status": "pending"
+      }
+    },
+    {
+      "id": "complete-slice:M004:S05",
+      "kind": "verification",
+      "dependsOn": [
+        "execute-task:M004:S05:T08"
+      ],
+      "metadata": {
+        "unitType": "complete-slice",
+        "unitId": "M004.S05",
+        "title": "S05",
         "status": "pending"
       }
     }

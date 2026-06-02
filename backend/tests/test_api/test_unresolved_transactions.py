@@ -7,6 +7,7 @@ Tests verify:
 - GET /api/unresolved-transactions/{id} returns single transaction
 - PUT /api/unresolved-transactions/{id} modifies fields
 - DELETE /api/unresolved-transactions/{id} removes transactions
+- GET /api/unresolved-transactions/{id}/candidates suggests invoice matches
 - Filter by status, amount range, date range
 - Search in description field
 - Ordering by various fields and directions
@@ -14,6 +15,13 @@ Tests verify:
 import pytest
 from fastapi.testclient import TestClient
 from datetime import datetime, timedelta
+from decimal import Decimal
+from sqlalchemy.orm import Session
+
+try:
+    from backend.models import Supplier, Project, PurchaseOrder, Invoice, InvoiceItem
+except ImportError:
+    from models import Supplier, Project, PurchaseOrder, Invoice, InvoiceItem
 
 
 class TestCreateUnresolvedTransaction:
@@ -384,6 +392,271 @@ class TestDeleteUnresolvedTransaction:
     def test_delete_unresolved_transaction_not_found(self, test_client: TestClient):
         """DELETE returns 404 when transaction id doesn't exist."""
         response = test_client.delete("/api/unresolved-transactions/99999")
+
+        assert response.status_code == 404
+
+
+class TestGetInvoiceCandidates:
+    """Test GET /api/unresolved-transactions/{id}/candidates endpoint."""
+
+    def test_get_candidates_returns_empty_list_for_no_invoices(self, test_client: TestClient):
+        """GET returns empty list when no matching invoices exist."""
+        now = datetime.utcnow()
+        create_response = test_client.post("/api/unresolved-transactions/", json={
+            "amount": 5000.00,
+            "description": "Test transaction",
+            "bank_date": now.isoformat(),
+            "status": "Не распределено"
+        })
+        transaction_id = create_response.json()["id"]
+
+        response = test_client.get(f"/api/unresolved-transactions/{transaction_id}/candidates")
+
+        assert response.status_code == 200
+        data = response.json()
+        assert isinstance(data, list)
+        assert len(data) == 0
+
+    def test_get_candidates_with_exact_match(self, test_client: TestClient, db_session: Session):
+        """GET returns invoice with confidence 1.00 for exact amount match."""
+        # Create supplier, project, PO, invoice with items
+        supplier = Supplier(
+            name="Test Supplier",
+            email="test@example.com",
+            requisites="ИНН: 7701234567\nБанк: Тинькофф",
+        )
+        db_session.add(supplier)
+
+        project = Project(name="Test Project", client="Test Client", status="Проектирование")
+        db_session.add(project)
+
+        db_session.flush()
+
+        po = PurchaseOrder(project_id=project.id, supplier_id=supplier.id, status="Сверен")
+        db_session.add(po)
+        db_session.flush()
+
+        invoice = Invoice(purchase_order_id=po.id, status="Сверен")
+        db_session.add(invoice)
+        db_session.flush()
+
+        invoice_item = InvoiceItem(
+            invoice_id=invoice.id,
+            name="Test Item",
+            sku="SKU001",
+            qty=1,
+            unit_price=Decimal("10000.00"),
+            total_price=Decimal("10000.00"),
+        )
+        db_session.add(invoice_item)
+        db_session.commit()
+
+        # Create unresolved transaction with exact match amount
+        now = datetime.utcnow()
+        create_response = test_client.post("/api/unresolved-transactions/", json={
+            "amount": 10000.00,
+            "description": "Test transaction",
+            "bank_date": now.isoformat(),
+            "status": "Не распределено"
+        })
+        transaction_id = create_response.json()["id"]
+
+        # Get candidates
+        response = test_client.get(f"/api/unresolved-transactions/{transaction_id}/candidates")
+
+        assert response.status_code == 200
+        data = response.json()
+        assert len(data) == 1
+        assert data[0]["invoice_id"] == invoice.id
+        assert data[0]["supplier_name"] == "Test Supplier"
+        assert data[0]["invoice_total"] == 10000.00
+        assert data[0]["amount_difference"] == 0.0
+        assert data[0]["confidence_score"] == 1.00
+
+    def test_get_candidates_with_tolerance_match(self, test_client: TestClient, db_session: Session):
+        """GET returns invoice within 10% tolerance with confidence < 1.00."""
+        # Create supplier, project, PO, invoice with items
+        supplier = Supplier(
+            name="Tolerance Supplier",
+            email="tolerance@example.com",
+            requisites="ИНН: 7701234567\nБанк: Тинькофф",
+        )
+        db_session.add(supplier)
+
+        project = Project(name="Test Project", client="Test Client", status="Проектирование")
+        db_session.add(project)
+
+        db_session.flush()
+
+        po = PurchaseOrder(project_id=project.id, supplier_id=supplier.id, status="Сверен")
+        db_session.add(po)
+        db_session.flush()
+
+        invoice = Invoice(purchase_order_id=po.id, status="Сверен")
+        db_session.add(invoice)
+        db_session.flush()
+
+        # Invoice total is 10000.00
+        invoice_item = InvoiceItem(
+            invoice_id=invoice.id,
+            name="Test Item",
+            sku="SKU001",
+            qty=1,
+            unit_price=Decimal("10000.00"),
+            total_price=Decimal("10000.00"),
+        )
+        db_session.add(invoice_item)
+        db_session.commit()
+
+        # Create unresolved transaction with 5% difference (within 10% tolerance)
+        now = datetime.utcnow()
+        create_response = test_client.post("/api/unresolved-transactions/", json={
+            "amount": 9500.00,  # 5% less than invoice
+            "description": "Test transaction",
+            "bank_date": now.isoformat(),
+            "status": "Не распределено"
+        })
+        transaction_id = create_response.json()["id"]
+
+        # Get candidates
+        response = test_client.get(f"/api/unresolved-transactions/{transaction_id}/candidates")
+
+        assert response.status_code == 200
+        data = response.json()
+        assert len(data) == 1
+        assert data[0]["invoice_id"] == invoice.id
+        assert data[0]["supplier_name"] == "Tolerance Supplier"
+        assert data[0]["invoice_total"] == 10000.00
+        assert data[0]["amount_difference"] == 500.0
+        # Confidence should be < 1.00 but > 0.75 (our baseline)
+        assert 0.75 < data[0]["confidence_score"] < 1.00
+
+    def test_get_candidates_excludes_outside_tolerance(self, test_client: TestClient, db_session: Session):
+        """GET excludes invoices outside 10% tolerance range."""
+        # Create supplier, project, PO, invoice with items
+        supplier = Supplier(
+            name="Far Supplier",
+            email="far@example.com",
+            requisites="ИНН: 7701234567\nБанк: Тинькофф",
+        )
+        db_session.add(supplier)
+
+        project = Project(name="Test Project", client="Test Client", status="Проектирование")
+        db_session.add(project)
+
+        db_session.flush()
+
+        po = PurchaseOrder(project_id=project.id, supplier_id=supplier.id, status="Сверен")
+        db_session.add(po)
+        db_session.flush()
+
+        invoice = Invoice(purchase_order_id=po.id, status="Сверен")
+        db_session.add(invoice)
+        db_session.flush()
+
+        # Invoice total is 10000.00
+        invoice_item = InvoiceItem(
+            invoice_id=invoice.id,
+            name="Test Item",
+            sku="SKU001",
+            qty=1,
+            unit_price=Decimal("10000.00"),
+            total_price=Decimal("10000.00"),
+        )
+        db_session.add(invoice_item)
+        db_session.commit()
+
+        # Create unresolved transaction with 15% difference (outside 10% tolerance)
+        now = datetime.utcnow()
+        create_response = test_client.post("/api/unresolved-transactions/", json={
+            "amount": 8500.00,  # 15% less than invoice
+            "description": "Test transaction",
+            "bank_date": now.isoformat(),
+            "status": "Не распределено"
+        })
+        transaction_id = create_response.json()["id"]
+
+        # Get candidates
+        response = test_client.get(f"/api/unresolved-transactions/{transaction_id}/candidates")
+
+        assert response.status_code == 200
+        data = response.json()
+        # Should be empty since 15% difference is outside 10% tolerance
+        assert len(data) == 0
+
+    def test_get_candidates_sorted_by_confidence(self, test_client: TestClient, db_session: Session):
+        """GET returns candidates sorted by confidence score descending."""
+        # Create two invoices with different amounts
+        supplier = Supplier(
+            name="Multi Invoice Supplier",
+            email="multi@example.com",
+            requisites="ИНН: 7701234567\nБанк: Тинькофф",
+        )
+        db_session.add(supplier)
+
+        project = Project(name="Test Project", client="Test Client", status="Проектирование")
+        db_session.add(project)
+
+        db_session.flush()
+
+        po = PurchaseOrder(project_id=project.id, supplier_id=supplier.id, status="Сверен")
+        db_session.add(po)
+        db_session.flush()
+
+        # Invoice 1: exact match (10000.00)
+        invoice1 = Invoice(purchase_order_id=po.id, status="Сверен")
+        db_session.add(invoice1)
+        db_session.flush()
+        item1 = InvoiceItem(
+            invoice_id=invoice1.id,
+            name="Item 1",
+            sku="SKU001",
+            qty=1,
+            unit_price=Decimal("10000.00"),
+            total_price=Decimal("10000.00"),
+        )
+        db_session.add(item1)
+
+        # Invoice 2: close match (9500.00)
+        invoice2 = Invoice(purchase_order_id=po.id, status="Сверен")
+        db_session.add(invoice2)
+        db_session.flush()
+        item2 = InvoiceItem(
+            invoice_id=invoice2.id,
+            name="Item 2",
+            sku="SKU002",
+            qty=1,
+            unit_price=Decimal("9500.00"),
+            total_price=Decimal("9500.00"),
+        )
+        db_session.add(item2)
+        db_session.commit()
+
+        # Create unresolved transaction that matches invoice1 exactly
+        now = datetime.utcnow()
+        create_response = test_client.post("/api/unresolved-transactions/", json={
+            "amount": 10000.00,
+            "description": "Test transaction",
+            "bank_date": now.isoformat(),
+            "status": "Не распределено"
+        })
+        transaction_id = create_response.json()["id"]
+
+        # Get candidates
+        response = test_client.get(f"/api/unresolved-transactions/{transaction_id}/candidates")
+
+        assert response.status_code == 200
+        data = response.json()
+        assert len(data) == 2
+        # Should be sorted by confidence descending
+        confidences = [c["confidence_score"] for c in data]
+        assert confidences == sorted(confidences, reverse=True)
+        # First should have confidence 1.00 (exact match)
+        assert data[0]["confidence_score"] == 1.00
+
+    def test_get_candidates_transaction_not_found(self, test_client: TestClient):
+        """GET returns 404 when transaction id doesn't exist."""
+        response = test_client.get("/api/unresolved-transactions/99999/candidates")
 
         assert response.status_code == 404
 
