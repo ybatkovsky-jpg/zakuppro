@@ -38,7 +38,7 @@ verify_invoice_task returns verdict → notification_router dispatches to approp
   - Files: `backend/email_notifier.py`, `backend/tests/test_email_notifier.py`
   - Verify: pytest backend/tests/test_email_notifier.py -v
 
-- [ ] **T03: Integrate notification dispatch with verify_invoice_task** `est:45m`
+- [x] **T03: Integrate notification dispatch with verify_invoice_task** `est:45m`
   ## Why
   Notifications must trigger automatically after verification completes. S04's verify_invoice_task needs notification hook.
   - Files: `backend/tasks.py`, `backend/tests/test_s05_notifications_integration.py`

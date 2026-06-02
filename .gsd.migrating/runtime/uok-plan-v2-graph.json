@@ -1,5 +1,5 @@
 {
-  "compiledAt": "2026-06-01T23:17:42.868Z",
+  "compiledAt": "2026-06-02T01:07:08.586Z",
   "milestoneId": "M003",
   "pipeline": {
     "clarifyRoundLimit": 3,
@@ -392,12 +392,15 @@
       "dependsOn": [
         "execute-task:M003:S05:T02"
       ],
-      "writes": [],
+      "writes": [
+        "backend/tasks.py",
+        "backend/tests/test_s05_notifications_integration.py"
+      ],
       "metadata": {
         "unitType": "execute-task",
         "unitId": "M003.S05.T03",
-        "title": "Integrate notification dispatch with verify_invoice_task",
-        "status": "pending"
+        "title": "Integrated notification dispatch with verify_invoice_task - dispatch_invoice_notifications routes to Telegram/email based on verdict, with full test coverage",
+        "status": "complete"
       }
     },
     {
@@ -410,6 +413,75 @@
         "unitType": "complete-slice",
         "unitId": "M003.S05",
         "title": "S05",
+        "status": "complete"
+      }
+    },
+    {
+      "id": "execute-task:M003:S06:T01",
+      "kind": "unit",
+      "dependsOn": [],
+      "writes": [
+        "backend/tests/test_s06_e2e_integration.py"
+      ],
+      "metadata": {
+        "unitType": "execute-task",
+        "unitId": "M003.S06.T01",
+        "title": "Created end-to-end integration tests for the invoice processing pipeline (parse → verify → notify) with 6 passing tests covering happy path flows and error handling",
+        "status": "complete"
+      }
+    },
+    {
+      "id": "execute-task:M003:S06:T02",
+      "kind": "unit",
+      "dependsOn": [
+        "execute-task:M003:S06:T01"
+      ],
+      "writes": [],
+      "metadata": {
+        "unitType": "execute-task",
+        "unitId": "M003.S06.T02",
+        "title": "Test error path end-to-end scenarios with DLQ",
+        "status": "pending"
+      }
+    },
+    {
+      "id": "execute-task:M003:S06:T03",
+      "kind": "unit",
+      "dependsOn": [
+        "execute-task:M003:S06:T02"
+      ],
+      "writes": [],
+      "metadata": {
+        "unitType": "execute-task",
+        "unitId": "M003.S06.T03",
+        "title": "Validate dirty invoice fixtures with merged cells and Russian content",
+        "status": "pending"
+      }
+    },
+    {
+      "id": "execute-task:M003:S06:T04",
+      "kind": "unit",
+      "dependsOn": [
+        "execute-task:M003:S06:T03"
+      ],
+      "writes": [],
+      "metadata": {
+        "unitType": "execute-task",
+        "unitId": "M003.S06.T04",
+        "title": "Run all S06 tests and verify coverage threshold",
+        "status": "pending"
+      }
+    },
+    {
+      "id": "complete-slice:M003:S06",
+      "kind": "verification",
+      "dependsOn": [
+        "execute-task:M003:S06:T04"
+      ],
+      "metadata": {
+        "unitType": "complete-slice",
+        "unitId": "M003.S06",
+        "title": "S06",
         "status": "pending"
       }
     }

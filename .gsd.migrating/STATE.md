@@ -1,9 +1,9 @@
 # GSD State
 
 **Active Milestone:** M003: Email + Invoice Processing
-**Active Slice:** S05: S05
+**Active Slice:** S06: S06
 **Phase:** executing
-**Requirements Status:** 9 active · 5 validated · 5 deferred · 0 out of scope
+**Requirements Status:** 8 active · 6 validated · 5 deferred · 0 out of scope
 
 ## Milestone Registry
 - ✅ **M001:** Foundation: Database Schema and Core API
@@ -21,4 +21,4 @@
 - None
 
 ## Next Action
-Execute T03: Integrate notification dispatch with verify_invoice_task in slice S05.
+Execute T02: Test error path end-to-end scenarios with DLQ in slice S06.

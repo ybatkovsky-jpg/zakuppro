@@ -29,10 +29,10 @@
 - [x] **S04: S04** `risk:medium — fuzzy matching reconciliation logic is new core business logic` `depends:[]`
   > After this: invoice_verifier.py compares invoice items against ProjectItem by purchase_order. SKU matches → OK. SKU differs + RapidFuzz similarity >85% → clarification flag. Quantity differs → partial flag. Verification result saved to Invoice.verification_result JSONB.
 
-- [ ] **S05: S05** `risk:low-medium — extends existing telegram_notifier.py, adds SMTP` `depends:[]`
+- [x] **S05: S05** `risk:low-medium — extends existing telegram_notifier.py, adds SMTP` `depends:[]`
   > After this: Telegram notification sent on invoice verification (success/partial/failure). Clarification email sent via SMTP to supplier when fuzzy match detected. User can reply via email or Telegram to resolve.
 
-- [ ] **S06: Integration + End-to-End Testing** `risk:low — validates full flow` `depends:[S02,S03,S04,S05]`
+- [ ] **S06: S06** `risk:low — validates full flow` `depends:[]`
   > After this: Full flow test: send invoice email to test mailbox → IMAP ingest → parse → verify → notification. All steps execute end-to-end. Test fixtures for dirty invoices (merged cells, multi-line headers).
 
 ## Boundary Map

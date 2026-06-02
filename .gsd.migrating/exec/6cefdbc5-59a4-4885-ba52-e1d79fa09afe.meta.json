@@ -1,0 +1,18 @@
+{
+  "id": "6cefdbc5-59a4-4885-ba52-e1d79fa09afe",
+  "runtime": "bash",
+  "purpose": "Run S05 integration tests",
+  "script_chars": 103,
+  "started_at": "2026-06-02T00:25:48.979Z",
+  "finished_at": "2026-06-02T00:25:49.112Z",
+  "exit_code": 1,
+  "signal": null,
+  "timed_out": false,
+  "duration_ms": 133,
+  "stdout_bytes": 544,
+  "stderr_bytes": 0,
+  "stdout_truncated": false,
+  "stderr_truncated": false,
+  "stdout_path": "D:\\CLAUDE\\Project\\zakuppro\\zakuppro\\.gsd\\exec\\6cefdbc5-59a4-4885-ba52-e1d79fa09afe.stdout",
+  "stderr_path": "D:\\CLAUDE\\Project\\zakuppro\\zakuppro\\.gsd\\exec\\6cefdbc5-59a4-4885-ba52-e1d79fa09afe.stderr"
+}

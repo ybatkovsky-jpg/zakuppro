@@ -13,14 +13,6 @@ This file is the explicit capability and coverage contract for the project.
 - Primary owning slice: M002
 - Validation: S03 verification passed: Celery task parse_excel_bom registered with @app.task, pandas reads Excel files, OpenAI GPT-4o extracts structure with json_schema, Pydantic validates output. Test file sample_bom.xlsx with Russian headers validates dirty table handling.
 
-### R007 — Email Worker (SMTP outbound) для отправки запросов поставщикам с копией на рабочую почту компании
-- Class: integration
-- Status: active
-- Description: Email Worker (SMTP outbound) для отправки запросов поставщикам с копией на рабочую почту компании
-- Why it matters: Автоматизация коммуникации с поставщиками. Шаблонные письма должны отправляться без участия менеджера.
-- Source: user
-- Primary owning slice: M003
-
 ### R008 — Сверка счетов (Invoice Verification) через LLM с fuzzy matching для опечаток в названиях и артикулах
 - Class: core-capability
 - Status: active
@@ -125,6 +117,15 @@ This file is the explicit capability and coverage contract for the project.
 - Primary owning slice: M002
 - Validation: S02 added telegram-bot service to docker-compose.yml with restart: unless-stopped, volume mounts, and ALLOWED_CHAT_IDS environment variable for authorization.
 
+### R007 — Email Worker (SMTP outbound) для отправки запросов поставщикам с копией на рабочую почту компании
+- Class: integration
+- Status: validated
+- Description: Email Worker (SMTP outbound) для отправки запросов поставщикам с копией на рабочую почту компании
+- Why it matters: Автоматизация коммуникации с поставщиками. Шаблонные письма должны отправляться без участия менеджера.
+- Source: user
+- Primary owning slice: M003
+- Validation: S05 verification passed: email_notifier.py implements SMTP outbound with aiosmtplib async client. 19 tests covering config validation, email building, async SMTP operations, Russian content. send_clarification_email sends to supplier with BCC to company. Non-blocking pattern matches telegram_notifier.
+
 ## Deferred
 
 ### R015 — Graceful shutdown и cleanup для всех сервисов (Celery workers, Telegram bot, FastAPI) с сохранением состояния задач
@@ -179,7 +180,7 @@ This file is the explicit capability and coverage contract for the project.
 | R004 | core-capability | validated | M002 | none | S04 process_bom_to_project orchestrates full flow: Excel from Telegram → AI parsing → Project/ProjectItem DB creation → Telegram notifications. Integration test test_process_bom_to_project_task_success verifies. |
 | R005 | failure-visibility | validated | M002 | none | S04 implemented FailedTask model with task_id, error_message, file_path, chat_id, context. DLQ alert via send_dlq_alert to TELEGRAM_OWNER_CHAT_ID. Integration test confirms error path. |
 | R006 | operability | validated | M002 | none | S02 added telegram-bot service to docker-compose.yml with restart: unless-stopped, volume mounts, and ALLOWED_CHAT_IDS environment variable for authorization. |
-| R007 | integration | active | M003 | none | unmapped |
+| R007 | integration | validated | M003 | none | S05 verification passed: email_notifier.py implements SMTP outbound with aiosmtplib async client. 19 tests covering config validation, email building, async SMTP operations, Russian content. send_clarification_email sends to supplier with BCC to company. Non-blocking pattern matches telegram_notifier. |
 | R008 | core-capability | active | M003 | none | S01 verification passed: InvoiceItem table created with sku, name, qty columns; Invoice.verification_result JSONB column for LLM results; llm_provider.py wrapper supports OpenAI, Gemini, Claude with automatic fallback; ready for fuzzy matching logic in S04. |
 | R009 | integration | active | M004 | none | unmapped |
 | R010 | admin/support | active | M004 | none | unmapped |
@@ -195,7 +196,7 @@ This file is the explicit capability and coverage contract for the project.
 
 ## Coverage Summary
 
-- Active requirements: 9
-- Mapped to slices: 9
-- Validated: 5 (R001, R002, R004, R005, R006)
+- Active requirements: 8
+- Mapped to slices: 8
+- Validated: 6 (R001, R002, R004, R005, R006, R007)
 - Unmapped active requirements: 0
