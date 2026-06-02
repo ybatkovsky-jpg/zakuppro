@@ -21,7 +21,10 @@ from backend.schemas import (
     UnresolvedTransactionResponse,
     InvoiceCandidateResponse,
     ManualMatchRequest,
-    ManualMatchResponse
+    ManualMatchResponse,
+    BulkMatchRequest,
+    BulkMatchResponse,
+    BulkMatchError
 )
 
 logger = logging.getLogger(__name__)
@@ -417,4 +420,165 @@ def manual_match_transaction(
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Failed to match transaction: {str(e)}"
+        )
+
+
+@router.post("/bulk-match", response_model=BulkMatchResponse, status_code=status.HTTP_200_OK)
+def bulk_manual_match_transactions(
+    match_request: BulkMatchRequest,
+    db: Session = Depends(get_db)
+):
+    """
+    Bulk match multiple unresolved transactions to invoices.
+
+    Processes a list of (unresolved_transaction_id, invoice_id, optional amount) tuples.
+    Validates all inputs first, then wraps all match operations in a database transaction.
+    Creates Payment and TransactionMatchingAudit records for each match, updates
+    UnresolvedTransaction statuses. Returns summary with counts, payment_ids, and errors.
+
+    Rollback entire transaction on any failure to maintain atomicity.
+
+    Request body:
+    - matches: List of {unresolved_transaction_id, invoice_id, amount?}
+
+    Returns:
+    - matched_count: Number of successful matches
+    - failed_count: Number of failed matches
+    - payment_ids: List of created Payment record IDs
+    - errors: List of {unresolved_transaction_id, invoice_id, error} for failures
+    """
+    logger.info(
+        f"bulk_manual_match_transactions called with {len(match_request.matches)} matches"
+    )
+
+    # Validate all inputs before processing
+    validated_matches = []
+    errors = []
+
+    for match_item in match_request.matches:
+        transaction = db.query(UnresolvedTransaction).filter(
+            UnresolvedTransaction.id == match_item.unresolved_transaction_id
+        ).first()
+
+        if not transaction:
+            error_msg = f"UnresolvedTransaction with id {match_item.unresolved_transaction_id} not found"
+            logger.warning(error_msg)
+            errors.append(BulkMatchError(
+                unresolved_transaction_id=match_item.unresolved_transaction_id,
+                invoice_id=match_item.invoice_id,
+                error=error_msg
+            ))
+            continue
+
+        if transaction.status != "Не распределено":
+            error_msg = (
+                f"Cannot match transaction {match_item.unresolved_transaction_id} "
+                f"with status '{transaction.status}'. Only 'Не распределено' can be matched."
+            )
+            logger.warning(error_msg)
+            errors.append(BulkMatchError(
+                unresolved_transaction_id=match_item.unresolved_transaction_id,
+                invoice_id=match_item.invoice_id,
+                error=error_msg
+            ))
+            continue
+
+        invoice = db.query(Invoice).filter(Invoice.id == match_item.invoice_id).first()
+        if not invoice:
+            error_msg = f"Invoice with id {match_item.invoice_id} not found"
+            logger.warning(error_msg)
+            errors.append(BulkMatchError(
+                unresolved_transaction_id=match_item.unresolved_transaction_id,
+                invoice_id=match_item.invoice_id,
+                error=error_msg
+            ))
+            continue
+
+        validated_matches.append({
+            "transaction": transaction,
+            "invoice": invoice,
+            "amount": match_item.amount if match_item.amount is not None else transaction.amount
+        })
+
+    logger.debug(f"Validated {len(validated_matches)} matches, {len(errors)} validation errors")
+
+    # If all validations failed, return early
+    if not validated_matches:
+        logger.warning("All matches failed validation")
+        return BulkMatchResponse(
+            matched_count=0,
+            failed_count=len(errors),
+            payment_ids=[],
+            errors=errors
+        )
+
+    try:
+        # Use database transaction for atomicity
+        payment_ids = []
+
+        for match_data in validated_matches:
+            transaction = match_data["transaction"]
+            invoice = match_data["invoice"]
+            amount = match_data["amount"]
+
+            # Create Payment record
+            payment = Payment(
+                invoice_id=invoice.id,
+                amount=amount,
+                bank_transaction_id=f"unresolved_{transaction.id}",
+                payment_date=transaction.bank_date,
+            )
+            db.add(payment)
+            db.flush()  # Get payment_id before commit
+
+            logger.debug(f"Created payment_id={payment.id} for transaction_id={transaction.id}")
+
+            # Create TransactionMatchingAudit with unresolved_transaction_id
+            audit = TransactionMatchingAudit(
+                bank_transaction_id=None,  # Null for manual matches from unresolved queue
+                unresolved_transaction_id=transaction.id,  # Track source
+                invoice_id=invoice.id,
+                matched_at=datetime.utcnow(),
+                matched_by="manual",
+                confidence_score=Decimal("1.00"),  # Manual match = full confidence
+                matching_context={
+                    "algorithm": "bulk_manual_match",
+                    "transaction_amount": str(amount),
+                    "unresolved_transaction_id": transaction.id,
+                    "invoice_id": invoice.id,
+                    "matched_by": "manual",
+                },
+            )
+            db.add(audit)
+
+            # Update UnresolvedTransaction status
+            transaction.status = "Привязано вручную"
+
+            payment_ids.append(payment.id)
+
+        # Commit all changes atomically
+        db.commit()
+
+        logger.info(
+            f"Bulk match successful: {len(payment_ids)} matches, {len(errors)} errors"
+        )
+
+        return BulkMatchResponse(
+            matched_count=len(payment_ids),
+            failed_count=len(errors),
+            payment_ids=payment_ids,
+            errors=errors
+        )
+
+    except Exception as e:
+        # Rollback on any error
+        db.rollback()
+        logger.error(
+            f"Error during bulk match: {str(e)}",
+            exc_info=True
+        )
+        # Return partial success info for any successful validations
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Bulk match failed and was rolled back: {str(e)}"
         )

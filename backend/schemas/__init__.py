@@ -77,6 +77,10 @@ UnresolvedTransactionListResponse = _schemas.UnresolvedTransactionListResponse
 InvoiceCandidateResponse = _schemas.InvoiceCandidateResponse
 ManualMatchRequest = _schemas.ManualMatchRequest
 ManualMatchResponse = _schemas.ManualMatchResponse
+BulkMatchItem = _schemas.BulkMatchItem
+BulkMatchRequest = _schemas.BulkMatchRequest
+BulkMatchResponse = _schemas.BulkMatchResponse
+BulkMatchError = _schemas.BulkMatchError
 
 # ProductionTask schemas
 ProductionTaskBase = _schemas.ProductionTaskBase
@@ -135,6 +139,10 @@ __all__ = [
     "InvoiceCandidateResponse",
     "ManualMatchRequest",
     "ManualMatchResponse",
+    "BulkMatchItem",
+    "BulkMatchRequest",
+    "BulkMatchResponse",
+    "BulkMatchError",
     # ProductionTasks
     "ProductionTaskBase",
     "ProductionTaskCreate",

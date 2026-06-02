@@ -333,6 +333,33 @@ class ManualMatchResponse(BaseSchema):
     matched_at: datetime
 
 
+class BulkMatchItem(BaseSchema):
+    """Schema for a single match item in bulk match request."""
+    unresolved_transaction_id: int
+    invoice_id: int
+    amount: Optional[float] = None  # Optional override amount
+
+
+class BulkMatchRequest(BaseSchema):
+    """Schema for bulk match request."""
+    matches: List[BulkMatchItem]
+
+
+class BulkMatchError(BaseSchema):
+    """Schema for a single error in bulk match response."""
+    unresolved_transaction_id: int
+    invoice_id: int
+    error: str
+
+
+class BulkMatchResponse(BaseSchema):
+    """Schema for bulk match response."""
+    matched_count: int
+    failed_count: int
+    payment_ids: List[int]
+    errors: List[BulkMatchError]
+
+
 # =============================================================================
 # ProductionTask Schemas
 # =============================================================================
