@@ -32,7 +32,7 @@
 - [x] **S05: S05** `risk:low-medium — extends existing telegram_notifier.py, adds SMTP` `depends:[]`
   > After this: Telegram notification sent on invoice verification (success/partial/failure). Clarification email sent via SMTP to supplier when fuzzy match detected. User can reply via email or Telegram to resolve.
 
-- [ ] **S06: S06** `risk:low — validates full flow` `depends:[]`
+- [x] **S06: S06** `risk:low — validates full flow` `depends:[]`
   > After this: Full flow test: send invoice email to test mailbox → IMAP ingest → parse → verify → notification. All steps execute end-to-end. Test fixtures for dirty invoices (merged cells, multi-line headers).
 
 ## Boundary Map

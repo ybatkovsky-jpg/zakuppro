@@ -184,6 +184,59 @@ class ProductionTask(Base):
     project = relationship("Project", back_populates="production_tasks")
 
 
+class BankStatement(Base):
+    """BankStatement - bank statement file upload for reconciliation."""
+    __tablename__ = "bank_statements"
+
+    id = Column(Integer, primary_key=True, index=True)
+    bank_name = Column(String(100), nullable=False)  # Tinkoff, Ozon, etc.
+    statement_date = Column(DateTime(timezone=True), nullable=False)  # Statement date from bank
+    period_start = Column(DateTime(timezone=True), nullable=False)  # Period start date
+    period_end = Column(DateTime(timezone=True), nullable=False)  # Period end date
+    raw_file = Column(LargeBinary, nullable=True)  # Original 1C ClientBank file (BLOB)
+    status = Column(String(50), nullable=False, default="Обрабатывается")  # Обрабатывается, Ошибки, Готов
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+
+    # Relationships
+    transactions = relationship("BankTransaction", back_populates="bank_statement", cascade="all, delete-orphan", lazy="selectin")
+
+
+class BankTransaction(Base):
+    """BankTransaction - individual transactions from bank statements."""
+    __tablename__ = "bank_transactions"
+
+    id = Column(Integer, primary_key=True, index=True)
+    bank_statement_id = Column(Integer, ForeignKey("bank_statements.id"), nullable=False)
+    transaction_date = Column(DateTime(timezone=True), nullable=False, index=True)  # ix_bank_transactions_transaction_date
+    amount = Column(Numeric(12, 2), nullable=False, index=True)  # ix_bank_transactions_amount
+    supplier_inn = Column(String(12), nullable=True, index=True)  # ix_bank_transactions_supplier_inn
+    description = Column(Text, nullable=True)  # Transaction description/purpose
+    operation_type = Column(String(50), nullable=False)  # Debit, Credit, etc.
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+
+    # Relationships
+    bank_statement = relationship("BankStatement", back_populates="transactions")
+    matching_audits = relationship("TransactionMatchingAudit", back_populates="bank_transaction", lazy="selectin")
+
+
+class TransactionMatchingAudit(Base):
+    """TransactionMatchingAudit - audit trail for auto-matched bank-to-invoice transactions."""
+    __tablename__ = "transaction_matching_audits"
+
+    id = Column(Integer, primary_key=True, index=True)
+    bank_transaction_id = Column(Integer, ForeignKey("bank_transactions.id"), nullable=False)
+    invoice_id = Column(Integer, ForeignKey("invoices.id"), nullable=False)
+    matched_at = Column(DateTime(timezone=True), nullable=False)
+    matched_by = Column(String(50), nullable=False)  # 'auto', 'manual', or user_id
+    confidence_score = Column(Numeric(3, 2), nullable=True)  # 0.00-1.00 confidence score
+    matching_context = Column(JSON, nullable=True)  # Matching algorithm details (JSONB)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+
+    # Relationships
+    bank_transaction = relationship("BankTransaction", back_populates="matching_audits")
+    invoice = relationship("Invoice")  # No back_populates - Invoice doesn't track matches
+
+
 class FailedTask(Base):
     """FailedTask - Dead Letter Queue (DLQ) for failed Celery tasks."""
     __tablename__ = "failed_tasks"

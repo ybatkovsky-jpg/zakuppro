@@ -1,0 +1,18 @@
+{
+  "id": "c11b7c88-77d9-4fb0-9567-b04bb9db23f8",
+  "runtime": "bash",
+  "purpose": "Run S06 tests with coverage",
+  "script_chars": 207,
+  "started_at": "2026-06-02T03:13:43.601Z",
+  "finished_at": "2026-06-02T03:13:43.820Z",
+  "exit_code": 1,
+  "signal": null,
+  "timed_out": false,
+  "duration_ms": 219,
+  "stdout_bytes": 544,
+  "stderr_bytes": 0,
+  "stdout_truncated": false,
+  "stderr_truncated": false,
+  "stdout_path": "D:\\CLAUDE\\Project\\zakuppro\\zakuppro\\.gsd\\exec\\c11b7c88-77d9-4fb0-9567-b04bb9db23f8.stdout",
+  "stderr_path": "D:\\CLAUDE\\Project\\zakuppro\\zakuppro\\.gsd\\exec\\c11b7c88-77d9-4fb0-9567-b04bb9db23f8.stderr"
+}

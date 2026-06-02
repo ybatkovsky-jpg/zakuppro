@@ -1,0 +1,24 @@
+{
+  "version": 1,
+  "projectName": "zakuppro",
+  "projectPath": "D:\\CLAUDE\\Project\\zakuppro\\zakuppro",
+  "gsdVersion": "3.0.0",
+  "entries": [
+    {
+      "filename": "M003-2026-06-02T03-31-34.html",
+      "generatedAt": "2026-06-02T03:31:34.099Z",
+      "milestoneId": "M003",
+      "milestoneTitle": "Email + Invoice Processing",
+      "label": "M003: Email + Invoice Processing",
+      "kind": "milestone",
+      "totalCost": 87.88797400000001,
+      "totalTokens": 4107683,
+      "totalDuration": 30402370,
+      "doneSlices": 14,
+      "totalSlices": 14,
+      "doneMilestones": 3,
+      "totalMilestones": 7,
+      "phase": "pre-planning"
+    }
+  ]
+}

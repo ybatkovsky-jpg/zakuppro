@@ -42,7 +42,7 @@ S06 validates the complete invoice pipeline from S02 (IMAP ingest) through S03 (
   - Files: `backend/tests/test_s06_e2e_integration.py`
   - Verify: cd backend && python -m pytest tests/test_s06_e2e_integration.py::TestDirtyFixtureValidation -v
 
-- [ ] **T04: Run all S06 tests and verify coverage threshold** `est:15m`
+- [x] **T04: Run all S06 tests and verify coverage threshold** `est:15m`
   ## Why
   Slice completeness requires all new tests passing with >80% coverage. Confirms S06 validates integration closure.
   - Files: `backend/tests/test_s06_e2e_integration.py`

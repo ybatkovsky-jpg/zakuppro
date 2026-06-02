@@ -4,7 +4,7 @@
 
 ZakupPro — Mini-MRP система для мебельного производства "ПРОМЕБЕЛЬ". Автоматизация закупок, управления проектами, складом и финансами.
 
-**Current state:** M001 completed (DB schema + FastAPI CRUD). M002 completed (Async core + AI-Agent Foundation).
+**Current state:** M001 completed (DB schema + FastAPI CRUD). M002 completed (Async core + AI-Agent Foundation). M003 completed (Email + Invoice Processing).
 
 ## Core Value
 
@@ -39,8 +39,20 @@ ZakupPro — Mini-MRP система для мебельного произво�
 - Supplier auto-creation с python-slugify
 - Telegram notifier для completion и DLQ alerts
 
-**M003-M006 — Queued:**
-- M003: Email Worker + Invoice Processing
+**M003 — Completed (verdict: pass):**
+- IMAP ingest service (imap_client.py) with SSL/TLS, polling, attachment extraction
+- Email Worker Docker service with 17 environment variables, healthcheck, restart policy
+- LLM provider wrapper (llm_provider.py) with OpenAI/Gemini/Claude support and automatic fallback
+- Invoice BLOB storage (Invoice.raw_file BYTEA, Invoice.verification_result JSONB, InvoiceItem table)
+- Invoice parsing with PDF (pdfplumber) and Excel (pandas) support
+- Invoice verification with fuzzy matching (RapidFuzz 85% threshold), exact SKU matching, quantity discrepancy detection
+- Notifications: Telegram (verified/partial/clarification_needed/failed) + SMTP clarification emails to suppliers
+- Non-blocking notification pattern (errors logged, don't block pipeline)
+- 221 tests passing with 81% coverage for new milestone components
+- E2E integration tests (13 tests) validating parse → verify → notify pipeline
+- Dirty invoice fixtures validated (merged cells, Russian content)
+
+**M004-M006 — Queued:**
 - M004: Bank Integration + Financials
 - M005: Frontend UI (Next.js + Ant Design)
 - M006: Business Logic Polish (Kanban, комплектация, склад)
@@ -49,9 +61,10 @@ ZakupPro — Mini-MRP система для мебельного произво�
 
 **Tech Stack:**
 - Backend: Python (FastAPI), SQLAlchemy 2.0, PostgreSQL
-- AI: OpenAI GPT-4o
+- AI: OpenAI GPT-4o, Gemini, Claude (provider-agnostic wrapper)
 - Message Queue: RabbitMQ + Celery
 - Bot: python-telegram-bot v21+
+- Email: imaplib (IMAP), aiosmtplib (SMTP)
 - Frontend: Next.js + React + Ant Design (планируется)
 
 **Patterns:**
@@ -64,6 +77,11 @@ ZakupPro — Mini-MRP система для мебельного произво�
 - Pandas fillna('') перед markdown conversion для AI context
 - Authorization middleware с environment-based ALLOWED_CHAT_IDS
 - Fail-fast health endpoint (503 на любой degradation)
+- LLM provider wrapper with automatic fallback on transient errors
+- Non-blocking notification pattern (log errors, return False, don't block pipeline)
+- IMAP polling with Message-ID persistence for duplicate detection
+- Graceful shutdown via SIGTERM/SIGINT handlers
+- call_task() helpers for testing Celery tasks without @app.task wrapper
 
 **Integration Points:**
 - Telegram Bot → RabbitMQ → Celery Workers → FastAPI → PostgreSQL
@@ -78,7 +96,7 @@ See `.gsd/REQUIREMENTS.md` for the explicit capability contract.
 
 - [x] M001: Foundation — DB schema, FastAPI CRUD, Docker
 - [x] M002: Asynchronous Core + AI-Agent Foundation — RabbitMQ, Celery, Telegram Bot, Excel parsing, DLQ
-- [ ] M003: Email + Invoice Processing — SMTP outbound, invoice verification
+- [x] M003: Email + Invoice Processing — IMAP ingest, invoice parsing/verification, notifications
 - [ ] M004: Bank Integration + Financials — bank statement import, payment mapping
 - [ ] M005: Frontend UI — Next.js, Kanban, specifications tables
 - [ ] M006: Business Logic Polish — Kanban transitions, stock reservation, readiness matrix

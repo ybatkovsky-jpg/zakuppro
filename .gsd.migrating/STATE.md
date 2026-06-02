@@ -1,15 +1,15 @@
 # GSD State
 
-**Active Milestone:** M003: Email + Invoice Processing
-**Active Slice:** S06: S06
-**Phase:** executing
+**Active Milestone:** M004: Bank Integration + Financials
+**Active Slice:** S01: Database Schema + BankStatement Models
+**Phase:** planning
 **Requirements Status:** 8 active · 6 validated · 5 deferred · 0 out of scope
 
 ## Milestone Registry
 - ✅ **M001:** Foundation: Database Schema and Core API
 - ✅ **M002:** Asynchronous Core + AI-Agent Foundation
-- 🔄 **M003:** Email + Invoice Processing
-- ⬜ **M004:** Bank Integration + Financials
+- ✅ **M003:** Email + Invoice Processing
+- 🔄 **M004:** Bank Integration + Financials
 - ⬜ **M005:** Frontend UI
 - ⬜ **M006:** Business Logic Polish
 - ⬜ **M007:** M007
@@ -21,4 +21,4 @@
 - None
 
 ## Next Action
-Execute T04: Run all S06 tests and verify coverage threshold in slice S06.
+Slice S01 has no DB tasks. Plan slice tasks before execution.
