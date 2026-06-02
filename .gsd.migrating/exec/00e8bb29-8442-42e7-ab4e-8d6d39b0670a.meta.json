@@ -1,0 +1,18 @@
+{
+  "id": "00e8bb29-8442-42e7-ab4e-8d6d39b0670a",
+  "runtime": "bash",
+  "purpose": "Run supplier INN extractor unit tests",
+  "script_chars": 123,
+  "started_at": "2026-06-02T11:10:53.703Z",
+  "finished_at": "2026-06-02T11:10:53.785Z",
+  "exit_code": 1,
+  "signal": null,
+  "timed_out": false,
+  "duration_ms": 82,
+  "stdout_bytes": 544,
+  "stderr_bytes": 0,
+  "stdout_truncated": false,
+  "stderr_truncated": false,
+  "stdout_path": "D:\\CLAUDE\\Project\\zakuppro\\zakuppro\\.gsd\\exec\\00e8bb29-8442-42e7-ab4e-8d6d39b0670a.stdout",
+  "stderr_path": "D:\\CLAUDE\\Project\\zakuppro\\zakuppro\\.gsd\\exec\\00e8bb29-8442-42e7-ab4e-8d6d39b0670a.stderr"
+}

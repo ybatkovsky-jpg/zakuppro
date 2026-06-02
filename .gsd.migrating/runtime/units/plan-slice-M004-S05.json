@@ -1,0 +1,15 @@
+{
+  "version": 1,
+  "unitType": "plan-slice",
+  "unitId": "M004/S05",
+  "startedAt": 1780399304879,
+  "updatedAt": 1780399416336,
+  "phase": "crashed",
+  "wrapupWarningSent": false,
+  "continueHereFired": false,
+  "timeoutAt": null,
+  "lastProgressAt": 1780399416332,
+  "progressCount": 0,
+  "lastProgressKind": "signal",
+  "recoveryAttempts": 0
+}

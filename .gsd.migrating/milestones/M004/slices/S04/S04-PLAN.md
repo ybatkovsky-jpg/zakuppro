@@ -43,17 +43,17 @@ Upstream surfaces consumed: BankStatement/BankTransaction from S03 parse_bank_st
   - Files: `backend/services/payment_matcher.py`
   - Verify: pytest backend/tests/test_payment_matcher.py -v -k test_create_payment or test_create_unresolved
 
-- [ ] **T04: Create Celery Task for Payment Matching** `est:1h`
+- [x] **T04: Create Celery Task for Payment Matching** `est:1h`
   Add match_bank_transactions task to tasks.py following parse_bank_statement pattern. Task takes bank_statement_id or bank_transaction_id, calls PaymentMatcher, returns dict with status, matched_count, unresolved_count, payment_ids. Include bind equals True, max_retries equals 2, exponential backoff on RateLimitError, FailedTask DLQ on final failure. Add logger statements for each stage.
   - Files: `backend/tasks.py`, `backend/tests/test_match_bank_transactions_task.py`
   - Verify: pytest backend/tests/test_match_bank_transactions_task.py -v
 
-- [ ] **T05: Create Unit Tests for Payment Matcher** `est:2h`
+- [x] **T05: Create Unit Tests for Payment Matcher** `est:2h`
   Create test_payment_matcher.py with comprehensive unit tests covering exact INN plus amount match to confidence 1.00, amount within plus minus 5 percent tolerance, amount outside tolerance, payment within 90 day window, payment before invoice, multiple candidates to unresolved, no supplier to unresolved, NULL supplier_inn to unresolved. Use test fixtures with Supplier requisites with INN, Invoice, InvoiceItem, BankTransaction. Verify Invoice.status updates to Oplacheno on match. Verify TransactionMatchingAudit created with confidence_score.
   - Files: `backend/tests/test_payment_matcher.py`
   - Verify: pytest backend/tests/test_payment_matcher.py -v
 
-- [ ] **T06: Create Integration Tests for End-to-End Matching Flow** `est:2h`
+- [x] **T06: Create Integration Tests for End-to-End Matching Flow** `est:2h`
   Create test_matching_integration.py with end to end tests BankStatement to BankTransaction to Payment matching, UnresolvedTransaction creation verification, Invoice.status update verification, TransactionMatchingAudit record verification, Celery task execution via helper function. Test scenarios simple exact match, tolerance match, ambiguous to unresolved, unknown supplier to unresolved. Add call_match_bank_transactions_task_helper bypassing Celery. Verify confidence_score populated in TransactionMatchingAudit. Verify matching_context JSON contains algorithm metadata.
   - Files: `backend/tests/test_matching_integration.py`
   - Verify: pytest backend/tests/test_matching_integration.py -v

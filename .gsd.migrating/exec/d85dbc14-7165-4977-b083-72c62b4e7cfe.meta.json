@@ -1,0 +1,18 @@
+{
+  "id": "d85dbc14-7165-4977-b083-72c62b4e7cfe",
+  "runtime": "bash",
+  "purpose": "Run payment matcher unit tests",
+  "script_chars": 116,
+  "started_at": "2026-06-02T11:10:53.806Z",
+  "finished_at": "2026-06-02T11:10:53.882Z",
+  "exit_code": 1,
+  "signal": null,
+  "timed_out": false,
+  "duration_ms": 76,
+  "stdout_bytes": 544,
+  "stderr_bytes": 0,
+  "stdout_truncated": false,
+  "stderr_truncated": false,
+  "stdout_path": "D:\\CLAUDE\\Project\\zakuppro\\zakuppro\\.gsd\\exec\\d85dbc14-7165-4977-b083-72c62b4e7cfe.stdout",
+  "stderr_path": "D:\\CLAUDE\\Project\\zakuppro\\zakuppro\\.gsd\\exec\\d85dbc14-7165-4977-b083-72c62b4e7cfe.stderr"
+}

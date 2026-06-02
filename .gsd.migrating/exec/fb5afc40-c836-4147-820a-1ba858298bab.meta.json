@@ -1,0 +1,18 @@
+{
+  "id": "fb5afc40-c836-4147-820a-1ba858298bab",
+  "runtime": "bash",
+  "purpose": "Run integration tests for matching flow",
+  "script_chars": 122,
+  "started_at": "2026-06-02T11:04:20.012Z",
+  "finished_at": "2026-06-02T11:04:20.079Z",
+  "exit_code": 1,
+  "signal": null,
+  "timed_out": false,
+  "duration_ms": 67,
+  "stdout_bytes": 544,
+  "stderr_bytes": 0,
+  "stdout_truncated": false,
+  "stderr_truncated": false,
+  "stdout_path": "D:\\CLAUDE\\Project\\zakuppro\\zakuppro\\.gsd\\exec\\fb5afc40-c836-4147-820a-1ba858298bab.stdout",
+  "stderr_path": "D:\\CLAUDE\\Project\\zakuppro\\zakuppro\\.gsd\\exec\\fb5afc40-c836-4147-820a-1ba858298bab.stderr"
+}

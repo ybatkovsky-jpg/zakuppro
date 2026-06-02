@@ -1,0 +1,18 @@
+{
+  "id": "71c33a86-269c-4737-8475-4bc6cc24c92a",
+  "runtime": "bash",
+  "purpose": "Run end-to-end integration tests",
+  "script_chars": 121,
+  "started_at": "2026-06-02T11:10:53.973Z",
+  "finished_at": "2026-06-02T11:10:54.035Z",
+  "exit_code": 1,
+  "signal": null,
+  "timed_out": false,
+  "duration_ms": 62,
+  "stdout_bytes": 544,
+  "stderr_bytes": 0,
+  "stdout_truncated": false,
+  "stderr_truncated": false,
+  "stdout_path": "D:\\CLAUDE\\Project\\zakuppro\\zakuppro\\.gsd\\exec\\71c33a86-269c-4737-8475-4bc6cc24c92a.stdout",
+  "stderr_path": "D:\\CLAUDE\\Project\\zakuppro\\zakuppro\\.gsd\\exec\\71c33a86-269c-4737-8475-4bc6cc24c92a.stderr"
+}

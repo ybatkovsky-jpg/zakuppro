@@ -1,0 +1,18 @@
+{
+  "id": "1c3bea2a-81b2-41ca-be09-d62625bc75ef",
+  "runtime": "bash",
+  "purpose": "Run Celery task unit tests",
+  "script_chars": 129,
+  "started_at": "2026-06-02T11:10:53.894Z",
+  "finished_at": "2026-06-02T11:10:53.962Z",
+  "exit_code": 1,
+  "signal": null,
+  "timed_out": false,
+  "duration_ms": 68,
+  "stdout_bytes": 544,
+  "stderr_bytes": 0,
+  "stdout_truncated": false,
+  "stderr_truncated": false,
+  "stdout_path": "D:\\CLAUDE\\Project\\zakuppro\\zakuppro\\.gsd\\exec\\1c3bea2a-81b2-41ca-be09-d62625bc75ef.stdout",
+  "stderr_path": "D:\\CLAUDE\\Project\\zakuppro\\zakuppro\\.gsd\\exec\\1c3bea2a-81b2-41ca-be09-d62625bc75ef.stderr"
+}

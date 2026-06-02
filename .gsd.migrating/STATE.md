@@ -1,8 +1,8 @@
 # GSD State
 
 **Active Milestone:** M004: Bank Integration + Financials
-**Active Slice:** S04: S04
-**Phase:** executing
+**Active Slice:** S05: Transaction Matching API
+**Phase:** evaluating-gates
 **Requirements Status:** 8 active · 6 validated · 5 deferred · 0 out of scope
 
 ## Milestone Registry
@@ -21,4 +21,4 @@
 - None
 
 ## Next Action
-Execute T04: Create Celery Task for Payment Matching in slice S04.
+Evaluate 2 quality gate(s) for S05 before execution.

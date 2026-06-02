@@ -1,12 +1,12 @@
 {
-  "compiledAt": "2026-06-02T10:24:33.661Z",
+  "compiledAt": "2026-06-02T11:10:11.174Z",
   "milestoneId": "M004",
   "pipeline": {
     "clarifyRoundLimit": 3,
     "researchSynthesized": true,
     "draftContextIncluded": false,
     "finalizedContextIncluded": true,
-    "sourcePhase": "executing"
+    "sourcePhase": "summarizing"
   },
   "nodes": [
     {
@@ -289,12 +289,15 @@
       "dependsOn": [
         "execute-task:M004:S04:T03"
       ],
-      "writes": [],
+      "writes": [
+        "backend/tasks.py",
+        "backend/tests/test_match_bank_transactions_task.py"
+      ],
       "metadata": {
         "unitType": "execute-task",
         "unitId": "M004.S04.T04",
-        "title": "Create Celery Task for Payment Matching",
-        "status": "pending"
+        "title": "Added match_bank_transactions Celery task with bind=True, max_retries=2, exponential backoff on RateLimitError, and FailedTask DLQ persistence",
+        "status": "complete"
       }
     },
     {
@@ -303,12 +306,14 @@
       "dependsOn": [
         "execute-task:M004:S04:T04"
       ],
-      "writes": [],
+      "writes": [
+        "backend/tests/test_payment_matcher.py"
+      ],
       "metadata": {
         "unitType": "execute-task",
         "unitId": "M004.S04.T05",
-        "title": "Create Unit Tests for Payment Matcher",
-        "status": "pending"
+        "title": "Unit tests for PaymentMatcher already exist with 18 passing tests covering all matching scenarios",
+        "status": "complete"
       }
     },
     {
@@ -317,12 +322,14 @@
       "dependsOn": [
         "execute-task:M004:S04:T05"
       ],
-      "writes": [],
+      "writes": [
+        "backend/tests/test_matching_integration.py"
+      ],
       "metadata": {
         "unitType": "execute-task",
         "unitId": "M004.S04.T06",
-        "title": "Create Integration Tests for End-to-End Matching Flow",
-        "status": "pending"
+        "title": "Created end-to-end integration tests for payment matching flow covering BankStatement→BankTransaction→Payment/UnresolvedTransaction with 9 passing test scenarios",
+        "status": "complete"
       }
     },
     {
