@@ -1261,5 +1261,212 @@ class TestBulkManualMatch:
         assert audit.matching_context["transaction_amount"] == "5000.0"
 
 
+class TestAuditHistory:
+    """Test GET /api/unresolved-transactions/audit-history endpoint."""
+
+    @staticmethod
+    def _create_test_data(test_client: TestClient, db_session: Session):
+        """Helper to create test data for audit history tests."""
+        supplier = Supplier(name="Audit Supplier", email="audit@example.com", requisites="ИНН: 7701234567")
+        db_session.add(supplier)
+
+        project = Project(name="Audit Project", client="Audit Client", status="Проектирование")
+        db_session.add(project)
+        db_session.flush()
+
+        po = PurchaseOrder(project_id=project.id, supplier_id=supplier.id, status="Сверен")
+        db_session.add(po)
+        db_session.flush()
+
+        invoice = Invoice(purchase_order_id=po.id, status="Сверен")
+        db_session.add(invoice)
+        db_session.flush()
+
+        invoice_item = InvoiceItem(
+            invoice_id=invoice.id,
+            name="Audit Item",
+            sku="AUDIT001",
+            qty=1,
+            unit_price=Decimal("10000.00"),
+            total_price=Decimal("10000.00"),
+        )
+        db_session.add(invoice_item)
+        db_session.commit()
+
+        # Create unresolved transactions
+        now = datetime.utcnow()
+        create_response = test_client.post("/api/unresolved-transactions/", json={
+            "amount": 10000.00,
+            "bank_date": now.isoformat(),
+            "status": "Не распределено"
+        })
+        transaction_id = create_response.json()["id"]
+
+        # Manual match to create audit record
+        match_response = test_client.post(f"/api/unresolved-transactions/{transaction_id}/match", json={
+            "invoice_id": invoice.id
+        })
+
+        return {
+            "transaction_id": transaction_id,
+            "invoice_id": invoice.id,
+            "payment_id": match_response.json()["payment_id"],
+        }
+
+    def test_audit_history_returns_manual_matches(self, test_client: TestClient, db_session: Session):
+        """GET returns audit records for manual matches with nested details."""
+        data = self._create_test_data(test_client, db_session)
+
+        response = test_client.get("/api/unresolved-transactions/audit-history")
+
+        assert response.status_code == 200
+        audit_data = response.json()
+        assert "items" in audit_data
+        assert "total" in audit_data
+        assert "skip" in audit_data
+        assert "limit" in audit_data
+
+        assert audit_data["total"] >= 1
+        assert len(audit_data["items"]) >= 1
+
+        # Find the manual match audit record
+        audit_record = None
+        for item in audit_data["items"]:
+            if item.get("unresolved_transaction_id") == data["transaction_id"]:
+                audit_record = item
+                break
+
+        assert audit_record is not None
+        assert audit_record["invoice_id"] == data["invoice_id"]
+        assert audit_record["matched_by"] == "manual"
+        assert audit_record["unresolved_transaction_id"] == data["transaction_id"]
+        assert audit_record["bank_transaction_id"] is None  # Manual matches have null bank_transaction_id
+        assert audit_record["confidence_score"] == 1.0  # Manual match = full confidence
+
+        # Check nested unresolved_transaction
+        assert "unresolved_transaction" in audit_record
+        assert audit_record["unresolved_transaction"]["id"] == data["transaction_id"]
+        assert audit_record["unresolved_transaction"]["amount"] == 10000.00
+        assert audit_record["unresolved_transaction"]["status"] == "Привязано вручную"
+
+        # Check nested invoice
+        assert "invoice" in audit_record
+        assert audit_record["invoice"]["id"] == data["invoice_id"]
+        assert audit_record["invoice"]["status"] == "Сверен"
+
+    def test_audit_history_filter_by_transaction_id(self, test_client: TestClient, db_session: Session):
+        """GET filters audit records by unresolved transaction ID."""
+        data = self._create_test_data(test_client, db_session)
+
+        response = test_client.get(f"/api/unresolved-transactions/audit-history?transaction_id={data['transaction_id']}")
+
+        assert response.status_code == 200
+        audit_data = response.json()
+        assert audit_data["total"] >= 1
+
+        # All returned records should have the specified transaction_id
+        for item in audit_data["items"]:
+            assert item["unresolved_transaction_id"] == data["transaction_id"]
+
+    def test_audit_history_filter_by_invoice_id(self, test_client: TestClient, db_session: Session):
+        """GET filters audit records by invoice ID."""
+        data = self._create_test_data(test_client, db_session)
+
+        response = test_client.get(f"/api/unresolved-transactions/audit-history?invoice_id={data['invoice_id']}")
+
+        assert response.status_code == 200
+        audit_data = response.json()
+        assert audit_data["total"] >= 1
+
+        # All returned records should have the specified invoice_id
+        for item in audit_data["items"]:
+            assert item["invoice_id"] == data["invoice_id"]
+
+    def test_audit_history_filter_by_matched_by(self, test_client: TestClient, db_session: Session):
+        """GET filters audit records by matched_by field."""
+        self._create_test_data(test_client, db_session)
+
+        response = test_client.get("/api/unresolved-transactions/audit-history?matched_by=manual")
+
+        assert response.status_code == 200
+        audit_data = response.json()
+
+        # All returned records should have matched_by='manual'
+        for item in audit_data["items"]:
+            assert item["matched_by"] == "manual"
+
+    def test_audit_history_filter_by_date_range(self, test_client: TestClient, db_session: Session):
+        """GET filters audit records by matched_at date range."""
+        now = datetime.utcnow()
+        data = self._create_test_data(test_client, db_session)
+
+        # Filter with date_from (should include our record)
+        date_from = (now - timedelta(hours=1)).isoformat()
+        response = test_client.get(f"/api/unresolved-transactions/audit-history?date_from={date_from}")
+
+        assert response.status_code == 200
+        audit_data = response.json()
+        assert audit_data["total"] >= 1
+
+        # Filter with date_to in the past (should return 0)
+        past_date = (now - timedelta(days=30)).isoformat()
+        response = test_client.get(f"/api/unresolved-transactions/audit-history?date_to={past_date}")
+
+        assert response.status_code == 200
+        audit_data = response.json()
+        assert audit_data["total"] == 0
+
+    def test_audit_history_pagination(self, test_client: TestClient, db_session: Session):
+        """GET respects skip and limit query parameters."""
+        # Create multiple audit records
+        for i in range(5):
+            data = self._create_test_data(test_client, db_session)
+
+        # Test limit
+        response = test_client.get("/api/unresolved-transactions/audit-history?limit=3")
+        assert response.status_code == 200
+        audit_data = response.json()
+        assert len(audit_data["items"]) <= 3
+        assert audit_data["limit"] == 3
+
+        # Test skip
+        total = audit_data["total"]
+        response = test_client.get(f"/api/unresolved-transactions/audit-history?skip=2&limit={total}")
+        assert response.status_code == 200
+        audit_data = response.json()
+        assert audit_data["skip"] == 2
+
+    def test_audit_history_empty_result(self, test_client: TestClient):
+        """GET returns empty list when no audit records exist."""
+        response = test_client.get("/api/unresolved-transactions/audit-history")
+
+        assert response.status_code == 200
+        audit_data = response.json()
+        assert audit_data["total"] == 0
+        assert len(audit_data["items"]) == 0
+
+    def test_audit_history_combined_filters(self, test_client: TestClient, db_session: Session):
+        """GET applies multiple filters simultaneously."""
+        now = datetime.utcnow()
+        data = self._create_test_data(test_client, db_session)
+
+        # Combine transaction_id, matched_by, and date filters
+        date_from = (now - timedelta(hours=1)).isoformat()
+        response = test_client.get(
+            f"/api/unresolved-transactions/audit-history?"
+            f"transaction_id={data['transaction_id']}"
+            f"&matched_by=manual"
+            f"&date_from={date_from}"
+        )
+
+        assert response.status_code == 200
+        audit_data = response.json()
+
+        # All filters should be applied
+        for item in audit_data["items"]:
+            assert item["unresolved_transaction_id"] == data["transaction_id"]
+            assert item["matched_by"] == "manual"
+
+
 if __name__ == "__main__":
     pytest.main([__file__, "-v"])

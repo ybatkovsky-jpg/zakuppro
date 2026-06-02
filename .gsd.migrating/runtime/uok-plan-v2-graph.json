@@ -1,5 +1,5 @@
 {
-  "compiledAt": "2026-06-02T11:54:24.587Z",
+  "compiledAt": "2026-06-02T12:00:55.876Z",
   "milestoneId": "M004",
   "pipeline": {
     "clarifyRoundLimit": 3,
@@ -408,12 +408,17 @@
       "dependsOn": [
         "execute-task:M004:S05:T03"
       ],
-      "writes": [],
+      "writes": [
+        "backend/routers/unresolved_transactions.py",
+        "backend/schemas.py",
+        "backend/schemas/__init__.py",
+        "backend/tests/test_api/test_unresolved_transactions.py"
+      ],
       "metadata": {
         "unitType": "execute-task",
         "unitId": "M004.S05.T04",
-        "title": "Add Bulk Manual Match Endpoint",
-        "status": "pending"
+        "title": "Added POST /api/unresolved-transactions/bulk-match endpoint for bulk manual reconciliation with atomic transaction, validation before processing, and summary response with matched_count, failed_count, payment_ids, and errors",
+        "status": "complete"
       }
     },
     {

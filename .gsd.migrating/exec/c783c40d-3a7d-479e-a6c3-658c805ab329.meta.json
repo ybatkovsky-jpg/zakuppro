@@ -1,0 +1,18 @@
+{
+  "id": "c783c40d-3a7d-479e-a6c3-658c805ab329",
+  "runtime": "bash",
+  "purpose": "Run bulk match tests using python directly",
+  "script_chars": 153,
+  "started_at": "2026-06-02T11:58:27.447Z",
+  "finished_at": "2026-06-02T11:58:27.694Z",
+  "exit_code": 1,
+  "signal": null,
+  "timed_out": false,
+  "duration_ms": 247,
+  "stdout_bytes": 544,
+  "stderr_bytes": 0,
+  "stdout_truncated": false,
+  "stderr_truncated": false,
+  "stdout_path": "D:\\CLAUDE\\Project\\zakuppro\\zakuppro\\.gsd\\exec\\c783c40d-3a7d-479e-a6c3-658c805ab329.stdout",
+  "stderr_path": "D:\\CLAUDE\\Project\\zakuppro\\zakuppro\\.gsd\\exec\\c783c40d-3a7d-479e-a6c3-658c805ab329.stderr"
+}

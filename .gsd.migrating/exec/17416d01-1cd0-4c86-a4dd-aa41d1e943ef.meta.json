@@ -1,0 +1,18 @@
+{
+  "id": "17416d01-1cd0-4c86-a4dd-aa41d1e943ef",
+  "runtime": "bash",
+  "purpose": "Run bulk match tests to verify implementation",
+  "script_chars": 138,
+  "started_at": "2026-06-02T11:58:19.932Z",
+  "finished_at": "2026-06-02T11:58:20.055Z",
+  "exit_code": 1,
+  "signal": null,
+  "timed_out": false,
+  "duration_ms": 123,
+  "stdout_bytes": 544,
+  "stderr_bytes": 0,
+  "stdout_truncated": false,
+  "stderr_truncated": false,
+  "stdout_path": "D:\\CLAUDE\\Project\\zakuppro\\zakuppro\\.gsd\\exec\\17416d01-1cd0-4c86-a4dd-aa41d1e943ef.stdout",
+  "stderr_path": "D:\\CLAUDE\\Project\\zakuppro\\zakuppro\\.gsd\\exec\\17416d01-1cd0-4c86-a4dd-aa41d1e943ef.stderr"
+}

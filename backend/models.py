@@ -235,6 +235,7 @@ class TransactionMatchingAudit(Base):
 
     # Relationships
     bank_transaction = relationship("BankTransaction", back_populates="matching_audits")
+    unresolved_transaction = relationship("UnresolvedTransaction")  # For manual matches from unresolved queue
     invoice = relationship("Invoice")  # No back_populates - Invoice doesn't track matches
 
 

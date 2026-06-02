@@ -361,6 +361,61 @@ class BulkMatchResponse(BaseSchema):
 
 
 # =============================================================================
+# TransactionMatchingAudit Schemas
+# =============================================================================
+
+class BankTransactionNested(BaseSchema):
+    """Schema for bank transaction in nested audit responses."""
+    id: int
+    transaction_date: datetime
+    amount: float
+    supplier_inn: Optional[str] = None
+    description: Optional[str] = None
+    operation_type: str
+
+
+class UnresolvedTransactionNested(BaseSchema):
+    """Schema for unresolved transaction in nested audit responses."""
+    id: int
+    amount: float
+    description: Optional[str] = None
+    bank_date: datetime
+    status: str
+
+
+class InvoiceNested(BaseSchema):
+    """Schema for invoice in nested audit responses."""
+    id: int
+    status: str
+    purchase_order_id: int
+    created_at: datetime
+
+
+class TransactionMatchingAuditResponse(BaseSchema):
+    """Schema for transaction matching audit response."""
+    id: int
+    bank_transaction_id: Optional[int] = None
+    unresolved_transaction_id: Optional[int] = None
+    invoice_id: int
+    matched_at: datetime
+    matched_by: str
+    confidence_score: Optional[float] = None
+    matching_context: Optional[dict] = None
+    created_at: datetime
+    bank_transaction: Optional[BankTransactionNested] = None
+    unresolved_transaction: Optional[UnresolvedTransactionNested] = None
+    invoice: Optional[InvoiceNested] = None
+
+
+class AuditHistoryListResponse(BaseSchema):
+    """Schema for paginated audit history list response."""
+    items: List[TransactionMatchingAuditResponse]
+    total: int
+    skip: int
+    limit: int
+
+
+# =============================================================================
 # ProductionTask Schemas
 # =============================================================================
 

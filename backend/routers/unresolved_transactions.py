@@ -24,7 +24,9 @@ from backend.schemas import (
     ManualMatchResponse,
     BulkMatchRequest,
     BulkMatchResponse,
-    BulkMatchError
+    BulkMatchError,
+    TransactionMatchingAuditResponse,
+    AuditHistoryListResponse
 )
 
 logger = logging.getLogger(__name__)
@@ -115,6 +117,94 @@ def list_unresolved_transactions(
     logger.info(f"Returning {len(transactions)} of {total_count} unresolved transactions")
 
     return transactions
+
+
+@router.get("/audit-history", response_model=AuditHistoryListResponse)
+def get_audit_history(
+    skip: int = Query(0, ge=0, description="Number of records to skip for pagination"),
+    limit: int = Query(100, ge=1, le=1000, description="Maximum number of records to return"),
+    transaction_id: Optional[int] = Query(None, description="Filter by unresolved transaction ID"),
+    invoice_id: Optional[int] = Query(None, description="Filter by invoice ID"),
+    date_from: Optional[datetime] = Query(None, description="Filter from this matched_at date (inclusive)"),
+    date_to: Optional[datetime] = Query(None, description="Filter until this matched_at date (inclusive)"),
+    matched_by: Optional[str] = Query(None, description="Filter by matched_by value (e.g., 'auto', 'manual')"),
+    db: Session = Depends(get_db)
+):
+    """
+    Get audit history for transaction matching with filters.
+
+    Returns records from TransactionMatchingAudit with nested details:
+    - bank_transaction: For auto-matched bank transactions
+    - unresolved_transaction: For manually matched unresolved transactions
+    - invoice: Always present, the matched invoice
+
+    Filters:
+    - transaction_id: Filter by unresolved_transaction_id (manual matches)
+    - invoice_id: Filter by invoice_id
+    - date_from/date_to: Filter by matched_at date range
+    - matched_by: Filter by who performed the match ('auto', 'manual', or user_id)
+
+    Pagination:
+    - skip/limit: Standard pagination controls
+
+    Returns paginated list with total count.
+    """
+    logger.info(
+        "get_audit_history called with filters: skip=%s, limit=%s, transaction_id=%s, "
+        "invoice_id=%s, date_from=%s, date_to=%s, matched_by=%s",
+        skip, limit, transaction_id, invoice_id, date_from, date_to, matched_by
+    )
+
+    # Build query with eager loading for nested relationships
+    query = (
+        db.query(TransactionMatchingAudit)
+        .options(
+            joinedload(TransactionMatchingAudit.bank_transaction),
+            joinedload(TransactionMatchingAudit.unresolved_transaction),
+            joinedload(TransactionMatchingAudit.invoice)
+        )
+    )
+
+    # Apply filters
+    if transaction_id:
+        query = query.filter(TransactionMatchingAudit.unresolved_transaction_id == transaction_id)
+        logger.debug(f"Applied transaction_id filter: {transaction_id}")
+
+    if invoice_id:
+        query = query.filter(TransactionMatchingAudit.invoice_id == invoice_id)
+        logger.debug(f"Applied invoice_id filter: {invoice_id}")
+
+    if date_from:
+        query = query.filter(TransactionMatchingAudit.matched_at >= date_from)
+        logger.debug(f"Applied date_from filter: {date_from}")
+
+    if date_to:
+        query = query.filter(TransactionMatchingAudit.matched_at <= date_to)
+        logger.debug(f"Applied date_to filter: {date_to}")
+
+    if matched_by:
+        query = query.filter(TransactionMatchingAudit.matched_by == matched_by)
+        logger.debug(f"Applied matched_by filter: {matched_by}")
+
+    # Get total count before pagination
+    total_count = query.count()
+
+    # Apply ordering (most recent first) and pagination
+    audits = (
+        query.order_by(TransactionMatchingAudit.matched_at.desc())
+        .offset(skip)
+        .limit(limit)
+        .all()
+    )
+
+    logger.info(f"Returning {len(audits)} of {total_count} audit records")
+
+    return AuditHistoryListResponse(
+        items=audits,
+        total=total_count,
+        skip=skip,
+        limit=limit
+    )
 
 
 @router.get("/{transaction_id}", response_model=UnresolvedTransactionResponse)

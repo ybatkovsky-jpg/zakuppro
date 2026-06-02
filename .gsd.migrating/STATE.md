@@ -21,4 +21,4 @@
 - None
 
 ## Next Action
-Execute T04: Add Bulk Manual Match Endpoint in slice S05.
+Execute T05: Add Audit History Endpoint and Extend TransactionMatchingAudit in slice S05.

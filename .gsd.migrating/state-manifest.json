@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "exported_at": "2026-06-02T11:54:04.982Z",
+  "exported_at": "2026-06-02T12:00:34.273Z",
   "milestones": [
     {
       "id": "M001",
@@ -4394,19 +4394,29 @@
       "milestone_id": "M004",
       "slice_id": "S05",
       "id": "T04",
-      "title": "Add Bulk Manual Match Endpoint",
-      "status": "pending",
-      "one_liner": "",
-      "narrative": "",
-      "verification_result": "",
+      "title": "Added POST /api/unresolved-transactions/bulk-match endpoint for bulk manual reconciliation with atomic transaction, validation before processing, and summary response with matched_count, failed_count, payment_ids, and errors",
+      "status": "complete",
+      "one_liner": "Added POST /api/unresolved-transactions/bulk-match endpoint for bulk manual reconciliation with atomic transaction, validation before processing, and summary response with matched_count, failed_count, payment_ids, and errors",
+      "narrative": "Implemented the bulk manual match endpoint POST /api/unresolved-transactions/bulk-match. The endpoint:\n\n1. Accepts a list of (unresolved_transaction_id, invoice_id, optional amount) match items\n2. Validates all inputs before processing (transaction exists, status is 'Не распределено', invoice exists)\n3. Uses database transaction for atomicity - all matches succeed or all are rolled back\n4. Creates Payment and TransactionMatchingAudit records for each match\n5. Updates UnresolvedTransaction.status to 'Привязано вручную'\n6. Returns BulkMatchResponse with matched_count, failed_count, payment_ids, and errors\n\nAdded 4 new schemas: BulkMatchItem, BulkMatchRequest, BulkMatchResponse, and BulkMatchError. Exported new schemas via backend/schemas/__init__.py.\n\nThe endpoint performs validation upfront to return clear error messages for failed items, then processes all valid matches in a single transaction. If any database error occurs during processing, the entire transaction is rolled back.\n\nAdded 7 comprehensive tests covering: all success, custom amounts, partial failure, all fail validation, rollback, empty list, and amount override scenarios.\n\nAll 38 tests for unresolved_transactions module pass.",
+      "verification_result": "Ran pytest backend/tests/test_api/test_unresolved_transactions.py -k test_bulk_match -v. All 7 bulk match tests passed:\n- test_bulk_match_all_success: Verifies all matches processed with Payment/Audit creation and status updates\n- test_bulk_match_with_custom_amounts: Verifies custom amounts are used in Payment records\n- test_bulk_match_partial_failure: Verifies partial success with detailed error messages\n- test_bulk_match_all_fail_validation: Verifies all failures handled gracefully\n- test_bulk_match_rollback_on_error: Verifies rollback on database errors\n- test_bulk_match_empty_list: Verifies empty request handled\n- test_bulk_match_with_amount_override: Verifies partial payment amounts work correctly\n\nAll 38 tests for unresolved_transactions module pass.",
       "duration": "",
-      "completed_at": null,
+      "completed_at": "2026-06-02T12:00:34.188Z",
       "blocker_discovered": false,
-      "deviations": "",
-      "known_issues": "",
-      "key_files": [],
-      "key_decisions": [],
-      "full_summary_md": "",
+      "deviations": "None.",
+      "known_issues": "None.",
+      "key_files": [
+        "backend/routers/unresolved_transactions.py",
+        "backend/schemas.py",
+        "backend/schemas/__init__.py",
+        "backend/tests/test_api/test_unresolved_transactions.py"
+      ],
+      "key_decisions": [
+        "Bulk match validates all inputs upfront before processing any matches to provide clear error feedback",
+        "Entire bulk match operation uses single database transaction for atomicity - all succeed or rollback on any error",
+        "Custom amounts in match items allow partial payments to be recorded",
+        "TransactionMatchingAudit entries use unresolved_transaction_id tracking for unified audit trail"
+      ],
+      "full_summary_md": "---\nid: T04\nparent: S05\nmilestone: M004\nkey_files:\n  - backend/routers/unresolved_transactions.py\n  - backend/schemas.py\n  - backend/schemas/__init__.py\n  - backend/tests/test_api/test_unresolved_transactions.py\nkey_decisions:\n  - Bulk match validates all inputs upfront before processing any matches to provide clear error feedback\n  - Entire bulk match operation uses single database transaction for atomicity - all succeed or rollback on any error\n  - Custom amounts in match items allow partial payments to be recorded\n  - TransactionMatchingAudit entries use unresolved_transaction_id tracking for unified audit trail\nduration: \nverification_result: mixed\ncompleted_at: 2026-06-02T12:00:34.184Z\nblocker_discovered: false\n---\n\n# T04: Added POST /api/unresolved-transactions/bulk-match endpoint for bulk manual reconciliation with atomic transaction, validation before processing, and summary response with matched_count, failed_count, payment_ids, and errors\n\n**Added POST /api/unresolved-transactions/bulk-match endpoint for bulk manual reconciliation with atomic transaction, validation before processing, and summary response with matched_count, failed_count, payment_ids, and errors**\n\n## What Happened\n\nImplemented the bulk manual match endpoint POST /api/unresolved-transactions/bulk-match. The endpoint:\n\n1. Accepts a list of (unresolved_transaction_id, invoice_id, optional amount) match items\n2. Validates all inputs before processing (transaction exists, status is 'Не распределено', invoice exists)\n3. Uses database transaction for atomicity - all matches succeed or all are rolled back\n4. Creates Payment and TransactionMatchingAudit records for each match\n5. Updates UnresolvedTransaction.status to 'Привязано вручную'\n6. Returns BulkMatchResponse with matched_count, failed_count, payment_ids, and errors\n\nAdded 4 new schemas: BulkMatchItem, BulkMatchRequest, BulkMatchResponse, and BulkMatchError. Exported new schemas via backend/schemas/__init__.py.\n\nThe endpoint performs validation upfront to return clear error messages for failed items, then processes all valid matches in a single transaction. If any database error occurs during processing, the entire transaction is rolled back.\n\nAdded 7 comprehensive tests covering: all success, custom amounts, partial failure, all fail validation, rollback, empty list, and amount override scenarios.\n\nAll 38 tests for unresolved_transactions module pass.\n\n## Verification\n\nRan pytest backend/tests/test_api/test_unresolved_transactions.py -k test_bulk_match -v. All 7 bulk match tests passed:\n- test_bulk_match_all_success: Verifies all matches processed with Payment/Audit creation and status updates\n- test_bulk_match_with_custom_amounts: Verifies custom amounts are used in Payment records\n- test_bulk_match_partial_failure: Verifies partial success with detailed error messages\n- test_bulk_match_all_fail_validation: Verifies all failures handled gracefully\n- test_bulk_match_rollback_on_error: Verifies rollback on database errors\n- test_bulk_match_empty_list: Verifies empty request handled\n- test_bulk_match_with_amount_override: Verifies partial payment amounts work correctly\n\nAll 38 tests for unresolved_transactions module pass.\n\n## Verification Evidence\n\n| # | Command | Exit Code | Verdict | Duration |\n|---|---------|-----------|---------|----------|\n| 1 | `pytest backend/tests/test_api/test_unresolved_transactions.py -k test_bulk_match -v | 0 | PASS | 2000` | -1 | unknown (coerced from string) | 0ms |\n| 2 | `pytest backend/tests/test_api/test_unresolved_transactions.py -v | 0 | PASS | 3000` | -1 | unknown (coerced from string) | 0ms |\n\n## Deviations\n\nNone.\n\n## Known Issues\n\nNone.\n\n## Files Created/Modified\n\n- `backend/routers/unresolved_transactions.py`\n- `backend/schemas.py`\n- `backend/schemas/__init__.py`\n- `backend/tests/test_api/test_unresolved_transactions.py`\n",
       "description": "Create POST /api/unresolved-transactions/bulk-match endpoint accepting list of (unresolved_transaction_id, invoice_id, optional amount). Validate all inputs, wrap in database transaction, create Payment and TransactionMatchingAudit records for each match, update UnresolvedTransaction statuses. Return summary with matched_count, failed_count, payment_ids, errors. Rollback entire transaction on any failure.",
       "estimate": "2h",
       "files": [
@@ -6489,6 +6499,28 @@
       "verdict": "unknown (coerced from string)",
       "duration_ms": 0,
       "created_at": "2026-06-02T11:54:04.885Z"
+    },
+    {
+      "id": 179,
+      "task_id": "T04",
+      "slice_id": "S05",
+      "milestone_id": "M004",
+      "command": "pytest backend/tests/test_api/test_unresolved_transactions.py -k test_bulk_match -v | 0 | PASS | 2000",
+      "exit_code": -1,
+      "verdict": "unknown (coerced from string)",
+      "duration_ms": 0,
+      "created_at": "2026-06-02T12:00:34.189Z"
+    },
+    {
+      "id": 180,
+      "task_id": "T04",
+      "slice_id": "S05",
+      "milestone_id": "M004",
+      "command": "pytest backend/tests/test_api/test_unresolved_transactions.py -v | 0 | PASS | 3000",
+      "exit_code": -1,
+      "verdict": "unknown (coerced from string)",
+      "duration_ms": 0,
+      "created_at": "2026-06-02T12:00:34.189Z"
     }
   ]
 }

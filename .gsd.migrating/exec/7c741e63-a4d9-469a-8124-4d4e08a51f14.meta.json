@@ -1,0 +1,18 @@
+{
+  "id": "7c741e63-a4d9-469a-8124-4d4e08a51f14",
+  "runtime": "bash",
+  "purpose": "Find python executable",
+  "script_chars": 76,
+  "started_at": "2026-06-02T11:58:35.755Z",
+  "finished_at": "2026-06-02T11:58:35.822Z",
+  "exit_code": 1,
+  "signal": null,
+  "timed_out": false,
+  "duration_ms": 67,
+  "stdout_bytes": 544,
+  "stderr_bytes": 0,
+  "stdout_truncated": false,
+  "stderr_truncated": false,
+  "stdout_path": "D:\\CLAUDE\\Project\\zakuppro\\zakuppro\\.gsd\\exec\\7c741e63-a4d9-469a-8124-4d4e08a51f14.stdout",
+  "stderr_path": "D:\\CLAUDE\\Project\\zakuppro\\zakuppro\\.gsd\\exec\\7c741e63-a4d9-469a-8124-4d4e08a51f14.stderr"
+}

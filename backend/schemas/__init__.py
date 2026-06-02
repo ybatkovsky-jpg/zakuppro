@@ -82,6 +82,13 @@ BulkMatchRequest = _schemas.BulkMatchRequest
 BulkMatchResponse = _schemas.BulkMatchResponse
 BulkMatchError = _schemas.BulkMatchError
 
+# TransactionMatchingAudit schemas
+BankTransactionNested = _schemas.BankTransactionNested
+UnresolvedTransactionNested = _schemas.UnresolvedTransactionNested
+InvoiceNested = _schemas.InvoiceNested
+TransactionMatchingAuditResponse = _schemas.TransactionMatchingAuditResponse
+AuditHistoryListResponse = _schemas.AuditHistoryListResponse
+
 # ProductionTask schemas
 ProductionTaskBase = _schemas.ProductionTaskBase
 ProductionTaskCreate = _schemas.ProductionTaskCreate
@@ -143,6 +150,12 @@ __all__ = [
     "BulkMatchRequest",
     "BulkMatchResponse",
     "BulkMatchError",
+    # TransactionMatchingAudit
+    "BankTransactionNested",
+    "UnresolvedTransactionNested",
+    "InvoiceNested",
+    "TransactionMatchingAuditResponse",
+    "AuditHistoryListResponse",
     # ProductionTasks
     "ProductionTaskBase",
     "ProductionTaskCreate",

@@ -45,7 +45,7 @@
   - Files: `backend/routers/unresolved_transactions.py`, `backend/schemas.py`, `backend/models.py`
   - Verify: pytest backend/tests/test_api/test_unresolved_transactions.py -k test_single_match -v
 
-- [ ] **T04: Add Bulk Manual Match Endpoint** `est:2h`
+- [x] **T04: Add Bulk Manual Match Endpoint** `est:2h`
   Create POST /api/unresolved-transactions/bulk-match endpoint accepting list of (unresolved_transaction_id, invoice_id, optional amount). Validate all inputs, wrap in database transaction, create Payment and TransactionMatchingAudit records for each match, update UnresolvedTransaction statuses. Return summary with matched_count, failed_count, payment_ids, errors. Rollback entire transaction on any failure.
   - Files: `backend/routers/unresolved_transactions.py`, `backend/schemas.py`
   - Verify: pytest backend/tests/test_api/test_unresolved_transactions.py -k test_bulk_match -v
