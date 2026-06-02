@@ -4,6 +4,7 @@ Pytest configuration and shared fixtures for backend tests.
 Fixtures:
 - db_session: SQLAlchemy session for in-memory SQLite database
 - test_engine: SQLAlchemy engine for tests
+- test_client: FastAPI TestClient for API endpoint tests
 """
 import os
 import pytest
@@ -95,3 +96,41 @@ def db_session_with_fk(test_engine):
         session.rollback()
         session.close()
         Base.metadata.drop_all(test_engine)
+
+
+@pytest.fixture(scope="function")
+def test_client(test_engine):
+    """Create a FastAPI TestClient for API testing with isolated DB.
+
+    This fixture uses the same test engine to ensure the FastAPI app
+    uses the same database as the tests.
+    """
+    from fastapi.testclient import TestClient
+
+    # Import main app to ensure all routes are registered
+    try:
+        from backend.main import app
+    except ImportError:
+        from main import app
+
+    # Use the same engine (tables already created)
+    TestSessionLocal = sessionmaker(bind=test_engine)
+
+    # Create tables in case they weren't created yet
+    Base.metadata.create_all(test_engine)
+
+    # Override the get_db dependency to use test database
+    def override_get_db():
+        db = TestSessionLocal()
+        try:
+            yield db
+        finally:
+            db.close()
+
+    app.dependency_overrides[get_db] = override_get_db
+
+    client = TestClient(app)
+    yield client
+
+    # Clean up
+    app.dependency_overrides.clear()

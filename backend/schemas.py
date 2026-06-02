@@ -302,6 +302,14 @@ class UnresolvedTransactionResponse(UnresolvedTransactionBase):
     updated_at: Optional[datetime] = None
 
 
+class UnresolvedTransactionListResponse(BaseSchema):
+    """Schema for paginated unresolved transaction list response with metadata."""
+    items: List[UnresolvedTransactionResponse]
+    total: int
+    skip: int
+    limit: int
+
+
 # =============================================================================
 # ProductionTask Schemas
 # =============================================================================
