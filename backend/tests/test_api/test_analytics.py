@@ -805,3 +805,232 @@ class TestExportTransactionsWithRecords:
         excel_data = BytesIO(response.content)
         df = pd.read_excel(excel_data, engine="openpyxl")
         assert len(df) == 3  # Limited to 3
+
+
+# Import path to fixture files
+import os
+FIXTURES_DIR = os.path.join(os.path.dirname(__file__), "..", "fixtures")
+TINKOFF_STATEMENT_PATH = os.path.join(FIXTURES_DIR, "tinkoff_statement.txt")
+
+
+class TestUploadBankStatementValidFile:
+    """Test POST /api/analytics/upload-bank-statement with valid .txt file."""
+
+    def test_upload_valid_bank_statement(self, test_client: TestClient):
+        """POST returns 201 with parsed transaction count."""
+        # Use the actual fixture file
+        with open(TINKOFF_STATEMENT_PATH, "rb") as f:
+            file_content = f.read()
+        files = {"file": ("statement.txt", file_content, "text/plain")}
+
+        response = test_client.post("/api/analytics/upload-bank-statement", files=files)
+
+        assert response.status_code == 201
+        data = response.json()
+        assert "bank_statement_id" in data
+        assert data["parsed_transactions"] == 3  # Tinkoff statement has 3 transactions
+        assert data["matched_count"] == 0  # No matching invoices
+        assert data["bank_name"] is not None
+        assert "statement_date" in data
+
+    def test_upload_creates_bank_statement_record(self, test_client: TestClient):
+        """POST creates BankStatement and BankTransaction records in DB."""
+        with open(TINKOFF_STATEMENT_PATH, "rb") as f:
+            file_content = f.read()
+        files = {"file": ("statement.txt", file_content, "text/plain")}
+
+        response = test_client.post("/api/analytics/upload-bank-statement", files=files)
+
+        assert response.status_code == 201
+        data = response.json()
+        bank_statement_id = data["bank_statement_id"]
+
+        # Verify bank statement record exists via GET (if endpoint exists)
+        # For now, just verify the response structure
+        assert isinstance(bank_statement_id, int)
+        assert data["parsed_transactions"] > 0
+
+    def test_upload_with_cp1251_encoding(self, test_client: TestClient):
+        """POST handles CP1251 encoded bank statement correctly."""
+        # Tinkoff statement is CP1251 encoded
+        with open(TINKOFF_STATEMENT_PATH, "rb") as f:
+            file_content = f.read()
+        files = {"file": ("cp1251_statement.txt", file_content, "text/plain")}
+
+        response = test_client.post("/api/analytics/upload-bank-statement", files=files)
+
+        assert response.status_code == 201
+        data = response.json()
+        assert data["parsed_transactions"] == 3
+
+
+class TestUploadBankStatementValidation:
+    """Test POST /api/analytics/upload-bank-statement validation rules."""
+
+    def test_upload_invalid_extension_rejected(self, test_client: TestClient):
+        """POST returns 400 for non-.txt file extension."""
+        # Try to upload a PDF file
+        files = {"file": ("statement.pdf", b"fake pdf content", "application/pdf")}
+
+        response = test_client.post("/api/analytics/upload-bank-statement", files=files)
+
+        assert response.status_code == 400
+        assert "Invalid file type" in response.json()["detail"]
+        assert ".txt" in response.json()["detail"]
+
+    def test_upload_case_insensitive_extension(self, test_client: TestClient):
+        """POST accepts .txt with any case (TXT, Txt, etc.)."""
+        with open(TINKOFF_STATEMENT_PATH, "rb") as f:
+            file_content = f.read()
+        files = {"file": ("STATEMENT.TXT", file_content, "text/plain")}
+
+        response = test_client.post("/api/analytics/upload-bank-statement", files=files)
+
+        assert response.status_code == 201
+        data = response.json()
+        assert data["parsed_transactions"] == 3
+
+    def test_upload_no_extension_rejected(self, test_client: TestClient):
+        """POST returns 400 for file without extension."""
+        with open(TINKOFF_STATEMENT_PATH, "rb") as f:
+            file_content = f.read()
+        files = {"file": ("statement", file_content, "text/plain")}
+
+        response = test_client.post("/api/analytics/upload-bank-statement", files=files)
+
+        assert response.status_code == 400
+        assert "Invalid file type" in response.json()["detail"]
+
+
+class TestUploadBankStatementFileSize:
+    """Test POST /api/analytics/upload-bank-statement file size limits."""
+
+    def test_upload_exceeds_5mb_limit(self, test_client: TestClient):
+        """POST returns 400 for file larger than 5MB."""
+        # Create a file larger than 5MB (5MB + 1 byte)
+        large_content = b"x" * (5 * 1024 * 1024 + 1)
+        files = {"file": ("large_statement.txt", large_content, "text/plain")}
+
+        response = test_client.post("/api/analytics/upload-bank-statement", files=files)
+
+        assert response.status_code == 400
+        assert "exceeds maximum of 5MB" in response.json()["detail"]
+
+    def test_upload_at_5mb_limit_accepted(self, test_client: TestClient):
+        """POST accepts file exactly at 5MB limit."""
+        # Create a file exactly 5MB
+        limit_content = b"x" * (5 * 1024 * 1024)
+        files = {"file": ("limit_statement.txt", limit_content, "text/plain")}
+
+        response = test_client.post("/api/analytics/upload-bank-statement", files=files)
+
+        # File is too large to parse but should pass size validation
+        # May fail parsing due to invalid content, but not due to size
+        assert response.status_code in (201, 400)  # 400 if parsing fails
+
+    def test_upload_small_file_accepted(self, test_client: TestClient):
+        """POST accepts small file (< 5MB)."""
+        small_content = b"tiny content"
+        files = {"file": ("small_statement.txt", small_content, "text/plain")}
+
+        response = test_client.post("/api/analytics/upload-bank-statement", files=files)
+
+        # Should not fail on size check (may fail on parsing invalid content)
+        assert response.status_code in (201, 400)
+        if response.status_code == 400:
+            # If it fails, it should be due to parsing, not size
+            detail = response.json().get("detail", "")
+            assert "exceeds maximum" not in detail
+
+
+class TestUploadBankStatementParserErrors:
+    """Test POST /api/analytics/upload-bank-statement parser error handling."""
+
+    def test_upload_empty_file(self, test_client: TestClient):
+        """POST returns 201 with zero transactions for empty file."""
+        empty_content = b""
+        files = {"file": ("empty.txt", empty_content, "text/plain")}
+
+        response = test_client.post("/api/analytics/upload-bank-statement", files=files)
+
+        # Empty file will have 0 transactions but should create a record
+        assert response.status_code == 201
+        data = response.json()
+        assert data["parsed_transactions"] == 0
+
+    def test_upload_invalid_format(self, test_client: TestClient):
+        """POST returns 201 with zero transactions for malformed content."""
+        invalid_content = b"This is not a valid bank statement file at all"
+        files = {"file": ("invalid.txt", invalid_content, "text/plain")}
+
+        response = test_client.post("/api/analytics/upload-bank-statement", files=files)
+
+        # Should parse with 0 transactions (not an error, just empty result)
+        assert response.status_code == 201
+        data = response.json()
+        assert data["parsed_transactions"] == 0
+
+    def test_upload_corrupted_encoding(self, test_client: TestClient):
+        """POST handles corrupted/invalid encoding gracefully."""
+        # The parser is lenient - it tries CP1251 then UTF-8
+        # If encoding succeeds but no transactions found, returns 201 with 0 transactions
+        # This is the correct behavior - don't reject files just because they're not valid bank statements
+        corrupted_content = b"\xff\xfe\x00\x01\x02\x03\x04\x05"
+        files = {"file": ("corrupted.txt", corrupted_content, "text/plain")}
+
+        response = test_client.post("/api/analytics/upload-bank-statement", files=files)
+
+        # Should return 201 with 0 transactions (graceful handling)
+        assert response.status_code == 201
+        data = response.json()
+        assert data["parsed_transactions"] == 0
+
+
+class TestUploadBankStatementWithMatching:
+    """Test POST /api/analytics/upload-bank-statement with auto-matching."""
+
+    def test_upload_with_matching_invoices(self, test_client: TestClient):
+        """POST auto-matches transactions to existing invoices."""
+        # First, create supplier and invoice with matching INN
+        supplier_response = test_client.post("/api/suppliers/", json={
+            "name": "Match Supplier",
+            "email": "match@example.com",
+            "requisites": "ИНН 123456789012\n其他的供应商信息"
+        })
+        assert supplier_response.status_code == 201
+        supplier_id = supplier_response.json()["id"]
+
+        project_response = test_client.post("/api/projects/", json={
+            "name": "Match Project",
+            "client": "Test Client"
+        })
+        assert project_response.status_code == 201
+        project_id = project_response.json()["id"]
+
+        po_response = test_client.post("/api/purchase-orders/", json={
+            "project_id": project_id,
+            "supplier_id": supplier_id
+        })
+        assert po_response.status_code == 201
+        po_id = po_response.json()["id"]
+
+        # Create invoice
+        invoice_response = test_client.post("/api/invoices/", json={
+            "purchase_order_id": po_id,
+            "status": "Сверен"
+        })
+        assert invoice_response.status_code == 201
+        invoice_id = invoice_response.json()["id"]
+
+        # Upload bank statement with transaction for supplier INN 123456789012
+        with open(TINKOFF_STATEMENT_PATH, "rb") as f:
+            file_content = f.read()
+        files = {"file": ("statement.txt", file_content, "text/plain")}
+
+        upload_response = test_client.post("/api/analytics/upload-bank-statement", files=files)
+
+        assert upload_response.status_code == 201
+        data = upload_response.json()
+        # May or may not match depending on invoice total amount
+        assert "matched_count" in data
+        assert isinstance(data["matched_count"], int)

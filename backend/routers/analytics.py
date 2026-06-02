@@ -1,8 +1,9 @@
 """
 Analytics router for ZakupPro API.
-Provides endpoints for dashboard metrics, payment dynamics, and export functionality.
+Provides endpoints for dashboard metrics, payment dynamics, export functionality,
+and bank statement upload for manual reconciliation.
 """
-from fastapi import APIRouter, Depends, HTTPException, status, Query, Response
+from fastapi import APIRouter, Depends, HTTPException, status, Query, Response, UploadFile, File
 from fastapi.responses import StreamingResponse
 from sqlalchemy.orm import Session, joinedload, selectinload
 from sqlalchemy import func, and_, or_, select, case, cast, Date
@@ -15,12 +16,18 @@ import io
 import pandas as pd
 
 from backend.database import get_db
-from backend.models import Invoice, Payment, Supplier, Project, PurchaseOrder
+from backend.models import (
+    Invoice, Payment, Supplier, Project, PurchaseOrder,
+    BankStatement, BankTransaction
+)
 from backend.schemas import (
     DashboardMetricsResponse,
     PaymentDynamicsResponse,
-    PaymentDynamicsPoint
+    PaymentDynamicsPoint,
+    UploadBankStatementResponse
 )
+from backend.services.bank_statement_parser import BankStatementParser
+from backend.services.payment_matcher import PaymentMatcher
 
 logger = logging.getLogger(__name__)
 
@@ -456,4 +463,148 @@ def export_transactions_excel(
         headers={
             "Content-Disposition": f"attachment; filename={filename}"
         }
+    )
+
+
+@router.post("/upload-bank-statement", response_model=UploadBankStatementResponse, status_code=status.HTTP_201_CREATED)
+async def upload_bank_statement(
+    file: UploadFile = File(..., description="Bank statement file in 1C ClientBank .txt format"),
+    db: Session = Depends(get_db)
+):
+    """
+    Upload a bank statement file for manual reconciliation.
+
+    Accepts 1C ClientBank .txt files (CP1251 or UTF-8 encoded).
+    Parses the file, creates BankStatement and BankTransaction records,
+    and optionally runs auto-matching against invoices.
+
+    Validates:
+    - File extension must be .txt (case-insensitive)
+    - File size must not exceed 5MB
+
+    Returns:
+    - bank_statement_id: ID of created BankStatement record
+    - parsed_transactions: Number of transactions parsed
+    - matched_count: Number of transactions auto-matched to invoices
+    - bank_name: Bank name extracted from statement
+    - statement_date: Statement date
+    - period_start: Period start date
+    - period_end: Period end date
+
+    Logs file name, size, parse result for observability.
+    """
+    logger.info(
+        f"upload_bank_statement called: filename={file.filename}, "
+        f"content_type={file.content_type}"
+    )
+
+    # Validate file extension (.txt only, case-insensitive)
+    if not file.filename or not file.filename.lower().endswith('.txt'):
+        logger.warning(f"Invalid file extension: {file.filename}")
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Invalid file type. Only .txt files are allowed."
+        )
+
+    # Read file content
+    content = await file.read()
+    file_size = len(content)
+
+    logger.info(f"File read: {file.filename}, size={file_size} bytes")
+
+    # Validate file size (max 5MB)
+    MAX_FILE_SIZE = 5 * 1024 * 1024  # 5MB
+    if file_size > MAX_FILE_SIZE:
+        logger.warning(f"File size exceeds limit: {file_size} bytes")
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"File size exceeds maximum of 5MB. Got {file_size / 1024 / 1024:.2f}MB."
+        )
+
+    # Parse bank statement
+    try:
+        parser = BankStatementParser()
+        parse_result = parser.parse(content)
+
+        parsed_transactions = parse_result.get('transactions', [])
+        bank_name = parse_result.get('bank_name', 'Unknown')
+        statement_date = parse_result.get('statement_date', datetime.now())
+        period_start = parse_result.get('period_start', datetime.now())
+        period_end = parse_result.get('period_end', datetime.now())
+
+        logger.info(
+            f"Parse successful: bank_name={bank_name}, "
+            f"transactions={len(parsed_transactions)}, "
+            f"period={period_start} to {period_end}"
+        )
+
+    except ValueError as e:
+        logger.error(f"Parser error: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Failed to parse bank statement: {str(e)}"
+        )
+    except Exception as e:
+        logger.error(f"Unexpected parser error: {str(e)}", exc_info=True)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Internal error while parsing bank statement: {str(e)}"
+        )
+
+    # Create BankStatement record
+    bank_statement = BankStatement(
+        bank_name=bank_name,
+        statement_date=statement_date,
+        period_start=period_start,
+        period_end=period_end,
+        raw_file=content,
+        status="Готов"
+    )
+    db.add(bank_statement)
+    db.flush()  # Get bank_statement.id
+
+    logger.info(f"Created bank_statement_id={bank_statement.id}")
+
+    # Create BankTransaction records
+    transaction_count = 0
+    for tx_data in parsed_transactions:
+        transaction = BankTransaction(
+            bank_statement_id=bank_statement.id,
+            transaction_date=tx_data.get('transaction_date', datetime.now()),
+            amount=tx_data.get('amount', Decimal('0')),
+            supplier_inn=tx_data.get('supplier_inn'),
+            description=tx_data.get('description', ''),
+            operation_type=tx_data.get('operation_type', 'Debit')
+        )
+        db.add(transaction)
+        transaction_count += 1
+
+    db.commit()
+
+    logger.info(f"Created {transaction_count} BankTransaction records")
+
+    # Run auto-matching
+    try:
+        matcher = PaymentMatcher(db)
+        match_result = matcher.match_statement_transactions(bank_statement.id)
+        matched_count = match_result.matched_count
+
+        logger.info(
+            f"Auto-matching complete: matched={matched_count}, "
+            f"unresolved={match_result.unresolved_count}"
+        )
+
+    except Exception as e:
+        logger.error(f"Auto-matching error: {str(e)}", exc_info=True)
+        # Continue without failing - transactions are stored
+        matched_count = 0
+
+    return UploadBankStatementResponse(
+        bank_statement_id=bank_statement.id,
+        parsed_transactions=transaction_count,
+        matched_count=matched_count,
+        bank_name=bank_name,
+        statement_date=statement_date,
+        period_start=period_start,
+        period_end=period_end
     )
