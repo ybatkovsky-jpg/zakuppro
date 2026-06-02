@@ -1,5 +1,5 @@
 {
-  "compiledAt": "2026-06-02T10:06:30.374Z",
+  "compiledAt": "2026-06-02T10:14:13.692Z",
   "milestoneId": "M004",
   "pipeline": {
     "clarifyRoundLimit": 3,
@@ -255,12 +255,15 @@
       "dependsOn": [
         "execute-task:M004:S04:T01"
       ],
-      "writes": [],
+      "writes": [
+        "backend/services/payment_matcher.py",
+        "backend/tests/test_payment_matcher.py"
+      ],
       "metadata": {
         "unitType": "execute-task",
         "unitId": "M004.S04.T02",
-        "title": "Create Payment Matcher Core Service",
-        "status": "pending"
+        "title": "Created PaymentMatcher service with multi-tier matching: exact INN+amount (confidence 1.00), INN+amount±5% (confidence 0.85-0.99), Supplier INN cache, and UnresolvedTransaction handling",
+        "status": "complete"
       }
     },
     {

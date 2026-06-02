@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "exported_at": "2026-06-02T10:06:10.191Z",
+  "exported_at": "2026-06-02T10:13:29.825Z",
   "milestones": [
     {
       "id": "M001",
@@ -4017,19 +4017,27 @@
       "milestone_id": "M004",
       "slice_id": "S04",
       "id": "T02",
-      "title": "Create Payment Matcher Core Service",
-      "status": "pending",
-      "one_liner": "",
-      "narrative": "",
-      "verification_result": "",
+      "title": "Created PaymentMatcher service with multi-tier matching: exact INN+amount (confidence 1.00), INN+amount±5% (confidence 0.85-0.99), Supplier INN cache, and UnresolvedTransaction handling",
+      "status": "complete",
+      "one_liner": "Created PaymentMatcher service with multi-tier matching: exact INN+amount (confidence 1.00), INN+amount±5% (confidence 0.85-0.99), Supplier INN cache, and UnresolvedTransaction handling",
+      "narrative": "Created `backend/services/payment_matcher.py` with `PaymentMatcher` class following the `InvoiceVerifier` pattern. The service implements:\n\n**Multi-tier Matching Algorithm:**\n- Exact INN + exact amount match = confidence 1.00\n- INN + amount within ±5% tolerance = confidence 0.85-0.99 (calculated based on proximity to exact)\n- Tolerance calculated FROM invoice total, not transaction amount (handles partial payments)\n\n**Key Features:**\n- `match_transaction()` - Match single BankTransaction to invoices\n- `match_batch()` - Match multiple transactions\n- `match_statement_transactions()` - Match all transactions from a BankStatement\n- `_get_supplier_inn()` - Supplier INN lookup cache to avoid repeated text extraction\n- `_find_invoice_candidates()` - Find invoices by supplier INN via PurchaseOrder\n- `_calculate_confidence()` - Proximity-based confidence scoring (0.85-1.00 range)\n- `_select_best_match()` - Handle single vs multiple candidate scenarios\n- `_create_payment()` - Create Payment + TransactionMatchingAudit records\n- `_create_unresolved_transaction()` - Create UnresolvedTransaction for unmatched\n\n**Edge Case Handling:**\n- NULL supplier_inn → UnresolvedTransaction\n- No matching invoices → UnresolvedTransaction  \n- Multiple candidates with close confidence (<0.05 gap) → UnresolvedTransaction (ambiguous)\n- Amount outside ±5% tolerance → No match\n\n**Observability:**\n- Logger statements for each matching stage (INN extraction, invoice lookup, tolerance checks, payment creation, unresolved creation)\n- TransactionMatchingAudit.matching_context contains algorithm metadata (tolerance bounds, confidence score, invoice_id, etc.)\n- Stats tracking: matched_count, unresolved_count, payment_ids in MatchResult\n\nCreated comprehensive test suite `backend/tests/test_payment_matcher.py` with 16 tests covering all scenarios. All tests pass.\n\n**Key Decisions:**\n1. Tolerance calculated FROM invoice total (not transaction amount) because bank statements often have partial payments or rounding\n2. Confidence score based on proximity to exact match using linear interpolation: 0.85 + (1 - diff/tolerance_range) * 0.15\n3. Uses `joinedload(Invoice.items)` to avoid N+1 queries when calculating invoice totals",
+      "verification_result": "\n- Import verification: `python -c \"from backend.services.payment_matcher import PaymentMatcher; print('OK')\"` ✓\n- Test suite: 16/16 tests pass covering exact match, tolerance match, edge cases, cache, batch/statement matching ✓\n- Confidence calculation verified: exact match = 1.00, tolerance boundaries = 0.85-0.99 range\n- Tolerance calculation verified: ±5% from invoice total correctly excludes transactions outside range\n- UnresolvedTransaction creation verified for NULL INN, no invoices, multiple candidates, outside tolerance\n- TransactionMatchingAudit records created with confidence_score and matching_context JSON\n",
       "duration": "",
-      "completed_at": null,
+      "completed_at": "2026-06-02T10:13:29.746Z",
       "blocker_discovered": false,
-      "deviations": "",
-      "known_issues": "",
-      "key_files": [],
-      "key_decisions": [],
-      "full_summary_md": "",
+      "deviations": "None.",
+      "known_issues": "None.",
+      "key_files": [
+        "backend/services/payment_matcher.py",
+        "backend/tests/test_payment_matcher.py"
+      ],
+      "key_decisions": [
+        "Tolerance calculated FROM invoice total (not transaction amount) because bank statements often have partial payments or rounding differences",
+        "Confidence score uses linear interpolation: 0.85 at tolerance boundary, 1.00 at exact match, proportional in between",
+        "Supplier INN lookup cache (Dict[int, Optional[str]]) prevents repeated text extraction from Supplier.requisites",
+        "Multiple candidates with confidence gap < 0.05 treated as ambiguous → UnresolvedTransaction for manual review"
+      ],
+      "full_summary_md": "---\nid: T02\nparent: S04\nmilestone: M004\nkey_files:\n  - backend/services/payment_matcher.py\n  - backend/tests/test_payment_matcher.py\nkey_decisions:\n  - Tolerance calculated FROM invoice total (not transaction amount) because bank statements often have partial payments or rounding differences\n  - Confidence score uses linear interpolation: 0.85 at tolerance boundary, 1.00 at exact match, proportional in between\n  - Supplier INN lookup cache (Dict[int, Optional[str]]) prevents repeated text extraction from Supplier.requisites\n  - Multiple candidates with confidence gap < 0.05 treated as ambiguous → UnresolvedTransaction for manual review\nduration: \nverification_result: passed\ncompleted_at: 2026-06-02T10:13:29.742Z\nblocker_discovered: false\n---\n\n# T02: Created PaymentMatcher service with multi-tier matching: exact INN+amount (confidence 1.00), INN+amount±5% (confidence 0.85-0.99), Supplier INN cache, and UnresolvedTransaction handling\n\n**Created PaymentMatcher service with multi-tier matching: exact INN+amount (confidence 1.00), INN+amount±5% (confidence 0.85-0.99), Supplier INN cache, and UnresolvedTransaction handling**\n\n## What Happened\n\nCreated `backend/services/payment_matcher.py` with `PaymentMatcher` class following the `InvoiceVerifier` pattern. The service implements:\n\n**Multi-tier Matching Algorithm:**\n- Exact INN + exact amount match = confidence 1.00\n- INN + amount within ±5% tolerance = confidence 0.85-0.99 (calculated based on proximity to exact)\n- Tolerance calculated FROM invoice total, not transaction amount (handles partial payments)\n\n**Key Features:**\n- `match_transaction()` - Match single BankTransaction to invoices\n- `match_batch()` - Match multiple transactions\n- `match_statement_transactions()` - Match all transactions from a BankStatement\n- `_get_supplier_inn()` - Supplier INN lookup cache to avoid repeated text extraction\n- `_find_invoice_candidates()` - Find invoices by supplier INN via PurchaseOrder\n- `_calculate_confidence()` - Proximity-based confidence scoring (0.85-1.00 range)\n- `_select_best_match()` - Handle single vs multiple candidate scenarios\n- `_create_payment()` - Create Payment + TransactionMatchingAudit records\n- `_create_unresolved_transaction()` - Create UnresolvedTransaction for unmatched\n\n**Edge Case Handling:**\n- NULL supplier_inn → UnresolvedTransaction\n- No matching invoices → UnresolvedTransaction  \n- Multiple candidates with close confidence (<0.05 gap) → UnresolvedTransaction (ambiguous)\n- Amount outside ±5% tolerance → No match\n\n**Observability:**\n- Logger statements for each matching stage (INN extraction, invoice lookup, tolerance checks, payment creation, unresolved creation)\n- TransactionMatchingAudit.matching_context contains algorithm metadata (tolerance bounds, confidence score, invoice_id, etc.)\n- Stats tracking: matched_count, unresolved_count, payment_ids in MatchResult\n\nCreated comprehensive test suite `backend/tests/test_payment_matcher.py` with 16 tests covering all scenarios. All tests pass.\n\n**Key Decisions:**\n1. Tolerance calculated FROM invoice total (not transaction amount) because bank statements often have partial payments or rounding\n2. Confidence score based on proximity to exact match using linear interpolation: 0.85 + (1 - diff/tolerance_range) * 0.15\n3. Uses `joinedload(Invoice.items)` to avoid N+1 queries when calculating invoice totals\n\n## Verification\n\n\n- Import verification: `python -c \"from backend.services.payment_matcher import PaymentMatcher; print('OK')\"` ✓\n- Test suite: 16/16 tests pass covering exact match, tolerance match, edge cases, cache, batch/statement matching ✓\n- Confidence calculation verified: exact match = 1.00, tolerance boundaries = 0.85-0.99 range\n- Tolerance calculation verified: ±5% from invoice total correctly excludes transactions outside range\n- UnresolvedTransaction creation verified for NULL INN, no invoices, multiple candidates, outside tolerance\n- TransactionMatchingAudit records created with confidence_score and matching_context JSON\n\n\n## Verification Evidence\n\n| # | Command | Exit Code | Verdict | Duration |\n|---|---------|-----------|---------|----------|\n| 1 | `python -c 'from backend.services.payment_matcher import PaymentMatcher; print(\"OK\")'` | 0 | PASS | 800ms |\n| 2 | `python -m pytest backend/tests/test_payment_matcher.py -v --tb=short` | 0 | PASS | 1100ms |\n\n## Deviations\n\nNone.\n\n## Known Issues\n\nNone.\n\n## Files Created/Modified\n\n- `backend/services/payment_matcher.py`\n- `backend/tests/test_payment_matcher.py`\n",
       "description": "Create payment_matcher.py with PaymentMatcher class following InvoiceVerifier pattern. Implement multi tier matching exact INN plus amount to confidence 1.00, INN plus amount plus minus 5 percent to confidence 0.85 to 0.99. Include private methods for INN extraction, invoice lookup, tolerance checks. Handle edge cases NULL supplier_inn, no invoices, multiple candidates to unresolved. Build Supplier INN lookup cache to avoid repeated text extraction. Query invoices via PurchaseOrder with status in Sveren Ozhidaet oplaty. Return MatchResult dict with matched_count, unresolved_count, payment_ids.",
       "estimate": "2h",
       "files": [
@@ -5951,6 +5959,28 @@
       "verdict": "pass",
       "duration_ms": 190,
       "created_at": "2026-06-02T10:06:10.134Z"
+    },
+    {
+      "id": 165,
+      "task_id": "T02",
+      "slice_id": "S04",
+      "milestone_id": "M004",
+      "command": "python -c 'from backend.services.payment_matcher import PaymentMatcher; print(\"OK\")'",
+      "exit_code": 0,
+      "verdict": "PASS",
+      "duration_ms": 800,
+      "created_at": "2026-06-02T10:13:29.747Z"
+    },
+    {
+      "id": 166,
+      "task_id": "T02",
+      "slice_id": "S04",
+      "milestone_id": "M004",
+      "command": "python -m pytest backend/tests/test_payment_matcher.py -v --tb=short",
+      "exit_code": 0,
+      "verdict": "PASS",
+      "duration_ms": 1100,
+      "created_at": "2026-06-02T10:13:29.747Z"
     }
   ]
 }

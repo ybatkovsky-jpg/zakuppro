@@ -621,9 +621,8 @@ class PaymentMatcher:
         )
         self.db.add(audit)
 
-        # Update invoice status to "Оплачен" (Paid) if all conditions met
-        # (Optional: could require full payment of invoice total)
-        # invoice.status = "Оплачен"
+        # Update invoice status to "Оплачен" (Paid) on successful match
+        invoice.status = "Оплачен"
 
         self.db.commit()
 

@@ -33,7 +33,7 @@ Upstream surfaces consumed: BankStatement/BankTransaction from S03 parse_bank_st
   - Files: `backend/services/supplier_inn_extractor.py`, `backend/tests/test_supplier_inn_extractor.py`
   - Verify: pytest backend/tests/test_supplier_inn_extractor.py -v
 
-- [ ] **T02: Create Payment Matcher Core Service** `est:2h`
+- [x] **T02: Create Payment Matcher Core Service** `est:2h`
   Create payment_matcher.py with PaymentMatcher class following InvoiceVerifier pattern. Implement multi tier matching exact INN plus amount to confidence 1.00, INN plus amount plus minus 5 percent to confidence 0.85 to 0.99. Include private methods for INN extraction, invoice lookup, tolerance checks. Handle edge cases NULL supplier_inn, no invoices, multiple candidates to unresolved. Build Supplier INN lookup cache to avoid repeated text extraction. Query invoices via PurchaseOrder with status in Sveren Ozhidaet oplaty. Return MatchResult dict with matched_count, unresolved_count, payment_ids.
   - Files: `backend/services/payment_matcher.py`
   - Verify: python -c from backend.services.payment_matcher import PaymentMatcher; print OK

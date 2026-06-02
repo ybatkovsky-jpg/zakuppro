@@ -1,7 +1,7 @@
 # Codebase Map
 
-Generated: 2026-06-02T09:59:12Z | Files: 500 | Described: 0/500
-<!-- gsd:codebase-meta {"generatedAt":"2026-06-02T09:59:12Z","fingerprint":"345029592962c1763de12da2f04d6554efc05cc3","fileCount":500,"truncated":true} -->
+Generated: 2026-06-02T10:14:08Z | Files: 500 | Described: 0/500
+<!-- gsd:codebase-meta {"generatedAt":"2026-06-02T10:14:08Z","fingerprint":"8ffa3c3711d5d3bc7ff72ce3be152ae44d98c8d0","fileCount":500,"truncated":true} -->
 Note: Truncated to first 500 files. Run with higher --max-files to include all.
 
 ### (root)/
@@ -27,13 +27,13 @@ Note: Truncated to first 500 files. Run with higher --max-files to include all.
 - `.gsd.migrating/STATE.md`
 
 ### .gsd.migrating/activity/
-- *(150 files: 150 .jsonl)*
+- *(157 files: 157 .jsonl)*
 
 ### .gsd.migrating/audit/
 - `.gsd.migrating/audit/events.jsonl`
 
 ### .gsd.migrating/exec/
-- *(123 files: 41 .json, 41 .stderr, 41 .stdout)*
+- *(126 files: 42 .json, 42 .stderr, 42 .stdout)*
 
 ### .gsd.migrating/graphs/
 - `.gsd.migrating/graphs/graph.json`
@@ -294,15 +294,3 @@ Note: Truncated to first 500 files. Run with higher --max-files to include all.
 - `.gsd.migrating/milestones/M003/slices/S03/tasks/T01-PLAN.md`
 - `.gsd.migrating/milestones/M003/slices/S03/tasks/T01-SUMMARY.md`
 - `.gsd.migrating/milestones/M003/slices/S03/tasks/T02-PLAN.md`
-- `.gsd.migrating/milestones/M003/slices/S03/tasks/T02-SUMMARY.md`
-- `.gsd.migrating/milestones/M003/slices/S03/tasks/T03-PLAN.md`
-- `.gsd.migrating/milestones/M003/slices/S03/tasks/T03-SUMMARY.md`
-- `.gsd.migrating/milestones/M003/slices/S03/tasks/T03-VERIFY.json`
-- `.gsd.migrating/milestones/M003/slices/S03/tasks/T04-PLAN.md`
-- `.gsd.migrating/milestones/M003/slices/S03/tasks/T04-SUMMARY.md`
-- `.gsd.migrating/milestones/M003/slices/S03/tasks/T04-VERIFY.json`
-
-### .gsd.migrating/milestones/M003/slices/S04/
-- `.gsd.migrating/milestones/M003/slices/S04/S04-PLAN.md`
-- `.gsd.migrating/milestones/M003/slices/S04/S04-PRE-EXEC-VERIFY.json`
-- `.gsd.migrating/milestones/M003/slices/S04/S04-RESEARCH.md`

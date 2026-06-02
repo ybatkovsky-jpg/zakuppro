@@ -1,7 +1,7 @@
-# GSD context snapshot (2026-06-02T10:06:17.460Z)
+# GSD context snapshot (2026-06-02T10:13:40.152Z)
 
 ## Active context
-Active: M004 / S04 / T02 - Create Payment Matcher Core Service
+Active: M004 / S04 / T03 - Add Payment and UnresolvedTransaction Creation to Matcher
 
 ## Top project memories
 - [MEM005] (architecture) SQLAlchemy 2.0 uses relationship(back_populates=...) for bidirectional relationships, not backref. This makes relationships explicit on both sides for clearer code.

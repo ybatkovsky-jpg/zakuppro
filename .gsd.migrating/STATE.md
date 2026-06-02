@@ -21,4 +21,4 @@
 - None
 
 ## Next Action
-Execute T02: Create Payment Matcher Core Service in slice S04.
+Execute T03: Add Payment and UnresolvedTransaction Creation to Matcher in slice S04.

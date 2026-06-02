@@ -166,11 +166,45 @@ class TestPaymentMatcher:
         """Test INN + amount within ±5% tolerance yields confidence 0.85-0.99."""
         matcher = PaymentMatcher(db_session)
 
+        # Helper to create a fresh invoice for each test with distinct amounts
+        def _create_fresh_invoice(total_amount: Decimal):
+            po = PurchaseOrder(
+                project_id=test_data["project"].id,
+                supplier_id=test_data["supplier_with_inn"].id,
+                status="Сверен",
+            )
+            db_session.add(po)
+            db_session.flush()
+
+            invoice = Invoice(
+                purchase_order_id=po.id,
+                status="Ожидает оплаты",
+                raw_text="Test invoice",
+            )
+            db_session.add(invoice)
+            db_session.flush()
+
+            # Add item with the specified total
+            item = InvoiceItem(
+                invoice_id=invoice.id,
+                name="Item",
+                sku="SKU001",
+                qty=1,
+                unit_price=total_amount,
+                total_price=total_amount,
+            )
+            db_session.add(item)
+            db_session.flush()
+            return invoice
+
         # Test at -5% tolerance boundary (confidence should be >= 0.85)
+        # Use a unique invoice total that won't conflict with test_data invoice (15000)
+        invoice_total_min = Decimal("20000.00")
+        invoice_min = _create_fresh_invoice(invoice_total_min)
         transaction_min = BankTransaction(
             bank_statement_id=test_data["statement"].id,
             transaction_date=datetime.utcnow(),
-            amount=Decimal("14250.00"),  # 15000 - 5%
+            amount=Decimal("19000.00"),  # 20000 - 5%
             supplier_inn="1234567890",
             description="Payment at -5% tolerance",
             operation_type="Debit",
@@ -190,10 +224,12 @@ class TestPaymentMatcher:
         assert audit_min.confidence_score >= Decimal("0.85")
 
         # Test at +5% tolerance boundary
+        invoice_total_max = Decimal("25000.00")
+        invoice_max = _create_fresh_invoice(invoice_total_max)
         transaction_max = BankTransaction(
             bank_statement_id=test_data["statement"].id,
             transaction_date=datetime.utcnow(),
-            amount=Decimal("15750.00"),  # 15000 + 5%
+            amount=Decimal("26250.00"),  # 25000 + 5%
             supplier_inn="1234567890",
             description="Payment at +5% tolerance",
             operation_type="Debit",
@@ -213,10 +249,12 @@ class TestPaymentMatcher:
         assert audit_max.confidence_score >= Decimal("0.85")
 
         # Test at 2.5% tolerance (confidence > 0.85 and < 1.00)
+        invoice_total_mid = Decimal("30000.00")
+        invoice_mid = _create_fresh_invoice(invoice_total_mid)
         transaction_mid = BankTransaction(
             bank_statement_id=test_data["statement"].id,
             transaction_date=datetime.utcnow(),
-            amount=Decimal("14625.00"),  # 15000 - 2.5%
+            amount=Decimal("29250.00"),  # 30000 - 2.5%
             supplier_inn="1234567890",
             description="Payment at -2.5% tolerance",
             operation_type="Debit",
@@ -450,9 +488,44 @@ class TestPaymentMatcher:
 
     def test_batch_matching(self, db_session: Session, test_data: dict):
         """Test batch matching of multiple transactions."""
-        # Create multiple transactions
+        # Helper to create a fresh invoice with specified total
+        def _create_fresh_invoice(total_amount: Decimal):
+            po = PurchaseOrder(
+                project_id=test_data["project"].id,
+                supplier_id=test_data["supplier_with_inn"].id,
+                status="Сверен",
+            )
+            db_session.add(po)
+            db_session.flush()
+
+            invoice = Invoice(
+                purchase_order_id=po.id,
+                status="Ожидает оплаты",
+                raw_text="Test invoice",
+            )
+            db_session.add(invoice)
+            db_session.flush()
+
+            # Add item with the specified total
+            item = InvoiceItem(
+                invoice_id=invoice.id,
+                name="Item",
+                sku="SKU001",
+                qty=1,
+                unit_price=total_amount,
+                total_price=total_amount,
+            )
+            db_session.add(item)
+            db_session.flush()
+            return invoice
+
+        # Create invoices with unique amounts to avoid ambiguity
+        invoice1 = _create_fresh_invoice(Decimal("20000.00"))
+        invoice2 = _create_fresh_invoice(Decimal("21000.00"))
+
+        # Create multiple transactions - two should match, one should not
         transaction_ids = []
-        for i, amount in enumerate([Decimal("15000.00"), Decimal("14250.00"), Decimal("14000.00")]):
+        for i, amount in enumerate([Decimal("20000.00"), Decimal("21000.00"), Decimal("25000.00")]):
             transaction = BankTransaction(
                 bank_statement_id=test_data["statement"].id,
                 transaction_date=datetime.utcnow(),
@@ -468,15 +541,52 @@ class TestPaymentMatcher:
         matcher = PaymentMatcher(db_session)
         result = matcher.match_batch(transaction_ids)
 
-        # First two should match, third should be unresolved
+        # First two should match (20000 and 21000), third (25000) should be unresolved
         assert result.matched_count == 2
         assert result.unresolved_count == 1
         assert len(result.payment_ids) == 2
 
     def test_match_statement_transactions(self, db_session: Session, test_data: dict):
         """Test matching all transactions from a bank statement."""
-        # Add transactions to statement
-        for i, amount in enumerate([Decimal("15000.00"), Decimal("15750.00")]):
+        # Helper to create a fresh invoice with specified total
+        def _create_fresh_invoice(total_amount: Decimal):
+            po = PurchaseOrder(
+                project_id=test_data["project"].id,
+                supplier_id=test_data["supplier_with_inn"].id,
+                status="Сверен",
+            )
+            db_session.add(po)
+            db_session.flush()
+
+            invoice = Invoice(
+                purchase_order_id=po.id,
+                status="Ожидает оплаты",
+                raw_text="Test invoice",
+            )
+            db_session.add(invoice)
+            db_session.flush()
+
+            # Add item with the specified total
+            item = InvoiceItem(
+                invoice_id=invoice.id,
+                name="Item",
+                sku="SKU001",
+                qty=1,
+                unit_price=total_amount,
+                total_price=total_amount,
+            )
+            db_session.add(item)
+            db_session.flush()
+            return invoice
+
+        # Create invoices with amounts that have non-overlapping tolerance ranges
+        # 20000 ± 5% = [19000, 21000]
+        # 50000 ± 5% = [47500, 52500] - no overlap
+        invoice1 = _create_fresh_invoice(Decimal("20000.00"))
+        invoice2 = _create_fresh_invoice(Decimal("50000.00"))
+
+        # Add transactions to statement - both should match exactly
+        for i, amount in enumerate([Decimal("20000.00"), Decimal("50000.00")]):
             transaction = BankTransaction(
                 bank_statement_id=test_data["statement"].id,
                 transaction_date=datetime.utcnow(),
@@ -510,6 +620,68 @@ class TestPaymentMatcher:
         assert result_dict["unresolved_count"] == 2
         assert result_dict["payment_ids"] == [1, 2, 3, 4, 5]
         assert result_dict["errors"] == ["Error 1"]
+
+    def test_create_payment_updates_invoice_status(self, db_session: Session, test_data: dict):
+        """Test that successful payment match updates Invoice.status to 'Оплачен'."""
+        # Create bank transaction with exact amount match
+        transaction = BankTransaction(
+            bank_statement_id=test_data["statement"].id,
+            transaction_date=datetime.utcnow(),
+            amount=Decimal("15000.00"),  # Exact match to invoice total
+            supplier_inn="1234567890",
+            description="Payment to Supplier",
+            operation_type="Debit",
+        )
+        db_session.add(transaction)
+        db_session.flush()
+
+        # Verify initial invoice status
+        invoice = test_data["invoice"]
+        assert invoice.status == "Ожидает оплаты"
+
+        # Match transaction
+        matcher = PaymentMatcher(db_session)
+        result = matcher.match_transaction(transaction.id)
+
+        # Verify match succeeded
+        assert result.matched_count == 1
+        assert len(result.payment_ids) == 1
+
+        # Verify Invoice status was updated to "Оплачен"
+        db_session.refresh(invoice)
+        assert invoice.status == "Оплачен"
+
+    def test_create_unresolved_transaction_sets_status(self, db_session: Session, test_data: dict):
+        """Test that UnresolvedTransaction is created with correct status."""
+        # Create transaction that will be unresolved (no matching supplier)
+        transaction = BankTransaction(
+            bank_statement_id=test_data["statement"].id,
+            transaction_date=datetime.utcnow(),
+            amount=Decimal("15000.00"),
+            supplier_inn="9999999999",  # Non-existent INN
+            description="Payment to unknown supplier",
+            operation_type="Debit",
+        )
+        db_session.add(transaction)
+        db_session.flush()
+
+        # Match transaction
+        matcher = PaymentMatcher(db_session)
+        result = matcher.match_transaction(transaction.id)
+
+        # Verify unresolved created
+        assert result.matched_count == 0
+        assert result.unresolved_count == 1
+
+        # Verify UnresolvedTransaction status is "Не распределено"
+        unresolved = (
+            db_session.query(UnresolvedTransaction)
+            .filter(UnresolvedTransaction.amount == Decimal("15000.00"))
+            .first()
+        )
+        assert unresolved is not None
+        assert unresolved.status == "Не распределено"
+        assert unresolved.bank_date == transaction.transaction_date
 
 
 class TestMatchPaymentConvenienceFunction:
