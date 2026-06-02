@@ -1211,3 +1211,155 @@ def parse_bank_statement(self, filename: str, file_content: bytes, metadata: dic
         if db is not None:
             db.close()
             logger.info(f"Task {task_id}: Database session closed")
+
+
+@app.task(name='tasks.match_bank_transactions', bind=True, max_retries=2)
+def match_bank_transactions(self, bank_statement_id: Optional[int] = None, bank_transaction_id: Optional[int] = None) -> dict:
+    """
+    Match bank transactions to invoices using PaymentMatcher service.
+
+    This task performs auto-reconciliation by:
+    1. Calling PaymentMatcher to match transactions to invoices
+    2. Creating Payment records on successful matches
+    3. Creating UnresolvedTransaction records for unmatched transactions
+    4. Returning summary with matched/unresolved counts and payment IDs
+
+    Can operate in two modes:
+    - bank_statement_id: Match all transactions from a bank statement
+    - bank_transaction_id: Match a single transaction
+
+    On rate limit errors, task retries with exponential backoff.
+    After max_retries=2, task goes to DLQ with FailedTask record.
+
+    Args:
+        bank_statement_id: BankStatement ID (optional, mutually exclusive with bank_transaction_id)
+        bank_transaction_id: BankTransaction ID (optional, mutually exclusive with bank_statement_id)
+
+    Returns:
+        dict: Result with keys:
+            - status: 'success' or 'error'
+            - matched_count: Number of transactions matched to invoices
+            - unresolved_count: Number of transactions sent to unresolved queue
+            - payment_ids: List of created Payment record IDs
+            - errors: List of error messages encountered during matching
+            - task_id: Celery task ID
+
+    Raises:
+        ValueError: If neither bank_statement_id nor bank_transaction_id provided
+        ValueError: If both parameters provided (must be exclusive)
+        RateLimitError: Triggers retry with exponential backoff
+    """
+    task_id = self.request.id
+    logger.info(
+        f"Task {task_id}: match_bank_transactions started - "
+        f"bank_statement_id={bank_statement_id}, bank_transaction_id={bank_transaction_id}, "
+        f"retry={self.request.retries}"
+    )
+
+    db = None
+
+    try:
+        from backend.database import SessionLocal
+        from backend.models import FailedTask
+        from backend.services.payment_matcher import PaymentMatcher
+
+        # Validate inputs: exactly one parameter must be provided
+        if bank_statement_id is None and bank_transaction_id is None:
+            error_msg = "Either bank_statement_id or bank_transaction_id must be provided"
+            logger.error(f"Task {task_id}: {error_msg}")
+            raise ValueError(error_msg)
+
+        if bank_statement_id is not None and bank_transaction_id is not None:
+            error_msg = "bank_statement_id and bank_transaction_id are mutually exclusive"
+            logger.error(f"Task {task_id}: {error_msg}")
+            raise ValueError(error_msg)
+
+        # Step 1: Create database session
+        logger.info(f"Task {task_id}: Creating database session")
+        db = SessionLocal()
+
+        # Step 2: Initialize PaymentMatcher
+        logger.info(f"Task {task_id}: Initializing PaymentMatcher")
+        matcher = PaymentMatcher(db)
+
+        # Step 3: Call appropriate matching method
+        if bank_statement_id is not None:
+            logger.info(f"Task {task_id}: Matching transactions for bank_statement_id={bank_statement_id}")
+            match_result = matcher.match_statement_transactions(bank_statement_id)
+        else:
+            logger.info(f"Task {task_id}: Matching transaction bank_transaction_id={bank_transaction_id}")
+            match_result = matcher.match_transaction(bank_transaction_id)
+
+        # Step 4: Log result summary
+        logger.info(
+            f"Task {task_id}: Matching complete - "
+            f"{match_result.matched_count} matched, {match_result.unresolved_count} unresolved, "
+            f"{len(match_result.payment_ids)} payments created, {len(match_result.errors)} errors"
+        )
+
+        result = {
+            'status': 'success',
+            'matched_count': match_result.matched_count,
+            'unresolved_count': match_result.unresolved_count,
+            'payment_ids': match_result.payment_ids,
+            'errors': match_result.errors,
+            'task_id': task_id,
+        }
+
+        logger.info(f"Task {task_id}: match_bank_transactions completed successfully")
+        return result
+
+    except RateLimitError as e:
+        # Retry with exponential backoff
+        retry_count = self.request.retries
+        countdown = 2 ** retry_count  # 1, 2, 4...
+        logger.warning(
+            f"Task {task_id}: Rate limit hit, "
+            f"retrying in {countdown}s (attempt {retry_count + 1}/3)"
+        )
+        raise self.retry(exc=e, countdown=countdown, max_retries=2)
+
+    except Exception as e:
+        # Handle error: create FailedTask for DLQ
+        error_message = f"{type(e).__name__}: {str(e)}\n\n{traceback.format_exc()}"
+
+        logger.error(f"Task {task_id}: Error occurred - {error_message}")
+
+        try:
+            from backend.database import SessionLocal
+            from backend.models import FailedTask
+
+            if db is None:
+                db = SessionLocal()
+
+            # Create FailedTask record for DLQ
+            failed_task = FailedTask(
+                task_id=task_id,
+                task_name='tasks.match_bank_transactions',
+                error_message=error_message,
+                error_type=type(e).__name__,
+                file_path=None,
+                chat_id=None,
+                context=json.dumps({
+                    'bank_statement_id': bank_statement_id,
+                    'bank_transaction_id': bank_transaction_id,
+                })
+            )
+            db.add(failed_task)
+            db.commit()
+            logger.info(f"Task {task_id}: FailedTask record created")
+
+        except Exception as inner_error:
+            logger.error(
+                f"Task {task_id}: Failed to create FailedTask - {inner_error}",
+                exc_info=True
+            )
+
+        # Re-raise original exception for Celery DLQ handling
+        raise
+
+    finally:
+        # Always close database session
+        if db is not None:
+            db.close()
+            logger.info(f"Task {task_id}: Database session closed")
