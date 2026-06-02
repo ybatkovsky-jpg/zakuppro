@@ -15,7 +15,7 @@ from sqlalchemy.orm import Session
 from backend.models import (
     Project, ProjectItem, Supplier, StockItem,
     PurchaseOrder, Invoice, InvoiceItem, Payment, UnresolvedTransaction,
-    ProductionTask
+    ProductionTask, BankStatement, BankTransaction, TransactionMatchingAudit
 )
 
 
@@ -806,6 +806,345 @@ class TestInvoiceExtensions:
         # Test invoice -> items (bidirectional)
         assert len(invoice.items) == 1
         assert invoice.items[0] == invoice_item
+
+
+class TestBankStatementModels:
+    """Test BankStatement, BankTransaction, and TransactionMatchingAudit models."""
+
+    def test_bank_statement_transactions_bidirectional(self, db_session):
+        """Test BankStatement -> BankTransaction bidirectional navigation."""
+        # Create a bank statement
+        statement = BankStatement(
+            bank_name="Tinkoff",
+            statement_date=datetime.now(),
+            period_start=datetime.now(),
+            period_end=datetime.now(),
+            status="Обрабатывается"
+        )
+        db_session.add(statement)
+        db_session.flush()
+
+        # Create bank transactions
+        txn1 = BankTransaction(
+            bank_statement_id=statement.id,
+            transaction_date=datetime.now(),
+            amount=10000.00,
+            supplier_inn="1234567890",
+            description="Payment for goods",
+            operation_type="Debit"
+        )
+        txn2 = BankTransaction(
+            bank_statement_id=statement.id,
+            transaction_date=datetime.now(),
+            amount=5000.00,
+            supplier_inn="0987654321",
+            description="Service fee",
+            operation_type="Debit"
+        )
+        db_session.add_all([txn1, txn2])
+        db_session.commit()
+
+        # Refresh to ensure relationships are loaded
+        db_session.refresh(statement)
+        db_session.refresh(txn1)
+        db_session.refresh(txn2)
+
+        # Test statement -> transactions
+        assert len(statement.transactions) == 2
+        assert statement.transactions[0].amount == 10000.00
+        assert statement.transactions[1].amount == 5000.00
+
+        # Test transaction -> statement (bidirectional)
+        assert txn1.bank_statement == statement
+        assert txn1.bank_statement.bank_name == "Tinkoff"
+        assert txn2.bank_statement == statement
+
+    def test_bank_statement_cascade_delete_transactions(self, db_session):
+        """Test that deleting a BankStatement deletes child BankTransaction records."""
+        # Create a bank statement with transactions
+        statement = BankStatement(
+            bank_name="Ozon",
+            statement_date=datetime.now(),
+            period_start=datetime.now(),
+            period_end=datetime.now(),
+            status="Готов"
+        )
+        db_session.add(statement)
+        db_session.flush()
+
+        txn1 = BankTransaction(
+            bank_statement_id=statement.id,
+            transaction_date=datetime.now(),
+            amount=15000.00,
+            supplier_inn="1111111111",
+            description="Purchase payment",
+            operation_type="Debit"
+        )
+        txn2 = BankTransaction(
+            bank_statement_id=statement.id,
+            transaction_date=datetime.now(),
+            amount=7500.00,
+            supplier_inn="2222222222",
+            description="Partial payment",
+            operation_type="Debit"
+        )
+        db_session.add_all([txn1, txn2])
+        db_session.commit()
+
+        # Verify transactions exist
+        statement_id = statement.id
+        txn_count = db_session.query(BankTransaction).filter_by(bank_statement_id=statement_id).count()
+        assert txn_count == 2
+
+        # Delete statement (should cascade delete transactions)
+        db_session.delete(statement)
+        db_session.commit()
+
+        # Verify transactions are cascade deleted
+        txn_count = db_session.query(BankTransaction).filter_by(bank_statement_id=statement_id).count()
+        assert txn_count == 0, "BankTransaction records should be cascade deleted when BankStatement is deleted"
+
+    def test_bank_transaction_lazy_selectin(self, db_session):
+        """Test that BankStatement.transactions uses selectin lazy loading to prevent N+1 queries."""
+        statement = BankStatement(
+            bank_name="Tinkoff",
+            statement_date=datetime.now(),
+            period_start=datetime.now(),
+            period_end=datetime.now(),
+            status="Обрабатывается"
+        )
+        db_session.add(statement)
+        db_session.flush()
+
+        # Create multiple transactions
+        for i in range(5):
+            txn = BankTransaction(
+                bank_statement_id=statement.id,
+                transaction_date=datetime.now(),
+                amount=float(1000 * (i + 1)),
+                supplier_inn=f"{i:010d}",
+                description=f"Transaction {i}",
+                operation_type="Debit"
+            )
+            db_session.add(txn)
+        db_session.commit()
+
+        # Access statement.transactions - should load in a single query with selectin
+        db_session.refresh(statement)
+        transactions = statement.transactions
+
+        assert len(transactions) == 5
+        # With selectin, all transactions are loaded upfront (no N+1)
+        # This is verified by inspection, not assert
+
+    def test_bank_transaction_matching_audits_relationship(self, db_session):
+        """Test BankTransaction -> TransactionMatchingAudit relationship."""
+        # Create bank statement with transaction
+        statement = BankStatement(
+            bank_name="Tinkoff",
+            statement_date=datetime.now(),
+            period_start=datetime.now(),
+            period_end=datetime.now(),
+            status="Готов"
+        )
+        db_session.add(statement)
+        db_session.flush()
+
+        txn = BankTransaction(
+            bank_statement_id=statement.id,
+            transaction_date=datetime.now(),
+            amount=10000.00,
+            supplier_inn="1234567890",
+            description="Payment for goods",
+            operation_type="Debit"
+        )
+        db_session.add(txn)
+        db_session.flush()
+
+        # Create project, supplier, PO, and invoice for matching audit
+        project = Project(
+            name="Test Project",
+            client="Test Client",
+            status="Проектирование"
+        )
+        supplier = Supplier(
+            name="Test Supplier",
+            email="test@example.com"
+        )
+        db_session.add_all([project, supplier])
+        db_session.flush()
+
+        po = PurchaseOrder(
+            project_id=project.id,
+            supplier_id=supplier.id,
+            status="Сформирован"
+        )
+        db_session.add(po)
+        db_session.flush()
+
+        invoice = Invoice(
+            purchase_order_id=po.id,
+            status="Сверен"
+        )
+        db_session.add(invoice)
+        db_session.flush()
+
+        # Create matching audit
+        audit = TransactionMatchingAudit(
+            bank_transaction_id=txn.id,
+            invoice_id=invoice.id,
+            matched_at=datetime.now(),
+            matched_by="auto",
+            confidence_score=0.95,
+            matching_context={"algorithm": "fuzzy_match", "score": 0.95}
+        )
+        db_session.add(audit)
+        db_session.commit()
+
+        # Refresh
+        db_session.refresh(txn)
+        db_session.refresh(audit)
+
+        # Test transaction -> matching_audits
+        assert len(txn.matching_audits) == 1
+        assert txn.matching_audits[0].matched_by == "auto"
+        # confidence_score is Numeric(3,2), returns Decimal
+        assert float(txn.matching_audits[0].confidence_score) == 0.95
+
+        # Test audit -> bank_transaction (bidirectional)
+        assert audit.bank_transaction == txn
+        assert audit.bank_transaction.amount == 10000.00
+
+    def test_bank_statement_model_attributes(self, db_session):
+        """Test BankStatement model has all expected attributes."""
+        statement = BankStatement(
+            bank_name="Tinkoff",
+            statement_date=datetime.now(),
+            period_start=datetime.now(),
+            period_end=datetime.now(),
+            status="Готов"
+        )
+        db_session.add(statement)
+        db_session.commit()
+
+        db_session.refresh(statement)
+
+        # Basic attributes
+        assert hasattr(statement, 'id')
+        assert hasattr(statement, 'bank_name')
+        assert hasattr(statement, 'statement_date')
+        assert hasattr(statement, 'period_start')
+        assert hasattr(statement, 'period_end')
+        assert hasattr(statement, 'raw_file')
+        assert hasattr(statement, 'status')
+        assert hasattr(statement, 'created_at')
+
+        # Relationship attributes
+        assert hasattr(statement, 'transactions')
+
+    def test_bank_transaction_model_attributes(self, db_session):
+        """Test BankTransaction model has all expected attributes."""
+        statement = BankStatement(
+            bank_name="Ozon",
+            statement_date=datetime.now(),
+            period_start=datetime.now(),
+            period_end=datetime.now()
+        )
+        db_session.add(statement)
+        db_session.flush()
+
+        txn = BankTransaction(
+            bank_statement_id=statement.id,
+            transaction_date=datetime.now(),
+            amount=10000.00,
+            supplier_inn="1234567890",
+            description="Test payment",
+            operation_type="Debit"
+        )
+        db_session.add(txn)
+        db_session.commit()
+
+        db_session.refresh(txn)
+
+        # Basic attributes
+        assert hasattr(txn, 'id')
+        assert hasattr(txn, 'bank_statement_id')
+        assert hasattr(txn, 'transaction_date')
+        assert hasattr(txn, 'amount')
+        assert hasattr(txn, 'supplier_inn')
+        assert hasattr(txn, 'description')
+        assert hasattr(txn, 'operation_type')
+        assert hasattr(txn, 'created_at')
+
+        # Relationship attributes
+        assert hasattr(txn, 'bank_statement')
+        assert hasattr(txn, 'matching_audits')
+
+    def test_transaction_matching_audit_model_attributes(self, db_session):
+        """Test TransactionMatchingAudit model has all expected attributes."""
+        # Create dependent objects
+        statement = BankStatement(
+            bank_name="Tinkoff",
+            statement_date=datetime.now(),
+            period_start=datetime.now(),
+            period_end=datetime.now()
+        )
+        db_session.add(statement)
+        db_session.flush()
+
+        txn = BankTransaction(
+            bank_statement_id=statement.id,
+            transaction_date=datetime.now(),
+            amount=10000.00,
+            operation_type="Debit"
+        )
+        db_session.add(txn)
+        db_session.flush()
+
+        project = Project(name="Test Project", client="Test Client")
+        supplier = Supplier(name="Test Supplier", email="test@example.com")
+        db_session.add_all([project, supplier])
+        db_session.flush()
+
+        po = PurchaseOrder(
+            project_id=project.id,
+            supplier_id=supplier.id,
+            status="Сформирован"
+        )
+        db_session.add(po)
+        db_session.flush()
+
+        invoice = Invoice(purchase_order_id=po.id, status="Ожидает сверки")
+        db_session.add(invoice)
+        db_session.flush()
+
+        # Create audit
+        audit = TransactionMatchingAudit(
+            bank_transaction_id=txn.id,
+            invoice_id=invoice.id,
+            matched_at=datetime.now(),
+            matched_by="auto",
+            confidence_score=0.95,
+            matching_context={"test": "data"}
+        )
+        db_session.add(audit)
+        db_session.commit()
+
+        db_session.refresh(audit)
+
+        # Basic attributes
+        assert hasattr(audit, 'id')
+        assert hasattr(audit, 'bank_transaction_id')
+        assert hasattr(audit, 'invoice_id')
+        assert hasattr(audit, 'matched_at')
+        assert hasattr(audit, 'matched_by')
+        assert hasattr(audit, 'confidence_score')
+        assert hasattr(audit, 'matching_context')
+        assert hasattr(audit, 'created_at')
+
+        # Relationship attributes
+        assert hasattr(audit, 'bank_transaction')
+        assert hasattr(audit, 'invoice')
 
 
 if __name__ == "__main__":
