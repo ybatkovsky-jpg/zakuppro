@@ -1,5 +1,5 @@
 {
-  "compiledAt": "2026-06-02T10:14:13.692Z",
+  "compiledAt": "2026-06-02T10:24:33.661Z",
   "milestoneId": "M004",
   "pipeline": {
     "clarifyRoundLimit": 3,
@@ -272,12 +272,15 @@
       "dependsOn": [
         "execute-task:M004:S04:T02"
       ],
-      "writes": [],
+      "writes": [
+        "backend/services/payment_matcher.py",
+        "backend/tests/test_payment_matcher.py"
+      ],
       "metadata": {
         "unitType": "execute-task",
         "unitId": "M004.S04.T03",
-        "title": "Add Payment and UnresolvedTransaction Creation to Matcher",
-        "status": "pending"
+        "title": "Enabled Invoice.status=\"Оплачен\" update on successful payment match and added tests for Payment/UnresolvedTransaction creation",
+        "status": "complete"
       }
     },
     {

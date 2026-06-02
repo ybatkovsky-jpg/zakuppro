@@ -1,0 +1,18 @@
+{
+  "schemaVersion": 1,
+  "taskId": "T03",
+  "unitId": "M004/S04/T03",
+  "timestamp": 1780395864104,
+  "passed": false,
+  "discoverySource": "task-plan",
+  "checks": [
+    {
+      "command": "pytest backend/tests/test_payment_matcher.py -v -k test_create_payment or test_create_unresolved",
+      "exitCode": 4,
+      "durationMs": 1938,
+      "verdict": "fail"
+    }
+  ],
+  "retryAttempt": 1,
+  "maxRetries": 2
+}

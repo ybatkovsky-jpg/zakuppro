@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "exported_at": "2026-06-02T10:13:29.825Z",
+  "exported_at": "2026-06-02T10:24:16.283Z",
   "milestones": [
     {
       "id": "M001",
@@ -4065,19 +4065,25 @@
       "milestone_id": "M004",
       "slice_id": "S04",
       "id": "T03",
-      "title": "Add Payment and UnresolvedTransaction Creation to Matcher",
-      "status": "pending",
-      "one_liner": "",
-      "narrative": "",
-      "verification_result": "",
+      "title": "Enabled Invoice.status=\"Оплачен\" update on successful payment match and added tests for Payment/UnresolvedTransaction creation",
+      "status": "complete",
+      "one_liner": "Enabled Invoice.status=\"Оплачен\" update on successful payment match and added tests for Payment/UnresolvedTransaction creation",
+      "narrative": "Extended PaymentMatcher to update Invoice.status to \"Оплачен\" (Paid) on successful payment match. The implementation was already in place for _create_payment_record and _create_unresolved_transaction methods from T02. The key change was uncommenting and activating the invoice status update in _create_payment method (line 626).\n\nAdded two new tests:\n1. test_create_payment_updates_invoice_status - Verifies that Invoice.status changes from \"Ожидает оплаты\" to \"Оплачен\" after successful payment match\n2. test_create_unresolved_transaction_sets_status - Verifies that UnresolvedTransaction records are created with status=\"Не распределено\" and correct bank_date\n\nUpdated existing tests (test_tolerance_match_confidence_0_85_to_0_99, test_batch_matching, test_match_statement_transactions) to create separate invoices with unique amounts to avoid ambiguity after the Invoice.status change prevents multiple payments to the same invoice.",
+      "verification_result": "Ran pytest backend/tests/test_payment_matcher.py::TestPaymentMatcher::test_create_payment_updates_invoice_status and test_create_unresolved_transaction_sets_status. Both tests PASSED, verifying:\n- Payment record creation with invoice_id, amount, bank_transaction_id, payment_date\n- TransactionMatchingAudit creation with confidence_score and matching_context JSON\n- Invoice.status update to \"Оплачен\" on successful match\n- UnresolvedTransaction creation with status=\"Не распределено\", amount, description, bank_date\n\nAll 18 tests in the payment matcher test suite pass.",
       "duration": "",
-      "completed_at": null,
+      "completed_at": "2026-06-02T10:24:16.209Z",
       "blocker_discovered": false,
-      "deviations": "",
-      "known_issues": "",
-      "key_files": [],
-      "key_decisions": [],
-      "full_summary_md": "",
+      "deviations": "None.",
+      "known_issues": "None.",
+      "key_files": [
+        "backend/services/payment_matcher.py",
+        "backend/tests/test_payment_matcher.py"
+      ],
+      "key_decisions": [
+        "Activated Invoice.status update to 'Оплачен' on successful payment match - this was previously commented out in T02",
+        "Updated test fixtures to create separate invoices with unique amounts to avoid candidate ambiguity after status change prevents re-matching paid invoices"
+      ],
+      "full_summary_md": "---\nid: T03\nparent: S04\nmilestone: M004\nkey_files:\n  - backend/services/payment_matcher.py\n  - backend/tests/test_payment_matcher.py\nkey_decisions:\n  - Activated Invoice.status update to 'Оплачен' on successful payment match - this was previously commented out in T02\n  - Updated test fixtures to create separate invoices with unique amounts to avoid candidate ambiguity after status change prevents re-matching paid invoices\nduration: \nverification_result: passed\ncompleted_at: 2026-06-02T10:24:16.206Z\nblocker_discovered: false\n---\n\n# T03: Enabled Invoice.status=\"Оплачен\" update on successful payment match and added tests for Payment/UnresolvedTransaction creation\n\n**Enabled Invoice.status=\"Оплачен\" update on successful payment match and added tests for Payment/UnresolvedTransaction creation**\n\n## What Happened\n\nExtended PaymentMatcher to update Invoice.status to \"Оплачен\" (Paid) on successful payment match. The implementation was already in place for _create_payment_record and _create_unresolved_transaction methods from T02. The key change was uncommenting and activating the invoice status update in _create_payment method (line 626).\n\nAdded two new tests:\n1. test_create_payment_updates_invoice_status - Verifies that Invoice.status changes from \"Ожидает оплаты\" to \"Оплачен\" after successful payment match\n2. test_create_unresolved_transaction_sets_status - Verifies that UnresolvedTransaction records are created with status=\"Не распределено\" and correct bank_date\n\nUpdated existing tests (test_tolerance_match_confidence_0_85_to_0_99, test_batch_matching, test_match_statement_transactions) to create separate invoices with unique amounts to avoid ambiguity after the Invoice.status change prevents multiple payments to the same invoice.\n\n## Verification\n\nRan pytest backend/tests/test_payment_matcher.py::TestPaymentMatcher::test_create_payment_updates_invoice_status and test_create_unresolved_transaction_sets_status. Both tests PASSED, verifying:\n- Payment record creation with invoice_id, amount, bank_transaction_id, payment_date\n- TransactionMatchingAudit creation with confidence_score and matching_context JSON\n- Invoice.status update to \"Оплачен\" on successful match\n- UnresolvedTransaction creation with status=\"Не распределено\", amount, description, bank_date\n\nAll 18 tests in the payment matcher test suite pass.\n\n## Verification Evidence\n\n| # | Command | Exit Code | Verdict | Duration |\n|---|---------|-----------|---------|----------|\n| 1 | `pytest backend/tests/test_payment_matcher.py::TestPaymentMatcher::test_create_payment_updates_invoice_status -v` | 0 | PASS | 260ms |\n| 2 | `pytest backend/tests/test_payment_matcher.py::TestPaymentMatcher::test_create_unresolved_transaction_sets_status -v` | 0 | PASS | 260ms |\n| 3 | `pytest backend/tests/test_payment_matcher.py -v` | 0 | PASS | 1150ms |\n\n## Deviations\n\nNone.\n\n## Known Issues\n\nNone.\n\n## Files Created/Modified\n\n- `backend/services/payment_matcher.py`\n- `backend/tests/test_payment_matcher.py`\n",
       "description": "Extend PaymentMatcher with _create_payment_record and _create_unresolved_transaction methods. _create_payment_record creates Payment with invoice_id, amount, bank_transaction_id as string, payment_date and TransactionMatchingAudit with confidence_score and matching_context JSON. _create_unresolved_transaction creates UnresolvedTransaction with amount, description, bank_date, status equals Ne raspredeleno. Update Invoice.status to Oplacheno on successful match. Add methods to call create_payment on match, create_unresolved on failure. Commit DB changes after each transaction processed.",
       "estimate": "1.5h",
       "files": [
@@ -5981,6 +5987,39 @@
       "verdict": "PASS",
       "duration_ms": 1100,
       "created_at": "2026-06-02T10:13:29.747Z"
+    },
+    {
+      "id": 167,
+      "task_id": "T03",
+      "slice_id": "S04",
+      "milestone_id": "M004",
+      "command": "pytest backend/tests/test_payment_matcher.py::TestPaymentMatcher::test_create_payment_updates_invoice_status -v",
+      "exit_code": 0,
+      "verdict": "PASS",
+      "duration_ms": 260,
+      "created_at": "2026-06-02T10:24:16.209Z"
+    },
+    {
+      "id": 168,
+      "task_id": "T03",
+      "slice_id": "S04",
+      "milestone_id": "M004",
+      "command": "pytest backend/tests/test_payment_matcher.py::TestPaymentMatcher::test_create_unresolved_transaction_sets_status -v",
+      "exit_code": 0,
+      "verdict": "PASS",
+      "duration_ms": 260,
+      "created_at": "2026-06-02T10:24:16.210Z"
+    },
+    {
+      "id": 169,
+      "task_id": "T03",
+      "slice_id": "S04",
+      "milestone_id": "M004",
+      "command": "pytest backend/tests/test_payment_matcher.py -v",
+      "exit_code": 0,
+      "verdict": "PASS",
+      "duration_ms": 1150,
+      "created_at": "2026-06-02T10:24:16.210Z"
     }
   ]
 }

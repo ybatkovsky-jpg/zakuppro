@@ -38,7 +38,7 @@ Upstream surfaces consumed: BankStatement/BankTransaction from S03 parse_bank_st
   - Files: `backend/services/payment_matcher.py`
   - Verify: python -c from backend.services.payment_matcher import PaymentMatcher; print OK
 
-- [ ] **T03: Add Payment and UnresolvedTransaction Creation to Matcher** `est:1.5h`
+- [x] **T03: Add Payment and UnresolvedTransaction Creation to Matcher** `est:1.5h`
   Extend PaymentMatcher with _create_payment_record and _create_unresolved_transaction methods. _create_payment_record creates Payment with invoice_id, amount, bank_transaction_id as string, payment_date and TransactionMatchingAudit with confidence_score and matching_context JSON. _create_unresolved_transaction creates UnresolvedTransaction with amount, description, bank_date, status equals Ne raspredeleno. Update Invoice.status to Oplacheno on successful match. Add methods to call create_payment on match, create_unresolved on failure. Commit DB changes after each transaction processed.
   - Files: `backend/services/payment_matcher.py`
   - Verify: pytest backend/tests/test_payment_matcher.py -v -k test_create_payment or test_create_unresolved

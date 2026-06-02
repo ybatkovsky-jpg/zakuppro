@@ -1,0 +1,18 @@
+{
+  "id": "acc6f1e9-f17b-4769-85cd-df94f4dcfdd6",
+  "runtime": "bash",
+  "purpose": "Run pytest for payment matcher tests",
+  "script_chars": 155,
+  "started_at": "2026-06-02T10:20:35.767Z",
+  "finished_at": "2026-06-02T10:20:35.840Z",
+  "exit_code": 1,
+  "signal": null,
+  "timed_out": false,
+  "duration_ms": 73,
+  "stdout_bytes": 544,
+  "stderr_bytes": 0,
+  "stdout_truncated": false,
+  "stderr_truncated": false,
+  "stdout_path": "D:\\CLAUDE\\Project\\zakuppro\\zakuppro\\.gsd\\exec\\acc6f1e9-f17b-4769-85cd-df94f4dcfdd6.stdout",
+  "stderr_path": "D:\\CLAUDE\\Project\\zakuppro\\zakuppro\\.gsd\\exec\\acc6f1e9-f17b-4769-85cd-df94f4dcfdd6.stderr"
+}

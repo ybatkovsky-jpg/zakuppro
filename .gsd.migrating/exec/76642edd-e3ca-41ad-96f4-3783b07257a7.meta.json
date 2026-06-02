@@ -1,0 +1,18 @@
+{
+  "id": "76642edd-e3ca-41ad-96f4-3783b07257a7",
+  "runtime": "bash",
+  "purpose": "Run payment matcher verification tests",
+  "script_chars": 157,
+  "started_at": "2026-06-02T10:20:31.065Z",
+  "finished_at": "2026-06-02T10:20:31.158Z",
+  "exit_code": 1,
+  "signal": null,
+  "timed_out": false,
+  "duration_ms": 93,
+  "stdout_bytes": 544,
+  "stderr_bytes": 0,
+  "stdout_truncated": false,
+  "stderr_truncated": false,
+  "stdout_path": "D:\\CLAUDE\\Project\\zakuppro\\zakuppro\\.gsd\\exec\\76642edd-e3ca-41ad-96f4-3783b07257a7.stdout",
+  "stderr_path": "D:\\CLAUDE\\Project\\zakuppro\\zakuppro\\.gsd\\exec\\76642edd-e3ca-41ad-96f4-3783b07257a7.stderr"
+}

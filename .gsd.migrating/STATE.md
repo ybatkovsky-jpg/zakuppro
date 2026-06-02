@@ -21,4 +21,4 @@
 - None
 
 ## Next Action
-Execute T03: Add Payment and UnresolvedTransaction Creation to Matcher in slice S04.
+Execute T04: Create Celery Task for Payment Matching in slice S04.
