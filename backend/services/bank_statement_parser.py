@@ -243,6 +243,8 @@ class BankStatementParser:
         Returns:
             datetime object or None if parsing fails
         """
+        if date_str is None:
+            return None
         try:
             return datetime.strptime(date_str, '%d.%m.%Y')
         except (ValueError, AttributeError) as e:
@@ -259,11 +261,13 @@ class BankStatementParser:
         Returns:
             Decimal object or None if parsing fails
         """
+        if amount_str is None:
+            return None
         try:
             # Remove any whitespace and convert to Decimal
             cleaned = amount_str.strip().replace(',', '.').replace(' ', '')
             return Decimal(cleaned)
-        except (InvalidOperation, ValueError) as e:
+        except (InvalidOperation, ValueError, AttributeError) as e:
             logger.warning(f"Failed to parse amount '{amount_str}': {e}")
             return None
 
