@@ -1,12 +1,12 @@
 {
-  "compiledAt": "2026-06-02T12:14:18.257Z",
+  "compiledAt": "2026-06-02T13:04:58.413Z",
   "milestoneId": "M004",
   "pipeline": {
     "clarifyRoundLimit": 3,
     "researchSynthesized": true,
     "draftContextIncluded": false,
     "finalizedContextIncluded": true,
-    "sourcePhase": "summarizing"
+    "sourcePhase": "executing"
   },
   "nodes": [
     {
@@ -502,6 +502,73 @@
         "unitType": "complete-slice",
         "unitId": "M004.S05",
         "title": "S05",
+        "status": "complete"
+      }
+    },
+    {
+      "id": "execute-task:M004:S06:T01",
+      "kind": "unit",
+      "dependsOn": [],
+      "writes": [],
+      "metadata": {
+        "unitType": "execute-task",
+        "unitId": "M004.S06.T01",
+        "title": "Create analytics router with dashboard metrics endpoint",
+        "status": "pending"
+      }
+    },
+    {
+      "id": "execute-task:M004:S06:T02",
+      "kind": "unit",
+      "dependsOn": [
+        "execute-task:M004:S06:T01"
+      ],
+      "writes": [],
+      "metadata": {
+        "unitType": "execute-task",
+        "unitId": "M004.S06.T02",
+        "title": "Add payment dynamics time-series endpoint and Excel export for transactions",
+        "status": "pending"
+      }
+    },
+    {
+      "id": "execute-task:M004:S06:T03",
+      "kind": "unit",
+      "dependsOn": [
+        "execute-task:M004:S06:T02"
+      ],
+      "writes": [],
+      "metadata": {
+        "unitType": "execute-task",
+        "unitId": "M004.S06.T03",
+        "title": "Implement manual bank statement upload endpoint with validation and parser integration",
+        "status": "pending"
+      }
+    },
+    {
+      "id": "execute-task:M004:S06:T04",
+      "kind": "unit",
+      "dependsOn": [
+        "execute-task:M004:S06:T03"
+      ],
+      "writes": [],
+      "metadata": {
+        "unitType": "execute-task",
+        "unitId": "M004.S06.T04",
+        "title": "Create integration test suite for analytics/export/upload end-to-end workflow",
+        "status": "pending"
+      }
+    },
+    {
+      "id": "complete-slice:M004:S06",
+      "kind": "verification",
+      "dependsOn": [
+        "execute-task:M004:S06:T04"
+      ],
+      "metadata": {
+        "unitType": "complete-slice",
+        "unitId": "M004.S06",
+        "title": "Analytics + Export + Manual Upload",
         "status": "pending"
       }
     }

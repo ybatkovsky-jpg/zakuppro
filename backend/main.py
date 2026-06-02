@@ -14,6 +14,7 @@ from backend.routers import (
     payments,
     unresolved_transactions,
     production_tasks,
+    analytics,
 )
 
 # Create FastAPI application
@@ -48,6 +49,7 @@ app.include_router(invoices.router)
 app.include_router(payments.router)
 app.include_router(unresolved_transactions.router)
 app.include_router(production_tasks.router)
+app.include_router(analytics.router)
 
 
 @app.get("/")

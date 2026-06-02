@@ -439,3 +439,34 @@ class ProductionTaskResponse(ProductionTaskBase):
     project_id: int
     created_at: datetime
     updated_at: Optional[datetime] = None
+
+
+# =============================================================================
+# Analytics Schemas
+# =============================================================================
+
+class DashboardMetricsResponse(BaseSchema):
+    """Schema for dashboard metrics response."""
+    paid_invoices_count: int
+    unpaid_invoices_count: int
+    total_paid_amount: float
+    total_unpaid_amount: float
+    pending_invoices_count: int
+    period_start: datetime
+    period_end: datetime
+
+
+class PaymentDynamicsPoint(BaseSchema):
+    """Schema for a single data point in payment dynamics time series."""
+    date: datetime
+    paid_amount: float
+    paid_count: int
+
+
+class PaymentDynamicsResponse(BaseSchema):
+    """Schema for payment dynamics time series response."""
+    data: List[PaymentDynamicsPoint]
+    total_amount: float
+    total_count: int
+    period_start: datetime
+    period_end: datetime

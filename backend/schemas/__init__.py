@@ -95,6 +95,11 @@ ProductionTaskCreate = _schemas.ProductionTaskCreate
 ProductionTaskUpdate = _schemas.ProductionTaskUpdate
 ProductionTaskResponse = _schemas.ProductionTaskResponse
 
+# Analytics schemas
+DashboardMetricsResponse = _schemas.DashboardMetricsResponse
+PaymentDynamicsPoint = _schemas.PaymentDynamicsPoint
+PaymentDynamicsResponse = _schemas.PaymentDynamicsResponse
+
 __all__ = [
     # Verification
     "ItemVerification",
@@ -161,4 +166,8 @@ __all__ = [
     "ProductionTaskCreate",
     "ProductionTaskUpdate",
     "ProductionTaskResponse",
+    # Analytics
+    "DashboardMetricsResponse",
+    "PaymentDynamicsPoint",
+    "PaymentDynamicsResponse",
 ]

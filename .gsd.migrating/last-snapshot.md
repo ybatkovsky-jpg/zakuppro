@@ -1,7 +1,4 @@
-# GSD context snapshot (2026-06-02T12:11:40.381Z)
-
-## Active context
-Active: M004 / S05 / T08 - Restore test_client Fixture and Run Full Test Suite
+# GSD context snapshot (2026-06-02T13:04:45.883Z)
 
 ## Top project memories
 - [MEM005] (architecture) SQLAlchemy 2.0 uses relationship(back_populates=...) for bidirectional relationships, not backref. This makes relationships explicit on both sides for clearer code.

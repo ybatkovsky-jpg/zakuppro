@@ -2,7 +2,7 @@
 
 **Active Milestone:** M004: Bank Integration + Financials
 **Active Slice:** S06: Analytics + Export + Manual Upload
-**Phase:** planning
+**Phase:** executing
 **Requirements Status:** 8 active · 6 validated · 5 deferred · 0 out of scope
 
 ## Milestone Registry
@@ -21,4 +21,4 @@
 - None
 
 ## Next Action
-Slice S06 has no DB tasks. Plan slice tasks before execution.
+Execute T01: Create analytics router with dashboard metrics endpoint in slice S06.
