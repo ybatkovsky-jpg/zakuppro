@@ -1,5 +1,5 @@
 {
-  "compiledAt": "2026-06-02T09:21:29.309Z",
+  "compiledAt": "2026-06-02T10:06:30.374Z",
   "milestoneId": "M004",
   "pipeline": {
     "clarifyRoundLimit": 3,
@@ -144,12 +144,14 @@
       "id": "execute-task:M004:S03:T01",
       "kind": "unit",
       "dependsOn": [],
-      "writes": [],
+      "writes": [
+        "backend/celery_app.py"
+      ],
       "metadata": {
         "unitType": "execute-task",
         "unitId": "M004.S03.T01",
-        "title": "Configure RabbitMQ bank.statement exchange and queue",
-        "status": "pending"
+        "title": "Configured RabbitMQ bank.statement exchange and queue with DLQ binding and task routing",
+        "status": "complete"
       }
     },
     {
@@ -158,12 +160,15 @@
       "dependsOn": [
         "execute-task:M004:S03:T01"
       ],
-      "writes": [],
+      "writes": [
+        "D:/CLAUDE/Project/zakuppro/zakuppro/backend/services/imap_client.py",
+        "D:/CLAUDE/Project/zakuppro/zakuppro/backend/tests/test_imap_client.py"
+      ],
       "metadata": {
         "unitType": "execute-task",
         "unitId": "M004.S03.T02",
-        "title": "Add .txt support to AttachmentExtractor",
-        "status": "pending"
+        "title": "Added .txt support to AttachmentExtractor for 1C ClientBank bank statement files",
+        "status": "complete"
       }
     },
     {
@@ -172,12 +177,15 @@
       "dependsOn": [
         "execute-task:M004:S03:T02"
       ],
-      "writes": [],
+      "writes": [
+        "backend/email_worker.py",
+        "backend/tests/test_email_worker.py"
+      ],
       "metadata": {
         "unitType": "execute-task",
         "unitId": "M004.S03.T03",
-        "title": "Add routing logic to Email Worker for .txt files",
-        "status": "pending"
+        "title": "Added routing logic to Email Worker for .txt bank statement files with new publish_bank_statement_task() method and stats tracking",
+        "status": "complete"
       }
     },
     {
@@ -186,12 +194,15 @@
       "dependsOn": [
         "execute-task:M004:S03:T03"
       ],
-      "writes": [],
+      "writes": [
+        "backend/tasks.py",
+        "backend/tests/test_parse_bank_statement_task.py"
+      ],
       "metadata": {
         "unitType": "execute-task",
         "unitId": "M004.S03.T04",
-        "title": "Implement parse_bank_statement Celery task",
-        "status": "pending"
+        "title": "Implemented parse_bank_statement Celery task for processing 1C ClientBank .txt files with full persistence and error handling",
+        "status": "complete"
       }
     },
     {
@@ -200,12 +211,14 @@
       "dependsOn": [
         "execute-task:M004:S03:T04"
       ],
-      "writes": [],
+      "writes": [
+        "backend/tests/test_bank_statement_integration.py"
+      ],
       "metadata": {
         "unitType": "execute-task",
         "unitId": "M004.S03.T05",
-        "title": "Write integration test for end-to-end bank statement flow",
-        "status": "pending"
+        "title": "Created integration test file `test_bank_statement_integration.py` with 6 comprehensive tests verifying end-to-end bank statement flow",
+        "status": "complete"
       }
     },
     {
@@ -217,7 +230,105 @@
       "metadata": {
         "unitType": "complete-slice",
         "unitId": "M004.S03",
-        "title": "Email Worker Extension + RabbitMQ Exchange",
+        "title": "S03",
+        "status": "complete"
+      }
+    },
+    {
+      "id": "execute-task:M004:S04:T01",
+      "kind": "unit",
+      "dependsOn": [],
+      "writes": [
+        "backend/services/supplier_inn_extractor.py",
+        "backend/tests/test_supplier_inn_extractor.py"
+      ],
+      "metadata": {
+        "unitType": "execute-task",
+        "unitId": "M004.S04.T01",
+        "title": "Created Supplier INN Extractor service with extract_inn_from_requisites function supporting multiple INN formats (INN:, ИНН:, inn:, with space/colon) and 10/12-digit patterns",
+        "status": "complete"
+      }
+    },
+    {
+      "id": "execute-task:M004:S04:T02",
+      "kind": "unit",
+      "dependsOn": [
+        "execute-task:M004:S04:T01"
+      ],
+      "writes": [],
+      "metadata": {
+        "unitType": "execute-task",
+        "unitId": "M004.S04.T02",
+        "title": "Create Payment Matcher Core Service",
+        "status": "pending"
+      }
+    },
+    {
+      "id": "execute-task:M004:S04:T03",
+      "kind": "unit",
+      "dependsOn": [
+        "execute-task:M004:S04:T02"
+      ],
+      "writes": [],
+      "metadata": {
+        "unitType": "execute-task",
+        "unitId": "M004.S04.T03",
+        "title": "Add Payment and UnresolvedTransaction Creation to Matcher",
+        "status": "pending"
+      }
+    },
+    {
+      "id": "execute-task:M004:S04:T04",
+      "kind": "unit",
+      "dependsOn": [
+        "execute-task:M004:S04:T03"
+      ],
+      "writes": [],
+      "metadata": {
+        "unitType": "execute-task",
+        "unitId": "M004.S04.T04",
+        "title": "Create Celery Task for Payment Matching",
+        "status": "pending"
+      }
+    },
+    {
+      "id": "execute-task:M004:S04:T05",
+      "kind": "unit",
+      "dependsOn": [
+        "execute-task:M004:S04:T04"
+      ],
+      "writes": [],
+      "metadata": {
+        "unitType": "execute-task",
+        "unitId": "M004.S04.T05",
+        "title": "Create Unit Tests for Payment Matcher",
+        "status": "pending"
+      }
+    },
+    {
+      "id": "execute-task:M004:S04:T06",
+      "kind": "unit",
+      "dependsOn": [
+        "execute-task:M004:S04:T05"
+      ],
+      "writes": [],
+      "metadata": {
+        "unitType": "execute-task",
+        "unitId": "M004.S04.T06",
+        "title": "Create Integration Tests for End-to-End Matching Flow",
+        "status": "pending"
+      }
+    },
+    {
+      "id": "complete-slice:M004:S04",
+      "kind": "verification",
+      "dependsOn": [
+        "execute-task:M004:S04:T06"
+      ],
+      "metadata": {
+        "unitType": "complete-slice",
+        "unitId": "M004.S04",
+        "title": "S04",
         "status": "pending"
       }
     }

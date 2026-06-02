@@ -1,8 +1,8 @@
 # GSD State
 
 **Active Milestone:** M004: Bank Integration + Financials
-**Active Slice:** S04: Auto-Matching Service
-**Phase:** planning
+**Active Slice:** S04: S04
+**Phase:** executing
 **Requirements Status:** 8 active · 6 validated · 5 deferred · 0 out of scope
 
 ## Milestone Registry
@@ -21,4 +21,4 @@
 - None
 
 ## Next Action
-Slice S04 has no DB tasks. Plan slice tasks before execution.
+Execute T02: Create Payment Matcher Core Service in slice S04.

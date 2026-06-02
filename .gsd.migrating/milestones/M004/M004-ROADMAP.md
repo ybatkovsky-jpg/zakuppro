@@ -24,7 +24,7 @@
 - [x] **S03: S03** `risk:medium` `depends:[]`
   > After this: Email Worker detects .txt attachments, routes to bank.statement exchange. parse_bank_statement Celery task processes statement and persists to DB. Integration test verifies end-to-end flow.
 
-- [ ] **S04: Auto-Matching Service** `risk:high` `depends:[S03]`
+- [ ] **S04: S04** `risk:high` `depends:[]`
   > After this: Auto-matcher links BankTransactions to Invoices by supplier INN + amount ±5% + date range. Unmatched transactions go to UnresolvedTransaction. Unit tests verify matching logic.
 
 - [ ] **S05: Transaction Matching API** `risk:medium` `depends:[S04]`
