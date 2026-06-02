@@ -1,7 +1,7 @@
 # GSD State
 
 **Active Milestone:** M003: Email + Invoice Processing
-**Active Slice:** S04: S04
+**Active Slice:** S05: S05
 **Phase:** executing
 **Requirements Status:** 9 active · 5 validated · 5 deferred · 0 out of scope
 
@@ -21,4 +21,4 @@
 - None
 
 ## Next Action
-Execute T06: Create integration tests for verification in slice S04.
+Execute T03: Integrate notification dispatch with verify_invoice_task in slice S05.

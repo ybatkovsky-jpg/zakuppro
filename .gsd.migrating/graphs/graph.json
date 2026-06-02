@@ -377,6 +377,49 @@
       "confidence": "EXTRACTED"
     },
     {
+      "id": "slice:M003:S04",
+      "label": "S04: Verification Logic + Fuzzy Matching",
+      "type": "slice",
+      "confidence": "EXTRACTED",
+      "sourceFile": "milestones/M003/slices/S04/S04-PLAN.md"
+    },
+    {
+      "id": "task:M003:S04:T01",
+      "label": "T01: Add rapidfuzz dependency",
+      "type": "task",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "id": "task:M003:S04:T02",
+      "label": "T02: Create verification schemas",
+      "type": "task",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "id": "task:M003:S04:T03",
+      "label": "T03: Implement invoice_verifier service",
+      "type": "task",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "id": "task:M003:S04:T04",
+      "label": "T04: Add verify_invoice Celery task",
+      "type": "task",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "id": "task:M003:S04:T05",
+      "label": "T05: Create unit tests for invoice_verifier",
+      "type": "task",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "id": "task:M003:S04:T06",
+      "label": "T06: Create integration tests for verification",
+      "type": "task",
+      "confidence": "EXTRACTED"
+    },
+    {
       "id": "milestone:M004",
       "label": "M004: Bank Integration + Financials",
       "type": "milestone",
@@ -1597,6 +1640,48 @@
       "confidence": "EXTRACTED"
     },
     {
+      "from": "milestone:M003",
+      "to": "slice:M003:S04",
+      "type": "contains",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "from": "slice:M003:S04",
+      "to": "task:M003:S04:T01",
+      "type": "contains",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "from": "slice:M003:S04",
+      "to": "task:M003:S04:T02",
+      "type": "contains",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "from": "slice:M003:S04",
+      "to": "task:M003:S04:T03",
+      "type": "contains",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "from": "slice:M003:S04",
+      "to": "task:M003:S04:T04",
+      "type": "contains",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "from": "slice:M003:S04",
+      "to": "task:M003:S04:T05",
+      "type": "contains",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "from": "slice:M003:S04",
+      "to": "task:M003:S04:T06",
+      "type": "contains",
+      "confidence": "EXTRACTED"
+    },
+    {
       "from": "milestone:M002",
       "to": "decision:M002:1",
       "type": "relates_to",
@@ -2329,5 +2414,5 @@
       "confidence": "EXTRACTED"
     }
   ],
-  "builtAt": "2026-06-01T15:05:43.051Z"
+  "builtAt": "2026-06-01T22:11:47.217Z"
 }

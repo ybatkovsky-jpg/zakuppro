@@ -1,7 +1,7 @@
 # Codebase Map
 
-Generated: 2026-06-01T21:55:45Z | Files: 500 | Described: 0/500
-<!-- gsd:codebase-meta {"generatedAt":"2026-06-01T21:55:45Z","fingerprint":"83a1d32a0991059bfb1c5db030c4c33ddfac04e6","fileCount":500,"truncated":true} -->
+Generated: 2026-06-01T23:09:10Z | Files: 500 | Described: 0/500
+<!-- gsd:codebase-meta {"generatedAt":"2026-06-01T23:09:10Z","fingerprint":"64d45f4660c6047e6e8f031c7742fd6cbb63961a","fileCount":500,"truncated":true} -->
 Note: Truncated to first 500 files. Run with higher --max-files to include all.
 
 ### (root)/
@@ -9,8 +9,6 @@ Note: Truncated to first 500 files. Run with higher --max-files to include all.
 - `.dockerignore`
 - `.env`
 - `.gitignore`
-- `.test_db.sqlite`
-- `Caddyfile`
 
 ### .gsd.migrating/
 - `.gsd.migrating/CODEBASE.md`
@@ -26,17 +24,16 @@ Note: Truncated to first 500 files. Run with higher --max-files to include all.
 - `.gsd.migrating/notifications.jsonl`
 - `.gsd.migrating/PROJECT.md`
 - `.gsd.migrating/REQUIREMENTS.md`
-- `.gsd.migrating/state-manifest.json`
 - `.gsd.migrating/STATE.md`
 
 ### .gsd.migrating/activity/
-- *(97 files: 97 .jsonl)*
+- *(107 files: 107 .jsonl)*
 
 ### .gsd.migrating/audit/
 - `.gsd.migrating/audit/events.jsonl`
 
 ### .gsd.migrating/exec/
-- *(87 files: 29 .json, 29 .stderr, 29 .stdout)*
+- *(99 files: 33 .json, 33 .stderr, 33 .stdout)*
 
 ### .gsd.migrating/graphs/
 - `.gsd.migrating/graphs/graph.json`
@@ -286,6 +283,8 @@ Note: Truncated to first 500 files. Run with higher --max-files to include all.
 - `.gsd.migrating/milestones/M003/slices/S03/S03-PLAN.md`
 - `.gsd.migrating/milestones/M003/slices/S03/S03-PRE-EXEC-VERIFY.json`
 - `.gsd.migrating/milestones/M003/slices/S03/S03-RESEARCH.md`
+- `.gsd.migrating/milestones/M003/slices/S03/S03-SUMMARY.md`
+- `.gsd.migrating/milestones/M003/slices/S03/S03-UAT.md`
 
 ### .gsd.migrating/milestones/M003/slices/S03/tasks/
 - `.gsd.migrating/milestones/M003/slices/S03/tasks/T01-PLAN.md`
@@ -296,6 +295,29 @@ Note: Truncated to first 500 files. Run with higher --max-files to include all.
 - `.gsd.migrating/milestones/M003/slices/S03/tasks/T03-SUMMARY.md`
 - `.gsd.migrating/milestones/M003/slices/S03/tasks/T03-VERIFY.json`
 - `.gsd.migrating/milestones/M003/slices/S03/tasks/T04-PLAN.md`
+- `.gsd.migrating/milestones/M003/slices/S03/tasks/T04-SUMMARY.md`
+- `.gsd.migrating/milestones/M003/slices/S03/tasks/T04-VERIFY.json`
+
+### .gsd.migrating/milestones/M003/slices/S04/
+- `.gsd.migrating/milestones/M003/slices/S04/S04-PLAN.md`
+- `.gsd.migrating/milestones/M003/slices/S04/S04-PRE-EXEC-VERIFY.json`
+- `.gsd.migrating/milestones/M003/slices/S04/S04-RESEARCH.md`
+
+### .gsd.migrating/milestones/M003/slices/S04/tasks/
+- `.gsd.migrating/milestones/M003/slices/S04/tasks/T01-PLAN.md`
+- `.gsd.migrating/milestones/M003/slices/S04/tasks/T01-SUMMARY.md`
+- `.gsd.migrating/milestones/M003/slices/S04/tasks/T01-VERIFY.json`
+- `.gsd.migrating/milestones/M003/slices/S04/tasks/T02-PLAN.md`
+- `.gsd.migrating/milestones/M003/slices/S04/tasks/T02-SUMMARY.md`
+- `.gsd.migrating/milestones/M003/slices/S04/tasks/T02-VERIFY.json`
+- `.gsd.migrating/milestones/M003/slices/S04/tasks/T03-PLAN.md`
+- `.gsd.migrating/milestones/M003/slices/S04/tasks/T03-SUMMARY.md`
+- `.gsd.migrating/milestones/M003/slices/S04/tasks/T03-VERIFY.json`
+- `.gsd.migrating/milestones/M003/slices/S04/tasks/T04-PLAN.md`
+- `.gsd.migrating/milestones/M003/slices/S04/tasks/T04-SUMMARY.md`
+- `.gsd.migrating/milestones/M003/slices/S04/tasks/T05-PLAN.md`
+- `.gsd.migrating/milestones/M003/slices/S04/tasks/T05-SUMMARY.md`
+- `.gsd.migrating/milestones/M003/slices/S04/tasks/T06-PLAN.md`
 
 ### .gsd.migrating/milestones/M004/
 - `.gsd.migrating/milestones/M004/M004-ROADMAP.md`
@@ -312,31 +334,7 @@ Note: Truncated to first 500 files. Run with higher --max-files to include all.
 ### .gsd.migrating/runtime/
 - `.gsd.migrating/runtime/M003-S01-reactive.json`
 - `.gsd.migrating/runtime/M003-S03-reactive.json`
-- `.gsd.migrating/runtime/uok-parity.jsonl`
-- `.gsd.migrating/runtime/uok-plan-v2-graph.json`
-- `.gsd.migrating/runtime/uok-writer-sequence.json`
-- `.gsd.migrating/runtime/write-gate-state.json`
+- `.gsd.migrating/runtime/M003-S04-reactive.json`
 
 ### .gsd.migrating/runtime/units/
-- *(72 files: 72 .json)*
-
-### .zscripts/
-- `.zscripts/build.sh`
-- `.zscripts/dev.pid`
-- `.zscripts/dev.sh`
-- `.zscripts/mini-services-build.sh`
-- `.zscripts/mini-services-install.sh`
-- `.zscripts/mini-services-start.sh`
-- `.zscripts/start.sh`
-
-### Python/_cache/
-- `Python/_cache/last_welcome.txt`
-
-### Python/bin/
-- `Python/bin/pip.exe`
-- `Python/bin/pip.exe.__script__.py`
-- `Python/bin/pip.exe.__target__`
-- `Python/bin/pip3.exe`
-- `Python/bin/pip3.exe.__script__.py`
-- `Python/bin/pip3.exe.__target__`
-- `Python/bin/python.exe`
+- *(50 files: 50 .json)*

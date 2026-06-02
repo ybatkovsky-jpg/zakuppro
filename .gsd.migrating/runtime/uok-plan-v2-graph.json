@@ -1,5 +1,5 @@
 {
-  "compiledAt": "2026-06-01T21:56:58.382Z",
+  "compiledAt": "2026-06-01T23:17:42.868Z",
   "milestoneId": "M003",
   "pipeline": {
     "clarifyRoundLimit": 3,
@@ -330,12 +330,14 @@
       "dependsOn": [
         "execute-task:M003:S04:T05"
       ],
-      "writes": [],
+      "writes": [
+        "backend/tests/test_s04_integration.py"
+      ],
       "metadata": {
         "unitType": "execute-task",
         "unitId": "M003.S04.T06",
-        "title": "Create integration tests for verification",
-        "status": "pending"
+        "title": "Created 9 integration tests for invoice verification service in test_s04_integration.py",
+        "status": "complete"
       }
     },
     {
@@ -348,6 +350,66 @@
         "unitType": "complete-slice",
         "unitId": "M003.S04",
         "title": "S04",
+        "status": "complete"
+      }
+    },
+    {
+      "id": "execute-task:M003:S05:T01",
+      "kind": "unit",
+      "dependsOn": [],
+      "writes": [
+        "backend/telegram_notifier.py",
+        "backend/tests/test_telegram_notifications.py"
+      ],
+      "metadata": {
+        "unitType": "execute-task",
+        "unitId": "M003.S05.T01",
+        "title": "Added 4 invoice-specific notification functions to telegram_notifier.py with full test coverage",
+        "status": "complete"
+      }
+    },
+    {
+      "id": "execute-task:M003:S05:T02",
+      "kind": "unit",
+      "dependsOn": [
+        "execute-task:M003:S05:T01"
+      ],
+      "writes": [
+        "backend/email_notifier.py",
+        "backend/tests/test_email_notifier.py",
+        "backend/requirements.txt"
+      ],
+      "metadata": {
+        "unitType": "execute-task",
+        "unitId": "M003.S05.T02",
+        "title": "Created email_notifier.py with async SMTP client for supplier clarification emails",
+        "status": "complete"
+      }
+    },
+    {
+      "id": "execute-task:M003:S05:T03",
+      "kind": "unit",
+      "dependsOn": [
+        "execute-task:M003:S05:T02"
+      ],
+      "writes": [],
+      "metadata": {
+        "unitType": "execute-task",
+        "unitId": "M003.S05.T03",
+        "title": "Integrate notification dispatch with verify_invoice_task",
+        "status": "pending"
+      }
+    },
+    {
+      "id": "complete-slice:M003:S05",
+      "kind": "verification",
+      "dependsOn": [
+        "execute-task:M003:S05:T03"
+      ],
+      "metadata": {
+        "unitType": "complete-slice",
+        "unitId": "M003.S05",
+        "title": "S05",
         "status": "pending"
       }
     }

@@ -1,0 +1,18 @@
+{
+  "id": "b820b27c-2882-4f95-a164-12807e706b00",
+  "runtime": "bash",
+  "purpose": "Run email notifier unit tests",
+  "script_chars": 106,
+  "started_at": "2026-06-01T23:10:10.942Z",
+  "finished_at": "2026-06-01T23:10:11.183Z",
+  "exit_code": 1,
+  "signal": null,
+  "timed_out": false,
+  "duration_ms": 241,
+  "stdout_bytes": 544,
+  "stderr_bytes": 0,
+  "stdout_truncated": false,
+  "stderr_truncated": false,
+  "stdout_path": "D:\\CLAUDE\\Project\\zakuppro\\zakuppro\\.gsd\\exec\\b820b27c-2882-4f95-a164-12807e706b00.stdout",
+  "stderr_path": "D:\\CLAUDE\\Project\\zakuppro\\zakuppro\\.gsd\\exec\\b820b27c-2882-4f95-a164-12807e706b00.stderr"
+}

@@ -1,0 +1,16 @@
+{
+  "schemaVersion": 1,
+  "taskId": "T02",
+  "unitId": "M003/S05/T02",
+  "timestamp": 1780355600419,
+  "passed": true,
+  "discoverySource": "task-plan",
+  "checks": [
+    {
+      "command": "pytest backend/tests/test_email_notifier.py -v",
+      "exitCode": 0,
+      "durationMs": 1725,
+      "verdict": "pass"
+    }
+  ]
+}

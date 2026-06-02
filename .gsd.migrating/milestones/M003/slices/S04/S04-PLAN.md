@@ -58,7 +58,7 @@ After S04: parse_invoice → verify_invoice task chain ready. InvoiceItem.projec
   - Files: `backend/tests/test_invoice_verifier.py`
   - Verify: cd backend && pytest tests/test_invoice_verifier.py -v
 
-- [ ] **T06: Create integration tests for verification** `est:60m`
+- [x] **T06: Create integration tests for verification** `est:60m`
   ## Why
   Integration tests verify full pipeline with database operations, ensuring InvoiceItem.project_item_id population and Invoice.verification_result structure.
   - Files: `backend/tests/test_s04_integration.py`
