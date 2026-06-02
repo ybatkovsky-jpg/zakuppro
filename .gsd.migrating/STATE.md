@@ -21,4 +21,4 @@
 - None
 
 ## Next Action
-Execute T03: Add Single Manual Match Endpoint in slice S05.
+Execute T04: Add Bulk Manual Match Endpoint in slice S05.

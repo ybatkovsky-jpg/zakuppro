@@ -1,5 +1,5 @@
 {
-  "compiledAt": "2026-06-02T11:39:12.190Z",
+  "compiledAt": "2026-06-02T11:54:24.587Z",
   "milestoneId": "M004",
   "pipeline": {
     "clarifyRoundLimit": 3,
@@ -388,12 +388,18 @@
       "dependsOn": [
         "execute-task:M004:S05:T02"
       ],
-      "writes": [],
+      "writes": [
+        "backend/routers/unresolved_transactions.py",
+        "backend/schemas.py",
+        "backend/models.py",
+        "backend/tests/test_api/test_unresolved_transactions.py",
+        "backend/schemas/__init__.py"
+      ],
       "metadata": {
         "unitType": "execute-task",
         "unitId": "M004.S05.T03",
-        "title": "Add Single Manual Match Endpoint",
-        "status": "pending"
+        "title": "Added POST /api/unresolved-transactions/{transaction_id}/match endpoint for manual reconciliation with Payment record creation, TransactionMatchingAudit tracking, and UnresolvedTransaction status update",
+        "status": "complete"
       }
     },
     {
