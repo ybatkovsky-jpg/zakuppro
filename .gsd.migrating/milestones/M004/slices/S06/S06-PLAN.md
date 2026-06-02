@@ -25,7 +25,7 @@ New analytics router registered in main.py. Excel export and upload endpoints us
 
 ## Tasks
 
-- [ ] **T01: Create analytics router with dashboard metrics endpoint** `est:45m`
+- [x] **T01: Create analytics router with dashboard metrics endpoint** `est:45m`
   ## Why
   Dashboard analytics endpoints provide frontend with key financial metrics (paid/unpaid invoice counts, total amounts, pending invoices) for project management visibility.
   - Files: `backend/routers/analytics.py`, `backend/schemas.py`, `backend/schemas/__init__.py`, `backend/main.py`, `backend/tests/test_api/test_analytics.py`

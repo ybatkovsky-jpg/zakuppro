@@ -1,0 +1,18 @@
+{
+  "id": "319f4a65-3d1e-484f-9dae-5896eb2a781f",
+  "runtime": "bash",
+  "purpose": "Run analytics dashboard tests",
+  "script_chars": 132,
+  "started_at": "2026-06-02T13:08:56.227Z",
+  "finished_at": "2026-06-02T13:08:56.320Z",
+  "exit_code": 1,
+  "signal": null,
+  "timed_out": false,
+  "duration_ms": 93,
+  "stdout_bytes": 544,
+  "stderr_bytes": 0,
+  "stdout_truncated": false,
+  "stderr_truncated": false,
+  "stdout_path": "D:\\CLAUDE\\Project\\zakuppro\\zakuppro\\.gsd\\exec\\319f4a65-3d1e-484f-9dae-5896eb2a781f.stdout",
+  "stderr_path": "D:\\CLAUDE\\Project\\zakuppro\\zakuppro\\.gsd\\exec\\319f4a65-3d1e-484f-9dae-5896eb2a781f.stderr"
+}

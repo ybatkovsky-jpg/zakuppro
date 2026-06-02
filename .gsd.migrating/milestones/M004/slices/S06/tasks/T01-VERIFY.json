@@ -1,0 +1,18 @@
+{
+  "schemaVersion": 1,
+  "taskId": "T01",
+  "unitId": "M004/S06/T01",
+  "timestamp": 1780405917805,
+  "passed": false,
+  "discoverySource": "task-plan",
+  "checks": [
+    {
+      "command": "pytest backend/tests/test_api/test_analytics.py -v -k dashboard",
+      "exitCode": 1,
+      "durationMs": 5158,
+      "verdict": "fail"
+    }
+  ],
+  "retryAttempt": 1,
+  "maxRetries": 2
+}

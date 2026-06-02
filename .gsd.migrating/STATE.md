@@ -1,7 +1,7 @@
 # GSD State
 
 **Active Milestone:** M004: Bank Integration + Financials
-**Active Slice:** S06: Analytics + Export + Manual Upload
+**Active Slice:** S06: S06
 **Phase:** executing
 **Requirements Status:** 8 active · 6 validated · 5 deferred · 0 out of scope
 
@@ -21,4 +21,4 @@
 - None
 
 ## Next Action
-Execute T01: Create analytics router with dashboard metrics endpoint in slice S06.
+Execute T02: Add payment dynamics time-series endpoint and Excel export for transactions in slice S06.

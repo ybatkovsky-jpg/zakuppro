@@ -30,7 +30,7 @@
 - [x] **S05: S05** `risk:medium` `depends:[]`
   > After this: API endpoints support unresolved transaction CRUD, bulk manual matching, and audit history. Integration test verifies full workflow from unmatched to matched state.
 
-- [ ] **S06: Analytics + Export + Manual Upload** `risk:low` `depends:[S05]`
+- [ ] **S06: S06** `risk:low` `depends:[]`
   > After this: Analytics endpoints return dashboard data (paid/unpaid counts, payment dynamics). Excel export generates .xlsx file. Manual upload endpoint processes uploaded .txt statements. Integration test verifies full flow.
 
 ## Boundary Map
