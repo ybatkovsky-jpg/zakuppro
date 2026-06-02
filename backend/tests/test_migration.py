@@ -195,6 +195,71 @@ class TestMigrationStructure:
         first_idx_section = downgrade_content[first_idx_drop : first_idx_drop + 300]
         assert "production_tasks" in first_idx_section, "First indexes dropped should include production_tasks"
 
+    def test_bank_statement_migration_exists(self):
+        """Test that the bank statement models migration file exists."""
+        migration_path = os.path.join(
+            BACKEND_DIR, "alembic", "versions", "m0h4akx9s41v_add_bank_statement_models.py"
+        )
+        assert os.path.exists(migration_path), "Bank statement models migration file not found"
+
+    def test_bank_statement_migration_creates_tables(self):
+        """Test that bank statement migration creates the three new tables."""
+        migration_path = os.path.join(
+            BACKEND_DIR, "alembic", "versions", "m0h4akx9s41v_add_bank_statement_models.py"
+        )
+        with open(migration_path, "r") as f:
+            content = f.read()
+
+        # Verify all three tables are created
+        assert "'bank_statements'" in content, "bank_statements table not found in migration"
+        assert "'bank_transactions'" in content, "bank_transactions table not found in migration"
+        assert "'transaction_matching_audits'" in content, "transaction_matching_audits table not found in migration"
+
+        # Verify create_table calls
+        create_table_count = content.count("op.create_table")
+        assert create_table_count == 3, f"Expected 3 create_table calls, found {create_table_count}"
+
+    def test_bank_statement_migration_has_fks(self):
+        """Test that bank statement migration defines foreign key constraints."""
+        migration_path = os.path.join(
+            BACKEND_DIR, "alembic", "versions", "m0h4akx9s41v_add_bank_statement_models.py"
+        )
+        with open(migration_path, "r") as f:
+            content = f.read()
+
+        # Count foreign key constraints
+        fk_count = content.count("ForeignKeyConstraint")
+        assert fk_count == 3, f"Expected 3 foreign keys, found {fk_count}"
+
+        # Verify specific FK names
+        assert "fk_bank_transactions_bank_statement" in content, "fk_bank_transactions_bank_statement not found"
+        assert "fk_transaction_matching_audit_bank_transaction" in content, "fk_transaction_matching_audit_bank_transaction not found"
+        assert "fk_transaction_matching_audit_invoice" in content, "fk_transaction_matching_audit_invoice not found"
+
+    def test_bank_statement_migration_has_indexes(self):
+        """Test that bank statement migration creates indexes for auto-matching query performance."""
+        migration_path = os.path.join(
+            BACKEND_DIR, "alembic", "versions", "m0h4akx9s41v_add_bank_statement_models.py"
+        )
+        with open(migration_path, "r") as f:
+            content = f.read()
+
+        # Check for index creation
+        create_index_count = content.count("create_index")
+        assert create_index_count >= 7, f"Expected at least 7 indexes, found {create_index_count}"
+
+        # Verify key indexes for auto-matching queries
+        assert "ix_bank_transactions_transaction_date" in content, "transaction_date index not found"
+        assert "ix_bank_transactions_amount" in content, "amount index not found"
+        assert "ix_bank_transactions_supplier_inn" in content, "supplier_inn index not found"
+
+        # Verify bank_statements indexes
+        assert "ix_bank_statements_id" in content, "bank_statements.id index not found"
+        assert "ix_bank_statements_statement_date" in content, "bank_statements.statement_date index not found"
+
+        # Verify transaction_matching_audits index
+        assert "ix_transaction_matching_audits_id" in content, "transaction_matching_audits.id index not found"
+
 
 @pytest.mark.skipif(not is_database_running(), reason="Database not running")
 class TestMigrationApply:
@@ -410,11 +475,12 @@ def test_alembic_history():
 
     revisions = list(script.walk_revisions())
 
-    assert len(revisions) >= 2, f"At least two revisions should exist, found {len(revisions)}"
+    assert len(revisions) >= 3, f"At least three revisions should exist, found {len(revisions)}"
     # Revisions are walked in reverse order (newest first)
     revision_ids = [r.revision for r in revisions]
     assert "d6d07b9ba359" in revision_ids
     assert "e6b0df437c13" in revision_ids
+    assert "m0h4akx9s41v" in revision_ids
 
 
 if __name__ == "__main__":
