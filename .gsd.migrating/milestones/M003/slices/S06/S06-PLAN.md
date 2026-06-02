@@ -30,7 +30,7 @@ S06 validates the complete invoice pipeline from S02 (IMAP ingest) through S03 (
   - Files: `backend/tests/test_s06_e2e_integration.py`
   - Verify: cd backend && python -m pytest tests/test_s06_e2e_integration.py::TestHappyPathE2E -v
 
-- [ ] **T02: Test error path end-to-end scenarios with DLQ** `est:45m`
+- [x] **T02: Test error path end-to-end scenarios with DLQ** `est:45m`
   ## Why
   Production failures must route to FailedTask DLQ without blocking pipeline. Error paths tested in isolation (S03-S04) need E2E validation.
   - Files: `backend/tests/test_s06_e2e_integration.py`

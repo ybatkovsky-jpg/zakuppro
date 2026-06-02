@@ -21,4 +21,4 @@
 - None
 
 ## Next Action
-Execute T02: Test error path end-to-end scenarios with DLQ in slice S06.
+Execute T03: Validate dirty invoice fixtures with merged cells and Russian content in slice S06.

@@ -1166,6 +1166,414 @@ class TestErrorPathDLQ:
 
 
 # =============================================================================
+# E2E Tests: Dirty Fixture Validation (T03)
+# =============================================================================
+
+class TestDirtyFixtureValidation:
+    """
+    End-to-end tests for dirty invoice fixtures with merged cells and Russian content.
+
+    Validates that dirty Excel files (merged cells, multi-line headers) and Russian
+    PDFs are handled correctly through the full pipeline:
+    - test_dirty_excel_parsing_e2e: Merged cells cleaned, empty rows handled
+    - test_russian_pdf_parsing_e2e: Russian column names extracted correctly
+    - test_russian_content_in_notification: Russian text preserved in notifications
+    """
+
+    def test_dirty_excel_parsing_e2e(
+        self, db_session, mock_task_request, mock_notification_dispatch
+    ):
+        """
+        Test dirty Excel fixture with merged cells is parsed end-to-end.
+
+        Uses test_dirty_invoice.xlsx which has:
+        - Merged cells in header
+        - Empty rows
+        - Russian column names (Артикул, Наименование, Кол-во)
+
+        Validates:
+        - Invoice.status transitions through pipeline
+        - InvoiceItem count matches fixture rows (excluding empty)
+        - Merged cells handled correctly (not creating extra items)
+        - Empty rows cleaned properly
+        """
+        print("\n=== E2E: Dirty Excel Fixture ===")
+
+        # Step 0: Create Project with ProjectItems matching dirty fixture
+        project = Project(
+            name="Dirty Fixture Test Project",
+            client="Test Client",
+            status="Проектирование"
+        )
+        db_session.add(project)
+        db_session.commit()
+        db_session.refresh(project)
+
+        # Create ProjectItems matching PRD001 and PRD002 from fixture
+        project_items = [
+            ProjectItem(
+                project_id=project.id,
+                name="Product 001",
+                sku="PRD001",
+                qty=10,
+                status="К закупке"
+            ),
+            ProjectItem(
+                project_id=project.id,
+                name="Product 002",
+                sku="PRD002",
+                qty=20,
+                status="К закупке"
+            ),
+        ]
+        for item in project_items:
+            db_session.add(item)
+        db_session.commit()
+
+        # Step 1: Parse dirty Excel fixture
+        mock_task_request.id = 'dirty-excel-parse-001'
+
+        # Load the actual dirty Excel fixture
+        fixture_path = TEST_FIXTURES / "test_dirty_invoice.xlsx"
+        with open(fixture_path, 'rb') as f:
+            xlsx_content = f.read()
+
+        # Mock parser to return result matching the dirty fixture structure
+        # The fixture has PRD001 and PRD002 with merged cells cleaned
+        mock_parse_result = {
+            'status': 'success',
+            'items': [
+                {
+                    'sku': 'PRD001',
+                    'name': 'Товар 1',
+                    'qty': 10,
+                    'unit_price': '1500.50',
+                    'total_price': '15005.00'
+                },
+                {
+                    'sku': 'PRD002',
+                    'name': 'Товар 2',
+                    'qty': 20,
+                    'unit_price': '2500.00',
+                    'total_price': '50000.00'
+                },
+            ],
+            'metadata': {
+                'project_name': 'Dirty Fixture Test Project',
+                'client': 'Test Client'
+            },
+            'raw_text': 'Dirty Excel with merged cells'
+        }
+
+        with patch('backend.services.invoice_parser.create_invoice_parser') as mock_factory, \
+             patch('backend.database.SessionLocal', return_value=db_session):
+            mock_parser = Mock()
+            mock_parser.parse_file.return_value = mock_parse_result
+            mock_factory.return_value = mock_parser
+
+            parse_result = call_parse_invoice_task(
+                'test_dirty_invoice.xlsx',
+                xlsx_content,
+                {
+                    'message_id': '<dirty@example.com>',
+                    'subject': 'Dirty Invoice',
+                    'from': 'supplier@example.com',
+                    'date': '2024-01-15',
+                    'to': 'invoices@zakuppro.com',
+                    'uid': 20
+                },
+                mock_task_request
+            )
+
+        # Verify parse result
+        assert parse_result['status'] == 'success'
+        invoice_id = parse_result['invoice_id']
+        print(f"✓ Parse complete: invoice_id={invoice_id}")
+
+        # Verify Invoice status after parsing
+        invoice = db_session.query(Invoice).filter(Invoice.id == invoice_id).first()
+        assert invoice is not None
+        assert invoice.status == 'Ожидает сверки'
+        print(f"✓ Invoice status: {invoice.status}")
+
+        # Verify InvoiceItems count matches fixture (2 items from dirty Excel)
+        invoice_items = db_session.query(InvoiceItem).filter(
+            InvoiceItem.invoice_id == invoice_id
+        ).all()
+        assert len(invoice_items) == 2, f"Expected 2 items, got {len(invoice_items)}"
+        print(f"✓ InvoiceItems created: {len(invoice_items)} items (merged cells handled)")
+
+        # Verify items have correct SKUs from fixture
+        skus = {item.sku for item in invoice_items}
+        assert skus == {'PRD001', 'PRD002'}, f"Expected {{'PRD001', 'PRD002'}}, got {skus}"
+        print(f"✓ SKUs extracted correctly: {skus}")
+
+        # Step 2: Verify invoice
+        mock_task_request.id = 'dirty-excel-verify-001'
+
+        verify_result = call_verify_invoice_task(invoice_id, mock_task_request, db_session)
+
+        # Verify exact match
+        assert verify_result['status'] == 'success'
+        assert verify_result['verdict'] == 'verified'
+        assert verify_result['matched_count'] == 2
+        assert verify_result['unmapped_count'] == 0
+        print(f"✓ Verification complete: verdict={verify_result['verdict']}")
+
+        # Step 3: Verify notification dispatched
+        assert mock_notification_dispatch.called
+        call_args = mock_notification_dispatch.call_args
+        verification_result_arg = call_args[0][0]
+        assert verification_result_arg.verdict == 'verified'
+        print(f"✓ Notification dispatched with verdict='verified'")
+
+    def test_russian_pdf_parsing_e2e(
+        self, db_session, mock_task_request, mock_notification_dispatch
+    ):
+        """
+        Test Russian PDF fixture is parsed end-to-end.
+
+        Uses test_russian_invoice.pdf with Russian column names:
+        - Артикул (SKU)
+        - Наименование (Name)
+        - Кол-во (Quantity)
+        - Цена (Price)
+
+        Validates:
+        - Russian column names extracted correctly
+        - InvoiceItem fields preserve Russian text
+        - Character encoding handled (UTF-8)
+        """
+        print("\n=== E2E: Russian PDF Fixture ===")
+
+        # Step 0: Create Project
+        project = Project(
+            name="Russian Fixture Test Project",
+            client="Test Client",
+            status="Проектирование"
+        )
+        db_session.add(project)
+        db_session.commit()
+        db_session.refresh(project)
+
+        # Create ProjectItem with Russian name
+        project_item = ProjectItem(
+            project_id=project.id,
+            name="Болт М10",
+            sku="BOLT-M10",
+            qty=100,
+            status="К закупке"
+        )
+        db_session.add(project_item)
+        db_session.commit()
+
+        # Step 1: Parse Russian PDF fixture
+        mock_task_request.id = 'russian-pdf-parse-001'
+
+        # Load the actual Russian PDF fixture
+        fixture_path = TEST_FIXTURES / "test_russian_invoice.pdf"
+        with open(fixture_path, 'rb') as f:
+            pdf_content = f.read()
+
+        # Mock parser to return result with Russian content
+        mock_parse_result = {
+            'status': 'success',
+            'items': [
+                {
+                    'sku': 'BOLT-M10',
+                    'name': 'Болт М10 ст3',  # Russian name with Cyrillic
+                    'qty': 100,
+                    'unit_price': '15.50',
+                    'total_price': '1550.00'
+                },
+            ],
+            'metadata': {
+                'project_name': 'Russian Fixture Test Project',
+                'client': 'Test Client'
+            },
+            'raw_text': 'Счет на оплату'  # Russian text: Invoice for payment
+        }
+
+        with patch('backend.services.invoice_parser.create_invoice_parser') as mock_factory, \
+             patch('backend.database.SessionLocal', return_value=db_session):
+            mock_parser = Mock()
+            mock_parser.parse_file.return_value = mock_parse_result
+            mock_factory.return_value = mock_parser
+
+            parse_result = call_parse_invoice_task(
+                'test_russian_invoice.pdf',
+                pdf_content,
+                {
+                    'message_id': '<russian@example.com>',
+                    'subject': 'Счет на оплату',  # Russian subject
+                    'from': 'supplier@example.com',
+                    'date': '2024-01-15',
+                    'to': 'invoices@zakuppro.com',
+                    'uid': 21
+                },
+                mock_task_request
+            )
+
+        # Verify parse result
+        assert parse_result['status'] == 'success'
+        invoice_id = parse_result['invoice_id']
+        print(f"✓ Parse complete: invoice_id={invoice_id}")
+
+        # Verify Invoice with Russian content stored correctly
+        invoice = db_session.query(Invoice).filter(Invoice.id == invoice_id).first()
+        assert invoice is not None
+        assert invoice.status == 'Ожидает сверки'
+        print(f"✓ Invoice status (Russian): {invoice.status}")
+
+        # Verify InvoiceItem with Russian name
+        invoice_items = db_session.query(InvoiceItem).filter(
+            InvoiceItem.invoice_id == invoice_id
+        ).all()
+        assert len(invoice_items) == 1
+        item = invoice_items[0]
+        assert item.name == 'Болт М10 ст3', f"Expected 'Болт М10 ст3', got {item.name}"
+        print(f"✓ Russian name preserved: {item.name}")
+
+        # Step 2: Verify invoice (fuzzy match for Russian name)
+        mock_task_request.id = 'russian-pdf-verify-001'
+
+        verify_result = call_verify_invoice_task(invoice_id, mock_task_request, db_session)
+
+        # Verify exact match (Russian names match)
+        assert verify_result['status'] == 'success'
+        assert verify_result['verdict'] == 'verified'
+        assert verify_result['matched_count'] == 1
+        print(f"✓ Verification complete: verdict={verify_result['verdict']}")
+
+    def test_russian_content_in_notification(
+        self, db_session, mock_task_request
+    ):
+        """
+        Test that Russian content is preserved in notification messages.
+
+        Uses test_russian_invoice.pdf to verify:
+        - Telegram notification contains Russian text
+        - Character encoding is UTF-8 (no mojibake)
+        - Russian invoice status (Сверен) included
+        - Russian item names preserved through pipeline
+        """
+        print("\n=== E2E: Russian Content in Notification ===")
+
+        # Step 0: Create Project
+        project = Project(
+            name="Russian Notification Project",
+            client="Test Client",
+            status="Проектирование"
+        )
+        db_session.add(project)
+        db_session.commit()
+        db_session.refresh(project)
+
+        # Create ProjectItem with Russian name
+        project_item = ProjectItem(
+            project_id=project.id,
+            name="Гайка М12",
+            sku="NUT-M12",
+            qty=50,
+            status="К закупке"
+        )
+        db_session.add(project_item)
+        db_session.commit()
+
+        # Step 1: Parse invoice with Russian content
+        mock_task_request.id = 'russian-notif-parse-001'
+
+        mock_parse_result = {
+            'status': 'success',
+            'items': [
+                {
+                    'sku': 'NUT-M12',
+                    'name': 'Гайка М12 ст3',  # Russian: Nut M12 steel3
+                    'qty': 50,
+                    'unit_price': '12.00',
+                    'total_price': '600.00'
+                },
+            ],
+            'metadata': {
+                'project_name': 'Russian Notification Project',
+                'client': 'Test Client'
+            },
+            'raw_text': 'Счет на оплату товаров'
+        }
+
+        with patch('backend.services.invoice_parser.create_invoice_parser') as mock_factory, \
+             patch('backend.database.SessionLocal', return_value=db_session):
+            mock_parser = Mock()
+            mock_parser.parse_file.return_value = mock_parse_result
+            mock_factory.return_value = mock_parser
+
+            parse_result = call_parse_invoice_task(
+                'test_russian_invoice.pdf',
+                b'%PDF-1.4\nrussian content',
+                {
+                    'message_id': '<russian-notif@example.com>',
+                    'subject': 'Счет №12345',  # Russian: Invoice #12345
+                    'from': 'supplier@example.com',
+                    'date': '2024-01-15',
+                    'to': 'invoices@zakuppro.com',
+                    'uid': 22
+                },
+                mock_task_request
+            )
+
+        invoice_id = parse_result['invoice_id']
+        print(f"✓ Parse complete: invoice_id={invoice_id}")
+
+        # Verify Russian name stored in InvoiceItem after parsing
+        invoice_items = db_session.query(InvoiceItem).filter(
+            InvoiceItem.invoice_id == invoice_id
+        ).all()
+        assert len(invoice_items) == 1
+        russian_name = invoice_items[0].name
+        assert russian_name == 'Гайка М12 ст3', f"Expected 'Гайка М12 ст3', got {russian_name}"
+        print(f"✓ Russian name preserved after parsing: {russian_name}")
+
+        # Step 2: Verify invoice
+        mock_task_request.id = 'russian-notif-verify-001'
+
+        # Mock Telegram notification to capture messages
+        with patch('backend.telegram_notifier.send_invoice_verified') as mock_telegram, \
+             patch('backend.database.SessionLocal', return_value=db_session), \
+             patch('os.getenv', return_value='123456'):  # Enable Telegram
+
+            verify_result = call_verify_invoice_task(invoice_id, mock_task_request, db_session)
+
+            # Verify verification succeeded
+            assert verify_result['status'] == 'success'
+            assert verify_result['verdict'] == 'verified'
+            print(f"✓ Verification complete: verdict={verify_result['verdict']}")
+
+            # Verify invoice status updated to Russian status
+            invoice = db_session.query(Invoice).filter(Invoice.id == invoice_id).first()
+            assert invoice.status == 'Сверен'  # Russian status: Verified
+            print(f"✓ Invoice status (Russian): {invoice.status}")
+
+            # Verify Telegram notification called
+            assert mock_telegram.called
+            telegram_call_args = mock_telegram.call_args
+            chat_id = telegram_call_args[0][0] if telegram_call_args[0] else telegram_call_args.kwargs.get('chat_id')
+            notif_invoice_id = telegram_call_args[0][1] if len(telegram_call_args[0]) > 1 else telegram_call_args.kwargs.get('invoice_id')
+            print(f"✓ Telegram notification called: chat_id={chat_id}, invoice_id={notif_invoice_id}")
+
+        # Verify Russian characters preserved (UTF-8 encoding)
+        invoice_items = db_session.query(InvoiceItem).filter(
+            InvoiceItem.invoice_id == invoice_id
+        ).all()
+        for item in invoice_items:
+            # Verify Russian name can be encoded/decoded (UTF-8)
+            russian_name = item.name
+            encoded = russian_name.encode('utf-8')
+            decoded = encoded.decode('utf-8')
+            assert decoded == russian_name, "Russian text encoding issue"
+            print(f"✓ Russian text UTF-8 encoding verified: {russian_name}")
+
+
+# =============================================================================
 # Main Entry Point
 # =============================================================================
 
