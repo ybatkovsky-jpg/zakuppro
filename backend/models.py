@@ -220,11 +220,12 @@ class BankTransaction(Base):
 
 
 class TransactionMatchingAudit(Base):
-    """TransactionMatchingAudit - audit trail for auto-matched bank-to-invoice transactions."""
+    """TransactionMatchingAudit - audit trail for auto-matched and manually matched transactions."""
     __tablename__ = "transaction_matching_audits"
 
     id = Column(Integer, primary_key=True, index=True)
-    bank_transaction_id = Column(Integer, ForeignKey("bank_transactions.id"), nullable=False)
+    bank_transaction_id = Column(Integer, ForeignKey("bank_transactions.id"), nullable=True)  # Nullable for manual matches from UnresolvedTransaction
+    unresolved_transaction_id = Column(Integer, ForeignKey("unresolved_transactions.id"), nullable=True)  # Tracks manual matches from unresolved queue
     invoice_id = Column(Integer, ForeignKey("invoices.id"), nullable=False)
     matched_at = Column(DateTime(timezone=True), nullable=False)
     matched_by = Column(String(50), nullable=False)  # 'auto', 'manual', or user_id

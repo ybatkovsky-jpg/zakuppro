@@ -1,7 +1,7 @@
-# GSD context snapshot (2026-06-02T11:30:09.105Z)
+# GSD context snapshot (2026-06-02T11:38:57.928Z)
 
 ## Active context
-Active: M004 / S05 / T02 - Add Invoice Candidate Suggestion Endpoint
+Active: M004 / S05 / T03 - Add Single Manual Match Endpoint
 
 ## Top project memories
 - [MEM005] (architecture) SQLAlchemy 2.0 uses relationship(back_populates=...) for bidirectional relationships, not backref. This makes relationships explicit on both sides for clearer code.

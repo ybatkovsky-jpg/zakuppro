@@ -21,4 +21,4 @@
 - None
 
 ## Next Action
-Execute T02: Add Invoice Candidate Suggestion Endpoint in slice S05.
+Execute T03: Add Single Manual Match Endpoint in slice S05.

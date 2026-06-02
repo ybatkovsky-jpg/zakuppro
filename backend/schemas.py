@@ -319,6 +319,20 @@ class InvoiceCandidateResponse(BaseSchema):
     confidence_score: float
 
 
+class ManualMatchRequest(BaseSchema):
+    """Schema for manual match request."""
+    invoice_id: int
+
+
+class ManualMatchResponse(BaseSchema):
+    """Schema for manual match response."""
+    payment_id: int
+    invoice_id: int
+    transaction_id: int
+    amount: float
+    matched_at: datetime
+
+
 # =============================================================================
 # ProductionTask Schemas
 # =============================================================================

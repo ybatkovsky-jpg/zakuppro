@@ -11,12 +11,17 @@ from decimal import Decimal
 import logging
 
 from backend.database import get_db
-from backend.models import UnresolvedTransaction, Supplier, PurchaseOrder, Invoice, InvoiceItem
+from backend.models import (
+    UnresolvedTransaction, Supplier, PurchaseOrder, Invoice, InvoiceItem,
+    Payment, TransactionMatchingAudit
+)
 from backend.schemas import (
     UnresolvedTransactionCreate,
     UnresolvedTransactionUpdate,
     UnresolvedTransactionResponse,
-    InvoiceCandidateResponse
+    InvoiceCandidateResponse,
+    ManualMatchRequest,
+    ManualMatchResponse
 )
 
 logger = logging.getLogger(__name__)
@@ -289,3 +294,127 @@ def get_invoice_candidates(transaction_id: int, db: Session = Depends(get_db)):
     logger.info(f"Returning {len(candidates)} candidates for transaction_id={transaction_id}")
 
     return candidates
+
+
+@router.post("/{transaction_id}/match", response_model=ManualMatchResponse, status_code=status.HTTP_201_CREATED)
+def manual_match_transaction(
+    transaction_id: int,
+    match_data: ManualMatchRequest,
+    db: Session = Depends(get_db)
+):
+    """
+    Manually match an unresolved transaction to an invoice.
+
+    Creates a Payment record linking the transaction to the invoice,
+    creates a TransactionMatchingAudit entry with matched_by='manual',
+    and updates the UnresolvedTransaction status to 'Привязано вручную'.
+
+    Uses database transaction with rollback on failure.
+
+    Request body:
+    - invoice_id: The ID of the invoice to match against
+
+    Returns:
+    - payment_id: Created Payment record ID
+    - invoice_id: Matched invoice ID
+    - transaction_id: Original UnresolvedTransaction ID
+    - amount: Payment amount
+    - matched_at: Timestamp of match
+    """
+    logger.info(f"manual_match_transaction called for transaction_id={transaction_id}, invoice_id={match_data.invoice_id}")
+
+    # Fetch the unresolved transaction
+    transaction = db.query(UnresolvedTransaction).filter(UnresolvedTransaction.id == transaction_id).first()
+    if not transaction:
+        logger.warning(f"UnresolvedTransaction with id {transaction_id} not found")
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"UnresolvedTransaction with id {transaction_id} not found"
+        )
+
+    # Validate transaction status is 'Не распределено'
+    if transaction.status != "Не распределено":
+        logger.warning(
+            f"UnresolvedTransaction {transaction_id} has invalid status '{transaction.status}', "
+            f"expected 'Не распределено'"
+        )
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Cannot match transaction with status '{transaction.status}'. Only 'Не распределено' can be matched."
+        )
+
+    # Validate invoice exists
+    invoice = db.query(Invoice).filter(Invoice.id == match_data.invoice_id).first()
+    if not invoice:
+        logger.warning(f"Invoice with id {match_data.invoice_id} not found")
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Invoice with id {match_data.invoice_id} not found"
+        )
+
+    logger.debug(f"Validated transaction {transaction_id} and invoice {match_data.invoice_id}")
+
+    try:
+        # Use database transaction for atomicity
+        # Create Payment record
+        payment = Payment(
+            invoice_id=invoice.id,
+            amount=transaction.amount,
+            bank_transaction_id=f"unresolved_{transaction_id}",  # Reference to unresolved transaction
+            payment_date=transaction.bank_date,
+        )
+        db.add(payment)
+        db.flush()  # Get payment_id before commit
+
+        logger.debug(f"Created payment_id={payment.id} for transaction_id={transaction_id}")
+
+        # Create TransactionMatchingAudit with unresolved_transaction_id
+        audit = TransactionMatchingAudit(
+            bank_transaction_id=None,  # Null for manual matches from unresolved queue
+            unresolved_transaction_id=transaction_id,  # Track source
+            invoice_id=invoice.id,
+            matched_at=datetime.utcnow(),
+            matched_by="manual",
+            confidence_score=Decimal("1.00"),  # Manual match = full confidence
+            matching_context={
+                "algorithm": "manual_match",
+                "transaction_amount": str(transaction.amount),
+                "unresolved_transaction_id": transaction_id,
+                "invoice_id": invoice.id,
+                "matched_by": "manual",
+            },
+        )
+        db.add(audit)
+
+        logger.debug(f"Created audit entry for manual match: transaction_id={transaction_id} -> invoice_id={invoice.id}")
+
+        # Update UnresolvedTransaction status
+        transaction.status = "Привязано вручную"
+
+        # Commit all changes atomically
+        db.commit()
+
+        logger.info(
+            f"Manual match successful: transaction_id={transaction_id} -> invoice_id={invoice.id}, "
+            f"payment_id={payment.id}, status updated to 'Привязано вручную'"
+        )
+
+        return ManualMatchResponse(
+            payment_id=payment.id,
+            invoice_id=invoice.id,
+            transaction_id=transaction_id,
+            amount=float(transaction.amount),
+            matched_at=datetime.utcnow()
+        )
+
+    except Exception as e:
+        # Rollback on any error
+        db.rollback()
+        logger.error(
+            f"Error during manual match for transaction_id={transaction_id}: {str(e)}",
+            exc_info=True
+        )
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to match transaction: {str(e)}"
+        )

@@ -19,9 +19,9 @@ from decimal import Decimal
 from sqlalchemy.orm import Session
 
 try:
-    from backend.models import Supplier, Project, PurchaseOrder, Invoice, InvoiceItem
+    from backend.models import Supplier, Project, PurchaseOrder, Invoice, InvoiceItem, Payment, TransactionMatchingAudit, UnresolvedTransaction
 except ImportError:
-    from models import Supplier, Project, PurchaseOrder, Invoice, InvoiceItem
+    from models import Supplier, Project, PurchaseOrder, Invoice, InvoiceItem, Payment, TransactionMatchingAudit, UnresolvedTransaction
 
 
 class TestCreateUnresolvedTransaction:
@@ -659,6 +659,233 @@ class TestGetInvoiceCandidates:
         response = test_client.get("/api/unresolved-transactions/99999/candidates")
 
         assert response.status_code == 404
+
+
+class TestManualMatch:
+    """Test POST /api/unresolved-transactions/{id}/match endpoint."""
+
+    def test_manual_match_success(self, test_client: TestClient, db_session: Session):
+        """POST creates Payment, Audit, and updates transaction status."""
+        # Create supplier, project, PO, invoice with items
+        supplier = Supplier(
+            name="Manual Match Supplier",
+            email="manual@example.com",
+            requisites="ИНН: 7701234567\nБанк: Тинькофф",
+        )
+        db_session.add(supplier)
+
+        project = Project(name="Test Project", client="Test Client", status="Проектирование")
+        db_session.add(project)
+
+        db_session.flush()
+
+        po = PurchaseOrder(project_id=project.id, supplier_id=supplier.id, status="Сверен")
+        db_session.add(po)
+        db_session.flush()
+
+        invoice = Invoice(purchase_order_id=po.id, status="Сверен")
+        db_session.add(invoice)
+        db_session.flush()
+
+        invoice_item = InvoiceItem(
+            invoice_id=invoice.id,
+            name="Test Item",
+            sku="SKU001",
+            qty=1,
+            unit_price=Decimal("10000.00"),
+            total_price=Decimal("10000.00"),
+        )
+        db_session.add(invoice_item)
+        db_session.commit()
+
+        # Create unresolved transaction with status 'Не распределено'
+        now = datetime.utcnow()
+        create_response = test_client.post("/api/unresolved-transactions/", json={
+            "amount": 10000.00,
+            "description": "Test transaction for manual match",
+            "bank_date": now.isoformat(),
+            "status": "Не распределено"
+        })
+        assert create_response.status_code == 201
+        transaction_id = create_response.json()["id"]
+
+        # Manually match to invoice
+        match_payload = {"invoice_id": invoice.id}
+        match_response = test_client.post(
+            f"/api/unresolved-transactions/{transaction_id}/match",
+            json=match_payload
+        )
+
+        assert match_response.status_code == 201
+        data = match_response.json()
+        assert data["payment_id"] > 0
+        assert data["invoice_id"] == invoice.id
+        assert data["transaction_id"] == transaction_id
+        assert data["amount"] == 10000.00
+        assert "matched_at" in data
+
+        # Verify Payment record was created
+        payment = db_session.query(Payment).filter(Payment.id == data["payment_id"]).first()
+        assert payment is not None
+        assert payment.invoice_id == invoice.id
+        assert float(payment.amount) == 10000.00
+        assert payment.bank_transaction_id == f"unresolved_{transaction_id}"
+
+        # Verify TransactionMatchingAudit was created with unresolved_transaction_id
+        audit = db_session.query(TransactionMatchingAudit).filter(
+            TransactionMatchingAudit.unresolved_transaction_id == transaction_id
+        ).first()
+        assert audit is not None
+        assert audit.invoice_id == invoice.id
+        assert audit.matched_by == "manual"
+        assert audit.bank_transaction_id is None  # Null for manual matches from unresolved
+
+        # Verify UnresolvedTransaction status was updated
+        get_response = test_client.get(f"/api/unresolved-transactions/{transaction_id}")
+        assert get_response.status_code == 200
+        transaction_data = get_response.json()
+        assert transaction_data["status"] == "Привязано вручную"
+
+    def test_manual_match_transaction_not_found(self, test_client: TestClient, db_session: Session):
+        """POST returns 404 when transaction id doesn't exist."""
+        supplier = Supplier(name="Test Supplier", email="test@example.com", requisites="ИНН: 7701234567")
+        db_session.add(supplier)
+
+        project = Project(name="Test Project", client="Test Client", status="Проектирование")
+        db_session.add(project)
+        db_session.flush()
+
+        po = PurchaseOrder(project_id=project.id, supplier_id=supplier.id, status="Сверен")
+        db_session.add(po)
+        db_session.flush()
+
+        invoice = Invoice(purchase_order_id=po.id, status="Сверен")
+        db_session.add(invoice)
+        db_session.commit()
+
+        match_payload = {"invoice_id": invoice.id}
+        response = test_client.post("/api/unresolved-transactions/99999/match", json=match_payload)
+
+        assert response.status_code == 404
+        assert "not found" in response.json()["detail"].lower()
+
+    def test_manual_match_invoice_not_found(self, test_client: TestClient):
+        """POST returns 404 when invoice id doesn't exist."""
+        now = datetime.utcnow()
+        create_response = test_client.post("/api/unresolved-transactions/", json={
+            "amount": 5000.00,
+            "bank_date": now.isoformat(),
+            "status": "Не распределено"
+        })
+        transaction_id = create_response.json()["id"]
+
+        match_payload = {"invoice_id": 99999}
+        response = test_client.post(
+            f"/api/unresolved-transactions/{transaction_id}/match",
+            json=match_payload
+        )
+
+        assert response.status_code == 404
+        assert "not found" in response.json()["detail"].lower()
+
+    def test_manual_match_invalid_status(self, test_client: TestClient, db_session: Session):
+        """POST returns 400 when transaction status is not 'Не распределено'."""
+        now = datetime.utcnow()
+        # Create transaction with status 'Привязано вручную' (already matched)
+        create_response = test_client.post("/api/unresolved-transactions/", json={
+            "amount": 5000.00,
+            "bank_date": now.isoformat(),
+            "status": "Привязано вручную"
+        })
+        transaction_id = create_response.json()["id"]
+
+        supplier = Supplier(name="Test Supplier", email="test@example.com", requisites="ИНН: 7701234567")
+        db_session.add(supplier)
+
+        project = Project(name="Test Project", client="Test Client", status="Проектирование")
+        db_session.add(project)
+        db_session.flush()
+
+        po = PurchaseOrder(project_id=project.id, supplier_id=supplier.id, status="Сверен")
+        db_session.add(po)
+        db_session.flush()
+
+        invoice = Invoice(purchase_order_id=po.id, status="Сверен")
+        db_session.add(invoice)
+        db_session.commit()
+
+        match_payload = {"invoice_id": invoice.id}
+        response = test_client.post(
+            f"/api/unresolved-transactions/{transaction_id}/match",
+            json=match_payload
+        )
+
+        assert response.status_code == 400
+        assert "status" in response.json()["detail"].lower()
+
+    def test_manual_match_rollback_on_error(self, test_client: TestClient, db_session: Session):
+        """POST rolls back transaction when invoice is deleted during match."""
+        # Create supplier, project, PO, invoice
+        supplier = Supplier(name="Test Supplier", email="test@example.com", requisites="ИНН: 7701234567")
+        db_session.add(supplier)
+
+        project = Project(name="Test Project", client="Test Client", status="Проектирование")
+        db_session.add(project)
+        db_session.flush()
+
+        po = PurchaseOrder(project_id=project.id, supplier_id=supplier.id, status="Сверен")
+        db_session.add(po)
+        db_session.flush()
+
+        invoice = Invoice(purchase_order_id=po.id, status="Сверен")
+        db_session.add(invoice)
+        db_session.commit()
+
+        # Store invoice_id before deletion
+        invoice_id = invoice.id
+
+        # Create unresolved transaction
+        now = datetime.utcnow()
+        create_response = test_client.post("/api/unresolved-transactions/", json={
+            "amount": 10000.00,
+            "bank_date": now.isoformat(),
+            "status": "Не распределено"
+        })
+        assert create_response.status_code == 201
+        transaction_id = create_response.json()["id"]
+
+        # Delete the invoice to trigger a foreign key error
+        db_session.delete(invoice)
+        db_session.commit()
+
+        # Try to match to the deleted invoice
+        match_payload = {"invoice_id": invoice_id}
+        response = test_client.post(
+            f"/api/unresolved-transactions/{transaction_id}/match",
+            json=match_payload
+        )
+
+        # Should return 404 since invoice doesn't exist
+        assert response.status_code == 404
+
+        # Verify transaction status was NOT updated (no changes made)
+        db_session.expire_all()  # Clear session cache
+        transaction = db_session.query(UnresolvedTransaction).filter(
+            UnresolvedTransaction.id == transaction_id
+        ).first()
+        assert transaction.status == "Не распределено"  # Still original status
+
+        # Verify no Payment was created
+        payment = db_session.query(Payment).filter(
+            Payment.bank_transaction_id == f"unresolved_{transaction_id}"
+        ).first()
+        assert payment is None
+
+        # Verify no TransactionMatchingAudit was created
+        audit = db_session.query(TransactionMatchingAudit).filter(
+            TransactionMatchingAudit.unresolved_transaction_id == transaction_id
+        ).first()
+        assert audit is None
 
 
 if __name__ == "__main__":
