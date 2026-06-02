@@ -139,7 +139,7 @@ function getDefinitionForType(type: string, definitions: RuleDefinition[]): Rule
 function QuickStats({ rules }: { rules: AutomationRuleData[] }) {
   const activeCount = rules.filter(r => r.enabled).length
   const todayExecutions = rules.reduce((sum, r) => sum + r.runCount, 0)
-  const lastRunTimes = rules.filter(r => r.lastRunAt).map(r => new Date(r.lastRun!)).filter(d => !isNaN(d.getTime()))
+  const lastRunTimes = rules.filter(r => r.lastRunAt).map(r => new Date(r.lastRunAt!)).filter(d => !isNaN(d.getTime()))
   const lastExecution = lastRunTimes.length > 0
     ? new Date(Math.max(...lastRunTimes.map(d => d.getTime())))
     : null

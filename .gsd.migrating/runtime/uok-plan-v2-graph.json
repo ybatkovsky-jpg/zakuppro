@@ -1,12 +1,12 @@
 {
-  "compiledAt": "2026-06-02T13:21:39.384Z",
+  "compiledAt": "2026-06-02T22:28:07.153Z",
   "milestoneId": "M004",
   "pipeline": {
     "clarifyRoundLimit": 3,
     "researchSynthesized": true,
     "draftContextIncluded": false,
     "finalizedContextIncluded": true,
-    "sourcePhase": "executing"
+    "sourcePhase": "completing-milestone"
   },
   "nodes": [
     {
@@ -540,12 +540,15 @@
       "dependsOn": [
         "execute-task:M004:S06:T02"
       ],
-      "writes": [],
+      "writes": [
+        "backend/routers/analytics.py",
+        "backend/tests/test_api/test_analytics.py"
+      ],
       "metadata": {
         "unitType": "execute-task",
         "unitId": "M004.S06.T03",
-        "title": "Implement manual bank statement upload endpoint with validation and parser integration",
-        "status": "pending"
+        "title": "Implemented manual bank statement upload endpoint with validation, parser integration, auto-matching, and comprehensive test coverage (13 tests for valid upload, extension validation, size limits, error handling, and invoice matching)",
+        "status": "complete"
       }
     },
     {
@@ -554,12 +557,14 @@
       "dependsOn": [
         "execute-task:M004:S06:T03"
       ],
-      "writes": [],
+      "writes": [
+        "backend/tests/test_analytics_integration.py"
+      ],
       "metadata": {
         "unitType": "execute-task",
         "unitId": "M004.S06.T04",
-        "title": "Create integration test suite for analytics/export/upload end-to-end workflow",
-        "status": "pending"
+        "title": "Created comprehensive integration test suite for analytics/export/upload end-to-end workflow with 5 test classes covering dashboard metrics, payment dynamics, Excel export, bank statement parsing, and auto-matching with audit trail verification",
+        "status": "complete"
       }
     },
     {
@@ -572,7 +577,7 @@
         "unitType": "complete-slice",
         "unitId": "M004.S06",
         "title": "S06",
-        "status": "pending"
+        "status": "complete"
       }
     }
   ]

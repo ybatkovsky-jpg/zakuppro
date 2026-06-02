@@ -1,0 +1,18 @@
+{
+  "id": "310cca8d-15e0-4020-9dc2-c1b98fc1b64c",
+  "runtime": "bash",
+  "purpose": "Run integration tests for analytics/export/upload workflow",
+  "script_chars": 116,
+  "started_at": "2026-06-02T13:50:08.973Z",
+  "finished_at": "2026-06-02T13:50:09.101Z",
+  "exit_code": 1,
+  "signal": null,
+  "timed_out": false,
+  "duration_ms": 128,
+  "stdout_bytes": 544,
+  "stderr_bytes": 0,
+  "stdout_truncated": false,
+  "stderr_truncated": false,
+  "stdout_path": "D:\\CLAUDE\\Project\\zakuppro\\zakuppro\\.gsd\\exec\\310cca8d-15e0-4020-9dc2-c1b98fc1b64c.stdout",
+  "stderr_path": "D:\\CLAUDE\\Project\\zakuppro\\zakuppro\\.gsd\\exec\\310cca8d-15e0-4020-9dc2-c1b98fc1b64c.stderr"
+}

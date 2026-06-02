@@ -37,7 +37,7 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
-    const { projectId, supplierId, emailTo, emailSubject, items } = body
+    const { projectId, supplierId, emailTo, emailSubject, emailBody, items } = body
 
     if (!projectId) {
       return NextResponse.json({ error: 'Project ID is required' }, { status: 400 })

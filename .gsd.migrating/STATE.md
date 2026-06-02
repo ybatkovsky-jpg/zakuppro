@@ -1,8 +1,8 @@
 # GSD State
 
 **Active Milestone:** M004: Bank Integration + Financials
-**Active Slice:** S06: S06
-**Phase:** executing
+**Active Slice:** None
+**Phase:** completing-milestone
 **Requirements Status:** 8 active · 6 validated · 5 deferred · 0 out of scope
 
 ## Milestone Registry
@@ -21,4 +21,4 @@
 - None
 
 ## Next Action
-Execute T03: Implement manual bank statement upload endpoint with validation and parser integration in slice S06.
+All slices complete in M004. Write milestone summary.

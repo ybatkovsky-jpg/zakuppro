@@ -92,13 +92,15 @@ export async function GET(request: NextRequest) {
       // Ищем сообщения
       const messageIds = await client.search(searchParams)
 
-      // Общая статистика
-      const totalMessages = messageIds.length
-      const unseenSearch = await client.search({ unseen: true })
-      const totalUnseen = unseenSearch.length
+      // Общая статистика (search может вернуть false при ошибке)
+      const totalMessages = Array.isArray(messageIds) ? messageIds.length : 0
+      const unseenSearch = await client.search({ seen: false })
+      const totalUnseen = Array.isArray(unseenSearch) ? unseenSearch.length : 0
 
       // Берём последние N сообщений (с конца списка)
-      const fetchIds = messageIds.slice(-limit).reverse()
+      const fetchIds = Array.isArray(messageIds) && messageIds.length > 0
+        ? messageIds.slice(-limit).reverse()
+        : []
 
       const emails: Array<{
         uid: number
@@ -113,43 +115,51 @@ export async function GET(request: NextRequest) {
 
       for (const msgId of fetchIds) {
         try {
-          const message: FetchMessageObject = await client.fetchOne(msgId, {
+          const message = await client.fetchOne(msgId, {
             uid: true,
-            from: true,
-            to: true,
-            subject: true,
-            date: true,
-            bodyText: true,
-            flags: true,
             envelope: true,
+            bodyStructure: true,
+            flags: true,
+            source: { maxLength: 10240 }, // Получаем начало письма для bodyText
           })
 
-          const fromAddr = message.from
-            ? (typeof message.from === 'object' && 'text' in message.from
-              ? (message.from as { text: string }).text
-              : String(message.from))
+          if (!message) {
+            continue
+          }
+
+          // Извлекаем данные из envelope
+          const envelope = message.envelope
+          const fromAddr = envelope?.from?.[0]
+            ? `${envelope.from[0].name ? `${envelope.from[0].name} <` : ''}${envelope.from[0].address}${envelope.from[0].name ? '>' : ''}`
             : ''
-          const toAddr = message.to
-            ? (typeof message.to === 'object' && 'text' in message.to
-              ? (message.to as { text: string }).text
-              : String(message.to))
+          const toAddr = envelope?.to?.[0]
+            ? `${envelope.to[0].name ? `${envelope.to[0].name} <` : ''}${envelope.to[0].address}${envelope.to[0].name ? '>' : ''}`
             : ''
 
-          // Проверяем наличие вложений по структуре envelope
+          // Проверяем наличие вложений по структуре
           let hasAttachments = false
           if (message.bodyStructure) {
             hasAttachments = checkForAttachments(message.bodyStructure)
           }
 
-          const isRead = !message.flags?.has('\\Seen')
+          const isRead = message.flags?.has('\\Seen') ?? false
+
+          // Извлекаем subject из envelope
+          const subject = envelope?.subject || '(Без темы)'
+
+          // Используем internalDate как дату письма
+          const emailDate = envelope?.date || message.internalDate || new Date()
+
+          // Простое извлечение body из source (если есть)
+          const body = message.source ? message.source.toString('utf-8').substring(0, 5000) : ''
 
           const emailEntry = {
             uid: message.uid ?? msgId,
             from: fromAddr,
             to: toAddr,
-            subject: message.subject || '(Без темы)',
-            date: message.date ? new Date(message.date).toISOString() : new Date().toISOString(),
-            body: message.bodyText || '',
+            subject,
+            date: typeof emailDate === 'string' ? emailDate : new Date(emailDate).toISOString(),
+            body,
             isRead,
             hasAttachments,
           }

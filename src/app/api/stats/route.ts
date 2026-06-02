@@ -73,7 +73,7 @@ export async function GET() {
 
     // ── Chart Data: Monthly Projects Trend (last 6 months) ──────────────────
     const now = new Date()
-    const monthlyProjectsData = []
+    const monthlyProjectsData: Array<{ month: string; count: number }> = []
     const monthNames = [
       'Янв', 'Фев', 'Мар', 'Апр', 'Май', 'Июн',
       'Июл', 'Авг', 'Сен', 'Окт', 'Ноя', 'Дек',

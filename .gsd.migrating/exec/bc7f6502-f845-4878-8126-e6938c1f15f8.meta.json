@@ -1,0 +1,18 @@
+{
+  "id": "bc7f6502-f845-4878-8126-e6938c1f15f8",
+  "runtime": "bash",
+  "purpose": "Run analytics unit tests",
+  "script_chars": 94,
+  "started_at": "2026-06-02T21:56:55.166Z",
+  "finished_at": "2026-06-02T21:56:55.244Z",
+  "exit_code": 1,
+  "signal": null,
+  "timed_out": false,
+  "duration_ms": 78,
+  "stdout_bytes": 544,
+  "stderr_bytes": 0,
+  "stdout_truncated": false,
+  "stderr_truncated": false,
+  "stdout_path": "D:\\CLAUDE\\Project\\zakuppro\\zakuppro\\.gsd\\exec\\bc7f6502-f845-4878-8126-e6938c1f15f8.stdout",
+  "stderr_path": "D:\\CLAUDE\\Project\\zakuppro\\zakuppro\\.gsd\\exec\\bc7f6502-f845-4878-8126-e6938c1f15f8.stderr"
+}

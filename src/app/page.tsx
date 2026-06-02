@@ -38,7 +38,7 @@ function AppContent() {
   const { currentView } = useAppStore()
 
   const pageTitle = pageTitles[currentView] ?? 'ПРОМЕБЕЛЬ'
-  const hasOwnHeader = currentView === 'project-detail' || currentView === 'supplier-detail'
+  const hasOwnHeader = (currentView as string) === 'project-detail' || (currentView as string) === 'supplier-detail'
 
   // Breadcrumb section
   const getBreadcrumb = () => {
@@ -59,8 +59,8 @@ function AppContent() {
               {breadcrumb && (
                 <>
                   <span className="text-sm text-muted-foreground/60 cursor-pointer hover:text-muted-foreground transition-colors" onClick={() => {
-                    if (currentView === 'project-detail') useAppStore.getState().navigate('projects')
-                    if (currentView === 'supplier-detail') useAppStore.getState().navigate('suppliers')
+                    if ((currentView as string) === 'project-detail') useAppStore.getState().navigate('projects')
+                    if ((currentView as string) === 'supplier-detail') useAppStore.getState().navigate('suppliers')
                   }}>{breadcrumb}</span>
                   <span className="text-muted-foreground/30">/</span>
                 </>

@@ -37,13 +37,13 @@ New analytics router registered in main.py. Excel export and upload endpoints us
   - Files: `backend/routers/analytics.py`, `backend/schemas.py`, `backend/schemas/__init__.py`, `backend/tests/test_api/test_analytics.py`
   - Verify: pytest backend/tests/test_api/test_analytics.py -v -k dynamics or export
 
-- [ ] **T03: Implement manual bank statement upload endpoint with validation and parser integration** `est:1h`
+- [x] **T03: Implement manual bank statement upload endpoint with validation and parser integration** `est:1h`
   ## Why
   Manual upload provides fallback when email Worker fails or for ad-hoc bank statement uploads outside the automated email flow.
   - Files: `backend/routers/analytics.py`, `backend/schemas.py`, `backend/schemas/__init__.py`, `backend/tests/test_api/test_analytics.py`
   - Verify: pytest backend/tests/test_api/test_analytics.py -v -k upload
 
-- [ ] **T04: Create integration test suite for analytics/export/upload end-to-end workflow** `est:45m`
+- [x] **T04: Create integration test suite for analytics/export/upload end-to-end workflow** `est:45m`
   ## Why
   Integration tests verify the complete workflow from data creation through analytics queries, export download, and upload/parsing to ensure all components work together.
   - Files: `backend/tests/test_analytics_integration.py`
