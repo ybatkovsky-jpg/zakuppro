@@ -1,7 +1,7 @@
-# GSD context snapshot (2026-06-02T01:32:15.222Z)
+# GSD context snapshot (2026-06-02T02:46:26.802Z)
 
 ## Active context
-Active: M003 / S06 / T03 - Validate dirty invoice fixtures with merged cells and Russian content
+Active: M003 / S06 / T04 - Run all S06 tests and verify coverage threshold
 
 ## Top project memories
 - [MEM005] (architecture) SQLAlchemy 2.0 uses relationship(back_populates=...) for bidirectional relationships, not backref. This makes relationships explicit on both sides for clearer code.

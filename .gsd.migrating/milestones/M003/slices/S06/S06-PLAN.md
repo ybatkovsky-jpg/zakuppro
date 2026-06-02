@@ -36,7 +36,7 @@ S06 validates the complete invoice pipeline from S02 (IMAP ingest) through S03 (
   - Files: `backend/tests/test_s06_e2e_integration.py`
   - Verify: cd backend && python -m pytest tests/test_s06_e2e_integration.py::TestErrorPathE2E -v
 
-- [ ] **T03: Validate dirty invoice fixtures with merged cells and Russian content** `est:30m`
+- [x] **T03: Validate dirty invoice fixtures with merged cells and Russian content** `est:30m`
   ## Why
   Dirty Excel files (merged cells, multi-line headers, Russian text) are common in real invoices. Fixtures exist but aren't validated end-to-end.
   - Files: `backend/tests/test_s06_e2e_integration.py`

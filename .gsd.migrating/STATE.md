@@ -21,4 +21,4 @@
 - None
 
 ## Next Action
-Execute T03: Validate dirty invoice fixtures with merged cells and Russian content in slice S06.
+Execute T04: Run all S06 tests and verify coverage threshold in slice S06.
