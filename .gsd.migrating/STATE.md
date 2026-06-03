@@ -21,4 +21,4 @@
 - None
 
 ## Next Action
-Execute M005-S04-T04: Create login endpoint and update main.py in slice S04.
+Execute M005-S04-T07: Frontend auth types and login API proxy in slice S04.

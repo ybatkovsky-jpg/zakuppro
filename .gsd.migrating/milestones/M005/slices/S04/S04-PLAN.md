@@ -43,19 +43,19 @@ Backend auth infrastructure (models, JWT, RBAC) is complete and tested. Frontend
   - Files: `backend/rbac.py`
   - Verify: grep -q 'require_role' backend/rbac.py && grep -q 'require_ownership' backend/rbac.py && grep -q 'PermissionDenied' backend/rbac.py
 
-- [ ] **M005-S04-T04: Create login endpoint and update main.py** `est:1.5h`
+- [x] **M005-S04-T04: Create login endpoint and update main.py** `est:1.5h`
   ## Why
   Users need a way to authenticate and receive JWT tokens. The login endpoint validates credentials and returns a token.
   - Files: `backend/routers/auth.py`, `backend/main.py`
   - Verify: grep -q 'login' backend/routers/auth.py && grep -q 'auth.router' backend/main.py
 
-- [ ] **M005-S04-T05: Update projects router with RBAC enforcement** `est:2h`
+- [x] **M005-S04-T05: Update projects router with RBAC enforcement** `est:2h`
   ## Why
   Projects router is the primary endpoint for managers. It needs ownership filtering and role-based access control.
   - Files: `backend/routers/projects.py`
   - Verify: grep -q 'current_user' backend/routers/projects.py && grep -q 'require_role\|ownership' backend/routers/projects.py
 
-- [ ] **M005-S04-T06: Update remaining routers with RBAC (stock_items, suppliers, analytics)** `est:2.5h`
+- [x] **M005-S04-T06: Update remaining routers with RBAC (stock_items, suppliers, analytics)** `est:2.5h`
   ## Why
   All API endpoints need RBAC to complete the security model. Stock items for warehouse, suppliers and analytics for owner/managers.
   - Files: `backend/routers/stock_items.py`, `backend/routers/suppliers.py`, `backend/routers/analytics.py`

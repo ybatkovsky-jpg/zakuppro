@@ -12,7 +12,36 @@ import type { ApiError } from '@/types/fastapi';
 // =============================================================================
 
 const FASTAPI_URL = process.env.FASTAPI_URL || 'http://localhost:8000';
-const FASTAPI_AUTH_TOKEN = process.env.FASTAPI_AUTH_TOKEN;
+
+// =============================================================================
+// Auth Token Storage (localStorage)
+// =============================================================================
+
+const AUTH_TOKEN_KEY = 'auth_token';
+
+/**
+ * Get the stored JWT token from localStorage
+ */
+export function getAuthToken(): string | null {
+  if (typeof window === 'undefined') return null;
+  return localStorage.getItem(AUTH_TOKEN_KEY);
+}
+
+/**
+ * Store the JWT token in localStorage
+ */
+export function setAuthToken(token: string): void {
+  if (typeof window === 'undefined') return;
+  localStorage.setItem(AUTH_TOKEN_KEY, token);
+}
+
+/**
+ * Remove the JWT token from localStorage (logout)
+ */
+export function clearAuthToken(): void {
+  if (typeof window === 'undefined') return;
+  localStorage.removeItem(AUTH_TOKEN_KEY);
+}
 
 // =============================================================================
 // Types
@@ -105,9 +134,17 @@ export async function apiFetch<T>(
     ...options.headers,
   };
 
-  // Add Authorization header if token is configured
-  if (FASTAPI_AUTH_TOKEN) {
-    headers['Authorization'] = `Bearer ${FASTAPI_AUTH_TOKEN}`;
+  // Add Authorization header from localStorage if available (client-side)
+  // Allow override via options.headers for server-side or special cases
+  const hasAuthHeader = Object.keys(options.headers || {}).some(
+    key => key.toLowerCase() === 'authorization'
+  );
+
+  if (!hasAuthHeader && typeof window !== 'undefined') {
+    const token = getAuthToken();
+    if (token) {
+      headers['Authorization'] = `Bearer ${token}`;
+    }
   }
 
   const config: RequestInit = {

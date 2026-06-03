@@ -1,0 +1,24 @@
+{
+  "schemaVersion": 1,
+  "taskId": "M005-S04-T04",
+  "unitId": "M005/S04/M005-S04-T04",
+  "timestamp": 1780483004747,
+  "passed": false,
+  "discoverySource": "task-plan",
+  "checks": [
+    {
+      "command": "grep -q 'login' backend/routers/auth.py",
+      "exitCode": 1,
+      "durationMs": 83,
+      "verdict": "fail"
+    },
+    {
+      "command": "grep -q 'auth.router' backend/main.py",
+      "exitCode": 1,
+      "durationMs": 25,
+      "verdict": "fail"
+    }
+  ],
+  "retryAttempt": 1,
+  "maxRetries": 2
+}

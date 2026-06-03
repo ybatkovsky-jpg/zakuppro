@@ -1,5 +1,5 @@
 {
-  "compiledAt": "2026-06-03T08:28:19.029Z",
+  "compiledAt": "2026-06-03T10:40:08.610Z",
   "milestoneId": "M005",
   "pipeline": {
     "clarifyRoundLimit": 3,
@@ -423,12 +423,16 @@
       "dependsOn": [
         "execute-task:M005:S04:M005-S04-T03"
       ],
-      "writes": [],
+      "writes": [
+        "backend/routers/auth.py",
+        "backend/main.py",
+        "backend/README.md"
+      ],
       "metadata": {
         "unitType": "execute-task",
         "unitId": "M005.S04.M005-S04-T04",
-        "title": "Create login endpoint and update main.py",
-        "status": "pending"
+        "title": "Created JWT login endpoint and integrated auth router into main application",
+        "status": "complete"
       }
     },
     {
@@ -437,12 +441,14 @@
       "dependsOn": [
         "execute-task:M005:S04:M005-S04-T04"
       ],
-      "writes": [],
+      "writes": [
+        "backend/routers/projects.py"
+      ],
       "metadata": {
         "unitType": "execute-task",
         "unitId": "M005.S04.M005-S04-T05",
-        "title": "Update projects router with RBAC enforcement",
-        "status": "pending"
+        "title": "Updated projects router with RBAC enforcement for owner, manager, and warehouse roles",
+        "status": "complete"
       }
     },
     {
@@ -451,12 +457,16 @@
       "dependsOn": [
         "execute-task:M005:S04:M005-S04-T05"
       ],
-      "writes": [],
+      "writes": [
+        "backend/routers/stock_items.py",
+        "backend/routers/suppliers.py",
+        "backend/routers/analytics.py"
+      ],
       "metadata": {
         "unitType": "execute-task",
         "unitId": "M005.S04.M005-S04-T06",
-        "title": "Update remaining routers with RBAC (stock_items, suppliers, analytics)",
-        "status": "pending"
+        "title": "Updated stock_items, suppliers, and analytics routers with RBAC (JWT auth and role-based access control)",
+        "status": "complete"
       }
     },
     {

@@ -1,0 +1,30 @@
+{
+  "schemaVersion": 1,
+  "taskId": "M005-S04-T06",
+  "unitId": "M005/S04/M005-S04-T06",
+  "timestamp": 1780483200704,
+  "passed": false,
+  "discoverySource": "task-plan",
+  "checks": [
+    {
+      "command": "grep -q 'current_user' backend/routers/stock_items.py",
+      "exitCode": 1,
+      "durationMs": 33,
+      "verdict": "fail"
+    },
+    {
+      "command": "grep -q 'current_user' backend/routers/suppliers.py",
+      "exitCode": 1,
+      "durationMs": 41,
+      "verdict": "fail"
+    },
+    {
+      "command": "grep -q 'current_user' backend/routers/analytics.py",
+      "exitCode": 1,
+      "durationMs": 28,
+      "verdict": "fail"
+    }
+  ],
+  "retryAttempt": 1,
+  "maxRetries": 2
+}

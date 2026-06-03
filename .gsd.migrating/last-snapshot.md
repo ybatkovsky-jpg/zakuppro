@@ -1,7 +1,7 @@
-# GSD context snapshot (2026-06-03T05:18:39.679Z)
+# GSD context snapshot (2026-06-03T10:39:59.662Z)
 
 ## Active context
-Active: M005 / S04 / M005-S04-T03 - Create RBAC authorization middleware
+Active: M005 / S04 / M005-S04-T07 - Frontend auth types and login API proxy
 
 ## Top project memories
 - [MEM005] (architecture) SQLAlchemy 2.0 uses relationship(back_populates=...) for bidirectional relationships, not backref. This makes relationships explicit on both sides for clearer code.

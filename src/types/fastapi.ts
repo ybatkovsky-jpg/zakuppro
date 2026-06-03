@@ -455,3 +455,26 @@ export interface DateRangeQueryParams {
 export interface PaymentDynamicsQueryParams extends DateRangeQueryParams {
   group_by?: 'day' | 'week' | 'month';
 }
+
+// =============================================================================
+// Authentication Types
+// =============================================================================
+
+export type UserRole = 'owner' | 'manager' | 'warehouse';
+
+export interface User {
+  id: number;
+  username: string;
+  role: UserRole;
+}
+
+export interface LoginRequest {
+  username: string;
+  password: string;
+}
+
+export interface LoginResponse {
+  access_token: string;
+  token_type: string;
+  role: UserRole;
+}
