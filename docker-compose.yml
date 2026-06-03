@@ -147,6 +147,12 @@ services:
     depends_on:
       rabbitmq:
         condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "celery -A backend.celery_app inspect ping --timeout=2 || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
     networks:
       - zakuppro-network
 
@@ -182,6 +188,34 @@ services:
     volumes:
       - uploads_data:/data/uploads
     restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "ps aux | grep telegram_bot | grep -v grep || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+    networks:
+      - zakuppro-network
+
+  # Next.js Frontend
+  frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: zakuppro-frontend
+    environment:
+      FASTAPI_URL: http://api:8000
+    ports:
+      - "3000:3000"
+    depends_on:
+      api:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
     networks:
       - zakuppro-network
 

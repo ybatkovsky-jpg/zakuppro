@@ -94,17 +94,71 @@ cp .env.example .env  # Отредактируйте .env с вашими клю
 
 ### 2. Запуск через Docker (рекомендуется)
 
+**Prerequisites:**
+- Docker 20.10+
+- Docker Compose 2.0+
+
+**Quick Start:**
 ```bash
 # Запуск всех сервисов
 docker-compose up -d
 
-# Проверка здоровья
-curl http://localhost:8000/health
+# Проверка статуса сервисов
+docker-compose ps
 
-# Логи
+# Smoke test (валидация полного цикла CRUD с авторизацией)
+bash scripts/smoke-test.sh
+```
+
+**Service URLs:**
+| Service | URL | Credentials |
+|---------|-----|-------------|
+| Frontend | http://localhost:3000 | — |
+| Backend API | http://localhost:8000 | `admin / admin123` (default) |
+| API Docs | http://localhost:8000/docs | — |
+| RabbitMQ UI | http://localhost:15672 | `guest / guest` |
+| PostgreSQL | localhost:5432 | `postgres / postgres` |
+
+**Services Description:**
+1. **db** — PostgreSQL 15 database (persistent volume)
+2. **api** — FastAPI backend with health check
+3. **rabbitmq** — Message broker with management UI
+4. **email-worker** — IMAP invoice ingest + LLM parsing
+5. **celery-worker** — Async task processing (LLM fallback, matching)
+6. **telegram-bot** — Telegram bot for file uploads
+7. **frontend** — Next.js UI (App Router + shadcn/ui)
+
+**Logs & Troubleshooting:**
+```bash
+# Логи конкретного сервиса
 docker-compose logs -f api
 docker-compose logs -f celery-worker
 docker-compose logs -f telegram-bot
+docker-compose logs -f email-worker
+
+# Все логи
+docker-compose logs
+
+# Перезапуск сервиса
+docker-compose restart api
+
+# Полная остановка и удаление volumes (сброс данных)
+docker-compose down -v
+```
+
+**Common Issues:**
+- **Port conflicts**: Измените порты в `docker-compose.yml` если заняты
+- **DB connection timeout**: Подождите ~10s после запуска для healthcheck
+- **RabbitMQ slow**: Management UI доступен после ~30s (start_period)
+- **LLM failures**: Проверьте `OPENAI_API_KEY` / `ANTHROPIC_API_KEY` в `.env`
+
+**Shutdown:**
+```bash
+# Остановка сервисов (сохранение данных)
+docker-compose down
+
+# Полная очистка включая volumes
+docker-compose down -v
 ```
 
 ### 3. Локальный запуск (development)
@@ -143,7 +197,7 @@ python -m backend.email_worker
 
 ## Переменные окружения
 
-Создайте `.env` файл в корне проекта:
+Создайте `.env` файл в корне проекта (см. `.env.example` для шаблона):
 
 ```bash
 # Database

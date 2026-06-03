@@ -54,9 +54,7 @@ node_modules/
 .env.local
 .env.*.local
 
-# Docker artifacts
-Dockerfile
-*.dockerfile
+# Docker artifacts (keep root Dockerfile, ignore backend)
 docker-compose.yml
 docker-compose.*.yml
 
@@ -78,3 +76,7 @@ cache/
 dist/
 build/
 *.egg-info/
+
+# Frontend build artifacts (recreated in container)
+.next/
+out/
