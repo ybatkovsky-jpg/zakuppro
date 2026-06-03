@@ -1,0 +1,38 @@
+{
+  "schemaVersion": 1,
+  "milestoneId": "M005",
+  "sliceId": "S01",
+  "timestamp": 1780443420152,
+  "status": "fail",
+  "durationMs": 5,
+  "checks": [
+    {
+      "category": "tool",
+      "target": "T03 Verify",
+      "passed": false,
+      "message": "Unsafe or non-runnable Verify command: grep -q 'apiGet\\|apiPost' src/app/api/suppliers/route.ts (contains shell control syntax such as pipes, redirects, semicolons, backticks, or command substitution)",
+      "blocking": true
+    },
+    {
+      "category": "tool",
+      "target": "T06 Verify",
+      "passed": false,
+      "message": "Unsafe or non-runnable Verify command: ! grep -q 'from.*lib/db' src/app/api/analytics/pipeline/route.ts src/app/api/analytics/suppliers/route.ts || grep -q 'apiGet\\|apiPost' src/app/api/analytics/pipeline/route.ts (contains shell control syntax such as pipes, redirects, semicolons, backticks, or command substitution)",
+      "blocking": true
+    },
+    {
+      "category": "tool",
+      "target": "T07 Verify",
+      "passed": false,
+      "message": "Unsafe or non-runnable Verify command: ! grep -q '@prisma\\|prisma' package.json (contains shell control syntax such as pipes, redirects, semicolons, backticks, or command substitution)",
+      "blocking": true
+    },
+    {
+      "category": "tool",
+      "target": "T08 Verify",
+      "passed": false,
+      "message": "Unsafe or non-runnable Verify command: curl -s http://localhost:3000/api/projects | head -1 (contains shell control syntax such as pipes, redirects, semicolons, backticks, or command substitution)",
+      "blocking": true
+    }
+  ]
+}

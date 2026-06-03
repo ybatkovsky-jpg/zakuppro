@@ -1,8 +1,8 @@
 # GSD State
 
 **Active Milestone:** M005: Frontend UI Integration
-**Active Slice:** S01: Frontend-Backend API Integration
-**Phase:** planning
+**Active Slice:** S01: S01
+**Phase:** executing
 **Requirements Status:** 6 active · 8 validated · 5 deferred · 0 out of scope
 
 ## Milestone Registry
@@ -21,4 +21,4 @@
 - None
 
 ## Next Action
-Slice S01 has no DB tasks. Plan slice tasks before execution.
+Execute T02: Replace Projects API Routes with FastAPI Proxy in slice S01.

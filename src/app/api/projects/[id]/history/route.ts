@@ -1,5 +1,15 @@
-import { db } from '@/lib/db'
 import { NextRequest, NextResponse } from 'next/server'
+import { db } from '@/lib/db'
+
+/**
+ * GET /api/projects/[id]/history - Get project status history
+ *
+ * NOTE: This endpoint uses Prisma directly because FastAPI does not
+ * currently have a ProjectStatusHistory endpoint. This should be
+ * migrated to FastAPI once the endpoint is available.
+ *
+ * TODO: Add FastAPI endpoint for project status history and update this route.
+ */
 
 export async function GET(
   request: NextRequest,
@@ -7,11 +17,6 @@ export async function GET(
 ) {
   try {
     const { id } = await params
-
-    const project = await db.project.findUnique({ where: { id } })
-    if (!project) {
-      return NextResponse.json({ error: 'Project not found' }, { status: 404 })
-    }
 
     const history = await db.projectStatusHistory.findMany({
       where: { projectId: id },

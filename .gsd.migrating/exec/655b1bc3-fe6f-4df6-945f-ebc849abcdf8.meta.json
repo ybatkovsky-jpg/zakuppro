@@ -1,0 +1,18 @@
+{
+  "id": "655b1bc3-fe6f-4df6-945f-ebc849abcdf8",
+  "runtime": "bash",
+  "purpose": "TypeScript check for diagnostics",
+  "script_chars": 98,
+  "started_at": "2026-06-02T22:34:45.178Z",
+  "finished_at": "2026-06-02T22:34:45.330Z",
+  "exit_code": 1,
+  "signal": null,
+  "timed_out": false,
+  "duration_ms": 152,
+  "stdout_bytes": 544,
+  "stderr_bytes": 0,
+  "stdout_truncated": false,
+  "stderr_truncated": false,
+  "stdout_path": "D:\\CLAUDE\\Project\\zakuppro\\zakuppro\\.gsd\\exec\\655b1bc3-fe6f-4df6-945f-ebc849abcdf8.stdout",
+  "stderr_path": "D:\\CLAUDE\\Project\\zakuppro\\zakuppro\\.gsd\\exec\\655b1bc3-fe6f-4df6-945f-ebc849abcdf8.stderr"
+}

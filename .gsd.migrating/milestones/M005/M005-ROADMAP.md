@@ -12,7 +12,7 @@
 
 ## Slices
 
-- [ ] **S01: Frontend-Backend API Integration** `risk:high` `depends:[]`
+- [ ] **S01: S01** `risk:high` `depends:[]`
   > After this: Frontend компоненты (Projects, Invoices, Analytics) получают данные через FastAPI endpoints. Проверяется curl-ом к /api/projects, /api/invoices, /api/analytics/dashboard.
 
 - [ ] **S02: Kanban Drag-and-Drop** `risk:medium` `depends:[S01]`

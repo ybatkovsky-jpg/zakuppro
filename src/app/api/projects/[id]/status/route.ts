@@ -1,5 +1,21 @@
-import { db } from '@/lib/db'
 import { NextRequest, NextResponse } from 'next/server'
+import { apiFetch } from '@/lib/api-client'
+import type { ProjectUpdate } from '@/types/fastapi'
+
+// =============================================================================
+// Type Mappings
+// =============================================================================
+
+const STATUS_TO_FASTAPI: Record<string, string> = {
+  'new': 'Проектирование',
+  'processing': 'Закупки',
+  'paid': 'Оплачено',
+  'delivered': 'Доставлено',
+  'cancelled': 'Отменен',
+  'requested': 'Закупки',
+  'invoiced': 'На оплате',
+  'completed': 'Завершен',
+}
 
 const VALID_TRANSITIONS: Record<string, string[]> = {
   'new': ['processing', 'cancelled'],
@@ -12,8 +28,19 @@ const VALID_TRANSITIONS: Record<string, string[]> = {
   'cancelled': [],
 }
 
-// Transitions that require a mandatory comment
 const MANDATORY_COMMENT_TRANSITIONS = ['cancelled']
+
+// =============================================================================
+// Helper Functions
+// =============================================================================
+
+function getRussianStatus(englishStatus: string): string {
+  return STATUS_TO_FASTAPI[englishStatus] || englishStatus
+}
+
+// =============================================================================
+// POST /api/projects/[id]/status - Update project status
+// =============================================================================
 
 export async function POST(
   request: NextRequest,
@@ -31,20 +58,32 @@ export async function POST(
       )
     }
 
-    const existing = await db.project.findUnique({ where: { id } })
-    if (!existing) {
+    // First, fetch the current project to validate transition
+    const currentResult = await apiFetch(`/api/projects/${id}`)
+
+    if (currentResult.error) {
+      const statusCode = (currentResult.error.details as any)?.status || 500
+      if (statusCode === 404) {
+        return NextResponse.json(
+          { error: 'Проект не найден' },
+          { status: 404 }
+        )
+      }
       return NextResponse.json(
-        { error: 'Проект не найден' },
-        { status: 404 }
+        { error: currentResult.error.error, details: currentResult.error.details },
+        { status: statusCode }
       )
     }
 
-    // Validate transition
-    const allowedTransitions = VALID_TRANSITIONS[existing.status] ?? []
+    const currentProject: any = currentResult.data
+    const currentStatus = currentProject.status
+
+    // Validate transition (using English status codes)
+    const allowedTransitions = VALID_TRANSITIONS[currentStatus as keyof typeof VALID_TRANSITIONS] || []
     if (!allowedTransitions.includes(status)) {
       return NextResponse.json(
         {
-          error: `Недопустимый переход статуса: ${existing.status} → ${status}`,
+          error: `Недопустимый переход статуса: ${currentStatus} → ${status}`,
           allowedTransitions,
         },
         { status: 400 }
@@ -59,29 +98,29 @@ export async function POST(
       )
     }
 
-    // Update project status
-    await db.project.update({
-      where: { id },
-      data: { status },
+    // Update project status via FastAPI
+    const updateData: ProjectUpdate = {
+      status: getRussianStatus(status),
+    }
+
+    const result = await apiFetch(`/api/projects/${id}`, {
+      method: 'PUT',
+      body: updateData,
     })
 
-    // Create status history entry - store transition info in notes since the new fields might not be available
-    const notesText = `Статус изменен: ${existing.status} → ${status}${comment ? ` | Комментарий: ${comment.trim()}` : ''}`
-
-    await db.projectStatusHistory.create({
-      data: {
-        projectId: id,
-        status,
-        notes: notesText,
-        ...(changedAt ? { createdAt: new Date(changedAt) } : {}),
-      },
-    })
+    if (result.error) {
+      const statusCode = (result.error.details as any)?.status || 500
+      return NextResponse.json(
+        { error: result.error.error, details: result.error.details },
+        { status: statusCode }
+      )
+    }
 
     return NextResponse.json({
       success: true,
-      fromStatus: existing.status,
+      fromStatus: currentStatus,
       toStatus: status,
-      message: `Статус проекта изменен: ${existing.status} → ${status}`,
+      message: `Статус проекта изменен: ${currentStatus} → ${status}`,
     })
   } catch (error) {
     console.error('Status change error:', error)

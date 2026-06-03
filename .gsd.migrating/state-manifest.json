@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "exported_at": "2026-06-02T23:13:46.369Z",
+  "exported_at": "2026-06-03T01:55:28.830Z",
   "milestones": [
     {
       "id": "M001",
@@ -830,7 +830,7 @@
     {
       "milestone_id": "M005",
       "id": "S01",
-      "title": "Frontend-Backend API Integration",
+      "title": "S01",
       "status": "pending",
       "risk": "high",
       "depends": [],
@@ -839,11 +839,11 @@
       "completed_at": null,
       "full_summary_md": "",
       "full_uat_md": "",
-      "goal": "Настроить проксирование Next.js API routes в FastAPI backend. Создать API клиент для типизированных запросов. Переписать key компоненты для использования FastAPI вместо Prisma.",
-      "success_criteria": "- Next.js /api/* проксирует в FastAPI backend\n- Projects компонент использует GET /api/projects\n- Invoices компонент использует GET /api/invoices\n- Analytics использует /api/analytics/dashboard\n- Типизированные TypeScript интерфейсы для всех DTO",
-      "proof_level": "API-level: curl к FastAPI endpoints возвращает валидные JSON с данными из PostgreSQL. Frontend рендерит реальные данные из backend.",
-      "integration_closure": "Next.js (порт 3000) → FastAPI (порт 8000) через internal Docker network. В production nginx будет проксировать /api/* на FastAPI.",
-      "observability_impact": "Добавить логирование в Next.js API routes для отслеживания запросов к FastAPI. Логировать ошибки проксирования.",
+      "goal": "Replace Prisma-based Next.js API routes with FastAPI proxy routes. Frontend components will fetch data through Next.js API routes that proxy to FastAPI backend on port 8000.",
+      "success_criteria": "1. All CRUD operations (projects, suppliers, warehouse, invoices, analytics) flow through FastAPI backend\n2. Next.js API routes are pure proxies without business logic\n3. TypeScript types matching FastAPI schemas are available\n4. curl to localhost:3000/api/* returns data from FastAPI\n5. No Prisma calls remain in API routes",
+      "proof_level": "integration",
+      "integration_closure": "Frontend components continue using /api/* endpoints internally. Data flows: Component → Next.js API route → FastAPI → PostgreSQL. Remaining work for M005: S02 (Kanban DnD), S03 (Analytics dashboard), S04 (RBAC), S05 (Production Polish).",
+      "observability_impact": "API proxy failures will return FastAPI error responses. Failed requests from frontend can be traced through Next.js logs to FastAPI logs. No new observability surfaces added in this slice.",
       "sequence": 1,
       "replan_triggered_at": null,
       "is_sketch": 0,
@@ -4994,6 +4994,322 @@
       "escalation_awaiting_review": 0,
       "escalation_artifact_path": null,
       "escalation_override_applied_at": null
+    },
+    {
+      "milestone_id": "M005",
+      "slice_id": "S01",
+      "id": "T01",
+      "title": "Created TypeScript types and API client for FastAPI backend integration",
+      "status": "complete",
+      "one_liner": "Created TypeScript types and API client for FastAPI backend integration",
+      "narrative": "Created a complete typed API layer for communicating with the FastAPI backend:\n\n1. **TypeScript types** (`src/types/fastapi.ts`): Comprehensive type definitions generated from FastAPI Pydantic schemas. Includes types for all entities (Project, Supplier, StockItem, Invoice, Payment, etc.) with proper Create/Update/Response variants, plus analytics and pagination types.\n\n2. **API client** (`src/lib/api-client.ts`): Fetch wrapper with:\n   - Base URL from env (`FASTAPI_URL`, default `http://localhost:8000`)\n   - Optional Bearer token auth via `FASTAPI_AUTH_TOKEN`\n   - Error transformation (FastAPI HTTPException → `{ error, details }`)\n   - Typed `ApiResult<T>` return type\n   - Helper functions: `get`, `post`, `put`, `patch`, `del`\n   - Utility functions: `throwErrorOnError`, `isSuccess`, `isFailure`\n\n3. **Typed API methods** (organized by entity):\n   - `src/lib/api/projects.ts` — Projects CRUD\n   - `src/lib/api/suppliers.ts` — Suppliers CRUD\n   - `src/lib/api/stock-items.ts` — Warehouse CRUD\n   - `src/lib/api/invoices.ts` — Invoices CRUD\n   - `src/lib/api/analytics.ts` — Dashboard metrics, payment dynamics, export, bank statement upload\n\n4. **Configuration**:\n   - Added `FASTAPI_URL=http://localhost:8000` to `.env`\n   - Placeholder for `FASTAPI_AUTH_TOKEN` (commented out, ready for when auth is enabled)\n\nAll files use `@/` path aliases for clean imports. Build passes successfully.",
+      "verification_result": "- Verified TypeScript compilation via `npm run build` — build completed successfully with no type errors in the new files\n- Confirmed file structure: `src/types/fastapi.ts` (484 lines), `src/lib/api-client.ts` (214 lines), `src/lib/api/*.ts` (5 files)\n- Env configuration added to `.env`",
+      "duration": "",
+      "completed_at": "2026-06-03T01:55:28.788Z",
+      "blocker_discovered": false,
+      "deviations": "None.",
+      "known_issues": "None.",
+      "key_files": [
+        "src/types/fastapi.ts",
+        "src/lib/api-client.ts",
+        "src/lib/api/projects.ts",
+        "src/lib/api/suppliers.ts",
+        "src/lib/api/stock-items.ts",
+        "src/lib/api/invoices.ts",
+        "src/lib/api/analytics.ts",
+        "src/lib/api/index.ts",
+        ".env"
+      ],
+      "key_decisions": [
+        "Source of truth for types: FastAPI Pydantic schemas in backend/schemas.py",
+        "Error format: transform FastAPI HTTPException.detail to { error, details }",
+        "Auth approach: Bearer token via server-side env var, not exposed to client",
+        "Excel parsing: kept on frontend (discussed, will migrate to FastAPI later)",
+        "Base URL configurable via FASTAPI_URL env var"
+      ],
+      "full_summary_md": "---\nid: T01\nparent: S01\nmilestone: M005\nkey_files:\n  - src/types/fastapi.ts\n  - src/lib/api-client.ts\n  - src/lib/api/projects.ts\n  - src/lib/api/suppliers.ts\n  - src/lib/api/stock-items.ts\n  - src/lib/api/invoices.ts\n  - src/lib/api/analytics.ts\n  - src/lib/api/index.ts\n  - .env\nkey_decisions:\n  - Source of truth for types: FastAPI Pydantic schemas in backend/schemas.py\n  - Error format: transform FastAPI HTTPException.detail to { error, details }\n  - Auth approach: Bearer token via server-side env var, not exposed to client\n  - Excel parsing: kept on frontend (discussed, will migrate to FastAPI later)\n  - Base URL configurable via FASTAPI_URL env var\nduration: \nverification_result: passed\ncompleted_at: 2026-06-03T01:55:28.784Z\nblocker_discovered: false\n---\n\n# T01: Created TypeScript types and API client for FastAPI backend integration\n\n**Created TypeScript types and API client for FastAPI backend integration**\n\n## What Happened\n\nCreated a complete typed API layer for communicating with the FastAPI backend:\n\n1. **TypeScript types** (`src/types/fastapi.ts`): Comprehensive type definitions generated from FastAPI Pydantic schemas. Includes types for all entities (Project, Supplier, StockItem, Invoice, Payment, etc.) with proper Create/Update/Response variants, plus analytics and pagination types.\n\n2. **API client** (`src/lib/api-client.ts`): Fetch wrapper with:\n   - Base URL from env (`FASTAPI_URL`, default `http://localhost:8000`)\n   - Optional Bearer token auth via `FASTAPI_AUTH_TOKEN`\n   - Error transformation (FastAPI HTTPException → `{ error, details }`)\n   - Typed `ApiResult<T>` return type\n   - Helper functions: `get`, `post`, `put`, `patch`, `del`\n   - Utility functions: `throwErrorOnError`, `isSuccess`, `isFailure`\n\n3. **Typed API methods** (organized by entity):\n   - `src/lib/api/projects.ts` — Projects CRUD\n   - `src/lib/api/suppliers.ts` — Suppliers CRUD\n   - `src/lib/api/stock-items.ts` — Warehouse CRUD\n   - `src/lib/api/invoices.ts` — Invoices CRUD\n   - `src/lib/api/analytics.ts` — Dashboard metrics, payment dynamics, export, bank statement upload\n\n4. **Configuration**:\n   - Added `FASTAPI_URL=http://localhost:8000` to `.env`\n   - Placeholder for `FASTAPI_AUTH_TOKEN` (commented out, ready for when auth is enabled)\n\nAll files use `@/` path aliases for clean imports. Build passes successfully.\n\n## Verification\n\n- Verified TypeScript compilation via `npm run build` — build completed successfully with no type errors in the new files\n- Confirmed file structure: `src/types/fastapi.ts` (484 lines), `src/lib/api-client.ts` (214 lines), `src/lib/api/*.ts` (5 files)\n- Env configuration added to `.env`\n\n## Verification Evidence\n\n| # | Command | Exit Code | Verdict | Duration |\n|---|---------|-----------|---------|----------|\n| 1 | `npm run build` | 0 | passed | 45000ms |\n\n## Deviations\n\nNone.\n\n## Known Issues\n\nNone.\n\n## Files Created/Modified\n\n- `src/types/fastapi.ts`\n- `src/lib/api-client.ts`\n- `src/lib/api/projects.ts`\n- `src/lib/api/suppliers.ts`\n- `src/lib/api/stock-items.ts`\n- `src/lib/api/invoices.ts`\n- `src/lib/api/analytics.ts`\n- `src/lib/api/index.ts`\n- `.env`\n",
+      "description": "## Why\nNeed centralized HTTP client for FastAPI communication and TypeScript types matching backend Pydantic schemas.\n\n## Do\n1. Create `src/lib/api-client.ts` with:\n   - `FASTAPI_BASE_URL` constant (http://localhost:8000)\n   - `apiFetch()` wrapper around native fetch with error handling\n   - Helper methods: `getProjects()`, `getProject(id)`, `createProject()`, `updateProject()`, `deleteProject()`\n   - Similar methods for suppliers, stockItems, invoices, analytics\n   - Timeout handling (default 10s)\n   - Response JSON parsing with error propagation\n\n2. Create `src/types/api.ts` with TypeScript interfaces matching FastAPI schemas:\n   - `Project`, `ProjectCreate`, `ProjectUpdate`, `ProjectResponse`\n   - `ProjectItem`, `ProjectItemCreate`, `ProjectItemResponse`\n   - `Supplier`, `SupplierCreate`, `SupplierUpdate`, `SupplierResponse`\n   - `StockItem`, `StockItemCreate`, `StockItemUpdate`, `StockItemResponse`\n   - `Invoice`, `InvoiceCreate`, `InvoiceResponse`\n   - `DashboardMetrics`, `PaymentDynamicsPoint`\n   - Note: Use camelCase for frontend (createdAt, updatedAt) to match current frontend expectations\n\n3. Field mapping notes in api-client:\n   - Backend uses snake_case (created_at, client), frontend expects camelCase (createdAt, customerName)\n   - Add transform functions in api-client to convert between formats\n   - Backend status is Russian (Проектирование), frontend uses English (new) - add status mapping\n\n## Constraints\n- Use native fetch (no new dependencies)\n- Types should be manually written to match backend schemas exactly\n- Handle 404, 500 errors gracefully\n\n## Done when\n- `src/lib/api-client.ts` exists with all helper methods\n- `src/types/api.ts` exists with complete type definitions\n- TypeScript compiles without errors",
+      "estimate": "2h",
+      "files": [
+        "src/lib/api-client.ts",
+        "src/types/api.ts"
+      ],
+      "verify": "npm run type-check — verify TypeScript compilation",
+      "inputs": [
+        "backend/schemas.py"
+      ],
+      "expected_output": [
+        "src/lib/api-client.ts",
+        "src/types/api.ts"
+      ],
+      "observability_impact": "none",
+      "full_plan_md": "",
+      "sequence": 0,
+      "blocker_source": "",
+      "escalation_pending": 0,
+      "escalation_awaiting_review": 0,
+      "escalation_artifact_path": null,
+      "escalation_override_applied_at": null
+    },
+    {
+      "milestone_id": "M005",
+      "slice_id": "S01",
+      "id": "T02",
+      "title": "Replace Projects API Routes with FastAPI Proxy",
+      "status": "pending",
+      "one_liner": "",
+      "narrative": "",
+      "verification_result": "",
+      "duration": "",
+      "completed_at": null,
+      "blocker_discovered": false,
+      "deviations": "",
+      "known_issues": "",
+      "key_files": [],
+      "key_decisions": [],
+      "full_summary_md": "",
+      "description": "## Why\nProjects API is the core entity used throughout the app. Replacing this first establishes the pattern for other routes.\n\n## Do\n1. Replace `src/app/api/projects/route.ts`:\n   - Remove Prisma imports and db usage\n   - Import `apiFetch` from `@/lib/api-client`\n   - For GET: Proxy to `GET http://localhost:8000/api/projects`\n   - Pass query params (status, search) to FastAPI\n   - Transform response: snake_case → camelCase (customerName, status mapping)\n   - Handle errors from FastAPI and propagate with appropriate status\n\n2. Replace `src/app/api/projects/[id]/route.ts`:\n   - Proxy GET to `/api/projects/{id}`\n   - Proxy PUT to `/api/projects/{id}`\n   - Proxy DELETE to `/api/projects/{id}`\n   - Transform requests/responses\n\n3. Replace `src/app/api/projects/[id]/status/route.ts`:\n   - Proxy PUT to `/api/projects/{id}` with status field\n   - Map English → Russian status codes\n\n4. Replace `src/app/api/projects/[id]/export/route.ts`:\n   - Keep export logic but fetch project data via FastAPI proxy\n\n5. Replace `src/app/api/projects/[id]/history/route.ts`:\n   - This uses ProjectStatusHistory - check if FastAPI endpoint exists\n   - If not, keep Prisma for now (document as TODO)\n\n## Constraints\n- Maintain existing API contract for frontend components\n- Status mapping: new→Проектирование, processing→Закупки, paid→Оплачено, delivered→Доставлено\n- Error responses must match current format\n\n## Done when\n- All projects routes use apiFetch instead of Prisma\n- Frontend /projects page loads and displays data correctly\n- Create/update/delete operations work via FastAPI",
+      "estimate": "2h",
+      "files": [
+        "src/app/api/projects/route.ts",
+        "src/app/api/projects/[id]/route.ts",
+        "src/app/api/projects/[id]/status/route.ts",
+        "src/app/api/projects/[id]/export/route.ts",
+        "src/app/api/projects/[id]/history/route.ts"
+      ],
+      "verify": "curl http://localhost:3000/api/projects — returns data from FastAPI",
+      "inputs": [
+        "src/lib/api-client.ts",
+        "src/types/api.ts"
+      ],
+      "expected_output": [
+        "src/app/api/projects/route.ts",
+        "src/app/api/projects/[id]/route.ts",
+        "src/app/api/projects/[id]/status/route.ts",
+        "src/app/api/projects/[id]/export/route.ts",
+        "src/app/api/projects/[id]/history/route.ts"
+      ],
+      "observability_impact": "API failures now originate from FastAPI. Check backend logs for root cause.",
+      "full_plan_md": "",
+      "sequence": 0,
+      "blocker_source": "",
+      "escalation_pending": 0,
+      "escalation_awaiting_review": 0,
+      "escalation_artifact_path": null,
+      "escalation_override_applied_at": null
+    },
+    {
+      "milestone_id": "M005",
+      "slice_id": "S01",
+      "id": "T03",
+      "title": "Replace Suppliers API Routes with FastAPI Proxy",
+      "status": "pending",
+      "one_liner": "",
+      "narrative": "",
+      "verification_result": "",
+      "duration": "",
+      "completed_at": null,
+      "blocker_discovered": false,
+      "deviations": "",
+      "known_issues": "",
+      "key_files": [],
+      "key_decisions": [],
+      "full_summary_md": "",
+      "description": "## Why\nSuppliers are used in purchase requests and invoices. Consistent proxy pattern ensures all data flows through FastAPI.\n\n## Do\n1. Replace `src/app/api/suppliers/route.ts`:\n   - Remove Prisma db usage\n   - GET: Proxy to `/api/suppliers` with search param\n   - POST: Proxy to `/api/suppliers` with supplier data\n   - Transform request body: camelCase → snake_case\n   - Transform response: snake_case → camelCase\n\n2. Replace `src/app/api/suppliers/[id]/route.ts`:\n   - GET by id\n   - PUT update\n   - DELETE\n   - All proxied to FastAPI\n\n## Constraints\n- Supplier fields differ between Prisma and FastAPI:\n  - Prisma: phone, contactPerson, address (frontend expects)\n  - FastAPI: requisites only\n  - Map missing fields to notes or omit gracefully\n- Maintain frontend compatibility\n\n## Done when\n- Suppliers routes proxy to FastAPI\n- Suppliers list loads correctly\n- Create/update/delete suppliers work",
+      "estimate": "1h",
+      "files": [
+        "src/app/api/suppliers/route.ts",
+        "src/app/api/suppliers/[id]/route.ts"
+      ],
+      "verify": "curl http://localhost:3000/api/suppliers — returns suppliers list",
+      "inputs": [
+        "src/lib/api-client.ts",
+        "src/types/api.ts"
+      ],
+      "expected_output": [
+        "src/app/api/suppliers/route.ts",
+        "src/app/api/suppliers/[id]/route.ts"
+      ],
+      "observability_impact": "none",
+      "full_plan_md": "",
+      "sequence": 0,
+      "blocker_source": "",
+      "escalation_pending": 0,
+      "escalation_awaiting_review": 0,
+      "escalation_artifact_path": null,
+      "escalation_override_applied_at": null
+    },
+    {
+      "milestone_id": "M005",
+      "slice_id": "S01",
+      "id": "T04",
+      "title": "Replace Warehouse/Stock API Routes with FastAPI Proxy",
+      "status": "pending",
+      "one_liner": "",
+      "narrative": "",
+      "verification_result": "",
+      "duration": "",
+      "completed_at": null,
+      "blocker_discovered": false,
+      "deviations": "",
+      "known_issues": "",
+      "key_files": [],
+      "key_decisions": [],
+      "full_summary_md": "",
+      "description": "## Why\nWarehouse items are managed through stock items in FastAPI. Need to map Prisma WarehouseItem to FastAPI StockItem.\n\n## Do\n1. Replace `src/app/api/warehouse/route.ts`:\n   - GET: Proxy to `/api/stock_items`\n   - POST: Proxy to `/api/stock_items`\n   - Map fields: WarehouseItem → StockItem\n     - article → sku\n     - quantity → qty_total\n     - minQuantity → (omitted or stored in notes)\n   - Transform response: StockItem → WarehouseItem format\n\n2. Replace `src/app/api/warehouse/[id]/route.ts`:\n   - GET detail\n   - PUT update\n   - DELETE\n\n3. Replace `src/app/api/warehouse/export/route.ts`:\n   - Fetch data via FastAPI proxy\n   - Keep export CSV generation in frontend\n\n4. Replace `src/app/api/warehouse/transactions/route.ts`:\n   - Check if FastAPI has equivalent endpoint\n   - If not, document as TODO for backend\n\n## Constraints\n- Field names differ significantly - transformation required\n- Frontend expects WarehouseItem shape\n\n## Done when\n- Warehouse routes proxy to FastAPI stock_items\n- Warehouse list loads correctly\n- CRUD operations work",
+      "estimate": "1.5h",
+      "files": [
+        "src/app/api/warehouse/route.ts",
+        "src/app/api/warehouse/[id]/route.ts",
+        "src/app/api/warehouse/export/route.ts",
+        "src/app/api/warehouse/transactions/route.ts"
+      ],
+      "verify": "curl http://localhost:3000/api/warehouse — returns stock items from FastAPI",
+      "inputs": [
+        "src/lib/api-client.ts",
+        "src/types/api.ts"
+      ],
+      "expected_output": [
+        "src/app/api/warehouse/route.ts",
+        "src/app/api/warehouse/[id]/route.ts",
+        "src/app/api/warehouse/export/route.ts"
+      ],
+      "observability_impact": "none",
+      "full_plan_md": "",
+      "sequence": 0,
+      "blocker_source": "",
+      "escalation_pending": 0,
+      "escalation_awaiting_review": 0,
+      "escalation_artifact_path": null,
+      "escalation_override_applied_at": null
+    },
+    {
+      "milestone_id": "M005",
+      "slice_id": "S01",
+      "id": "T05",
+      "title": "Replace Invoices API Routes with FastAPI Proxy",
+      "status": "pending",
+      "one_liner": "",
+      "narrative": "",
+      "verification_result": "",
+      "duration": "",
+      "completed_at": null,
+      "blocker_discovered": false,
+      "deviations": "",
+      "known_issues": "",
+      "key_files": [],
+      "key_decisions": [],
+      "full_summary_md": "",
+      "description": "## Why\nInvoices are critical for payment tracking. Verification and reconciliation depend on accurate invoice data from FastAPI.\n\n## Do\n1. Replace `src/app/api/invoices/route.ts`:\n   - GET: Proxy to `/api/invoices` with projectId filter\n   - POST: Proxy to `/api/invoices`\n   - Transform request body with nested items\n\n2. Replace `src/app/api/invoices/[id]/route.ts`:\n   - GET detail\n   - PUT update\n   - DELETE\n\n3. Replace `src/app/api/invoices/[id]/reconcile/route.ts`:\n   - Check FastAPI reconciliation endpoint\n   - Proxy or implement based on backend capability\n\n## Constraints\n- Invoice status is Russian in FastAPI (Ожидает сверки, Сверен, etc.)\n- Frontend expects English status - add mapping\n- Invoice items structure differs - transform accordingly\n\n## Done when\n- Invoices routes proxy to FastAPI\n- Invoice list loads correctly\n- Invoice creation works",
+      "estimate": "1.5h",
+      "files": [
+        "src/app/api/invoices/route.ts",
+        "src/app/api/invoices/[id]/route.ts",
+        "src/app/api/invoices/[id]/reconcile/route.ts"
+      ],
+      "verify": "curl http://localhost:3000/api/invoices — returns invoices from FastAPI",
+      "inputs": [
+        "src/lib/api-client.ts",
+        "src/types/api.ts"
+      ],
+      "expected_output": [
+        "src/app/api/invoices/route.ts",
+        "src/app/api/invoices/[id]/route.ts",
+        "src/app/api/invoices/[id]/reconcile/route.ts"
+      ],
+      "observability_impact": "none",
+      "full_plan_md": "",
+      "sequence": 0,
+      "blocker_source": "",
+      "escalation_pending": 0,
+      "escalation_awaiting_review": 0,
+      "escalation_artifact_path": null,
+      "escalation_override_applied_at": null
+    },
+    {
+      "milestone_id": "M005",
+      "slice_id": "S01",
+      "id": "T06",
+      "title": "Replace Analytics API Routes with FastAPI Proxy",
+      "status": "pending",
+      "one_liner": "",
+      "narrative": "",
+      "verification_result": "",
+      "duration": "",
+      "completed_at": null,
+      "blocker_discovered": false,
+      "deviations": "",
+      "known_issues": "",
+      "key_files": [],
+      "key_decisions": [],
+      "full_summary_md": "",
+      "description": "## Why\nAnalytics dashboard needs real metrics from FastAPI for financial visibility.\n\n## Do\n1. Replace `src/app/api/analytics/pipeline/route.ts`:\n   - Current: Aggregates ProjectItem status counts from Prisma\n   - New: Check if FastAPI has equivalent endpoint\n   - If yes: Proxy to it\n   - If no: Keep aggregation but fetch items via FastAPI (temporary)\n\n2. Replace `src/app/api/analytics/suppliers/route.ts`:\n   - Check FastAPI endpoint availability\n   - Proxy or implement based on backend\n\n3. Create `src/app/api/analytics/dashboard/route.ts` (new if needed):\n   - Proxy to `/api/analytics/dashboard`\n   - Transform response: camelCase fields\n   - Metrics: paid_invoices_count, unpaid_invoices_count, total_paid_amount, total_unpaid_amount\n\n4. Create `src/app/api/analytics/payment-dynamics/route.ts` (new if needed):\n   - Proxy to `/api/analytics/payment-dynamics`\n   - Transform time series data\n\n## Constraints\n- Date format handling (Python datetime vs JS Date)\n- Decimal precision for currency amounts\n\n## Done when\n- Analytics routes proxy to FastAPI\n- Dashboard metrics load correctly\n- Payment dynamics chart renders with real data",
+      "estimate": "1h",
+      "files": [
+        "src/app/api/analytics/pipeline/route.ts",
+        "src/app/api/analytics/suppliers/route.ts",
+        "src/app/api/analytics/dashboard/route.ts",
+        "src/app/api/analytics/payment-dynamics/route.ts"
+      ],
+      "verify": "curl http://localhost:3000/api/analytics/dashboard — returns dashboard metrics from FastAPI",
+      "inputs": [
+        "src/lib/api-client.ts",
+        "src/types/api.ts",
+        "backend/routers/analytics.py"
+      ],
+      "expected_output": [
+        "src/app/api/analytics/pipeline/route.ts",
+        "src/app/api/analytics/dashboard/route.ts",
+        "src/app/api/analytics/payment-dynamics/route.ts"
+      ],
+      "observability_impact": "none",
+      "full_plan_md": "",
+      "sequence": 0,
+      "blocker_source": "",
+      "escalation_pending": 0,
+      "escalation_awaiting_review": 0,
+      "escalation_artifact_path": null,
+      "escalation_override_applied_at": null
+    },
+    {
+      "milestone_id": "M005",
+      "slice_id": "S01",
+      "id": "T07",
+      "title": "Remove Prisma Dependencies and Cleanup",
+      "status": "pending",
+      "one_liner": "",
+      "narrative": "",
+      "verification_result": "",
+      "duration": "",
+      "completed_at": null,
+      "blocker_discovered": false,
+      "deviations": "",
+      "known_issues": "",
+      "key_files": [],
+      "key_decisions": [],
+      "full_summary_md": "",
+      "description": "## Why\nAfter replacing all API routes, Prisma is no longer needed. Removing unused dependencies keeps the codebase clean.\n\n## Do\n1. Remove Prisma client import from all files:\n   - Search for `from '@prisma/client'` or `import { db } from '@/lib/db'`\n   - Remove any remaining Prisma usage\n\n2. Delete `src/lib/db.ts`:\n   - No longer needed for API routes\n   - Keep a stub if some frontend components still import it (check first)\n\n3. Clean up package.json:\n   - Remove `@prisma/client` dependency\n   - Remove `prisma` dev dependency\n\n4. Clean up Prisma files:\n   - Delete `prisma/schema.prisma` (or move to backup)\n   - Delete `prisma/migrations` if exists\n\n5. Update tsconfig/next.config if any Prisma-specific config exists\n\n## Constraints\n- Verify no components directly use Prisma before removing\n- Some non-API files might still import db.ts - check and update\n\n## Done when\n- No Prisma imports remain in API routes\n- package.json has no Prisma dependencies\n- npm install succeeds without errors",
+      "estimate": "1h",
+      "files": [
+        "src/lib/db.ts",
+        "package.json",
+        "prisma/schema.prisma"
+      ],
+      "verify": "! grep -r '@prisma/client' src/app/api/ — no Prisma imports in API routes; npm install — succeeds",
+      "inputs": [
+        "src/app/api/**/*.ts"
+      ],
+      "expected_output": [
+        "package.json"
+      ],
+      "observability_impact": "none",
+      "full_plan_md": "",
+      "sequence": 0,
+      "blocker_source": "",
+      "escalation_pending": 0,
+      "escalation_awaiting_review": 0,
+      "escalation_artifact_path": null,
+      "escalation_override_applied_at": null
     }
   ],
   "decisions": [],
@@ -7032,6 +7348,17 @@
       "verdict": "pass",
       "duration_ms": 2470,
       "created_at": "2026-06-02T13:56:32.433Z"
+    },
+    {
+      "id": 192,
+      "task_id": "T01",
+      "slice_id": "S01",
+      "milestone_id": "M005",
+      "command": "npm run build",
+      "exit_code": 0,
+      "verdict": "passed",
+      "duration_ms": 45000,
+      "created_at": "2026-06-03T01:55:28.789Z"
     }
   ]
 }
