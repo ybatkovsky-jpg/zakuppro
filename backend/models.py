@@ -3,15 +3,47 @@ SQLAlchemy models for the Mini-MRP system.
 Based on SPEC.md requirements.
 All tables are defined without relationships (to be added later).
 """
-from sqlalchemy import Column, Integer, String, Numeric, DateTime, Text, ForeignKey, Boolean, LargeBinary, JSON
+from sqlalchemy import Column, Integer, String, Numeric, DateTime, Text, ForeignKey, Boolean, LargeBinary, JSON, Enum
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
+import enum
 
 # Handle both cases: when backend is a package and when running directly from backend directory
 try:
     from backend.database import Base
 except ImportError:
     from database import Base
+
+
+# =============================================================================
+# Role Enum for RBAC
+# =============================================================================
+
+class Role(str, enum.Enum):
+    """User roles for Role-Based Access Control (RBAC)."""
+    OWNER = "owner"      # Full access to all resources
+    MANAGER = "manager"  # Access only to own projects
+    WAREHOUSE = "warehouse"  # Access only to warehouse operations
+
+
+# =============================================================================
+# User Model
+# =============================================================================
+
+class User(Base):
+    """User entity for authentication and RBAC."""
+    __tablename__ = "users"
+
+    id = Column(Integer, primary_key=True, index=True)
+    username = Column(String(100), unique=True, nullable=False, index=True)
+    email = Column(String(255), unique=True, nullable=False, index=True)
+    hashed_password = Column(String(255), nullable=False)
+    role = Column(Enum(Role), nullable=False, default=Role.MANAGER)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    updated_at = Column(DateTime(timezone=True), onupdate=func.now())
+
+    # Relationships
+    owned_projects = relationship("Project", back_populates="owner")
 
 
 class Project(Base):
@@ -23,10 +55,12 @@ class Project(Base):
     client = Column(String(255), nullable=False)
     status = Column(String(50), nullable=False, default="Проектирование")  # Канбан: Проектирование, Закупки, В производстве, Монтаж
     total_cost = Column(Numeric(12, 2), nullable=True)  # Decimal for financial precision
+    owner_id = Column(Integer, ForeignKey("users.id"), nullable=True)  # Owner user (nullable for existing data)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
 
     # Relationships
+    owner = relationship("User", back_populates="owned_projects")
     items = relationship("ProjectItem", back_populates="project", cascade="all, delete-orphan", lazy="selectin")
     purchase_orders = relationship("PurchaseOrder", back_populates="project", lazy="selectin")
     production_tasks = relationship("ProductionTask", back_populates="project", lazy="selectin")

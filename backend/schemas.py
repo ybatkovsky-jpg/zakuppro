@@ -3,9 +3,57 @@ Pydantic v2 schemas for the Mini-MRP system.
 Provides request/response validation for all entities.
 Uses from_attributes=True for ORM mode compatibility with SQLAlchemy.
 """
-from pydantic import BaseModel, ConfigDict
-from typing import Optional, List
+from pydantic import BaseModel, ConfigDict, EmailStr, Field
+from typing import Optional, List, Literal
 from datetime import datetime
+import enum
+
+
+# =============================================================================
+# Role Enum for Auth Schemas
+# =============================================================================
+
+class Role(str, enum.Enum):
+    """User roles for Role-Based Access Control (RBAC)."""
+    OWNER = "owner"      # Full access to all resources
+    MANAGER = "manager"  # Access only to own projects
+    WAREHOUSE = "warehouse"  # Access only to warehouse operations
+
+
+# =============================================================================
+# Auth Schemas
+# =============================================================================
+
+class UserBase(BaseSchema):
+    """Base user schema."""
+    username: str = Field(..., min_length=3, max_length=100)
+    email: EmailStr
+    role: Role = Role.MANAGER
+
+
+class UserCreate(UserBase):
+    """Schema for creating a new user (includes password)."""
+    password: str = Field(..., min_length=8)
+
+
+class UserResponse(UserBase):
+    """Schema for user response (excludes password)."""
+    id: int
+    created_at: datetime
+    updated_at: Optional[datetime] = None
+
+
+class LoginRequest(BaseSchema):
+    """Schema for login request."""
+    username: str
+    password: str
+
+
+class LoginResponse(BaseSchema):
+    """Schema for login response."""
+    access_token: str
+    token_type: str = "bearer"
+    role: Role
 
 
 # =============================================================================

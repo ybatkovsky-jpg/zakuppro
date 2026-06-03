@@ -60,7 +60,7 @@
   - Files: `src/components/app/projects.tsx`
   - Verify: grep -q 'DragOverlay' src/components/app/projects.tsx && grep -q 'TouchSensor' src/components/app/projects.tsx
 
-- [ ] **T07: Build verification and manual testing** `est:30m`
+- [x] **T07: Build verification and manual testing** `est:30m`
   Run TypeScript build to verify no errors. Create manual test checklist for: valid transition (new → processing), invalid transition (completed → new), API error handling, toast notifications, touch device functionality. Document test results in slice UAT. This verifies the slice delivers the claimed functionality.
   - Files: `src/components/app/projects.tsx`
   - Verify: npm run build 2>&1 | tail -10

@@ -1,0 +1,17 @@
+{
+  "schemaVersion": 1,
+  "milestoneId": "M005",
+  "sliceId": "S03",
+  "timestamp": 1780461660414,
+  "status": "fail",
+  "durationMs": 3,
+  "checks": [
+    {
+      "category": "tool",
+      "target": "T03 Verify",
+      "passed": false,
+      "message": "Unsafe or non-runnable Verify command: npm run build succeeds; Manual verification: navigate to /dashboard and verify new components appear (contains shell control syntax such as pipes, redirects, semicolons, backticks, or command substitution)",
+      "blocking": true
+    }
+  ]
+}

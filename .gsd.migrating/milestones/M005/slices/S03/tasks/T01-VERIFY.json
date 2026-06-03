@@ -1,0 +1,18 @@
+{
+  "schemaVersion": 1,
+  "taskId": "T01",
+  "unitId": "M005/S03/T01",
+  "timestamp": 1780461838824,
+  "passed": false,
+  "discoverySource": "task-plan",
+  "checks": [
+    {
+      "command": "1. npm run build без TypeScript ошибок\n2. Визуальная проверка: карточка отображается на dashboard с корректными иконками и цветами",
+      "exitCode": 1,
+      "durationMs": 26,
+      "verdict": "fail"
+    }
+  ],
+  "retryAttempt": 1,
+  "maxRetries": 2
+}

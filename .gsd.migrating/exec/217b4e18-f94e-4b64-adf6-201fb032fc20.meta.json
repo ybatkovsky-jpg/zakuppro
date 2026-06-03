@@ -1,0 +1,18 @@
+{
+  "id": "217b4e18-f94e-4b64-adf6-201fb032fc20",
+  "runtime": "bash",
+  "purpose": "Build verification for S02 completion",
+  "script_chars": 73,
+  "started_at": "2026-06-03T04:32:40.126Z",
+  "finished_at": "2026-06-03T04:32:40.222Z",
+  "exit_code": 1,
+  "signal": null,
+  "timed_out": false,
+  "duration_ms": 96,
+  "stdout_bytes": 544,
+  "stderr_bytes": 0,
+  "stdout_truncated": false,
+  "stderr_truncated": false,
+  "stdout_path": "D:\\CLAUDE\\Project\\zakuppro\\zakuppro\\.gsd\\exec\\217b4e18-f94e-4b64-adf6-201fb032fc20.stdout",
+  "stderr_path": "D:\\CLAUDE\\Project\\zakuppro\\zakuppro\\.gsd\\exec\\217b4e18-f94e-4b64-adf6-201fb032fc20.stderr"
+}
