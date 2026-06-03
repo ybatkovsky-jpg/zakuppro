@@ -1,3 +1,9 @@
+/**
+ * Supplier Analytics API Route
+ * TODO: This route aggregates supplier metrics from Prisma.
+ * FastAPI backend does not have an equivalent endpoint yet.
+ * Future migration: Create /api/analytics/suppliers in FastAPI.
+ */
 import { db } from '@/lib/db'
 import { NextResponse } from 'next/server'
 

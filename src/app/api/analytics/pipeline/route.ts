@@ -1,3 +1,9 @@
+/**
+ * Pipeline Analytics API Route
+ * TODO: This route aggregates ProjectItem status counts from Prisma.
+ * FastAPI backend does not have an equivalent endpoint yet.
+ * Future migration: Fetch ProjectItem data via FastAPI and aggregate here.
+ */
 import { db } from '@/lib/db'
 import { NextResponse } from 'next/server'
 
