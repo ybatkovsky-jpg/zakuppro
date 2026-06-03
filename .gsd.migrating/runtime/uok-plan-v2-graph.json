@@ -1,5 +1,5 @@
 {
-  "compiledAt": "2026-06-03T04:51:13.975Z",
+  "compiledAt": "2026-06-03T05:07:35.920Z",
   "milestoneId": "M005",
   "pipeline": {
     "clarifyRoundLimit": 3,
@@ -340,12 +340,16 @@
       "dependsOn": [
         "execute-task:M005:S03:T03"
       ],
-      "writes": [],
+      "writes": [
+        "src/app/api/analytics/dashboard/route.ts",
+        "src/app/api/analytics/payment-dynamics/route.ts",
+        "src/lib/api/analytics.ts"
+      ],
       "metadata": {
         "unitType": "execute-task",
         "unitId": "M005.S03.T04",
-        "title": "Build Verification and Type Safety",
-        "status": "pending"
+        "title": "Fixed TypeScript null safety issues in analytics API routes and verified successful build",
+        "status": "complete"
       }
     },
     {
@@ -358,6 +362,134 @@
         "unitType": "complete-slice",
         "unitId": "M005.S03",
         "title": "S03",
+        "status": "complete"
+      }
+    },
+    {
+      "id": "execute-task:M005:S04:M005-S04-T01",
+      "kind": "unit",
+      "dependsOn": [],
+      "writes": [
+        "backend/models.py",
+        "backend/schemas.py",
+        "backend/alembic/versions/rbac_models_add_rbac.py",
+        "backend/scripts/seed_owner.py"
+      ],
+      "metadata": {
+        "unitType": "execute-task",
+        "unitId": "M005.S04.M005-S04-T01",
+        "title": "Added User model with RBAC roles, owner relationship to Project, migration, and auth schemas",
+        "status": "complete"
+      }
+    },
+    {
+      "id": "execute-task:M005:S04:M005-S04-T02",
+      "kind": "unit",
+      "dependsOn": [
+        "execute-task:M005:S04:M005-S04-T01"
+      ],
+      "writes": [],
+      "metadata": {
+        "unitType": "execute-task",
+        "unitId": "M005.S04.M005-S04-T02",
+        "title": "Implement JWT authentication module",
+        "status": "pending"
+      }
+    },
+    {
+      "id": "execute-task:M005:S04:M005-S04-T03",
+      "kind": "unit",
+      "dependsOn": [
+        "execute-task:M005:S04:M005-S04-T02"
+      ],
+      "writes": [],
+      "metadata": {
+        "unitType": "execute-task",
+        "unitId": "M005.S04.M005-S04-T03",
+        "title": "Create RBAC authorization middleware",
+        "status": "pending"
+      }
+    },
+    {
+      "id": "execute-task:M005:S04:M005-S04-T04",
+      "kind": "unit",
+      "dependsOn": [
+        "execute-task:M005:S04:M005-S04-T03"
+      ],
+      "writes": [],
+      "metadata": {
+        "unitType": "execute-task",
+        "unitId": "M005.S04.M005-S04-T04",
+        "title": "Create login endpoint and update main.py",
+        "status": "pending"
+      }
+    },
+    {
+      "id": "execute-task:M005:S04:M005-S04-T05",
+      "kind": "unit",
+      "dependsOn": [
+        "execute-task:M005:S04:M005-S04-T04"
+      ],
+      "writes": [],
+      "metadata": {
+        "unitType": "execute-task",
+        "unitId": "M005.S04.M005-S04-T05",
+        "title": "Update projects router with RBAC enforcement",
+        "status": "pending"
+      }
+    },
+    {
+      "id": "execute-task:M005:S04:M005-S04-T06",
+      "kind": "unit",
+      "dependsOn": [
+        "execute-task:M005:S04:M005-S04-T05"
+      ],
+      "writes": [],
+      "metadata": {
+        "unitType": "execute-task",
+        "unitId": "M005.S04.M005-S04-T06",
+        "title": "Update remaining routers with RBAC (stock_items, suppliers, analytics)",
+        "status": "pending"
+      }
+    },
+    {
+      "id": "execute-task:M005:S04:M005-S04-T07",
+      "kind": "unit",
+      "dependsOn": [
+        "execute-task:M005:S04:M005-S04-T06"
+      ],
+      "writes": [],
+      "metadata": {
+        "unitType": "execute-task",
+        "unitId": "M005.S04.M005-S04-T07",
+        "title": "Frontend auth types and login API proxy",
+        "status": "pending"
+      }
+    },
+    {
+      "id": "execute-task:M005:S04:M005-S04-T08",
+      "kind": "unit",
+      "dependsOn": [
+        "execute-task:M005:S04:M005-S04-T07"
+      ],
+      "writes": [],
+      "metadata": {
+        "unitType": "execute-task",
+        "unitId": "M005.S04.M005-S04-T08",
+        "title": "Write RBAC integration tests and verify slice",
+        "status": "pending"
+      }
+    },
+    {
+      "id": "complete-slice:M005:S04",
+      "kind": "verification",
+      "dependsOn": [
+        "execute-task:M005:S04:M005-S04-T08"
+      ],
+      "metadata": {
+        "unitType": "complete-slice",
+        "unitId": "M005.S04",
+        "title": "S04",
         "status": "pending"
       }
     }

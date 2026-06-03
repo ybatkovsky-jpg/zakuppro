@@ -1,7 +1,7 @@
 # GSD State
 
 **Active Milestone:** M005: Frontend UI Integration
-**Active Slice:** S03: S03
+**Active Slice:** S04: S04
 **Phase:** executing
 **Requirements Status:** 6 active · 8 validated · 5 deferred · 0 out of scope
 
@@ -21,4 +21,4 @@
 - None
 
 ## Next Action
-Execute T04: Build Verification and Type Safety in slice S03.
+Execute M005-S04-T02: Implement JWT authentication module in slice S04.

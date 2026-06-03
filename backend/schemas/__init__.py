@@ -26,6 +26,15 @@ spec.loader.exec_module(_schemas)
 # Re-export all schemas
 BaseSchema = _schemas.BaseSchema
 
+# Auth schemas
+Role = _schemas.Role
+UserBase = _schemas.UserBase
+UserCreate = _schemas.UserCreate
+UserResponse = _schemas.UserResponse
+LoginRequest = _schemas.LoginRequest
+LoginResponse = _schemas.LoginResponse
+TokenData = _schemas.TokenData
+
 # Project schemas
 ProjectBase = _schemas.ProjectBase
 ProjectCreate = _schemas.ProjectCreate
@@ -108,6 +117,14 @@ __all__ = [
     "VerificationResult",
     # Base
     "BaseSchema",
+    # Auth
+    "Role",
+    "UserBase",
+    "UserCreate",
+    "UserResponse",
+    "LoginRequest",
+    "LoginResponse",
+    "TokenData",
     # Projects
     "ProjectBase",
     "ProjectCreate",

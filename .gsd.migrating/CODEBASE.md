@@ -1,7 +1,7 @@
 # Codebase Map
 
-Generated: 2026-06-03T04:51:08Z | Files: 500 | Described: 0/500
-<!-- gsd:codebase-meta {"generatedAt":"2026-06-03T04:51:08Z","fingerprint":"70c5a38d83e2831d1c9b2d54019149cd57bc9ba1","fileCount":500,"truncated":true} -->
+Generated: 2026-06-03T04:58:34Z | Files: 500 | Described: 0/500
+<!-- gsd:codebase-meta {"generatedAt":"2026-06-03T04:58:34Z","fingerprint":"a4ad19012ce235e8913773657a40e5e7a0fb1f29","fileCount":500,"truncated":true} -->
 Note: Truncated to first 500 files. Run with higher --max-files to include all.
 
 ### (root)/
@@ -27,7 +27,7 @@ Note: Truncated to first 500 files. Run with higher --max-files to include all.
 - `.gsd.migrating/STATE.md`
 
 ### .gsd.migrating/activity/
-- *(218 files: 218 .jsonl)*
+- *(220 files: 220 .jsonl)*
 
 ### .gsd.migrating/audit/
 - `.gsd.migrating/audit/events.jsonl`
@@ -129,5 +129,3 @@ Note: Truncated to first 500 files. Run with higher --max-files to include all.
 - `.gsd.migrating/milestones/M001/slices/S04/tasks/T01-PLAN.md`
 - `.gsd.migrating/milestones/M001/slices/S04/tasks/T01-SUMMARY.md`
 - `.gsd.migrating/milestones/M001/slices/S04/tasks/T01-VERIFY.json`
-- `.gsd.migrating/milestones/M001/slices/S04/tasks/T02-PLAN.md`
-- `.gsd.migrating/milestones/M001/slices/S04/tasks/T02-SUMMARY.md`

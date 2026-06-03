@@ -49,7 +49,7 @@
 2. Визуально: все карточки на своих местах, responsive grid работает
 3. Прокрутка страницы не вызывает layout shift
 
-- [ ] **T04: Build Verification and Type Safety** `est:30m`
+- [x] **T04: Build Verification and Type Safety** `est:30m`
   ## Why
   Убедиться что все компоненты корректно типизированы и собираются без ошибок.
   - Verify: npm run build --silent | grep -i 'error' && exit 1 || exit 0

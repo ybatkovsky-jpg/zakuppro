@@ -1,0 +1,31 @@
+{
+  "schemaVersion": 1,
+  "milestoneId": "M005",
+  "sliceId": "S04",
+  "timestamp": 1780462990959,
+  "status": "fail",
+  "durationMs": 5,
+  "checks": [
+    {
+      "category": "tool",
+      "target": "M005-S04-T01 Verify",
+      "passed": false,
+      "message": "Unsafe or non-runnable Verify command: ls backend/alembic/versions/*add_rbac*.py 2>/dev/null (contains shell control syntax such as pipes, redirects, semicolons, backticks, or command substitution)",
+      "blocking": true
+    },
+    {
+      "category": "tool",
+      "target": "M005-S04-T05 Verify",
+      "passed": false,
+      "message": "Unsafe or non-runnable Verify command: grep -q 'require_role\\|ownership' backend/routers/projects.py (contains shell control syntax such as pipes, redirects, semicolons, backticks, or command substitution)",
+      "blocking": true
+    },
+    {
+      "category": "tool",
+      "target": "M005-S04-T08 Verify",
+      "passed": false,
+      "message": "Unsafe or non-runnable Verify command: python -m pytest tests/test_rbac_integration.py -v --tb=short 2>&1 | head -50 (contains shell control syntax such as pipes, redirects, semicolons, backticks, or command substitution)",
+      "blocking": true
+    }
+  ]
+}

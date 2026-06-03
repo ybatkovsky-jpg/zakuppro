@@ -10,6 +10,15 @@ import enum
 
 
 # =============================================================================
+# Base Configuration
+# =============================================================================
+
+class BaseSchema(BaseModel):
+    """Base schema with ORM mode enabled for Pydantic v2."""
+    model_config = ConfigDict(from_attributes=True)
+
+
+# =============================================================================
 # Role Enum for Auth Schemas
 # =============================================================================
 
@@ -56,13 +65,10 @@ class LoginResponse(BaseSchema):
     role: Role
 
 
-# =============================================================================
-# Base Configuration
-# =============================================================================
-
-class BaseSchema(BaseModel):
-    """Base schema with ORM mode enabled for Pydantic v2."""
-    model_config = ConfigDict(from_attributes=True)
+class TokenData(BaseSchema):
+    """Schema for verified JWT token payload."""
+    user_id: int
+    role: Role
 
 
 # =============================================================================

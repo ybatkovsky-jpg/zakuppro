@@ -18,10 +18,10 @@
 - [x] **S02: S02** `risk:medium` `depends:[]`
   > After this: Пользователь может перетащить карточку проекта из колонки 'Новые' в 'В обработке'. Статус обновляется в БД через FastAPI. Переходы подчиняются правилам VALID_TRANSITIONS.
 
-- [ ] **S03: S03** `risk:medium` `depends:[]`
+- [x] **S03: S03** `risk:medium` `depends:[]`
   > After this: Дашборд показывает метрики из FastAPI: paid_invoices_count, unpaid_invoices_count, total_paid_amount, total_unpaid_amount. Графики payment dynamics рендерятся данными из /api/analytics/payment-dynamics.
 
-- [ ] **S04: Role-Based Access Control (RBAC)** `risk:high` `depends:[S01]`
+- [ ] **S04: S04** `risk:high` `depends:[]`
   > After this: Пользователь 'manager' видит только свои проекты. Пользователь 'warehouse' видит только склад. Пользователь 'owner' видит всё. Попытка доступа к чужим данным возвращает 403.
 
 - [ ] **S05: Production Readiness Polish** `risk:low` `depends:[S01,S02,S03,S04]`
