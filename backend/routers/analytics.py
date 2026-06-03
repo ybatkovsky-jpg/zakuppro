@@ -2,6 +2,12 @@
 Analytics router for ZakupPro API.
 Provides endpoints for dashboard metrics, payment dynamics, export functionality,
 and bank statement upload for manual reconciliation.
+
+RBAC:
+- GET /api/analytics/dashboard: owner (all data), manager (own projects only), warehouse (403)
+- GET /api/analytics/payment-dynamics: owner (all data), manager (own projects only), warehouse (403)
+- GET /api/analytics/export/transactions: owner only
+- POST /api/analytics/upload-bank-statement: owner only
 """
 from fastapi import APIRouter, Depends, HTTPException, status, Query, Response, UploadFile, File
 from fastapi.responses import StreamingResponse
@@ -18,7 +24,7 @@ import pandas as pd
 from backend.database import get_db
 from backend.models import (
     Invoice, Payment, Supplier, Project, PurchaseOrder,
-    BankStatement, BankTransaction
+    BankStatement, BankTransaction, User
 )
 from backend.schemas import (
     DashboardMetricsResponse,
@@ -28,6 +34,7 @@ from backend.schemas import (
 )
 from backend.services.bank_statement_parser import BankStatementParser
 from backend.services.payment_matcher import PaymentMatcher
+from backend.rbac import require_role, Role, apply_ownership_filter
 
 logger = logging.getLogger(__name__)
 
@@ -38,10 +45,15 @@ router = APIRouter(prefix="/api/analytics", tags=["analytics"])
 def get_dashboard_metrics(
     period_start: Optional[datetime] = Query(None, description="Filter invoices from this date (inclusive)"),
     period_end: Optional[datetime] = Query(None, description="Filter invoices until this date (inclusive)"),
+    current_user: User = Depends(require_role([Role.OWNER, Role.MANAGER])),
     db: Session = Depends(get_db)
 ):
     """
     Get dashboard metrics for financial visibility.
+
+    RBAC:
+    - Owner: all data (no ownership filter)
+    - Manager: only their projects' metrics (filtered by owner_id)
 
     Returns aggregated metrics:
     - paid_invoices_count: Number of invoices with status 'Оплачен'
@@ -104,6 +116,14 @@ def get_dashboard_metrics(
         )
     )
 
+    # Apply ownership filter for managers
+    invoice_query = apply_ownership_filter(
+        invoice_query.join(Invoice.purchase_order).join(PurchaseOrder.project),
+        Project,
+        current_user.id,
+        current_user.role
+    )
+
     # Count paid invoices (status 'Оплачен')
     paid_invoices_count = (
         invoice_query.filter(Invoice.status == "Оплачен").count()
@@ -129,6 +149,14 @@ def get_dashboard_metrics(
             Payment.payment_date >= period_start,
             Payment.payment_date <= period_end
         )
+    )
+
+    # Apply ownership filter for managers (payments via invoices)
+    payment_query = apply_ownership_filter(
+        payment_query.join(Payment.invoice).join(Invoice.purchase_order).join(PurchaseOrder.project),
+        Project,
+        current_user.id,
+        current_user.role
     )
     total_paid_result = payment_query.with_entities(
         func.sum(Payment.amount)
@@ -184,6 +212,7 @@ def get_payment_dynamics(
     period_start: Optional[datetime] = Query(None, description="Filter payments from this date (inclusive)"),
     period_end: Optional[datetime] = Query(None, description="Filter payments until this date (inclusive)"),
     group_by: str = Query("day", description="Grouping period: 'day', 'week', or 'month'"),
+    current_user: User = Depends(require_role([Role.OWNER, Role.MANAGER])),
     db: Session = Depends(get_db)
 ):
     """
@@ -271,17 +300,28 @@ def get_payment_dynamics(
             date_trunc_expr = func.strftime("%Y-%m", Payment.payment_date)
 
     # Query for grouped payment data
+    # Build base query with ownership filter for managers
+    base_payment_query = db.query(Payment).filter(
+        and_(
+            Payment.payment_date >= period_start,
+            Payment.payment_date <= period_end
+        )
+    )
+
+    # Apply ownership filter for managers
+    base_payment_query = apply_ownership_filter(
+        base_payment_query.join(Payment.invoice).join(Invoice.purchase_order).join(PurchaseOrder.project),
+        Project,
+        current_user.id,
+        current_user.role
+    )
+
+    # Now build the aggregation query from the filtered base
     payment_query = (
-        db.query(
+        base_payment_query.with_entities(
             date_trunc_expr.label("period"),
             func.sum(Payment.amount).label("paid_amount"),
             func.count(Payment.id).label("paid_count")
-        )
-        .filter(
-            and_(
-                Payment.payment_date >= period_start,
-                Payment.payment_date <= period_end
-            )
         )
         .group_by("period")
         .order_by("period")
@@ -345,6 +385,7 @@ def export_transactions_excel(
     date_from: Optional[datetime] = Query(None, description="Filter transactions from this date (inclusive)"),
     date_to: Optional[datetime] = Query(None, description="Filter transactions until this date (inclusive)"),
     limit: int = Query(1000, ge=1, le=1000, description="Maximum number of rows to export"),
+    current_user: User = Depends(require_role([Role.OWNER])),
     db: Session = Depends(get_db)
 ):
     """
@@ -469,6 +510,7 @@ def export_transactions_excel(
 @router.post("/upload-bank-statement", response_model=UploadBankStatementResponse, status_code=status.HTTP_201_CREATED)
 async def upload_bank_statement(
     file: UploadFile = File(..., description="Bank statement file in 1C ClientBank .txt format"),
+    current_user: User = Depends(require_role([Role.OWNER])),
     db: Session = Depends(get_db)
 ):
     """

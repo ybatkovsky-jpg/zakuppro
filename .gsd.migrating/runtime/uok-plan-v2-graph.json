@@ -1,5 +1,5 @@
 {
-  "compiledAt": "2026-06-03T05:07:35.920Z",
+  "compiledAt": "2026-06-03T08:28:19.029Z",
   "milestoneId": "M005",
   "pipeline": {
     "clarifyRoundLimit": 3,
@@ -388,12 +388,17 @@
       "dependsOn": [
         "execute-task:M005:S04:M005-S04-T01"
       ],
-      "writes": [],
+      "writes": [
+        "backend/auth.py",
+        "backend/schemas.py",
+        "backend/schemas/__init__.py",
+        ".env"
+      ],
       "metadata": {
         "unitType": "execute-task",
         "unitId": "M005.S04.M005-S04-T02",
-        "title": "Implement JWT authentication module",
-        "status": "pending"
+        "title": "Implemented JWT authentication module with token creation, verification, and user dependency",
+        "status": "complete"
       }
     },
     {
@@ -402,12 +407,14 @@
       "dependsOn": [
         "execute-task:M005:S04:M005-S04-T02"
       ],
-      "writes": [],
+      "writes": [
+        "backend/rbac.py"
+      ],
       "metadata": {
         "unitType": "execute-task",
         "unitId": "M005.S04.M005-S04-T03",
-        "title": "Create RBAC authorization middleware",
-        "status": "pending"
+        "title": "Created RBAC authorization middleware with role-based access control, ownership checks, and query filtering utilities",
+        "status": "complete"
       }
     },
     {

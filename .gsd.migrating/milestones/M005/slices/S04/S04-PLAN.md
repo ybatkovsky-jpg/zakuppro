@@ -31,13 +31,13 @@ Backend auth infrastructure (models, JWT, RBAC) is complete and tested. Frontend
   - Files: `backend/models.py`, `backend/schemas.py`, `backend/alembic/versions/*_add_rbac_models.py`, `backend/scripts/seed_owner.py`
   - Verify: grep -q 'class User' backend/models.py && ls backend/alembic/versions/*add_rbac*.py 2>/dev/null && grep -q 'LoginRequest' backend/schemas.py
 
-- [ ] **M005-S04-T02: Implement JWT authentication module** `est:1.5h`
+- [x] **M005-S04-T02: Implement JWT authentication module** `est:1.5h`
   ## Why
   JWT tokens provide stateless authentication with role claims. This module creates tokens for login and validates them on requests.
   - Files: `backend/auth.py`, `backend/schemas.py`
   - Verify: grep -q 'create_access_token' backend/auth.py && grep -q 'verify_token' backend/auth.py && grep -q 'get_current_user' backend/auth.py
 
-- [ ] **M005-S04-T03: Create RBAC authorization middleware** `est:1.5h`
+- [x] **M005-S04-T03: Create RBAC authorization middleware** `est:1.5h`
   ## Why
   Authorization logic needs to be reusable across all routers. This module provides decorators and utilities for role-based access control.
   - Files: `backend/rbac.py`

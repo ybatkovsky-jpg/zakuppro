@@ -1,0 +1,30 @@
+{
+  "schemaVersion": 1,
+  "taskId": "M005-S04-T03",
+  "unitId": "M005/S04/M005-S04-T03",
+  "timestamp": 1780475291269,
+  "passed": false,
+  "discoverySource": "task-plan",
+  "checks": [
+    {
+      "command": "grep -q 'require_role' backend/rbac.py",
+      "exitCode": 1,
+      "durationMs": 32,
+      "verdict": "fail"
+    },
+    {
+      "command": "grep -q 'require_ownership' backend/rbac.py",
+      "exitCode": 1,
+      "durationMs": 25,
+      "verdict": "fail"
+    },
+    {
+      "command": "grep -q 'PermissionDenied' backend/rbac.py",
+      "exitCode": 1,
+      "durationMs": 27,
+      "verdict": "fail"
+    }
+  ],
+  "retryAttempt": 1,
+  "maxRetries": 2
+}

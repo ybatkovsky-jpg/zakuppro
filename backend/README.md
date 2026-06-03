@@ -46,3 +46,56 @@ backend/
 ├── database.py          # Database connection and session management
 └── requirements.txt     # Python dependencies
 ```
+
+## Authentication
+
+The API uses JWT-based authentication with role-based access control (RBAC).
+
+### Login Endpoint
+
+**POST** `/api/auth/login`
+
+Request body:
+```json
+{
+  "username": "owner",
+  "password": "owner123"
+}
+```
+
+Response:
+```json
+{
+  "access_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+  "token_type": "bearer",
+  "role": "owner"
+}
+```
+
+### Test Credentials
+
+For testing purposes, the following default users are available (seeds are created in migrations):
+
+| Username | Password  | Role      | Description |
+|----------|-----------|-----------|-------------|
+| owner    | owner123  | owner     | Full access to all resources |
+| manager  | manager123 | manager  | Access only to own projects |
+| warehouse| warehouse123 | warehouse | Access only to warehouse operations |
+
+### Using the Token
+
+Include the JWT token in the Authorization header for protected endpoints:
+
+```
+Authorization: Bearer <access_token>
+```
+
+### Environment Variables
+
+Configure JWT settings in `.env`:
+
+```
+JWT_SECRET_KEY=your-secret-key-change-in-production
+JWT_ALGORITHM=HS256
+JWT_ACCESS_TOKEN_EXPIRE_MINUTES=30
+```
