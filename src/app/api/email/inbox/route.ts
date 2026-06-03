@@ -1,3 +1,10 @@
+/**
+ * Email Inbox Processing API Route
+ *
+ * TODO: M005/S01 - This route was not part of the API migration slice.
+ * This endpoint processes incoming emails via IMAP and stores in Prisma.
+ * Future migration: Integrate with FastAPI email processing service.
+ */
 import { NextRequest, NextResponse } from 'next/server'
 import { ImapFlow, FetchMessageObject } from 'imapflow'
 import { db } from '@/lib/db'

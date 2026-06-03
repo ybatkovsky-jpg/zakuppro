@@ -1,3 +1,10 @@
+/**
+ * Stats API Route
+ *
+ * TODO: M005/S01 - This route was not part of the API migration slice.
+ * This endpoint aggregates statistics from multiple Prisma models.
+ * Future migration: Create equivalent FastAPI endpoints for stats aggregation.
+ */
 import { db } from '@/lib/db'
 import { NextResponse } from 'next/server'
 

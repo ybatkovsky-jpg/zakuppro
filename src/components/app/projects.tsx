@@ -4,6 +4,17 @@ import { useState, useRef, useMemo } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useAppStore } from '@/store/app-store'
 import { useToast } from '@/hooks/use-toast'
+import {
+  DndContext,
+  closestCenter,
+  DragOverlay,
+  useDraggable,
+  useDroppable,
+  useDroppableContext,
+  useSensors,
+  useSensor,
+  PointerSensor,
+} from '@dnd-kit/core'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -74,6 +85,20 @@ import { EmptyState } from '@/components/app/empty-state'
 import { exportToCSV } from '@/lib/export-csv'
 import { pluralize } from '@/lib/utils'
 
+// --- DnD Constants ---
+
+// Valid status transitions for drag-and-drop validation
+const VALID_TRANSITIONS: Record<string, string[]> = {
+  'new': ['processing', 'cancelled'],
+  'processing': ['requested', 'cancelled'],
+  'requested': ['invoiced', 'processing', 'cancelled'],
+  'invoiced': ['paid', 'requested', 'cancelled'],
+  'paid': ['delivered', 'invoiced'],
+  'delivered': ['completed', 'paid'],
+  'completed': [],
+  'cancelled': [],
+}
+
 // --- Types ---
 
 interface Project {
@@ -139,19 +164,207 @@ const KANBAN_COLUMNS: { status: string; label: string; color: string; border: st
   { status: 'cancelled', label: 'Отменён', color: 'red', border: 'border-l-red-400', bg: 'bg-red-50 dark:bg-red-950/30', badgeBg: 'bg-red-100 dark:bg-red-800', badgeText: 'text-red-700 dark:text-red-300', dotColor: 'bg-red-400', cardBg: 'bg-red-50/50 dark:bg-red-950/20', nameColor: 'text-red-700 dark:text-red-300' },
 ]
 
-// --- Kanban Board Component ---
+// --- Draggable Project Card Component ---
 
-function KanbanBoard({
-  projects,
-  navigateToProject,
-  deleteMutation,
-  formatDate,
-}: {
-  projects: Project[]
+interface DraggableProjectCardProps {
+  project: Project
+  column: typeof KANBAN_COLUMNS[number]
   navigateToProject: (id: string) => void
   deleteMutation: { mutate: (id: string) => void; isPending: boolean }
   formatDate: (d: string) => string
-}) {
+  index: number
+}
+
+function DraggableProjectCard({
+  project,
+  column,
+  navigateToProject,
+  deleteMutation,
+  formatDate,
+  index,
+}: DraggableProjectCardProps) {
+  const { attributes, listeners, setNodeRef, isDragging } = useDraggable({
+    id: project.id,
+    data: { project, fromStatus: project.status },
+  })
+
+  const budget = (project.items ?? []).reduce((sum, item) => sum + item.price * item.quantity, 0)
+  const itemCount = project._count?.items ?? 0
+  const col = KANBAN_COLUMNS.find((c) => c.status === column.status) ?? column
+
+  return (
+    <motion.div
+      ref={setNodeRef}
+      key={project.id}
+      initial={{ opacity: 0, y: 10, scale: 0.97 }}
+      animate={{ opacity: 1, y: 0, scale: 1 }}
+      exit={{ opacity: 0, scale: 0.95, transition: { duration: 0.15 } }}
+      transition={{ delay: index * 0.04, duration: 0.25 }}
+      className={`group rounded-xl border p-4 cursor-pointer shadow-sm hover:shadow-md transition-all duration-200 hover:-translate-y-0.5 border-l-[3px] ${col.border} ${col.cardBg} relative`}
+      onClick={() => navigateToProject(project.id)}
+      style={{ opacity: isDragging ? 0.5 : 1 }}
+    >
+      {/* Drag indicator */}
+      <div
+        {...attributes}
+        {...listeners}
+        className="absolute top-2 right-2 opacity-0 group-hover:opacity-40 transition-opacity cursor-grab active:cursor-grabbing"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <GripVertical className="h-4 w-4 text-muted-foreground" />
+      </div>
+
+      {/* Project Name */}
+      <div className="flex items-start justify-between gap-2 mb-1.5">
+        <h4 className={`font-semibold text-sm leading-tight line-clamp-2 ${col.nameColor}`}>
+          {project.name}
+        </h4>
+        <AlertDialog>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
+              <Button variant="ghost" size="icon" className="h-6 w-6 shrink-0 opacity-0 group-hover:opacity-100 hover:opacity-100" onClick={(e) => e.stopPropagation()}>
+                <MoreHorizontal className="h-3.5 w-3.5" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem onClick={(e) => { e.stopPropagation(); navigateToProject(project.id) }}>
+                <FolderOpen className="h-4 w-4" />
+                Открыть
+              </DropdownMenuItem>
+              <AlertDialogTrigger asChild>
+                <DropdownMenuItem className="text-destructive focus:text-destructive" onClick={(e) => e.stopPropagation()}>
+                  <Trash2 className="h-4 w-4" />
+                  Удалить
+                </DropdownMenuItem>
+              </AlertDialogTrigger>
+            </DropdownMenuContent>
+          </DropdownMenu>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Удалить проект?</AlertDialogTitle>
+              <AlertDialogDescription>
+                Проект &laquo;{project.name}&raquo; будет удалён без возможности восстановления.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Отмена</AlertDialogCancel>
+              <AlertDialogAction
+                className="bg-destructive text-white hover:bg-destructive/90"
+                onClick={() => deleteMutation.mutate(project.id)}
+                disabled={deleteMutation.isPending}
+              >
+                {deleteMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Удалить'}
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+      </div>
+
+      {/* Customer */}
+      {project.customerName && (
+        <div className="flex items-center gap-1.5 text-xs text-muted-foreground mb-2">
+          <User className="h-3 w-3" />
+          <span className="truncate">{project.customerName}</span>
+        </div>
+      )}
+
+      {/* Stats Row */}
+      <div className="flex items-center gap-2 text-xs">
+        {itemCount > 0 && (
+          <span className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-medium ${col.badgeBg} ${col.badgeText}`}>
+            <Package className="h-3 w-3" />
+            {itemCount} {pluralize(itemCount, 'поз.', 'поз.', 'поз.')}
+          </span>
+        )}
+        {budget > 0 && (
+          <span className="font-mono font-medium text-foreground/80">
+            {new Intl.NumberFormat('ru-RU').format(budget)} ₽
+          </span>
+        )}
+      </div>
+
+      {/* Date */}
+      <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground/70 mt-2 pt-2 border-t">
+        <Calendar className="h-3 w-3" />
+        <span>{formatDate(project.createdAt)}</span>
+      </div>
+    </motion.div>
+  )
+}
+
+// --- Kanban Column Component (Droppable) ---
+
+interface KanbanColumnProps {
+  col: typeof KANBAN_COLUMNS[number]
+  columnProjects: Project[]
+  navigateToProject: (id: string) => void
+  deleteMutation: { mutate: (id: string) => void; isPending: boolean }
+  formatDate: (d: string) => string
+}
+
+function KanbanColumn({ col, columnProjects, navigateToProject, deleteMutation, formatDate }: KanbanColumnProps) {
+  const { setNodeRef, isOver } = useDroppable({
+    id: col.status,
+    data: { status: col.status },
+  })
+
+  return (
+    <div className="flex flex-col min-w-[260px] max-w-[300px] shrink-0">
+      {/* Column Header */}
+      <div className={`flex items-center justify-between rounded-t-xl px-3 py-2.5 ${col.bg} border border-b-0`}>
+        <div className="flex items-center gap-2">
+          <div className={`size-2.5 rounded-full ${col.dotColor}`} />
+          <span className="text-sm font-semibold">{col.label}</span>
+        </div>
+        <span className={`inline-flex items-center justify-center min-w-5 h-5 px-1.5 rounded-full text-[11px] font-bold ${col.badgeBg} ${col.badgeText}`}>
+          {columnProjects.length}
+        </span>
+      </div>
+
+      {/* Column Body — scrollable + droppable */}
+      <div
+        ref={setNodeRef}
+        className={`flex-1 rounded-b-xl border border-t-0 p-2 flex flex-col gap-3 min-h-[120px] max-h-[calc(100vh-200px)] overflow-y-auto custom-scrollbar transition-colors duration-200 ${
+          isOver ? 'bg-primary/10 ring-2 ring-primary/30' : 'bg-muted/20'
+        }`}
+      >
+        <AnimatePresence mode="popLayout">
+          {columnProjects.length === 0 ? (
+            <div className="flex items-center justify-center h-24 rounded-xl border-2 border-dashed border-muted-foreground/20">
+              <span className="text-xs text-muted-foreground">Нет проектов</span>
+            </div>
+          ) : (
+            columnProjects.map((project, idx) => (
+              <DraggableProjectCard
+                key={project.id}
+                project={project}
+                column={col}
+                navigateToProject={navigateToProject}
+                deleteMutation={deleteMutation}
+                formatDate={formatDate}
+                index={idx}
+              />
+            ))
+          )}
+        </AnimatePresence>
+      </div>
+    </div>
+  )
+}
+
+// --- Kanban Board Component with DnD Context ---
+
+interface KanbanBoardProps {
+  projects: Project[]
+  navigateToProject: (id: string) => void
+  deleteMutation: { mutate: (id: string) => void; isPending: boolean }
+  statusMutation: { mutate: (data: { projectId: string; status: string; comment?: string }) => void; isPending: boolean }
+  formatDate: (d: string) => string
+}
+
+function KanbanBoard({ projects, navigateToProject, deleteMutation, statusMutation, formatDate }: KanbanBoardProps) {
+  const { toast } = useToast()
+
   const projectsByStatus = useMemo(() => {
     const map = new Map<string, Project[]>()
     KANBAN_COLUMNS.forEach((col) => map.set(col.status, []))
@@ -168,135 +381,125 @@ function KanbanBoard({
     return map
   }, [projects])
 
+  // DnD sensors - PointerSensor for mouse/touch
+  const sensors = useSensors(
+    useSensor(PointerSensor, {
+      activationConstraint: {
+        distance: 5, // 5px movement required to start drag
+      },
+    })
+  )
+
+  // Track active item for DragOverlay
+  const [activeId, setActiveId] = useState<string | null>(null)
+  const activeProject = projects.find((p) => p.id === activeId)
+
+  // onDragEnd handler
+  const handleDragEnd = async (event: { active: { id: string }; over: { id: string } | null }) => {
+    const { active, over } = event
+    setActiveId(null)
+
+    if (!over) {
+      console.log('[DnD] Drag ended outside any droppable zone')
+      return
+    }
+
+    const projectId = active.id
+    const targetStatus = over.id
+
+    // Find current project to get its current status
+    const project = projects.find((p) => p.id === projectId)
+    if (!project) {
+      console.error('[DnD] Project not found:', projectId)
+      toast({ title: 'Ошибка', description: 'Проект не найден', variant: 'destructive' })
+      return
+    }
+
+    const currentStatus = project.status
+
+    // Skip if dropping in the same column
+    if (currentStatus === targetStatus) {
+      console.log('[DnD] Dropped in same column, no action needed')
+      return
+    }
+
+    console.log(`[DnD] Drag: ${project.name} (${currentStatus}) → ${targetStatus}`)
+
+    // Validate transition
+    const validTargets = VALID_TRANSITIONS[currentStatus] || []
+    if (!validTargets.includes(targetStatus)) {
+      console.warn(`[DnD] Invalid transition: ${currentStatus} → ${targetStatus}`)
+      toast({
+        title: 'Недопустимый переход',
+        description: `Нельзя изменить статус с "${STATUS_MAP[currentStatus]?.label || currentStatus}" на "${STATUS_MAP[targetStatus]?.label || targetStatus}"`,
+        variant: 'destructive',
+      })
+      return
+    }
+
+    // Use React Query mutation for status update
+    statusMutation.mutate(
+      { projectId, status: targetStatus },
+      {
+        onSuccess: () => {
+          toast({
+            title: 'Статус обновлён',
+            description: `${project.name} → ${STATUS_MAP[targetStatus]?.label || targetStatus}`,
+          })
+          console.log(`[DnD] Status updated successfully: ${projectId} → ${targetStatus}`)
+        },
+      }
+    )
+  }
+
+  const handleDragStart = (event: { active: { id: string } }) => {
+    setActiveId(event.active.id)
+    console.log('[DnD] Drag started:', event.active.id)
+  }
+
   return (
-    <div className="overflow-x-auto pb-4 -mx-2">
-      <div className="flex gap-4 min-w-max px-2">
-        {KANBAN_COLUMNS.map((col) => {
-          const columnProjects = projectsByStatus.get(col.status) ?? []
-          return (
-            <div key={col.status} className="flex flex-col min-w-[260px] max-w-[300px] shrink-0">
-              {/* Column Header */}
-              <div className={`flex items-center justify-between rounded-t-xl px-3 py-2.5 ${col.bg} border border-b-0`}>
-                <div className="flex items-center gap-2">
-                  <div className={`size-2.5 rounded-full ${col.dotColor}`} />
-                  <span className="text-sm font-semibold">{col.label}</span>
-                </div>
-                <span className={`inline-flex items-center justify-center min-w-5 h-5 px-1.5 rounded-full text-[11px] font-bold ${col.badgeBg} ${col.badgeText}`}>
-                  {columnProjects.length}
-                </span>
-              </div>
-
-              {/* Column Body — scrollable */}
-              <div className="flex-1 rounded-b-xl border border-t-0 p-2 flex flex-col gap-3 min-h-[120px] max-h-[calc(100vh-200px)] overflow-y-auto bg-muted/20 custom-scrollbar">
-                <AnimatePresence mode="popLayout">
-                  {columnProjects.length === 0 ? (
-                    <div className="flex items-center justify-center h-24 rounded-xl border-2 border-dashed border-muted-foreground/20">
-                      <span className="text-xs text-muted-foreground">Нет проектов</span>
-                    </div>
-                  ) : (
-                    columnProjects.map((project, idx) => {
-                      const budget = (project.items ?? []).reduce((sum, item) => sum + item.price * item.quantity, 0)
-                      const itemCount = project._count?.items ?? 0
-                      return (
-                        <motion.div
-                          key={project.id}
-                          initial={{ opacity: 0, y: 10, scale: 0.97 }}
-                          animate={{ opacity: 1, y: 0, scale: 1 }}
-                          exit={{ opacity: 0, scale: 0.95, transition: { duration: 0.15 } }}
-                          transition={{ delay: idx * 0.04, duration: 0.25 }}
-                          className={`group rounded-xl border p-4 cursor-pointer shadow-sm hover:shadow-md transition-all duration-200 hover:-translate-y-0.5 border-l-[3px] ${col.border} ${col.cardBg} relative`}
-                          onClick={() => navigateToProject(project.id)}
-                        >
-                          {/* Drag indicator */}
-                          <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-40 transition-opacity cursor-grab">
-                            <GripVertical className="h-4 w-4 text-muted-foreground" />
-                          </div>
-
-                          {/* Project Name */}
-                          <div className="flex items-start justify-between gap-2 mb-1.5">
-                            <h4 className={`font-semibold text-sm leading-tight line-clamp-2 ${col.nameColor}`}>
-                              {project.name}
-                            </h4>
-                            <AlertDialog>
-                              <DropdownMenu>
-                                <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
-                                  <Button variant="ghost" size="icon" className="h-6 w-6 shrink-0 opacity-0 group-hover:opacity-100 hover:opacity-100" onClick={(e) => e.stopPropagation()}>
-                                    <MoreHorizontal className="h-3.5 w-3.5" />
-                                  </Button>
-                                </DropdownMenuTrigger>
-                                <DropdownMenuContent align="end">
-                                  <DropdownMenuItem onClick={(e) => { e.stopPropagation(); navigateToProject(project.id) }}>
-                                    <FolderOpen className="h-4 w-4" />
-                                    Открыть
-                                  </DropdownMenuItem>
-                                  <AlertDialogTrigger asChild>
-                                    <DropdownMenuItem className="text-destructive focus:text-destructive" onClick={(e) => e.stopPropagation()}>
-                                      <Trash2 className="h-4 w-4" />
-                                      Удалить
-                                    </DropdownMenuItem>
-                                  </AlertDialogTrigger>
-                                </DropdownMenuContent>
-                              </DropdownMenu>
-                              <AlertDialogContent>
-                                <AlertDialogHeader>
-                                  <AlertDialogTitle>Удалить проект?</AlertDialogTitle>
-                                  <AlertDialogDescription>
-                                    Проект &laquo;{project.name}&raquo; будет удалён без возможности восстановления.
-                                  </AlertDialogDescription>
-                                </AlertDialogHeader>
-                                <AlertDialogFooter>
-                                  <AlertDialogCancel>Отмена</AlertDialogCancel>
-                                  <AlertDialogAction
-                                    className="bg-destructive text-white hover:bg-destructive/90"
-                                    onClick={() => deleteMutation.mutate(project.id)}
-                                    disabled={deleteMutation.isPending}
-                                  >
-                                    {deleteMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Удалить'}
-                                  </AlertDialogAction>
-                                </AlertDialogFooter>
-                              </AlertDialogContent>
-                            </AlertDialog>
-                          </div>
-
-                          {/* Customer */}
-                          {project.customerName && (
-                            <div className="flex items-center gap-1.5 text-xs text-muted-foreground mb-2">
-                              <User className="h-3 w-3" />
-                              <span className="truncate">{project.customerName}</span>
-                            </div>
-                          )}
-
-                          {/* Stats Row */}
-                          <div className="flex items-center gap-2 text-xs">
-                            {itemCount > 0 && (
-                              <span className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-medium ${col.badgeBg} ${col.badgeText}`}>
-                                <Package className="h-3 w-3" />
-                                {itemCount} {pluralize(itemCount, 'поз.', 'поз.', 'поз.')}
-                              </span>
-                            )}
-                            {budget > 0 && (
-                              <span className="font-mono font-medium text-foreground/80">
-                                {new Intl.NumberFormat('ru-RU').format(budget)} ₽
-                              </span>
-                            )}
-                          </div>
-
-                          {/* Date */}
-                          <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground/70 mt-2 pt-2 border-t">
-                            <Calendar className="h-3 w-3" />
-                            <span>{formatDate(project.createdAt)}</span>
-                          </div>
-                        </motion.div>
-                      )
-                    })
-                  )}
-                </AnimatePresence>
-              </div>
-            </div>
-          )
-        })}
+    <DndContext
+      sensors={sensors}
+      collisionDetection={closestCenter}
+      onDragStart={handleDragStart}
+      onDragEnd={handleDragEnd}
+    >
+      <div className="overflow-x-auto pb-4 -mx-2">
+        <div className="flex gap-4 min-w-max px-2">
+          {KANBAN_COLUMNS.map((col) => {
+            const columnProjects = projectsByStatus.get(col.status) ?? []
+            return (
+              <KanbanColumn
+                key={col.status}
+                col={col}
+                columnProjects={columnProjects}
+                navigateToProject={navigateToProject}
+                deleteMutation={deleteMutation}
+                formatDate={formatDate}
+              />
+            )
+          })}
+        </div>
       </div>
-    </div>
+
+      {/* Drag Overlay - visual feedback during drag */}
+      <DragOverlay>
+        {activeProject && (
+          <div className="rounded-xl border p-4 shadow-2xl bg-background opacity-90 cursor-grabbing">
+            <div className="flex items-start justify-between gap-2 mb-1.5">
+              <h4 className="font-semibold text-sm leading-tight line-clamp-2">{activeProject.name}</h4>
+              <GripVertical className="h-4 w-4 text-muted-foreground" />
+            </div>
+            {activeProject.customerName && (
+              <div className="flex items-center gap-1.5 text-xs text-muted-foreground mb-2">
+                <User className="h-3 w-3" />
+                <span className="truncate">{activeProject.customerName}</span>
+              </div>
+            )}
+          </div>
+        )}
+      </DragOverlay>
+    </DndContext>
   )
 }
 
@@ -406,6 +609,33 @@ export function Projects() {
     },
     onError: (err: Error) => {
       toast({ title: 'Ошибка', description: err.message, variant: 'destructive' })
+    },
+  })
+
+  // Status update mutation for drag-and-drop
+  const statusMutation = useMutation({
+    mutationFn: async (data: { projectId: string; status: string; comment?: string }) => {
+      const res = await fetch(`/api/projects/${data.projectId}/status`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status: data.status, comment: data.comment }),
+      })
+      if (!res.ok) {
+        const err = await res.json()
+        throw new Error(err.error || 'Ошибка обновления статуса')
+      }
+      return res.json()
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['projects'] })
+    },
+    onError: (err: Error) => {
+      console.error('[DnD] API error:', err)
+      toast({
+        title: 'Ошибка обновления',
+        description: err.message,
+        variant: 'destructive',
+      })
     },
   })
 
@@ -735,6 +965,7 @@ export function Projects() {
           projects={projects}
           navigateToProject={navigateToProject}
           deleteMutation={deleteMutation}
+          statusMutation={statusMutation}
           formatDate={formatDate}
         />
       ) : (

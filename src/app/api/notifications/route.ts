@@ -1,3 +1,10 @@
+/**
+ * Notifications API Route
+ *
+ * TODO: M005/S01 - This route was not part of the API migration slice.
+ * This endpoint generates notifications from multiple Prisma models.
+ * Future migration: Create equivalent FastAPI endpoints for notifications.
+ */
 import { db } from '@/lib/db'
 import { NextRequest, NextResponse } from 'next/server'
 

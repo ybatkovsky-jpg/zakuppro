@@ -1,7 +1,7 @@
 # Codebase Map
 
-Generated: 2026-06-03T01:58:33Z | Files: 500 | Described: 0/500
-<!-- gsd:codebase-meta {"generatedAt":"2026-06-03T01:58:33Z","fingerprint":"27c39011dc91ceb51b20b7154d33358728be2fc0","fileCount":500,"truncated":true} -->
+Generated: 2026-06-03T02:06:22Z | Files: 500 | Described: 0/500
+<!-- gsd:codebase-meta {"generatedAt":"2026-06-03T02:06:22Z","fingerprint":"54d872b426bac826dd0de0a76d457ea3ea3e1f84","fileCount":500,"truncated":true} -->
 Note: Truncated to first 500 files. Run with higher --max-files to include all.
 
 ### (root)/
@@ -27,13 +27,13 @@ Note: Truncated to first 500 files. Run with higher --max-files to include all.
 - `.gsd.migrating/STATE.md`
 
 ### .gsd.migrating/activity/
-- *(195 files: 195 .jsonl)*
+- *(202 files: 202 .jsonl)*
 
 ### .gsd.migrating/audit/
 - `.gsd.migrating/audit/events.jsonl`
 
 ### .gsd.migrating/exec/
-- *(183 files: 61 .json, 61 .stderr, 61 .stdout)*
+- *(189 files: 63 .json, 63 .stderr, 63 .stdout)*
 
 ### .gsd.migrating/graphs/
 - `.gsd.migrating/graphs/graph.json`
@@ -42,6 +42,7 @@ Note: Truncated to first 500 files. Run with higher --max-files to include all.
 - `.gsd.migrating/journal/2026-05-31.jsonl`
 - `.gsd.migrating/journal/2026-06-01.jsonl`
 - `.gsd.migrating/journal/2026-06-02.jsonl`
+- `.gsd.migrating/journal/2026-06-03.jsonl`
 
 ### .gsd.migrating/migrating/milestones/M001/
 - `.gsd.migrating/migrating/milestones/M001/M001-LEARNINGS.md`
@@ -157,21 +158,3 @@ Note: Truncated to first 500 files. Run with higher --max-files to include all.
 - `.gsd.migrating/milestones/M002/slices/S01/tasks/T01-PLAN.md`
 - `.gsd.migrating/milestones/M002/slices/S01/tasks/T01-SUMMARY.md`
 - `.gsd.migrating/milestones/M002/slices/S01/tasks/T01-VERIFY.json`
-- `.gsd.migrating/milestones/M002/slices/S01/tasks/T02-PLAN.md`
-- `.gsd.migrating/milestones/M002/slices/S01/tasks/T02-SUMMARY.md`
-- `.gsd.migrating/milestones/M002/slices/S01/tasks/T02-VERIFY.json`
-- `.gsd.migrating/milestones/M002/slices/S01/tasks/T03-PLAN.md`
-- `.gsd.migrating/milestones/M002/slices/S01/tasks/T03-SUMMARY.md`
-- `.gsd.migrating/milestones/M002/slices/S01/tasks/T03-VERIFY.json`
-
-### .gsd.migrating/milestones/M002/slices/S02/
-- `.gsd.migrating/milestones/M002/slices/S02/S02-PLAN.md`
-- `.gsd.migrating/milestones/M002/slices/S02/S02-PRE-EXEC-VERIFY.json`
-- `.gsd.migrating/milestones/M002/slices/S02/S02-RESEARCH.md`
-- `.gsd.migrating/milestones/M002/slices/S02/S02-SUMMARY.md`
-- `.gsd.migrating/milestones/M002/slices/S02/S02-UAT.md`
-
-### .gsd.migrating/milestones/M002/slices/S02/tasks/
-- `.gsd.migrating/milestones/M002/slices/S02/tasks/T01-PLAN.md`
-- `.gsd.migrating/milestones/M002/slices/S02/tasks/T01-SUMMARY.md`
-- `.gsd.migrating/milestones/M002/slices/S02/tasks/T01-VERIFY.json`

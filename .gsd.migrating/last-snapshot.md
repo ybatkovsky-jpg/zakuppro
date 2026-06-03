@@ -1,7 +1,7 @@
-# GSD context snapshot (2026-06-03T01:55:39.570Z)
+# GSD context snapshot (2026-06-03T02:19:21.342Z)
 
 ## Active context
-Active: M005 / S01 / T02 - Replace Projects API Routes with FastAPI Proxy
+Active: M005 / S01 / T07 - Remove Prisma Dependencies and Cleanup
 
 ## Top project memories
 - [MEM005] (architecture) SQLAlchemy 2.0 uses relationship(back_populates=...) for bidirectional relationships, not backref. This makes relationships explicit on both sides for clearer code.

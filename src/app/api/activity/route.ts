@@ -1,3 +1,10 @@
+/**
+ * Activity Feed API Route
+ *
+ * TODO: M005/S01 - This route was not part of the API migration slice.
+ * This endpoint aggregates activity from Prisma models.
+ * Future migration: Create equivalent FastAPI activity endpoints.
+ */
 import { db } from '@/lib/db'
 import { NextResponse } from 'next/server'
 

@@ -1,3 +1,10 @@
+/**
+ * Reports API Route
+ *
+ * TODO: M005/S01 - This route was not part of the API migration slice.
+ * This endpoint generates reports from Prisma data.
+ * Future migration: Create equivalent FastAPI reports endpoints.
+ */
 import { NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 

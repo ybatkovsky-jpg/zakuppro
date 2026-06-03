@@ -1,3 +1,10 @@
+/**
+ * Automation Rules API Route
+ *
+ * TODO: M005/S01 - This route was not part of the API migration slice.
+ * This endpoint manages automation rules stored in Prisma.
+ * Future migration: Create equivalent FastAPI automation endpoints.
+ */
 import { db } from '@/lib/db'
 import { NextResponse } from 'next/server'
 

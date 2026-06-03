@@ -1,3 +1,10 @@
+/**
+ * Company Settings API Route
+ *
+ * TODO: M005/S01 - This route was not part of the API migration slice.
+ * This endpoint manages company details stored in Prisma.
+ * Future migration: Create equivalent FastAPI company settings endpoints.
+ */
 import { db } from '@/lib/db'
 import { NextRequest, NextResponse } from 'next/server'
 

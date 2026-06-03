@@ -1,3 +1,10 @@
+/**
+ * Deliveries API Route
+ *
+ * TODO: M005/S01 - This route was not part of the API migration slice.
+ * This endpoint manages delivery tracking stored in Prisma.
+ * Future migration: Create equivalent FastAPI delivery endpoints.
+ */
 import { NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 

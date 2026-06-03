@@ -21,4 +21,4 @@
 - None
 
 ## Next Action
-Execute T02: Replace Projects API Routes with FastAPI Proxy in slice S01.
+Execute T07: Remove Prisma Dependencies and Cleanup in slice S01.

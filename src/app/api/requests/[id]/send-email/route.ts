@@ -1,3 +1,10 @@
+/**
+ * Send Request Email API Route
+ *
+ * TODO: M005/S01 - This route was not part of the API migration slice.
+ * This endpoint sends emails for purchase requests using Prisma data.
+ * Future migration: Integrate with FastAPI email service.
+ */
 import { NextRequest, NextResponse } from 'next/server'
 import nodemailer from 'nodemailer'
 import { db } from '@/lib/db'

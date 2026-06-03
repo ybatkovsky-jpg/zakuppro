@@ -1,3 +1,10 @@
+/**
+ * Purchase Requests API Route
+ *
+ * TODO: M005/S01 - This route was not part of the API migration slice.
+ * This endpoint manages purchase requests stored in Prisma.
+ * Future migration: Create equivalent FastAPI purchase request endpoints.
+ */
 import { db } from '@/lib/db'
 import { NextRequest, NextResponse } from 'next/server'
 

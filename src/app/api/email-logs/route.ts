@@ -1,3 +1,10 @@
+/**
+ * Email Logs API Route
+ *
+ * TODO: M005/S01 - This route was not part of the API migration slice.
+ * This endpoint retrieves email logs stored in Prisma.
+ * Future migration: Create equivalent FastAPI email logs endpoint.
+ */
 import { db } from '@/lib/db'
 import { NextRequest, NextResponse } from 'next/server'
 

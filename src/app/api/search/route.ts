@@ -1,3 +1,10 @@
+/**
+ * Search API Route
+ *
+ * TODO: M005/S01 - This route was not part of the API migration slice.
+ * This endpoint performs fuzzy search across multiple Prisma models.
+ * Future migration: Create equivalent FastAPI search endpoints.
+ */
 import { db } from '@/lib/db'
 import { NextRequest, NextResponse } from 'next/server'
 

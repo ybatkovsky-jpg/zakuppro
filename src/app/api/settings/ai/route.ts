@@ -1,3 +1,10 @@
+/**
+ * AI Settings API Route
+ *
+ * TODO: M005/S01 - This route was not part of the API migration slice.
+ * This endpoint manages AI settings stored in Prisma.
+ * Future migration: Create equivalent FastAPI settings endpoints.
+ */
 import { NextRequest, NextResponse } from 'next/server'
 import ZAI from 'z-ai-web-dev-sdk'
 import { db } from '@/lib/db'

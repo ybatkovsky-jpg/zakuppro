@@ -1,583 +1,154 @@
 {
-  "compiledAt": "2026-06-02T22:31:57.390Z",
-  "milestoneId": "M004",
+  "compiledAt": "2026-06-03T03:09:42.337Z",
+  "milestoneId": "M005",
   "pipeline": {
     "clarifyRoundLimit": 3,
     "researchSynthesized": true,
-    "draftContextIncluded": false,
+    "draftContextIncluded": true,
     "finalizedContextIncluded": true,
-    "sourcePhase": "completing-milestone"
+    "sourcePhase": "executing"
   },
   "nodes": [
     {
-      "id": "execute-task:M004:S01:T01",
+      "id": "execute-task:M005:S01:T01",
       "kind": "unit",
       "dependsOn": [],
       "writes": [
-        "backend/models.py"
+        "src/types/fastapi.ts",
+        "src/lib/api-client.ts",
+        "src/lib/api/projects.ts",
+        "src/lib/api/suppliers.ts",
+        "src/lib/api/stock-items.ts",
+        "src/lib/api/invoices.ts",
+        "src/lib/api/analytics.ts",
+        "src/lib/api/index.ts",
+        ".env"
       ],
       "metadata": {
         "unitType": "execute-task",
-        "unitId": "M004.S01.T01",
-        "title": "Added BankStatement, BankTransaction, TransactionMatchingAudit SQLAlchemy models with bidirectional relationships and indexes",
+        "unitId": "M005.S01.T01",
+        "title": "Created TypeScript types and API client for FastAPI backend integration",
         "status": "complete"
       }
     },
     {
-      "id": "execute-task:M004:S01:T02",
+      "id": "execute-task:M005:S01:T02",
       "kind": "unit",
       "dependsOn": [
-        "execute-task:M004:S01:T01"
+        "execute-task:M005:S01:T01"
+      ],
+      "writes": [
+        "src/app/api/projects/route.ts",
+        "src/app/api/projects/[id]/route.ts",
+        "src/app/api/projects/[id]/status/route.ts",
+        "src/app/api/projects/[id]/export/route.ts",
+        "src/app/api/projects/[id]/history/route.ts"
+      ],
+      "metadata": {
+        "unitType": "execute-task",
+        "unitId": "M005.S01.T02",
+        "title": "Replaced Projects API routes with FastAPI proxy routes",
+        "status": "complete"
+      }
+    },
+    {
+      "id": "execute-task:M005:S01:T03",
+      "kind": "unit",
+      "dependsOn": [
+        "execute-task:M005:S01:T02"
+      ],
+      "writes": [
+        "src/app/api/suppliers/route.ts",
+        "src/app/api/suppliers/[id]/route.ts"
+      ],
+      "metadata": {
+        "unitType": "execute-task",
+        "unitId": "M005.S01.T03",
+        "title": "Replaced Suppliers API routes with FastAPI proxy routes",
+        "status": "complete"
+      }
+    },
+    {
+      "id": "execute-task:M005:S01:T04",
+      "kind": "unit",
+      "dependsOn": [
+        "execute-task:M005:S01:T03"
+      ],
+      "writes": [
+        "src/app/api/warehouse/route.ts",
+        "src/app/api/warehouse/[id]/route.ts",
+        "src/app/api/warehouse/export/route.ts",
+        "src/app/api/warehouse/transactions/route.ts"
+      ],
+      "metadata": {
+        "unitType": "execute-task",
+        "unitId": "M005.S01.T04",
+        "title": "Replaced warehouse Prisma routes with FastAPI proxy, mapping WarehouseItem to StockItem fields",
+        "status": "complete"
+      }
+    },
+    {
+      "id": "execute-task:M005:S01:T05",
+      "kind": "unit",
+      "dependsOn": [
+        "execute-task:M005:S01:T04"
+      ],
+      "writes": [
+        "src/app/api/invoices/route.ts",
+        "src/app/api/invoices/[id]/route.ts",
+        "src/app/api/invoices/[id]/reconcile/route.ts"
+      ],
+      "metadata": {
+        "unitType": "execute-task",
+        "unitId": "M005.S01.T05",
+        "title": "Kept invoices in Prisma with FastAPI migration notes; architectural mismatch between Prisma Invoice (direct project/supplier links) and FastAPI Invoice (purchase_order_id) requires frontend schema changes for full migration",
+        "status": "complete"
+      }
+    },
+    {
+      "id": "execute-task:M005:S01:T06",
+      "kind": "unit",
+      "dependsOn": [
+        "execute-task:M005:S01:T05"
+      ],
+      "writes": [
+        "src/app/api/analytics/dashboard/route.ts",
+        "src/app/api/analytics/payment-dynamics/route.ts",
+        "src/app/api/analytics/pipeline/route.ts",
+        "src/app/api/analytics/suppliers/route.ts"
+      ],
+      "metadata": {
+        "unitType": "execute-task",
+        "unitId": "M005.S01.T06",
+        "title": "Created dashboard and payment-dynamics proxy routes to FastAPI analytics backend; kept pipeline and suppliers on Prisma with migration notes",
+        "status": "complete"
+      }
+    },
+    {
+      "id": "execute-task:M005:S01:T07",
+      "kind": "unit",
+      "dependsOn": [
+        "execute-task:M005:S01:T06"
       ],
       "writes": [],
       "metadata": {
         "unitType": "execute-task",
-        "unitId": "M004.S01.T02",
-        "title": "Created Alembic migration m0h4akx9s41v for BankStatement, BankTransaction, and TransactionMatchingAudit tables with proper FKs, indexes, and downgrade support",
-        "status": "complete"
+        "unitId": "M005.S01.T07",
+        "title": "Remove Prisma Dependencies and Cleanup",
+        "status": "pending"
       }
     },
     {
-      "id": "execute-task:M004:S01:T03",
-      "kind": "unit",
-      "dependsOn": [
-        "execute-task:M004:S01:T02"
-      ],
-      "writes": [],
-      "metadata": {
-        "unitType": "execute-task",
-        "unitId": "M004.S01.T03",
-        "title": "Created Tinkoff and Ozon Bank 1C ClientBank test fixtures with Russian format samples and documentation",
-        "status": "complete"
-      }
-    },
-    {
-      "id": "execute-task:M004:S01:T04",
-      "kind": "unit",
-      "dependsOn": [
-        "execute-task:M004:S01:T03"
-      ],
-      "writes": [
-        "backend/tests/test_migration.py"
-      ],
-      "metadata": {
-        "unitType": "execute-task",
-        "unitId": "M004.S01.T04",
-        "title": "Added 4 test methods to TestMigrationStructure class verifying bank statement migration file, tables, FKs, and indexes",
-        "status": "complete"
-      }
-    },
-    {
-      "id": "execute-task:M004:S01:T05",
-      "kind": "unit",
-      "dependsOn": [
-        "execute-task:M004:S01:T04"
-      ],
-      "writes": [
-        "backend/tests/test_models.py"
-      ],
-      "metadata": {
-        "unitType": "execute-task",
-        "unitId": "M004.S01.T05",
-        "title": "TestBankStatementModels class with bidirectional relationship, cascade delete, and lazy-loading tests passing",
-        "status": "complete"
-      }
-    },
-    {
-      "id": "complete-slice:M004:S01",
+      "id": "complete-slice:M005:S01",
       "kind": "verification",
       "dependsOn": [
-        "execute-task:M004:S01:T05"
+        "execute-task:M005:S01:T07"
       ],
       "metadata": {
         "unitType": "complete-slice",
-        "unitId": "M004.S01",
+        "unitId": "M005.S01",
         "title": "S01",
-        "status": "complete"
-      }
-    },
-    {
-      "id": "execute-task:M004:S02:T01",
-      "kind": "unit",
-      "dependsOn": [],
-      "writes": [
-        "backend/services/bank_statement_parser.py"
-      ],
-      "metadata": {
-        "unitType": "execute-task",
-        "unitId": "M004.S02.T01",
-        "title": "Created BankStatementParser service for 1C ClientBank .txt files with CP1251/UTF-8 encoding support and field variation handling",
-        "status": "complete"
-      }
-    },
-    {
-      "id": "execute-task:M004:S02:T02",
-      "kind": "unit",
-      "dependsOn": [
-        "execute-task:M004:S02:T01"
-      ],
-      "writes": [
-        "backend/tests/test_bank_statement_parser.py",
-        "backend/services/bank_statement_parser.py"
-      ],
-      "metadata": {
-        "unitType": "execute-task",
-        "unitId": "M004.S02.T02",
-        "title": "Created comprehensive tests for BankStatementParser covering both Tinkoff and Ozon formats, encoding handling, field variations, date/amount parsing, and edge cases",
-        "status": "complete"
-      }
-    },
-    {
-      "id": "complete-slice:M004:S02",
-      "kind": "verification",
-      "dependsOn": [
-        "execute-task:M004:S02:T02"
-      ],
-      "metadata": {
-        "unitType": "complete-slice",
-        "unitId": "M004.S02",
-        "title": "S02",
-        "status": "complete"
-      }
-    },
-    {
-      "id": "execute-task:M004:S03:T01",
-      "kind": "unit",
-      "dependsOn": [],
-      "writes": [
-        "backend/celery_app.py"
-      ],
-      "metadata": {
-        "unitType": "execute-task",
-        "unitId": "M004.S03.T01",
-        "title": "Configured RabbitMQ bank.statement exchange and queue with DLQ binding and task routing",
-        "status": "complete"
-      }
-    },
-    {
-      "id": "execute-task:M004:S03:T02",
-      "kind": "unit",
-      "dependsOn": [
-        "execute-task:M004:S03:T01"
-      ],
-      "writes": [
-        "D:/CLAUDE/Project/zakuppro/zakuppro/backend/services/imap_client.py",
-        "D:/CLAUDE/Project/zakuppro/zakuppro/backend/tests/test_imap_client.py"
-      ],
-      "metadata": {
-        "unitType": "execute-task",
-        "unitId": "M004.S03.T02",
-        "title": "Added .txt support to AttachmentExtractor for 1C ClientBank bank statement files",
-        "status": "complete"
-      }
-    },
-    {
-      "id": "execute-task:M004:S03:T03",
-      "kind": "unit",
-      "dependsOn": [
-        "execute-task:M004:S03:T02"
-      ],
-      "writes": [
-        "backend/email_worker.py",
-        "backend/tests/test_email_worker.py"
-      ],
-      "metadata": {
-        "unitType": "execute-task",
-        "unitId": "M004.S03.T03",
-        "title": "Added routing logic to Email Worker for .txt bank statement files with new publish_bank_statement_task() method and stats tracking",
-        "status": "complete"
-      }
-    },
-    {
-      "id": "execute-task:M004:S03:T04",
-      "kind": "unit",
-      "dependsOn": [
-        "execute-task:M004:S03:T03"
-      ],
-      "writes": [
-        "backend/tasks.py",
-        "backend/tests/test_parse_bank_statement_task.py"
-      ],
-      "metadata": {
-        "unitType": "execute-task",
-        "unitId": "M004.S03.T04",
-        "title": "Implemented parse_bank_statement Celery task for processing 1C ClientBank .txt files with full persistence and error handling",
-        "status": "complete"
-      }
-    },
-    {
-      "id": "execute-task:M004:S03:T05",
-      "kind": "unit",
-      "dependsOn": [
-        "execute-task:M004:S03:T04"
-      ],
-      "writes": [
-        "backend/tests/test_bank_statement_integration.py"
-      ],
-      "metadata": {
-        "unitType": "execute-task",
-        "unitId": "M004.S03.T05",
-        "title": "Created integration test file `test_bank_statement_integration.py` with 6 comprehensive tests verifying end-to-end bank statement flow",
-        "status": "complete"
-      }
-    },
-    {
-      "id": "complete-slice:M004:S03",
-      "kind": "verification",
-      "dependsOn": [
-        "execute-task:M004:S03:T05"
-      ],
-      "metadata": {
-        "unitType": "complete-slice",
-        "unitId": "M004.S03",
-        "title": "S03",
-        "status": "complete"
-      }
-    },
-    {
-      "id": "execute-task:M004:S04:T01",
-      "kind": "unit",
-      "dependsOn": [],
-      "writes": [
-        "backend/services/supplier_inn_extractor.py",
-        "backend/tests/test_supplier_inn_extractor.py"
-      ],
-      "metadata": {
-        "unitType": "execute-task",
-        "unitId": "M004.S04.T01",
-        "title": "Created Supplier INN Extractor service with extract_inn_from_requisites function supporting multiple INN formats (INN:, ИНН:, inn:, with space/colon) and 10/12-digit patterns",
-        "status": "complete"
-      }
-    },
-    {
-      "id": "execute-task:M004:S04:T02",
-      "kind": "unit",
-      "dependsOn": [
-        "execute-task:M004:S04:T01"
-      ],
-      "writes": [
-        "backend/services/payment_matcher.py",
-        "backend/tests/test_payment_matcher.py"
-      ],
-      "metadata": {
-        "unitType": "execute-task",
-        "unitId": "M004.S04.T02",
-        "title": "Created PaymentMatcher service with multi-tier matching: exact INN+amount (confidence 1.00), INN+amount±5% (confidence 0.85-0.99), Supplier INN cache, and UnresolvedTransaction handling",
-        "status": "complete"
-      }
-    },
-    {
-      "id": "execute-task:M004:S04:T03",
-      "kind": "unit",
-      "dependsOn": [
-        "execute-task:M004:S04:T02"
-      ],
-      "writes": [
-        "backend/services/payment_matcher.py",
-        "backend/tests/test_payment_matcher.py"
-      ],
-      "metadata": {
-        "unitType": "execute-task",
-        "unitId": "M004.S04.T03",
-        "title": "Enabled Invoice.status=\"Оплачен\" update on successful payment match and added tests for Payment/UnresolvedTransaction creation",
-        "status": "complete"
-      }
-    },
-    {
-      "id": "execute-task:M004:S04:T04",
-      "kind": "unit",
-      "dependsOn": [
-        "execute-task:M004:S04:T03"
-      ],
-      "writes": [
-        "backend/tasks.py",
-        "backend/tests/test_match_bank_transactions_task.py"
-      ],
-      "metadata": {
-        "unitType": "execute-task",
-        "unitId": "M004.S04.T04",
-        "title": "Added match_bank_transactions Celery task with bind=True, max_retries=2, exponential backoff on RateLimitError, and FailedTask DLQ persistence",
-        "status": "complete"
-      }
-    },
-    {
-      "id": "execute-task:M004:S04:T05",
-      "kind": "unit",
-      "dependsOn": [
-        "execute-task:M004:S04:T04"
-      ],
-      "writes": [
-        "backend/tests/test_payment_matcher.py"
-      ],
-      "metadata": {
-        "unitType": "execute-task",
-        "unitId": "M004.S04.T05",
-        "title": "Unit tests for PaymentMatcher already exist with 18 passing tests covering all matching scenarios",
-        "status": "complete"
-      }
-    },
-    {
-      "id": "execute-task:M004:S04:T06",
-      "kind": "unit",
-      "dependsOn": [
-        "execute-task:M004:S04:T05"
-      ],
-      "writes": [
-        "backend/tests/test_matching_integration.py"
-      ],
-      "metadata": {
-        "unitType": "execute-task",
-        "unitId": "M004.S04.T06",
-        "title": "Created end-to-end integration tests for payment matching flow covering BankStatement→BankTransaction→Payment/UnresolvedTransaction with 9 passing test scenarios",
-        "status": "complete"
-      }
-    },
-    {
-      "id": "complete-slice:M004:S04",
-      "kind": "verification",
-      "dependsOn": [
-        "execute-task:M004:S04:T06"
-      ],
-      "metadata": {
-        "unitType": "complete-slice",
-        "unitId": "M004.S04",
-        "title": "S04",
-        "status": "complete"
-      }
-    },
-    {
-      "id": "execute-task:M004:S05:T01",
-      "kind": "unit",
-      "dependsOn": [],
-      "writes": [
-        "backend/routers/unresolved_transactions.py",
-        "backend/schemas.py",
-        "backend/tests/test_api/test_unresolved_transactions.py",
-        "backend/tests/conftest.py",
-        "backend/schemas/__init__.py"
-      ],
-      "metadata": {
-        "unitType": "execute-task",
-        "unitId": "M004.S05.T01",
-        "title": "Extended GET /api/unresolved-transactions with query parameter filtering (status, amount range, date range), description search, and flexible ordering. Added UnresolvedTransactionListResponse schema for paginated results.",
-        "status": "complete"
-      }
-    },
-    {
-      "id": "execute-task:M004:S05:T02",
-      "kind": "unit",
-      "dependsOn": [
-        "execute-task:M004:S05:T01"
-      ],
-      "writes": [
-        "backend/routers/unresolved_transactions.py",
-        "backend/schemas.py",
-        "backend/schemas/__init__.py",
-        "backend/tests/test_api/test_unresolved_transactions.py"
-      ],
-      "metadata": {
-        "unitType": "execute-task",
-        "unitId": "M004.S05.T02",
-        "title": "Added GET /api/unresolved-transactions/{id}/candidates endpoint suggesting matching invoices with 10% amount tolerance, 90-day date window, returning confidence-scored candidates for manual reconciliation",
-        "status": "complete"
-      }
-    },
-    {
-      "id": "execute-task:M004:S05:T03",
-      "kind": "unit",
-      "dependsOn": [
-        "execute-task:M004:S05:T02"
-      ],
-      "writes": [
-        "backend/routers/unresolved_transactions.py",
-        "backend/schemas.py",
-        "backend/models.py",
-        "backend/tests/test_api/test_unresolved_transactions.py",
-        "backend/schemas/__init__.py"
-      ],
-      "metadata": {
-        "unitType": "execute-task",
-        "unitId": "M004.S05.T03",
-        "title": "Added POST /api/unresolved-transactions/{transaction_id}/match endpoint for manual reconciliation with Payment record creation, TransactionMatchingAudit tracking, and UnresolvedTransaction status update",
-        "status": "complete"
-      }
-    },
-    {
-      "id": "execute-task:M004:S05:T04",
-      "kind": "unit",
-      "dependsOn": [
-        "execute-task:M004:S05:T03"
-      ],
-      "writes": [
-        "backend/routers/unresolved_transactions.py",
-        "backend/schemas.py",
-        "backend/schemas/__init__.py",
-        "backend/tests/test_api/test_unresolved_transactions.py"
-      ],
-      "metadata": {
-        "unitType": "execute-task",
-        "unitId": "M004.S05.T04",
-        "title": "Added POST /api/unresolved-transactions/bulk-match endpoint for bulk manual reconciliation with atomic transaction, validation before processing, and summary response with matched_count, failed_count, payment_ids, and errors",
-        "status": "complete"
-      }
-    },
-    {
-      "id": "execute-task:M004:S05:T05",
-      "kind": "unit",
-      "dependsOn": [
-        "execute-task:M004:S05:T04"
-      ],
-      "writes": [
-        "backend/models.py",
-        "backend/routers/unresolved_transactions.py",
-        "backend/schemas.py",
-        "backend/schemas/__init__.py",
-        "backend/tests/test_api/test_unresolved_transactions.py"
-      ],
-      "metadata": {
-        "unitType": "execute-task",
-        "unitId": "M004.S05.T05",
-        "title": "Added GET /api/unresolved-transactions/audit-history endpoint with filters (transaction_id, invoice_id, date_from/to, matched_by) returning audit records with nested Invoice/BankTransaction/UnresolvedTransaction details",
-        "status": "complete"
-      }
-    },
-    {
-      "id": "execute-task:M004:S05:T06",
-      "kind": "unit",
-      "dependsOn": [
-        "execute-task:M004:S05:T05"
-      ],
-      "writes": [
-        "backend/tests/test_api/test_unresolved_transactions.py",
-        "backend/tests/conftest.py.bak"
-      ],
-      "metadata": {
-        "unitType": "execute-task",
-        "unitId": "M004.S05.T06",
-        "title": "API unit tests already existed and all 38 tests pass successfully",
-        "status": "complete"
-      }
-    },
-    {
-      "id": "execute-task:M004:S05:T07",
-      "kind": "unit",
-      "dependsOn": [
-        "execute-task:M004:S05:T06"
-      ],
-      "writes": [
-        "backend/tests/test_unresolved_matching_integration.py"
-      ],
-      "metadata": {
-        "unitType": "execute-task",
-        "unitId": "M004.S05.T07",
-        "title": "Created integration test suite for manual matching workflow covering end-to-end transaction reconciliation, bulk operations, audit history retrieval, and edge cases",
-        "status": "complete"
-      }
-    },
-    {
-      "id": "execute-task:M004:S05:T08",
-      "kind": "unit",
-      "dependsOn": [
-        "execute-task:M004:S05:T07"
-      ],
-      "writes": [
-        "backend/tests/conftest.py",
-        "backend/tests/test_api/test_unresolved_transactions.py",
-        "backend/tests/test_unresolved_matching_integration.py"
-      ],
-      "metadata": {
-        "unitType": "execute-task",
-        "unitId": "M004.S05.T08",
-        "title": "Verified test_client fixture is present and all 55 tests pass successfully",
-        "status": "complete"
-      }
-    },
-    {
-      "id": "complete-slice:M004:S05",
-      "kind": "verification",
-      "dependsOn": [
-        "execute-task:M004:S05:T08"
-      ],
-      "metadata": {
-        "unitType": "complete-slice",
-        "unitId": "M004.S05",
-        "title": "S05",
-        "status": "complete"
-      }
-    },
-    {
-      "id": "execute-task:M004:S06:T01",
-      "kind": "unit",
-      "dependsOn": [],
-      "writes": [],
-      "metadata": {
-        "unitType": "execute-task",
-        "unitId": "M004.S06.T01",
-        "title": "Created analytics router with GET /api/analytics/dashboard endpoint returning paid/unpaid invoice counts, total amounts, and pending invoices with date range filtering and validation",
-        "status": "complete"
-      }
-    },
-    {
-      "id": "execute-task:M004:S06:T02",
-      "kind": "unit",
-      "dependsOn": [
-        "execute-task:M004:S06:T01"
-      ],
-      "writes": [
-        "backend/routers/analytics.py",
-        "backend/tests/test_api/test_analytics.py"
-      ],
-      "metadata": {
-        "unitType": "execute-task",
-        "unitId": "M004.S06.T02",
-        "title": "Added payment dynamics time-series endpoint and Excel export for transactions with date filtering, grouping options, and comprehensive test coverage",
-        "status": "complete"
-      }
-    },
-    {
-      "id": "execute-task:M004:S06:T03",
-      "kind": "unit",
-      "dependsOn": [
-        "execute-task:M004:S06:T02"
-      ],
-      "writes": [
-        "backend/routers/analytics.py",
-        "backend/tests/test_api/test_analytics.py"
-      ],
-      "metadata": {
-        "unitType": "execute-task",
-        "unitId": "M004.S06.T03",
-        "title": "Implemented manual bank statement upload endpoint with validation, parser integration, auto-matching, and comprehensive test coverage (13 tests for valid upload, extension validation, size limits, error handling, and invoice matching)",
-        "status": "complete"
-      }
-    },
-    {
-      "id": "execute-task:M004:S06:T04",
-      "kind": "unit",
-      "dependsOn": [
-        "execute-task:M004:S06:T03"
-      ],
-      "writes": [
-        "backend/tests/test_analytics_integration.py"
-      ],
-      "metadata": {
-        "unitType": "execute-task",
-        "unitId": "M004.S06.T04",
-        "title": "Created comprehensive integration test suite for analytics/export/upload end-to-end workflow with 5 test classes covering dashboard metrics, payment dynamics, Excel export, bank statement parsing, and auto-matching with audit trail verification",
-        "status": "complete"
-      }
-    },
-    {
-      "id": "complete-slice:M004:S06",
-      "kind": "verification",
-      "dependsOn": [
-        "execute-task:M004:S06:T04"
-      ],
-      "metadata": {
-        "unitType": "complete-slice",
-        "unitId": "M004.S06",
-        "title": "S06",
-        "status": "complete"
+        "status": "pending"
       }
     }
   ]

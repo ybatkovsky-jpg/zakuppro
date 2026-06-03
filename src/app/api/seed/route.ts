@@ -1,3 +1,10 @@
+/**
+ * Database Seed API Route
+ *
+ * TODO: M005/S01 - This route was not part of the API migration slice.
+ * This endpoint seeds the Prisma database with test data.
+ * Future migration: Replace with FastAPI seed endpoint.
+ */
 import { db } from '@/lib/db'
 import { NextResponse } from 'next/server'
 
