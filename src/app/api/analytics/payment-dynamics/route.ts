@@ -42,24 +42,25 @@ export async function GET(request: NextRequest) {
       period_end: string;
     }>('/analytics/payment-dynamics', params);
 
-    if (result.error) {
+    if (result.error || !result.data) {
       return NextResponse.json(
-        { error: result.error.error, details: result.error.details },
+        { error: result.error?.error || 'No data returned from backend', details: result.error?.details },
         { status: 500 }
       );
     }
 
     // FastAPI returns snake_case, transform to camelCase for frontend
+    const data = result.data;
     const response = {
-      data: result.data.data.map((point) => ({
+      data: data.data.map((point) => ({
         date: point.date,
         paidAmount: point.paid_amount,
         paidCount: point.paid_count,
       })),
-      totalAmount: result.data.total_amount,
-      totalCount: result.data.total_count,
-      periodStart: result.data.period_start,
-      periodEnd: result.data.period_end,
+      totalAmount: data.total_amount,
+      totalCount: data.total_count,
+      periodStart: data.period_start,
+      periodEnd: data.period_end,
     };
 
     return NextResponse.json(response);

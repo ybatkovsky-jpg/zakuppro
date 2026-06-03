@@ -36,23 +36,24 @@ export async function GET(request: NextRequest) {
       period_end: string;
     }>('/analytics/dashboard', params);
 
-    if (result.error) {
+    if (result.error || !result.data) {
       return NextResponse.json(
-        { error: result.error.error, details: result.error.details },
+        { error: result.error?.error || 'No data returned from backend', details: result.error?.details },
         { status: 500 }
       );
     }
 
     // FastAPI returns snake_case, frontend expects camelCase
     // Transform response
+    const data = result.data;
     const response = {
-      paidInvoicesCount: result.data.paid_invoices_count,
-      unpaidInvoicesCount: result.data.unpaid_invoices_count,
-      totalPaidAmount: result.data.total_paid_amount,
-      totalUnpaidAmount: result.data.total_unpaid_amount,
-      pendingInvoicesCount: result.data.pending_invoices_count,
-      periodStart: result.data.period_start,
-      periodEnd: result.data.period_end,
+      paidInvoicesCount: data.paid_invoices_count,
+      unpaidInvoicesCount: data.unpaid_invoices_count,
+      totalPaidAmount: data.total_paid_amount,
+      totalUnpaidAmount: data.total_unpaid_amount,
+      pendingInvoicesCount: data.pending_invoices_count,
+      periodStart: data.period_start,
+      periodEnd: data.period_end,
     };
 
     return NextResponse.json(response);

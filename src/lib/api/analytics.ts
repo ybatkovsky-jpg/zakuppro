@@ -37,7 +37,10 @@ export async function getDashboardMetrics(
 export async function getPaymentDynamics(
   params?: PaymentDynamicsQueryParams
 ): Promise<ApiResult<PaymentDynamicsResponse>> {
-  return apiClient.get<PaymentDynamicsResponse>(`${BASE_PATH}/payment-dynamics`, params);
+  return apiClient.get<PaymentDynamicsResponse>(
+    `${BASE_PATH}/payment-dynamics`,
+    params as Record<string, string | number | boolean | undefined>
+  );
 }
 
 // =============================================================================
