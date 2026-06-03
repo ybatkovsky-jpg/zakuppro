@@ -63,6 +63,8 @@ import {
 import { formatRelativeTime, pluralize } from '@/lib/utils'
 import { useMemo, useEffect, useState, useRef } from 'react'
 import Image from 'next/image'
+import { FinancialMetricsCard } from '@/components/app/financial-metrics-card'
+import { PaymentDynamicsChart } from '@/components/app/payment-dynamics-chart'
 
 // ── Types ───────────────────────────────────────────────────────────────────
 
@@ -1431,6 +1433,11 @@ export function Dashboard() {
         formatAmount={formatAmount}
       />
 
+      {/* ── Financial Metrics Card ─────────────────────────────────────── */}
+      <motion.div variants={itemVariants}>
+        <FinancialMetricsCard />
+      </motion.div>
+
       {/* ── KPI Summary Row ──────────────────────────────────────────── */}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <KpiMiniCard
@@ -1470,6 +1477,11 @@ export function Dashboard() {
           iconColor="text-amber-600 dark:text-amber-400"
         />
       </div>
+
+      {/* ── Payment Dynamics Chart ────────────────────────────────────── */}
+      <motion.div variants={itemVariants}>
+        <PaymentDynamicsChart />
+      </motion.div>
 
       {/* ── Urgent Items / Pending Actions ────────────────────────────── */}
       <UrgentItemsSection items={urgentItems} />
