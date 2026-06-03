@@ -1,0 +1,36 @@
+{
+  "schemaVersion": 1,
+  "taskId": "M005-S04-T07",
+  "unitId": "M005/S04/M005-S04-T07",
+  "timestamp": 1780483767441,
+  "passed": false,
+  "discoverySource": "task-plan",
+  "checks": [
+    {
+      "command": "grep -q 'LoginRequest' src/types/fastapi.ts",
+      "exitCode": 1,
+      "durationMs": 27,
+      "verdict": "fail"
+    },
+    {
+      "command": "grep -q 'LoginResponse' src/types/fastapi.ts",
+      "exitCode": 1,
+      "durationMs": 32,
+      "verdict": "fail"
+    },
+    {
+      "command": "test -f src/app/api/auth/login/route.ts",
+      "exitCode": 1,
+      "durationMs": 26,
+      "verdict": "fail"
+    },
+    {
+      "command": "test -f src/lib/auth.ts",
+      "exitCode": 1,
+      "durationMs": 26,
+      "verdict": "fail"
+    }
+  ],
+  "retryAttempt": 1,
+  "maxRetries": 2
+}

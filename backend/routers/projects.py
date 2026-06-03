@@ -26,7 +26,7 @@ router = APIRouter(prefix="/api/projects", tags=["projects"])
 def list_projects(
     skip: int = 0,
     limit: int = 100,
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(require_role([Role.OWNER, Role.MANAGER])),
     db: Session = Depends(get_db)
 ):
     """
@@ -58,7 +58,7 @@ def list_projects(
 @router.get("/{project_id}", response_model=ProjectResponse)
 def get_project(
     project_id: int,
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(require_role([Role.OWNER, Role.MANAGER])),
     db: Session = Depends(get_db)
 ):
     """

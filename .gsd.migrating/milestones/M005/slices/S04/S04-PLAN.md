@@ -61,7 +61,7 @@ Backend auth infrastructure (models, JWT, RBAC) is complete and tested. Frontend
   - Files: `backend/routers/stock_items.py`, `backend/routers/suppliers.py`, `backend/routers/analytics.py`
   - Verify: grep -q 'current_user' backend/routers/stock_items.py && grep -q 'current_user' backend/routers/suppliers.py && grep -q 'current_user' backend/routers/analytics.py
 
-- [ ] **M005-S04-T07: Frontend auth types and login API proxy** `est:1.5h`
+- [x] **M005-S04-T07: Frontend auth types and login API proxy** `est:1.5h`
   ## Why
   Frontend needs TypeScript types for auth and a way to call the login endpoint. The API proxy pattern follows S01 conventions.
   - Files: `src/types/fastapi.ts`, `src/app/api/auth/login/route.ts`, `src/lib/api-client.ts`, `src/lib/auth.ts`

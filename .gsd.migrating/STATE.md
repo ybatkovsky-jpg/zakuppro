@@ -21,4 +21,4 @@
 - None
 
 ## Next Action
-Execute M005-S04-T07: Frontend auth types and login API proxy in slice S04.
+Execute M005-S04-T08: Write RBAC integration tests and verify slice in slice S04.

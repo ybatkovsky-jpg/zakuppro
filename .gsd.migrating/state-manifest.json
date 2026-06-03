@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "exported_at": "2026-06-03T10:39:54.632Z",
+  "exported_at": "2026-06-03T10:49:21.135Z",
   "milestones": [
     {
       "id": "M001",
@@ -6137,19 +6137,28 @@
       "milestone_id": "M005",
       "slice_id": "S04",
       "id": "M005-S04-T07",
-      "title": "Frontend auth types and login API proxy",
-      "status": "pending",
-      "one_liner": "",
-      "narrative": "",
-      "verification_result": "",
+      "title": "Implemented frontend auth types, login API proxy, JWT token storage, and auth helper functions",
+      "status": "complete",
+      "one_liner": "Implemented frontend auth types, login API proxy, JWT token storage, and auth helper functions",
+      "narrative": "Added authentication types (UserRole, User, LoginRequest, LoginResponse) to src/types/fastapi.ts. Created src/app/api/auth/login/route.ts as a Next.js API proxy to FastAPI login endpoint with error transformation. Updated src/lib/api-client.ts with getAuthToken(), setAuthToken(), clearAuthToken() functions and modified apiFetch to include Authorization header from localStorage. Created src/lib/auth.ts with login(), logout(), isAuthenticated(), getUserRole(), getUserId(), and getUsername() functions for managing user sessions.",
+      "verification_result": "- Verified auth types (LoginRequest, LoginResponse, UserRole, User) exported in src/types/fastapi.ts using grep\n- Verified /api/auth/login route file exists at src/app/api/auth/login/route.ts\n- Verified auth utility functions exist in src/lib/auth.ts\n- Build output shows Route ƒ /api/auth/login is properly registered\n- TypeScript compilation shows no auth-related errors",
       "duration": "",
-      "completed_at": null,
+      "completed_at": "2026-06-03T10:49:21.059Z",
       "blocker_discovered": false,
-      "deviations": "",
-      "known_issues": "",
-      "key_files": [],
-      "key_decisions": [],
-      "full_summary_md": "",
+      "deviations": "None.",
+      "known_issues": "None.",
+      "key_files": [
+        "src/types/fastapi.ts",
+        "src/lib/api-client.ts",
+        "src/app/api/auth/login/route.ts",
+        "src/lib/auth.ts"
+      ],
+      "key_decisions": [
+        "JWT token stored in localStorage for client-side auth persistence",
+        "API proxy pattern follows S01 convention with error transformation",
+        "User role and username stored alongside token for quick access without additional API calls"
+      ],
+      "full_summary_md": "---\nid: M005-S04-T07\nparent: S04\nmilestone: M005\nkey_files:\n  - src/types/fastapi.ts\n  - src/lib/api-client.ts\n  - src/app/api/auth/login/route.ts\n  - src/lib/auth.ts\nkey_decisions:\n  - JWT token stored in localStorage for client-side auth persistence\n  - API proxy pattern follows S01 convention with error transformation\n  - User role and username stored alongside token for quick access without additional API calls\nduration: \nverification_result: passed\ncompleted_at: 2026-06-03T10:49:21.055Z\nblocker_discovered: false\n---\n\n# M005-S04-T07: Implemented frontend auth types, login API proxy, JWT token storage, and auth helper functions\n\n**Implemented frontend auth types, login API proxy, JWT token storage, and auth helper functions**\n\n## What Happened\n\nAdded authentication types (UserRole, User, LoginRequest, LoginResponse) to src/types/fastapi.ts. Created src/app/api/auth/login/route.ts as a Next.js API proxy to FastAPI login endpoint with error transformation. Updated src/lib/api-client.ts with getAuthToken(), setAuthToken(), clearAuthToken() functions and modified apiFetch to include Authorization header from localStorage. Created src/lib/auth.ts with login(), logout(), isAuthenticated(), getUserRole(), getUserId(), and getUsername() functions for managing user sessions.\n\n## Verification\n\n- Verified auth types (LoginRequest, LoginResponse, UserRole, User) exported in src/types/fastapi.ts using grep\n- Verified /api/auth/login route file exists at src/app/api/auth/login/route.ts\n- Verified auth utility functions exist in src/lib/auth.ts\n- Build output shows Route ƒ /api/auth/login is properly registered\n- TypeScript compilation shows no auth-related errors\n\n## Verification Evidence\n\n| # | Command | Exit Code | Verdict | Duration |\n|---|---------|-----------|---------|----------|\n| 1 | `grep -q 'LoginRequest' src/types/fastapi.ts && grep -q 'LoginResponse' src/types/fastapi.ts && test -f src/app/api/auth/login/route.ts && test -f src/lib/auth.ts && echo 'All checks passed'` | 0 | pass | 41ms |\n| 2 | `npm run build 2>&1 | grep -E '(api/auth|Route.*auth)'` | 0 | pass | 45000ms |\n| 3 | `npx tsc --noEmit --skipLibCheck 2>&1 | grep -E '(src/lib/auth|src/app/api/auth/login|src/types/fastapi.*auth)'` | 1 | pass | 5000ms |\n\n## Deviations\n\nNone.\n\n## Known Issues\n\nNone.\n\n## Files Created/Modified\n\n- `src/types/fastapi.ts`\n- `src/lib/api-client.ts`\n- `src/app/api/auth/login/route.ts`\n- `src/lib/auth.ts`\n",
       "description": "## Why\nFrontend needs TypeScript types for auth and a way to call the login endpoint. The API proxy pattern follows S01 conventions.\n\n## Do\n1. Update src/types/fastapi.ts:\n   - Add LoginRequest { username: string; password: string }\n   - Add LoginResponse { access_token: string; token_type: string; role: string }\n   - Add User { id: number; username: string; role: string }\n   - Add UserRole type: 'owner' | 'manager' | 'warehouse'\n2. Create src/app/api/auth/login/route.ts:\n   - POST handler that proxies to FastAPI /api/auth/login\n   - Transform error responses per S01 pattern\n3. Update src/lib/api-client.ts:\n   - Add getAuthToken() helper to read JWT from localStorage\n   - Add setAuthToken(token) helper to store JWT\n   - Modify apiFetch to include Authorization header from localStorage\n4. Create src/lib/auth.ts with:\n   - login(username, password) function\n   - isAuthenticated() check\n   - getUserRole() helper\n\n## Done when\n- Frontend can call /api/auth/login and receive JWT\n- Token is stored in localStorage\n- API client includes Authorization header in requests",
       "estimate": "1.5h",
       "files": [
@@ -8830,6 +8839,39 @@
       "verdict": "pass",
       "duration_ms": 500,
       "created_at": "2026-06-03T10:39:54.507Z"
+    },
+    {
+      "id": 244,
+      "task_id": "M005-S04-T07",
+      "slice_id": "S04",
+      "milestone_id": "M005",
+      "command": "grep -q 'LoginRequest' src/types/fastapi.ts && grep -q 'LoginResponse' src/types/fastapi.ts && test -f src/app/api/auth/login/route.ts && test -f src/lib/auth.ts && echo 'All checks passed'",
+      "exit_code": 0,
+      "verdict": "pass",
+      "duration_ms": 41,
+      "created_at": "2026-06-03T10:49:21.059Z"
+    },
+    {
+      "id": 245,
+      "task_id": "M005-S04-T07",
+      "slice_id": "S04",
+      "milestone_id": "M005",
+      "command": "npm run build 2>&1 | grep -E '(api/auth|Route.*auth)'",
+      "exit_code": 0,
+      "verdict": "pass",
+      "duration_ms": 45000,
+      "created_at": "2026-06-03T10:49:21.059Z"
+    },
+    {
+      "id": 246,
+      "task_id": "M005-S04-T07",
+      "slice_id": "S04",
+      "milestone_id": "M005",
+      "command": "npx tsc --noEmit --skipLibCheck 2>&1 | grep -E '(src/lib/auth|src/app/api/auth/login|src/types/fastapi.*auth)'",
+      "exit_code": 1,
+      "verdict": "pass",
+      "duration_ms": 5000,
+      "created_at": "2026-06-03T10:49:21.059Z"
     }
   ]
 }

@@ -112,6 +112,7 @@ class ProjectItemResponse(BaseSchema):
 class ProjectResponse(ProjectBase):
     """Schema for project response with nested relationships."""
     id: int
+    owner_id: int
     created_at: datetime
     updated_at: Optional[datetime] = None
     items: List[ProjectItemResponse] = []

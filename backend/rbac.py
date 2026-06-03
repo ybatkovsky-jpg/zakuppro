@@ -141,11 +141,12 @@ def require_role(allowed_roles: List[Role]):
     """
     def role_checker(current_user: User = Depends(get_current_active_user)) -> User:
         if current_user.role not in allowed_roles:
+            allowed_roles_str = ", ".join(r.value for r in allowed_roles)
             raise PermissionDenied(
                 detail=f"Role '{current_user.role.value}' not authorized for this endpoint",
                 user_id=current_user.id,
                 user_role=current_user.role.value,
-                required_permission=f"One of: {r.value for r in allowed_roles}"
+                required_permission=f"One of: {allowed_roles_str}"
             )
         return current_user
 
