@@ -55,7 +55,7 @@
   - Files: `src/components/app/projects.tsx`
   - Verify: grep -q 'useMutation' src/components/app/projects.tsx && grep -q 'statusMutation' src/components/app/projects.tsx
 
-- [ ] **T06: Add visual polish and touch support** `est:20m`
+- [x] **T06: Add visual polish and touch support** `est:20m`
   Add DragOverlay component showing dragged card preview at cursor position. Configure sensors with TouchSensor for mobile support. Add visual styles: column highlight on isOver, card opacity reduction on isDragging, smooth transition animations. Ensure drag handle (GripVertical) is always visible on hover. This completes the DnD UX polish.
   - Files: `src/components/app/projects.tsx`
   - Verify: grep -q 'DragOverlay' src/components/app/projects.tsx && grep -q 'TouchSensor' src/components/app/projects.tsx

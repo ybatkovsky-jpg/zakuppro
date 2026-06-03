@@ -1,0 +1,24 @@
+{
+  "schemaVersion": 1,
+  "taskId": "T06",
+  "unitId": "M005/S02/T06",
+  "timestamp": 1780460739992,
+  "passed": false,
+  "discoverySource": "task-plan",
+  "checks": [
+    {
+      "command": "grep -q 'DragOverlay' src/components/app/projects.tsx",
+      "exitCode": 1,
+      "durationMs": 28,
+      "verdict": "fail"
+    },
+    {
+      "command": "grep -q 'TouchSensor' src/components/app/projects.tsx",
+      "exitCode": 1,
+      "durationMs": 27,
+      "verdict": "fail"
+    }
+  ],
+  "retryAttempt": 1,
+  "maxRetries": 2
+}

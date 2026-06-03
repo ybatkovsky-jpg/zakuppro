@@ -20,7 +20,7 @@ export interface ProjectBase {
   total_cost?: number | null;
 }
 
-export interface ProjectCreate extends ProjectBase {}
+export type ProjectCreate = ProjectBase;
 
 export interface ProjectUpdate {
   name?: string;
@@ -92,7 +92,7 @@ export interface SupplierBase {
   requisites?: string | null;
 }
 
-export interface SupplierCreate extends SupplierBase {}
+export type SupplierCreate = SupplierBase;
 
 export interface SupplierUpdate {
   name?: string;
@@ -118,7 +118,7 @@ export interface StockItemBase {
   qty_available?: number; // default: 0
 }
 
-export interface StockItemCreate extends StockItemBase {}
+export type StockItemCreate = StockItemBase;
 
 export interface StockItemUpdate {
   name?: string;
@@ -244,7 +244,7 @@ export interface UnresolvedTransactionBase {
   status?: string; // default: "Не распределено"
 }
 
-export interface UnresolvedTransactionCreate extends UnresolvedTransactionBase {}
+export type UnresolvedTransactionCreate = UnresolvedTransactionBase;
 
 export interface UnresolvedTransactionUpdate {
   amount?: number;
