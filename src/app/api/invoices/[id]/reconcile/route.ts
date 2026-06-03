@@ -1,6 +1,22 @@
 import { db } from '@/lib/db'
 import { NextRequest, NextResponse } from 'next/server'
 
+// =============================================================================
+// Reconciliation Endpoint
+//
+// NOTE: FastAPI has an InvoiceVerifier service (backend/services/invoice_verifier.py)
+// that performs similar verification, but it is not exposed as a REST endpoint.
+// The frontend's reconciliation logic additionally includes:
+// - Levenshtein distance for fuzzy name matching
+// - Purchase request matching
+// - Unmatched item analysis
+// - Comprehensive summary statistics
+//
+// This endpoint maintains the local implementation until:
+// 1. FastAPI exposes a verification endpoint with equivalent functionality
+// 2. Or a migration path is established for the invoice data model
+// =============================================================================
+
 // Levenshtein distance for name similarity scoring
 function levenshteinDistance(a: string, b: string): number {
   const matrix: number[][] = []
@@ -38,7 +54,8 @@ export async function GET(
   try {
     const { id } = await params
 
-    // Fetch invoice with items
+    // Fetch invoice with items from Prisma
+    // TODO: Migrate to FastAPI verification endpoint once available
     const invoice = await db.invoice.findUnique({
       where: { id },
       include: {

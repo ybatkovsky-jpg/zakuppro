@@ -1,12 +1,46 @@
-import { db } from '@/lib/db'
 import { NextResponse } from 'next/server'
+import { apiFetch } from '@/lib/api-client'
+import type { StockItemResponse } from '@/types/fastapi'
 import * as XLSX from 'xlsx'
+
+// =============================================================================
+// Type Mappings - WarehouseItem (Prisma) <-> StockItem (FastAPI)
+// =============================================================================
+
+/**
+ * Transform FastAPI StockItem to Prisma WarehouseItem format for frontend compatibility
+ */
+function stockItemToWarehouseItem(stockItem: StockItemResponse): Record<string, unknown> {
+  return {
+    id: String(stockItem.id),
+    name: stockItem.name,
+    article: stockItem.sku,
+    category: '', // Not available in FastAPI
+    quantity: stockItem.qty_total,
+    minQuantity: 0, // Not available in FastAPI - using default
+    unit: 'шт', // Default value
+    location: '', // Not available in FastAPI
+    createdAt: stockItem.created_at,
+    updatedAt: stockItem.updated_at || null,
+  }
+}
+
+// =============================================================================
+// GET /api/warehouse/export - Export warehouse items to Excel
+// =============================================================================
 
 export async function GET() {
   try {
-    const items = await db.warehouseItem.findMany({
-      orderBy: { name: 'asc' },
-    })
+    // Fetch stock items from FastAPI
+    const result = await apiFetch<StockItemResponse[]>('/api/stock-items')
+
+    if (result.error) {
+      console.error('Warehouse export - FastAPI error:', result.error)
+      return NextResponse.json({ error: 'Failed to fetch warehouse items for export' }, { status: 500 })
+    }
+
+    // Transform to WarehouseItem format
+    const items = (result.data || []).map(stockItemToWarehouseItem)
 
     const statusMap = (qty: number, minQty: number): string => {
       if (qty < minQty) return 'Ниже минимума'
@@ -14,7 +48,7 @@ export async function GET() {
       return 'В норме'
     }
 
-    const sheetData = items.map((item) => ({
+    const sheetData = items.map((item: any) => ({
       'Наименование': item.name,
       'Артикул': item.article || '',
       'Категория': item.category || '',

@@ -1,6 +1,18 @@
 import { db } from '@/lib/db'
 import { NextRequest, NextResponse } from 'next/server'
 
+/**
+ * Warehouse Transactions API Route
+ *
+ * TODO: This endpoint still uses Prisma directly. FastAPI does not yet have an equivalent
+ * stock movement/transaction endpoint. Future work should:
+ * 1. Add a StockMovement model to FastAPI backend (similar to WarehouseTransaction)
+ * 2. Create endpoints for tracking stock in/out movements
+ * 3. Add business logic for updating qty_reserved and qty_available based on movements
+ *
+ * For now, this route continues to use the existing Prisma implementation.
+ */
+
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url)

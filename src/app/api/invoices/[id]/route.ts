@@ -1,6 +1,33 @@
 import { db } from '@/lib/db'
 import { NextRequest, NextResponse } from 'next/server'
 
+// =============================================================================
+// Status Mappings (for consistency with other invoice routes)
+// =============================================================================
+
+// Prisma (English) -> FastAPI (Russian) status mappings
+const STATUS_TO_FASTAPI: Record<string, string> = {
+  'received': 'Ожидает сверки',
+  'verified': 'Сверен',
+  'discrepancy': 'Ошибки',
+  'approved': 'Ожидает оплаты',
+  'paid': 'Оплачен',
+  'cancelled': 'Отменен',
+}
+
+const STATUS_FROM_FASTAPI: Record<string, string> = {
+  'Ожидает сверки': 'received',
+  'Сверен': 'verified',
+  'Ошибки': 'discrepancy',
+  'Ожидает оплаты': 'approved',
+  'Оплачен': 'paid',
+  'Отменен': 'cancelled',
+}
+
+// =============================================================================
+// GET /api/invoices/[id] - Get invoice detail
+// =============================================================================
+
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
@@ -8,6 +35,8 @@ export async function GET(
   try {
     const { id } = await params
 
+    // For now, fetch from Prisma
+    // TODO: Migrate to FastAPI once ID mapping is established
     const invoice = await db.invoice.findUnique({
       where: { id },
       include: {
@@ -31,6 +60,10 @@ export async function GET(
     return NextResponse.json({ error: 'Failed to fetch invoice' }, { status: 500 })
   }
 }
+
+// =============================================================================
+// PATCH /api/invoices/[id] - Update invoice
+// =============================================================================
 
 export async function PATCH(
   request: NextRequest,
@@ -118,5 +151,29 @@ export async function PATCH(
   } catch (error) {
     console.error('Invoice update error:', error)
     return NextResponse.json({ error: 'Failed to update invoice' }, { status: 500 })
+  }
+}
+
+// =============================================================================
+// DELETE /api/invoices/[id] - Delete invoice
+// =============================================================================
+
+export async function DELETE(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  try {
+    const { id } = await params
+
+    // For now, delete from Prisma
+    // TODO: Migrate to FastAPI once ID mapping is established
+    await db.invoice.delete({
+      where: { id },
+    })
+
+    return NextResponse.json({ success: true }, { status: 200 })
+  } catch (error) {
+    console.error('Invoice delete error:', error)
+    return NextResponse.json({ error: 'Failed to delete invoice' }, { status: 500 })
   }
 }

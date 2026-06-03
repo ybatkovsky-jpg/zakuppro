@@ -1,5 +1,94 @@
-import { db } from '@/lib/db'
 import { NextRequest, NextResponse } from 'next/server'
+import { apiFetch } from '@/lib/api-client'
+import type { StockItemResponse, StockItemUpdate } from '@/types/fastapi'
+
+// =============================================================================
+// Type Mappings - WarehouseItem (Prisma) <-> StockItem (FastAPI)
+// =============================================================================
+
+/**
+ * Transform FastAPI StockItem to Prisma WarehouseItem format for frontend compatibility
+ */
+function stockItemToWarehouseItem(stockItem: StockItemResponse): Record<string, unknown> {
+  return {
+    id: String(stockItem.id), // FastAPI uses int, Prisma uses string/cuid
+    name: stockItem.name,
+    article: stockItem.sku,
+    category: '', // Not available in FastAPI
+    quantity: stockItem.qty_total,
+    minQuantity: 0, // Not available in FastAPI
+    unit: 'шт', // Default value
+    location: '', // Not available in FastAPI
+    createdAt: stockItem.created_at,
+    updatedAt: stockItem.updated_at || null,
+    // Include FastAPI-specific fields for reference
+    _fastapi: {
+      qty_reserved: stockItem.qty_reserved,
+      qty_available: stockItem.qty_available,
+    },
+  }
+}
+
+/**
+ * Transform Prisma WarehouseItem format to FastAPI StockItemUpdate format
+ */
+function warehouseItemToStockItemUpdate(body: Record<string, unknown>): StockItemUpdate {
+  const update: StockItemUpdate = {}
+
+  if (body.name !== undefined) update.name = String(body.name)
+  if (body.article !== undefined) update.sku = String(body.article)
+  if (body.quantity !== undefined) {
+    update.qty_total = Number(body.quantity)
+    update.qty_available = Number(body.quantity) // Sync available with total
+  }
+
+  return update
+}
+
+// =============================================================================
+// GET /api/warehouse/[id] - Get warehouse item detail (proxies to FastAPI /api/stock_items/{id})
+// =============================================================================
+
+export async function GET(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  try {
+    const { id } = await params
+
+    // FastAPI uses numeric IDs, Prisma uses string IDs
+    // Try to parse as number for FastAPI
+    const numericId = parseInt(id, 10)
+    if (isNaN(numericId)) {
+      return NextResponse.json({ error: 'Invalid warehouse item ID' }, { status: 400 })
+    }
+
+    const result = await apiFetch<StockItemResponse>(`/api/stock-items/${numericId}`)
+
+    if (result.error) {
+      const statusCode = (result.error.details as any)?.status || 500
+      if (statusCode === 404) {
+        return NextResponse.json({ error: 'Warehouse item not found' }, { status: 404 })
+      }
+      return NextResponse.json(
+        { error: result.error.error, details: result.error.details },
+        { status: statusCode }
+      )
+    }
+
+    // Transform to WarehouseItem format
+    const transformed = stockItemToWarehouseItem(result.data!)
+
+    return NextResponse.json(transformed)
+  } catch (error) {
+    console.error('Warehouse item get error:', error)
+    return NextResponse.json({ error: 'Failed to fetch warehouse item' }, { status: 500 })
+  }
+}
+
+// =============================================================================
+// PATCH /api/warehouse/[id] - Update warehouse item (proxies to FastAPI /api/stock_items/{id})
+// =============================================================================
 
 export async function PATCH(
   request: NextRequest,
@@ -10,31 +99,51 @@ export async function PATCH(
     const body = await request.json()
     const { name, article, category, quantity, minQuantity, unit, location } = body
 
-    const existing = await db.warehouseItem.findUnique({ where: { id } })
-    if (!existing) {
-      return NextResponse.json({ error: 'Warehouse item not found' }, { status: 404 })
+    // FastAPI uses numeric IDs
+    const numericId = parseInt(id, 10)
+    if (isNaN(numericId)) {
+      return NextResponse.json({ error: 'Invalid warehouse item ID' }, { status: 400 })
     }
 
-    const data: Record<string, unknown> = {}
-    if (name !== undefined) data.name = name.trim()
-    if (article !== undefined) data.article = article.trim()
-    if (category !== undefined) data.category = category.trim()
-    if (quantity !== undefined) data.quantity = quantity
-    if (minQuantity !== undefined) data.minQuantity = minQuantity
-    if (unit !== undefined) data.unit = unit.trim()
-    if (location !== undefined) data.location = location.trim()
+    // Note: category, minQuantity, unit, location are not supported by FastAPI StockItem
+    // These fields will be ignored but we preserve them in the response for compatibility
 
-    const item = await db.warehouseItem.update({
-      where: { id },
-      data,
+    // Transform to StockItemUpdate format
+    const stockItemData = warehouseItemToStockItemUpdate({
+      name,
+      article,
+      quantity,
     })
 
-    return NextResponse.json(item)
+    const result = await apiFetch<StockItemResponse>(`/api/stock-items/${numericId}`, {
+      method: 'PATCH',
+      body: stockItemData,
+    })
+
+    if (result.error) {
+      const statusCode = (result.error.details as any)?.status || 500
+      if (statusCode === 404) {
+        return NextResponse.json({ error: 'Warehouse item not found' }, { status: 404 })
+      }
+      return NextResponse.json(
+        { error: result.error.error, details: result.error.details },
+        { status: statusCode }
+      )
+    }
+
+    // Transform response back to WarehouseItem format
+    const transformed = stockItemToWarehouseItem(result.data!)
+
+    return NextResponse.json(transformed)
   } catch (error) {
     console.error('Warehouse item update error:', error)
     return NextResponse.json({ error: 'Failed to update warehouse item' }, { status: 500 })
   }
 }
+
+// =============================================================================
+// DELETE /api/warehouse/[id] - Delete warehouse item (proxies to FastAPI /api/stock_items/{id})
+// =============================================================================
 
 export async function DELETE(
   request: NextRequest,
@@ -43,12 +152,26 @@ export async function DELETE(
   try {
     const { id } = await params
 
-    const existing = await db.warehouseItem.findUnique({ where: { id } })
-    if (!existing) {
-      return NextResponse.json({ error: 'Warehouse item not found' }, { status: 404 })
+    // FastAPI uses numeric IDs
+    const numericId = parseInt(id, 10)
+    if (isNaN(numericId)) {
+      return NextResponse.json({ error: 'Invalid warehouse item ID' }, { status: 400 })
     }
 
-    await db.warehouseItem.delete({ where: { id } })
+    const result = await apiFetch(`/api/stock-items/${numericId}`, {
+      method: 'DELETE',
+    })
+
+    if (result.error) {
+      const statusCode = (result.error.details as any)?.status || 500
+      if (statusCode === 404) {
+        return NextResponse.json({ error: 'Warehouse item not found' }, { status: 404 })
+      }
+      return NextResponse.json(
+        { error: result.error.error, details: result.error.details },
+        { status: statusCode }
+      )
+    }
 
     return NextResponse.json({ message: 'Warehouse item deleted successfully' })
   } catch (error) {
