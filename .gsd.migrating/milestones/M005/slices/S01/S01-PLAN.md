@@ -61,7 +61,7 @@ Frontend components continue using /api/* endpoints internally. Data flows: Comp
   - Files: `src/app/api/analytics/pipeline/route.ts`, `src/app/api/analytics/suppliers/route.ts`, `src/app/api/analytics/dashboard/route.ts`, `src/app/api/analytics/payment-dynamics/route.ts`
   - Verify: curl http://localhost:3000/api/analytics/dashboard — returns dashboard metrics from FastAPI
 
-- [ ] **T07: Remove Prisma Dependencies and Cleanup** `est:1h`
+- [x] **T07: Remove Prisma Dependencies and Cleanup** `est:1h`
   ## Why
   After replacing all API routes, Prisma is no longer needed. Removing unused dependencies keeps the codebase clean.
   - Files: `src/lib/db.ts`, `package.json`, `prisma/schema.prisma`

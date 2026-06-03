@@ -1,0 +1,18 @@
+{
+  "id": "8c645eff-8502-4399-810b-7b7ed9ae81c8",
+  "runtime": "bash",
+  "purpose": "Verify Projects API proxy endpoint",
+  "script_chars": 56,
+  "started_at": "2026-06-03T03:32:52.843Z",
+  "finished_at": "2026-06-03T03:32:52.945Z",
+  "exit_code": 1,
+  "signal": null,
+  "timed_out": false,
+  "duration_ms": 102,
+  "stdout_bytes": 544,
+  "stderr_bytes": 0,
+  "stdout_truncated": false,
+  "stderr_truncated": false,
+  "stdout_path": "D:\\CLAUDE\\Project\\zakuppro\\zakuppro\\.gsd\\exec\\8c645eff-8502-4399-810b-7b7ed9ae81c8.stdout",
+  "stderr_path": "D:\\CLAUDE\\Project\\zakuppro\\zakuppro\\.gsd\\exec\\8c645eff-8502-4399-810b-7b7ed9ae81c8.stderr"
+}

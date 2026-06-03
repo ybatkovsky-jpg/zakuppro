@@ -1,0 +1,24 @@
+{
+  "schemaVersion": 1,
+  "taskId": "T05",
+  "unitId": "M005/S02/T05",
+  "timestamp": 1780459122390,
+  "passed": false,
+  "discoverySource": "task-plan",
+  "checks": [
+    {
+      "command": "grep -q 'useMutation' src/components/app/projects.tsx",
+      "exitCode": 1,
+      "durationMs": 28,
+      "verdict": "fail"
+    },
+    {
+      "command": "grep -q 'statusMutation' src/components/app/projects.tsx",
+      "exitCode": 1,
+      "durationMs": 27,
+      "verdict": "fail"
+    }
+  ],
+  "retryAttempt": 1,
+  "maxRetries": 2
+}

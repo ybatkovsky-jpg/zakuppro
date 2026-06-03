@@ -1,0 +1,24 @@
+{
+  "schemaVersion": 1,
+  "taskId": "T03",
+  "unitId": "M005/S02/T03",
+  "timestamp": 1780458846125,
+  "passed": false,
+  "discoverySource": "task-plan",
+  "checks": [
+    {
+      "command": "grep -q 'useDroppable' src/components/app/projects.tsx",
+      "exitCode": 1,
+      "durationMs": 26,
+      "verdict": "fail"
+    },
+    {
+      "command": "grep -q 'setNodeRef' src/components/app/projects.tsx",
+      "exitCode": 1,
+      "durationMs": 25,
+      "verdict": "fail"
+    }
+  ],
+  "retryAttempt": 1,
+  "maxRetries": 2
+}

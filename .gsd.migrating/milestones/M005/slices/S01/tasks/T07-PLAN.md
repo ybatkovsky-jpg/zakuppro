@@ -1,50 +1,61 @@
 ---
-estimated_steps: 23
-estimated_files: 3
+estimated_steps: 28
+estimated_files: 2
 skills_used: []
 ---
 
-# T07: Remove Prisma Dependencies and Cleanup
+# T07: Document Prisma Migration Status and Cleanup
 
-## Why
-After replacing all API routes, Prisma is no longer needed. Removing unused dependencies keeps the codebase clean.
+Document which API routes successfully migrated to FastAPI and which remain on Prisma with reasons. Add TODO comments to any remaining Prisma routes lacking migration notes. Remove unused Prisma imports where safe.
 
-## Do
-1. Remove Prisma client import from all files:
-   - Search for `from '@prisma/client'` or `import { db } from '@/lib/db'`
-   - Remove any remaining Prisma usage
+## Current State Analysis
 
-2. Delete `src/lib/db.ts`:
-   - No longer needed for API routes
-   - Keep a stub if some frontend components still import it (check first)
+After T01-T06, the following routes were converted:
+- **Projects** (main routes) → FastAPI proxy ✓
+- **Suppliers** → FastAPI proxy ✓  
+- **Warehouse** (main routes) → FastAPI proxy ✓
+- **Analytics dashboard/payment-dynamics** → FastAPI proxy ✓
 
-3. Clean up package.json:
-   - Remove `@prisma/client` dependency
-   - Remove `prisma` dev dependency
+The following remain on Prisma (intentionally):
+- **Invoices** - architectural mismatch (T05 decision)
+- **Analytics pipeline/suppliers** - no FastAPI endpoint (T06 decision)
+- **Projects history** - no FastAPI ProjectStatusHistory endpoint (T02 decision)
+- **Warehouse transactions** - no FastAPI StockMovement endpoint
 
-4. Clean up Prisma files:
-   - Delete `prisma/schema.prisma` (or move to backup)
-   - Delete `prisma/migrations` if exists
+Routes out of slice scope (not part of T01-T06):
+- notifications, email-logs, email/*, settings/*, deliveries/*, search, stats, requests/*, reports, company, automation/*, activity, seed
 
-5. Update tsconfig/next.config if any Prisma-specific config exists
+## Task Steps
 
-## Constraints
-- Verify no components directly use Prisma before removing
-- Some non-API files might still import db.ts - check and update
+1. **Create MIGRATION_STATUS.md** documenting:
+   - All API routes and current backend (Prisma/FastAPI)
+   - Reason for any Prisma dependencies
+   - Migration requirements for future work
 
-## Done when
-- No Prisma imports remain in API routes
-- package.json has no Prisma dependencies
-- npm install succeeds without errors
+2. **Add TODO comments** to Prisma routes lacking migration notes:
+   - warehouse/transactions - add note about missing StockMovement endpoint
+   - All out-of-scope routes - add "Not in M005/S01 scope" note
+
+3. **Clean up what's possible**:
+   - Verify all successfully migrated routes have no Prisma imports
+   - Remove any stray Prisma imports from non-API files if safe
+
+## Deliverables
+
+- `.gsd/milestones/M005/slices/S01/MIGRATION_STATUS.md`
+- TODO comments on all Prisma-using API routes
 
 ## Inputs
 
-- `src/app/api/**/*.ts`
+- `Grep results from src/app/api`
+- `Task summaries T01-T06`
 
 ## Expected Output
 
-- `package.json`
+- `MIGRATION_STATUS.md`
+- `TODO comments on Prisma routes`
 
 ## Verification
 
-! grep -r '@prisma/client' src/app/api/ — no Prisma imports in API routes; npm install — succeeds
+1. Check MIGRATION_STATUS.md exists and lists all routes
+2. grep -c "TODO.*FastAPI\|TODO.*M005.*scope" src/app/api/**/route.ts

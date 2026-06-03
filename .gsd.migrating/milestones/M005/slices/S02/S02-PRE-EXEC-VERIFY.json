@@ -1,0 +1,17 @@
+{
+  "schemaVersion": 1,
+  "milestoneId": "M005",
+  "sliceId": "S02",
+  "timestamp": 1780458430935,
+  "status": "fail",
+  "durationMs": 5,
+  "checks": [
+    {
+      "category": "tool",
+      "target": "T07 Verify",
+      "passed": false,
+      "message": "Unsafe or non-runnable Verify command: npm run build 2>&1 | tail -10 (contains shell control syntax such as pipes, redirects, semicolons, backticks, or command substitution)",
+      "blocking": true
+    }
+  ]
+}

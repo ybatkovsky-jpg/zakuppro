@@ -12,10 +12,10 @@
 
 ## Slices
 
-- [ ] **S01: S01** `risk:high` `depends:[]`
+- [x] **S01: S01** `risk:high` `depends:[]`
   > After this: Frontend компоненты (Projects, Invoices, Analytics) получают данные через FastAPI endpoints. Проверяется curl-ом к /api/projects, /api/invoices, /api/analytics/dashboard.
 
-- [ ] **S02: Kanban Drag-and-Drop** `risk:medium` `depends:[S01]`
+- [ ] **S02: S02** `risk:medium` `depends:[]`
   > After this: Пользователь может перетащить карточку проекта из колонки 'Новые' в 'В обработке'. Статус обновляется в БД через FastAPI. Переходы подчиняются правилам VALID_TRANSITIONS.
 
 - [ ] **S03: Analytics Dashboard Real Data** `risk:medium` `depends:[S01]`

@@ -1,0 +1,24 @@
+{
+  "schemaVersion": 1,
+  "taskId": "T02",
+  "unitId": "M005/S02/T02",
+  "timestamp": 1780458762052,
+  "passed": false,
+  "discoverySource": "task-plan",
+  "checks": [
+    {
+      "command": "grep -q 'useDraggable' src/components/app/projects.tsx",
+      "exitCode": 1,
+      "durationMs": 25,
+      "verdict": "fail"
+    },
+    {
+      "command": "grep -q 'DraggableProjectCard' src/components/app/projects.tsx",
+      "exitCode": 1,
+      "durationMs": 25,
+      "verdict": "fail"
+    }
+  ],
+  "retryAttempt": 1,
+  "maxRetries": 2
+}

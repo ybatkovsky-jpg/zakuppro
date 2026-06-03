@@ -1,5 +1,5 @@
 {
-  "compiledAt": "2026-06-03T03:09:42.337Z",
+  "compiledAt": "2026-06-03T03:58:50.416Z",
   "milestoneId": "M005",
   "pipeline": {
     "clarifyRoundLimit": 3,
@@ -130,12 +130,27 @@
       "dependsOn": [
         "execute-task:M005:S01:T06"
       ],
-      "writes": [],
+      "writes": [
+        ".gsd/milestones/M005/slices/S01/MIGRATION_STATUS.md",
+        "src/app/api/stats/route.ts",
+        "src/app/api/notifications/route.ts",
+        "src/app/api/search/route.ts",
+        "src/app/api/company/route.ts",
+        "src/app/api/requests/route.ts",
+        "src/app/api/deliveries/route.ts",
+        "src/app/api/activity/route.ts",
+        "src/app/api/settings/telegram/route.ts",
+        "src/app/api/settings/email/route.ts",
+        "src/app/api/settings/ai/route.ts",
+        "src/app/api/automation/route.ts",
+        "src/app/api/automation/execute/route.ts",
+        "src/app/api/seed/route.ts"
+      ],
       "metadata": {
         "unitType": "execute-task",
         "unitId": "M005.S01.T07",
-        "title": "Remove Prisma Dependencies and Cleanup",
-        "status": "pending"
+        "title": "Documented Prisma migration status in MIGRATION_STATUS.md; added TODO comments to 27 Prisma-using routes; verified 11 migrated routes have no Prisma imports",
+        "status": "complete"
       }
     },
     {
@@ -148,6 +163,125 @@
         "unitType": "complete-slice",
         "unitId": "M005.S01",
         "title": "S01",
+        "status": "complete"
+      }
+    },
+    {
+      "id": "execute-task:M005:S02:T01",
+      "kind": "unit",
+      "dependsOn": [],
+      "writes": [
+        "src/components/app/projects.tsx"
+      ],
+      "metadata": {
+        "unitType": "execute-task",
+        "unitId": "M005.S02.T01",
+        "title": "Added @dnd-kit/core imports and VALID_TRANSITIONS constant to projects.tsx for drag-and-drop foundation",
+        "status": "complete"
+      }
+    },
+    {
+      "id": "execute-task:M005:S02:T02",
+      "kind": "unit",
+      "dependsOn": [
+        "execute-task:M005:S02:T01"
+      ],
+      "writes": [
+        "src/components/app/projects.tsx"
+      ],
+      "metadata": {
+        "unitType": "execute-task",
+        "unitId": "M005.S02.T02",
+        "title": "Created DraggableProjectCard component with useDraggable hook, isolating DnD logic from rendering",
+        "status": "complete"
+      }
+    },
+    {
+      "id": "execute-task:M005:S02:T03",
+      "kind": "unit",
+      "dependsOn": [
+        "execute-task:M005:S02:T02"
+      ],
+      "writes": [
+        "src/components/app/projects.tsx"
+      ],
+      "metadata": {
+        "unitType": "execute-task",
+        "unitId": "M005.S02.T03",
+        "title": "Converted Kanban columns to droppable zones with useDroppable hook and isOver highlight",
+        "status": "complete"
+      }
+    },
+    {
+      "id": "execute-task:M005:S02:T04",
+      "kind": "unit",
+      "dependsOn": [
+        "execute-task:M005:S02:T03"
+      ],
+      "writes": [
+        "src/components/app/projects.tsx"
+      ],
+      "metadata": {
+        "unitType": "execute-task",
+        "unitId": "M005.S02.T04",
+        "title": "Implemented DnD context wrapper with onDragEnd handler, DragOverlay, and status update API integration",
+        "status": "complete"
+      }
+    },
+    {
+      "id": "execute-task:M005:S02:T05",
+      "kind": "unit",
+      "dependsOn": [
+        "execute-task:M005:S02:T04"
+      ],
+      "writes": [
+        "src/components/app/projects.tsx"
+      ],
+      "metadata": {
+        "unitType": "execute-task",
+        "unitId": "M005.S02.T05",
+        "title": "Added React Query mutation for status updates, replacing direct fetch in onDragEnd with proper mutation integration",
+        "status": "complete"
+      }
+    },
+    {
+      "id": "execute-task:M005:S02:T06",
+      "kind": "unit",
+      "dependsOn": [
+        "execute-task:M005:S02:T05"
+      ],
+      "writes": [],
+      "metadata": {
+        "unitType": "execute-task",
+        "unitId": "M005.S02.T06",
+        "title": "Add visual polish and touch support",
+        "status": "pending"
+      }
+    },
+    {
+      "id": "execute-task:M005:S02:T07",
+      "kind": "unit",
+      "dependsOn": [
+        "execute-task:M005:S02:T06"
+      ],
+      "writes": [],
+      "metadata": {
+        "unitType": "execute-task",
+        "unitId": "M005.S02.T07",
+        "title": "Build verification and manual testing",
+        "status": "pending"
+      }
+    },
+    {
+      "id": "complete-slice:M005:S02",
+      "kind": "verification",
+      "dependsOn": [
+        "execute-task:M005:S02:T07"
+      ],
+      "metadata": {
+        "unitType": "complete-slice",
+        "unitId": "M005.S02",
+        "title": "S02",
         "status": "pending"
       }
     }

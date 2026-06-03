@@ -1,0 +1,30 @@
+{
+  "schemaVersion": 1,
+  "taskId": "T04",
+  "unitId": "M005/S02/T04",
+  "timestamp": 1780458941842,
+  "passed": false,
+  "discoverySource": "task-plan",
+  "checks": [
+    {
+      "command": "grep -q 'DndContext' src/components/app/projects.tsx",
+      "exitCode": 1,
+      "durationMs": 30,
+      "verdict": "fail"
+    },
+    {
+      "command": "grep -q 'onDragEnd' src/components/app/projects.tsx",
+      "exitCode": 1,
+      "durationMs": 35,
+      "verdict": "fail"
+    },
+    {
+      "command": "grep -q '/api/projects' src/components/app/projects.tsx",
+      "exitCode": 1,
+      "durationMs": 28,
+      "verdict": "fail"
+    }
+  ],
+  "retryAttempt": 1,
+  "maxRetries": 2
+}

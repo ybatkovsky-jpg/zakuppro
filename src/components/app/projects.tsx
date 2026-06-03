@@ -14,6 +14,7 @@ import {
   useSensors,
   useSensor,
   PointerSensor,
+  TouchSensor,
 } from '@dnd-kit/core'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -204,11 +205,11 @@ function DraggableProjectCard({
       onClick={() => navigateToProject(project.id)}
       style={{ opacity: isDragging ? 0.5 : 1 }}
     >
-      {/* Drag indicator */}
+      {/* Drag indicator - visible on hover and touch */}
       <div
         {...attributes}
         {...listeners}
-        className="absolute top-2 right-2 opacity-0 group-hover:opacity-40 transition-opacity cursor-grab active:cursor-grabbing"
+        className="absolute top-2 right-2 opacity-0 group-hover:opacity-50 hover:opacity-70 transition-opacity cursor-grab active:cursor-grabbing touch-auto"
         onClick={(e) => e.stopPropagation()}
       >
         <GripVertical className="h-4 w-4 text-muted-foreground" />
@@ -381,11 +382,17 @@ function KanbanBoard({ projects, navigateToProject, deleteMutation, statusMutati
     return map
   }, [projects])
 
-  // DnD sensors - PointerSensor for mouse/touch
+  // DnD sensors - PointerSensor for mouse, TouchSensor for mobile
   const sensors = useSensors(
     useSensor(PointerSensor, {
       activationConstraint: {
         distance: 5, // 5px movement required to start drag
+      },
+    }),
+    useSensor(TouchSensor, {
+      activationConstraint: {
+        delay: 250, // 250ms long press to start drag on touch devices
+        tolerance: 5,
       },
     })
   )
@@ -484,20 +491,49 @@ function KanbanBoard({ projects, navigateToProject, deleteMutation, statusMutati
 
       {/* Drag Overlay - visual feedback during drag */}
       <DragOverlay>
-        {activeProject && (
-          <div className="rounded-xl border p-4 shadow-2xl bg-background opacity-90 cursor-grabbing">
-            <div className="flex items-start justify-between gap-2 mb-1.5">
-              <h4 className="font-semibold text-sm leading-tight line-clamp-2">{activeProject.name}</h4>
-              <GripVertical className="h-4 w-4 text-muted-foreground" />
-            </div>
-            {activeProject.customerName && (
-              <div className="flex items-center gap-1.5 text-xs text-muted-foreground mb-2">
-                <User className="h-3 w-3" />
-                <span className="truncate">{activeProject.customerName}</span>
+        {activeProject && (() => {
+          const col = KANBAN_COLUMNS.find((c) => c.status === activeProject.status) ?? KANBAN_COLUMNS[0]
+          const budget = (activeProject.items ?? []).reduce((sum, item) => sum + item.price * item.quantity, 0)
+          const itemCount = activeProject._count?.items ?? 0
+
+          return (
+            <div className={`rounded-xl border-2 border-l-4 p-4 shadow-2xl bg-background cursor-grabbing max-w-[280px] ${col.border} ${col.cardBg} backdrop-blur-sm`}>
+              {/* Drag handle indicator */}
+              <div className="flex items-center justify-between mb-2">
+                <div className={`size-2.5 rounded-full ${col.dotColor}`} />
+                <GripVertical className="h-4 w-4 text-muted-foreground" />
               </div>
-            )}
-          </div>
-        )}
+
+              {/* Project Name */}
+              <h4 className={`font-semibold text-sm leading-tight line-clamp-2 mb-2 ${col.nameColor}`}>
+                {activeProject.name}
+              </h4>
+
+              {/* Customer */}
+              {activeProject.customerName && (
+                <div className="flex items-center gap-1.5 text-xs text-muted-foreground mb-2">
+                  <User className="h-3 w-3" />
+                  <span className="truncate">{activeProject.customerName}</span>
+                </div>
+              )}
+
+              {/* Stats Row */}
+              <div className="flex items-center gap-2 text-xs">
+                {itemCount > 0 && (
+                  <span className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-medium ${col.badgeBg} ${col.badgeText}`}>
+                    <Package className="h-3 w-3" />
+                    {itemCount} {pluralize(itemCount, 'поз.', 'поз.', 'поз.')}
+                  </span>
+                )}
+                {budget > 0 && (
+                  <span className="font-mono font-medium text-foreground/80">
+                    {new Intl.NumberFormat('ru-RU').format(budget)} ₽
+                  </span>
+                )}
+              </div>
+            </div>
+          )
+        })()}
       </DragOverlay>
     </DndContext>
   )

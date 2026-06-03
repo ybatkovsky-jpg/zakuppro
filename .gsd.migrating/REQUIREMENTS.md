@@ -29,6 +29,8 @@ This file is the explicit capability and coverage contract for the project.
 - Why it matters: Менеджерам нужен визуальный интерфейс для управления проектами, статусами и комплектации.
 - Source: user
 - Primary owning slice: M005
+- Validation: S01: API integration layer complete. TypeScript types (src/types/fastapi.ts) and API client (src/lib/api-client.ts) proxy requests to FastAPI backend. Projects, Suppliers, Warehouse, and Analytics dashboard endpoints now fetch data from FastAPI. Build verification passed. Full UI integration (Kanban drag-and-drop) deferred to S02-S04.
+- Notes: Primary owning slice: M005. S01 delivered API proxy infrastructure; S02-S04 will deliver UI components (Kanban DnD, Analytics dashboard, RBAC).
 
 ### R012 — Kanban-логика с блокировками: переход в "Производство" невозможен пока не все позиции "На складе" или "Оплачено"
 - Class: core-capability
@@ -186,7 +188,7 @@ This file is the explicit capability and coverage contract for the project.
 | R008 | core-capability | active | M003 | none | S01: InvoiceItem table created with sku, name, qty columns; Invoice.verification_result JSONB column; llm_provider.py wrapper supports OpenAI, Gemini, Claude with automatic fallback. S04: 9 integration tests verify exact SKU matching, RapidFuzz fuzzy name matching (>85% threshold), quantity discrepancy detection. Fuzzy matching logic complete with multi-tier strategy: exact SKU → OK, SKU differs + 85% similarity → clarification, quantity differs → partial. |
 | R009 | integration | validated | M004 | none | M004 Complete: S02 1C ClientBank parser with INN extraction (56 tests). S03 Email Worker routes .txt to parse_bank_statement task (29 tests). S04 PaymentMatcher auto-matches by INN + amount ±5% (84 tests). S06 Manual upload fallback (13 tests). Total: 187 tests passing. End-to-end flow verified: manual upload → parsing → auto-matching → manual resolution → audit retrieval. |
 | R010 | admin/support | validated | M004 | none | M004 Complete: S04 creates UnresolvedTransaction for unmatched payments. S05 provides full CRUD API with filters/search/bulk operations/audit trail. 55 tests (38 unit + 17 integration) verify manual reconciliation workflow. |
-| R011 | primary-user-loop | active | M005 | none | unmapped |
+| R011 | primary-user-loop | active | M005 | none | S01: API integration layer complete. TypeScript types (src/types/fastapi.ts) and API client (src/lib/api-client.ts) proxy requests to FastAPI backend. Projects, Suppliers, Warehouse, and Analytics dashboard endpoints now fetch data from FastAPI. Build verification passed. Full UI integration (Kanban drag-and-drop) deferred to S02-S04. |
 | R012 | core-capability | active | M006 | none | unmapped |
 | R013 | core-capability | active | M006 | none | unmapped |
 | R014 | operability | active | M006 | none | unmapped |

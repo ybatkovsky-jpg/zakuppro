@@ -1,16 +1,16 @@
 {
   "nodes": [
     {
-      "id": "milestone:M004",
-      "label": "M004: Bank Integration + Financials",
+      "id": "milestone:M005",
+      "label": "M005: Frontend UI Integration",
       "type": "milestone",
-      "description": "Active milestone: M004",
+      "description": "Active milestone: M005",
       "confidence": "EXTRACTED",
       "sourceFile": "STATE.md"
     },
     {
-      "id": "concept:phase:validating-milestone",
-      "label": "Phase: validating-milestone",
+      "id": "concept:phase:planning",
+      "label": "Phase: planning",
       "type": "concept",
       "confidence": "EXTRACTED",
       "sourceFile": "STATE.md"
@@ -483,6 +483,13 @@
       "confidence": "EXTRACTED"
     },
     {
+      "id": "milestone:M004",
+      "label": "M004: Bank Integration + Financials",
+      "type": "milestone",
+      "confidence": "EXTRACTED",
+      "sourceFile": "milestones/M004/M004-ROADMAP.md"
+    },
+    {
       "id": "slice:M004:S01",
       "label": "S01: Database Schema + BankStatement Models",
       "type": "slice",
@@ -705,11 +712,53 @@
       "confidence": "EXTRACTED"
     },
     {
-      "id": "milestone:M005",
-      "label": "M005: Frontend UI",
-      "type": "milestone",
+      "id": "slice:M005:S01",
+      "label": "S01: Frontend-Backend API Integration",
+      "type": "slice",
       "confidence": "EXTRACTED",
-      "sourceFile": "milestones/M005/M005-ROADMAP.md"
+      "sourceFile": "milestones/M005/slices/S01/S01-PLAN.md"
+    },
+    {
+      "id": "task:M005:S01:T01",
+      "label": "T01: Create API Client Utility and TypeScript Types",
+      "type": "task",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "id": "task:M005:S01:T02",
+      "label": "T02: Replace Projects API Routes with FastAPI Proxy",
+      "type": "task",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "id": "task:M005:S01:T03",
+      "label": "T03: Replace Suppliers API Routes with FastAPI Proxy",
+      "type": "task",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "id": "task:M005:S01:T04",
+      "label": "T04: Replace Warehouse/Stock API Routes with FastAPI Proxy",
+      "type": "task",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "id": "task:M005:S01:T05",
+      "label": "T05: Replace Invoices API Routes with FastAPI Proxy",
+      "type": "task",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "id": "task:M005:S01:T06",
+      "label": "T06: Replace Analytics API Routes with FastAPI Proxy",
+      "type": "task",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "id": "task:M005:S01:T07",
+      "label": "T07: Remove Prisma Dependencies and Cleanup",
+      "type": "task",
+      "confidence": "EXTRACTED"
     },
     {
       "id": "milestone:M006",
@@ -1578,6 +1627,132 @@
       "type": "lesson",
       "confidence": "EXTRACTED",
       "sourceFile": "milestones/M002/M002-LEARNINGS.md"
+    },
+    {
+      "id": "decision:M004:1",
+      "label": "**Chose LargeBinary for raw_file in BankStatement to store 1C ClientBank files** - **Rationale:** Keep original data available for re-parsing and audit purposes - **Source:** S01-SUMMARY.md/Technical Decisions",
+      "type": "decision",
+      "confidence": "EXTRACTED",
+      "sourceFile": "milestones/M004/M004-LEARNINGS.md"
+    },
+    {
+      "id": "decision:M004:2",
+      "label": "**Chose Numeric(3,2) for confidence_score to store 0.00-1.00 range** - **Rationale:** Precision matches matching confidence score range for efficient storage - **Source:** S01-SUMMARY.md/Technical Decisions",
+      "type": "decision",
+      "confidence": "EXTRACTED",
+      "sourceFile": "milestones/M004/M004-LEARNINGS.md"
+    },
+    {
+      "id": "decision:M004:3",
+      "label": "**Chose JSON for matching_context for flexible algorithm metadata** - **Rationale:** Allows storing various matching algorithm details without schema changes - **Source:** S01-SUMMARY.md/Technical Decisions",
+      "type": "decision",
+      "confidence": "EXTRACTED",
+      "sourceFile": "milestones/M004/M004-LEARNINGS.md"
+    },
+    {
+      "id": "decision:M004:4",
+      "label": "**Chose tolerance calculated FROM invoice total (not transaction amount)** - **Rationale:** Handles partial payments and rounding differences correctly - **Source:** S04-SUMMARY.md/Key Decisions",
+      "type": "decision",
+      "confidence": "EXTRACTED",
+      "sourceFile": "milestones/M004/M004-LEARNINGS.md"
+    },
+    {
+      "id": "decision:M004:5",
+      "label": "**Chose confidence score linear interpolation (0.85 at boundary, 1.00 at exact match)** - **Rationale:** Clear confidence scaling for matching algorithm with predictable boundaries - **Source:** S04-SUMMARY.md/Key Decisions",
+      "type": "decision",
+      "confidence": "EXTRACTED",
+      "sourceFile": "milestones/M004/M004-LEARNINGS.md"
+    },
+    {
+      "id": "decision:M004:6",
+      "label": "**Chose unified TransactionMatchingAudit for auto and manual matches** - **Rationale:** Single audit trail - manual matches use unresolved_transaction_id, auto matches use bank_transaction_id - **Source:** S05-SUMMARY.md/Key Decisions",
+      "type": "decision",
+      "confidence": "EXTRACTED",
+      "sourceFile": "milestones/M004/M004-LEARNINGS.md"
+    },
+    {
+      "id": "lesson:M004:1",
+      "label": "**Circular import between schemas.py and routers** - **What Happened:** schemas.py imported router modules, routers imported schemas.py - **Root Cause:** Direct imports creating dependency cycle - **Fix:** Dynamic schema loading via importlib.util in schemas/__init__.py - **Source:** S05-SUMMARY.md/Key Decisions",
+      "type": "lesson",
+      "confidence": "EXTRACTED",
+      "sourceFile": "milestones/M004/M004-LEARNINGS.md"
+    },
+    {
+      "id": "lesson:M004:2",
+      "label": "**SQLAlchemy Session.refresh_all() doesn't exist** - **What Happened:** Attempted to call Session.refresh_all() in integration tests - **Root Cause:** API doesn't exist - SQLAlchemy uses individual refresh() calls - **Fix:** Used individual session.refresh(obj) calls for each object - **Source:** S05-SUMMARY.md/Key Decisions",
+      "type": "lesson",
+      "confidence": "EXTRACTED",
+      "sourceFile": "milestones/M004/M004-LEARNINGS.md"
+    },
+    {
+      "id": "lesson:M004:3",
+      "label": "**Field variations in 1C ClientBank format (ПолучательИНН vs Получатель1)** - **What Happened:** Tinkoff uses ПолучательИНН, Ozon uses Получатель1 for supplier INN - **Root Cause:** Bank-specific format variations within 1C ClientBank standard - **Fix:** Parser handles both field variants for INN extraction - **Source:** S02-SUMMARY.md/Key Features",
+      "type": "lesson",
+      "confidence": "EXTRACTED",
+      "sourceFile": "milestones/M004/M004-LEARNINGS.md"
+    },
+    {
+      "id": "pattern:M004:1",
+      "label": "**Bank statement processing: status transition Обрабатывается → Готов** - **Where:** parse_bank_statement Celery task - **Source:** S03-SUMMARY.md/patterns_established",
+      "type": "pattern",
+      "confidence": "EXTRACTED",
+      "sourceFile": "milestones/M004/M004-LEARNINGS.md"
+    },
+    {
+      "id": "pattern:M004:2",
+      "label": "**FailedTask DLQ pattern for inspecting failed messages** - **Where:** Celery task error handling - **Source:** S03-SUMMARY.md/patterns_established",
+      "type": "pattern",
+      "confidence": "EXTRACTED",
+      "sourceFile": "milestones/M004/M004-LEARNINGS.md"
+    },
+    {
+      "id": "pattern:M004:3",
+      "label": "**Multi-tier matching algorithm with confidence scoring** - **Where:** PaymentMatcher service - **Source:** S04-SUMMARY.md/patterns_established",
+      "type": "pattern",
+      "confidence": "EXTRACTED",
+      "sourceFile": "milestones/M004/M004-LEARNINGS.md"
+    },
+    {
+      "id": "pattern:M004:4",
+      "label": "**INN extraction from Russian requisites text with regex** - **Where:** supplier_inn_extractor.py - **Source:** S04-SUMMARY.md/patterns_established",
+      "type": "pattern",
+      "confidence": "EXTRACTED",
+      "sourceFile": "milestones/M004/M004-LEARNINGS.md"
+    },
+    {
+      "id": "pattern:M004:5",
+      "label": "**Unified audit trail pattern: TransactionMatchingAudit tracks both auto and manual matches** - **Where:** Payment creation (auto) and manual reconciliation (manual) - **Source:** S05-SUMMARY.md/patterns_established",
+      "type": "pattern",
+      "confidence": "EXTRACTED",
+      "sourceFile": "milestones/M004/M004-LEARNINGS.md"
+    },
+    {
+      "id": "pattern:M004:6",
+      "label": "**Database dialect detection for SQLite vs PostgreSQL compatibility** - **Where:** Analytics payment-dynamics date truncation - **Source:** S06-SUMMARY.md/key_decisions",
+      "type": "pattern",
+      "confidence": "EXTRACTED",
+      "sourceFile": "milestones/M004/M004-LEARNINGS.md"
+    },
+    {
+      "id": "pattern:M004:7",
+      "label": "**Integration test pattern: direct model operations for faster testing** - **Where:** S06 integration tests avoid API calls for performance - **Source:** S06-SUMMARY.md/patterns_established",
+      "type": "pattern",
+      "confidence": "EXTRACTED",
+      "sourceFile": "milestones/M004/M004-LEARNINGS.md"
+    },
+    {
+      "id": "surprise:M004:1",
+      "label": "**1C ClientBank format varies between banks (Tinkoff vs Ozon field naming)** - **What:** Expected standard format, discovered ПолучательИНН vs Получатель1 variations - **Impact:** Parser needed flexible field handling for INN extraction - **Source:** S02-SUMMARY.md/Key Features",
+      "type": "lesson",
+      "confidence": "EXTRACTED",
+      "sourceFile": "milestones/M004/M004-LEARNINGS.md"
+    },
+    {
+      "id": "surprise:M004:2",
+      "label": "**python-multipart dependency required for FastAPI file upload** - **What:** Manual upload endpoint failed without explicit dependency - **Impact:** Added python-multipart to requirements for upload support - **Source:** S06-SUMMARY.md/Key Decisions",
+      "type": "lesson",
+      "confidence": "EXTRACTED",
+      "sourceFile": "milestones/M004/M004-LEARNINGS.md"
     }
   ],
   "edges": [
@@ -2226,6 +2401,54 @@
     {
       "from": "slice:M004:S06",
       "to": "task:M004:S06:T04",
+      "type": "contains",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "from": "milestone:M005",
+      "to": "slice:M005:S01",
+      "type": "contains",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "from": "slice:M005:S01",
+      "to": "task:M005:S01:T01",
+      "type": "contains",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "from": "slice:M005:S01",
+      "to": "task:M005:S01:T02",
+      "type": "contains",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "from": "slice:M005:S01",
+      "to": "task:M005:S01:T03",
+      "type": "contains",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "from": "slice:M005:S01",
+      "to": "task:M005:S01:T04",
+      "type": "contains",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "from": "slice:M005:S01",
+      "to": "task:M005:S01:T05",
+      "type": "contains",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "from": "slice:M005:S01",
+      "to": "task:M005:S01:T06",
+      "type": "contains",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "from": "slice:M005:S01",
+      "to": "task:M005:S01:T07",
       "type": "contains",
       "confidence": "EXTRACTED"
     },
@@ -2960,7 +3183,115 @@
       "to": "surprise:M002:6",
       "type": "relates_to",
       "confidence": "EXTRACTED"
+    },
+    {
+      "from": "milestone:M004",
+      "to": "decision:M004:1",
+      "type": "relates_to",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "from": "milestone:M004",
+      "to": "decision:M004:2",
+      "type": "relates_to",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "from": "milestone:M004",
+      "to": "decision:M004:3",
+      "type": "relates_to",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "from": "milestone:M004",
+      "to": "decision:M004:4",
+      "type": "relates_to",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "from": "milestone:M004",
+      "to": "decision:M004:5",
+      "type": "relates_to",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "from": "milestone:M004",
+      "to": "decision:M004:6",
+      "type": "relates_to",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "from": "milestone:M004",
+      "to": "lesson:M004:1",
+      "type": "relates_to",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "from": "milestone:M004",
+      "to": "lesson:M004:2",
+      "type": "relates_to",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "from": "milestone:M004",
+      "to": "lesson:M004:3",
+      "type": "relates_to",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "from": "milestone:M004",
+      "to": "pattern:M004:1",
+      "type": "relates_to",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "from": "milestone:M004",
+      "to": "pattern:M004:2",
+      "type": "relates_to",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "from": "milestone:M004",
+      "to": "pattern:M004:3",
+      "type": "relates_to",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "from": "milestone:M004",
+      "to": "pattern:M004:4",
+      "type": "relates_to",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "from": "milestone:M004",
+      "to": "pattern:M004:5",
+      "type": "relates_to",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "from": "milestone:M004",
+      "to": "pattern:M004:6",
+      "type": "relates_to",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "from": "milestone:M004",
+      "to": "pattern:M004:7",
+      "type": "relates_to",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "from": "milestone:M004",
+      "to": "surprise:M004:1",
+      "type": "relates_to",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "from": "milestone:M004",
+      "to": "surprise:M004:2",
+      "type": "relates_to",
+      "confidence": "EXTRACTED"
     }
   ],
-  "builtAt": "2026-06-02T21:58:35.470Z"
+  "builtAt": "2026-06-03T03:35:34.180Z"
 }
