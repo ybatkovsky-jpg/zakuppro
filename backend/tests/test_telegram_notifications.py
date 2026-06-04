@@ -3,7 +3,7 @@ Unit tests for Telegram notification functions.
 """
 
 import pytest
-from unittest.mock import Mock, patch, MagicMock
+from unittest.mock import Mock, patch, MagicMock, call
 
 # Handle optional telegram import
 try:
@@ -12,6 +12,7 @@ except ImportError:
     TelegramError = Exception
 
 from backend.telegram_notifier import (
+    send_completion_message,
     send_invoice_verified,
     send_invoice_partial,
     send_invoice_clarification_needed,
@@ -67,13 +68,15 @@ class TestSendInvoiceVerified:
         assert result is False
 
     def test_send_invoice_verified_telegram_error(self, mock_bot):
-        """Test handling Telegram API error."""
+        """Test handling Telegram API error — retried then returns False."""
         mock_bot.send_message.side_effect = TelegramError('API Error')
 
         with patch('backend.telegram_notifier._get_bot', return_value=mock_bot):
-            result = send_invoice_verified(123456, 100, {'matched': 5, 'total': 5})
+            with patch('time.sleep'):  # Skip retry backoff
+                result = send_invoice_verified(123456, 100, {'matched': 5, 'total': 5})
 
         assert result is False
+        assert mock_bot.send_message.call_count == 3
 
     def test_send_invoice_verified_unexpected_error(self, mock_bot):
         """Test handling unexpected error."""
@@ -137,13 +140,15 @@ class TestSendInvoicePartial:
         assert result is False
 
     def test_send_invoice_partial_telegram_error(self, mock_bot):
-        """Test handling Telegram API error."""
+        """Test handling Telegram API error — retried then returns False."""
         mock_bot.send_message.side_effect = TelegramError('API Error')
 
         with patch('backend.telegram_notifier._get_bot', return_value=mock_bot):
-            result = send_invoice_partial(123456, 100, ['Discrepancy'])
+            with patch('time.sleep'):  # Skip retry backoff
+                result = send_invoice_partial(123456, 100, ['Discrepancy'])
 
         assert result is False
+        assert mock_bot.send_message.call_count == 3
 
 
 class TestSendInvoiceClarificationNeeded:
@@ -205,13 +210,15 @@ class TestSendInvoiceClarificationNeeded:
         assert result is False
 
     def test_send_clarification_telegram_error(self, mock_bot):
-        """Test handling Telegram API error."""
+        """Test handling Telegram API error — retried then returns False."""
         mock_bot.send_message.side_effect = TelegramError('API Error')
 
         with patch('backend.telegram_notifier._get_bot', return_value=mock_bot):
-            result = send_invoice_clarification_needed(123456, 100, [])
+            with patch('time.sleep'):  # Skip retry backoff
+                result = send_invoice_clarification_needed(123456, 100, [])
 
         assert result is False
+        assert mock_bot.send_message.call_count == 3
 
 
 class TestSendInvoiceFailed:
@@ -248,13 +255,15 @@ class TestSendInvoiceFailed:
         assert result is False
 
     def test_send_invoice_failed_telegram_error(self, mock_bot):
-        """Test handling Telegram API error."""
+        """Test handling Telegram API error — retried then returns False."""
         mock_bot.send_message.side_effect = TelegramError('API Error')
 
         with patch('backend.telegram_notifier._get_bot', return_value=mock_bot):
-            result = send_invoice_failed(123456, 100, 'Error')
+            with patch('time.sleep'):  # Skip retry backoff
+                result = send_invoice_failed(123456, 100, 'Error')
 
         assert result is False
+        assert mock_bot.send_message.call_count == 3
 
     def test_send_invoice_failed_long_error(self, mock_bot):
         """Test invoice failed notification with long error message."""
@@ -269,3 +278,109 @@ class TestSendInvoiceFailed:
         mock_bot.send_message.assert_called_once()
         call_args = mock_bot.send_message.call_args
         assert error in call_args[1]['text']
+
+
+class TestTelegramRetry:
+    """Tests for retry behavior with @retry_sync decorator on Telegram functions."""
+
+    @pytest.fixture
+    def mock_bot(self):
+        """Create mock Bot instance."""
+        bot = Mock()
+        bot.send_message = Mock()
+        return bot
+
+    def test_retry_on_telegramerror_then_succeed(self, mock_bot):
+        """Telegram fails with TelegramError twice, succeeds on 3rd attempt."""
+        mock_bot.send_message.side_effect = [
+            TelegramError('Network error'),
+            TelegramError('Timeout'),
+            None,  # Succeeds on 3rd
+        ]
+
+        with patch('backend.telegram_notifier._get_bot', return_value=mock_bot):
+            with patch('time.sleep'):  # Skip retry backoff
+                result = send_completion_message(
+                    chat_id=123456,
+                    project_name='Test',
+                    items_count=10,
+                )
+
+        assert result is True
+        assert mock_bot.send_message.call_count == 3
+
+    def test_retry_on_telegramerror_all_exhausted(self, mock_bot):
+        """Telegram always fails — returns False after 3 attempts."""
+        mock_bot.send_message.side_effect = TelegramError('Server unavailable')
+
+        with patch('backend.telegram_notifier._get_bot', return_value=mock_bot):
+            with patch('time.sleep'):  # Skip retry backoff
+                result = send_completion_message(
+                    chat_id=123456,
+                    project_name='Test',
+                    items_count=10,
+                )
+
+        assert result is False
+        assert mock_bot.send_message.call_count == 3
+
+    def test_no_retry_on_non_telegram_error(self, mock_bot):
+        """Non-TelegramError (ValueError) — no retry, returns False immediately."""
+        mock_bot.send_message.side_effect = ValueError('Unexpected error')
+
+        with patch('backend.telegram_notifier._get_bot', return_value=mock_bot):
+            with patch('time.sleep') as mock_sleep:
+                result = send_completion_message(
+                    chat_id=123456,
+                    project_name='Test',
+                    items_count=10,
+                )
+
+        assert result is False
+        mock_sleep.assert_not_called()  # No retry = no sleep
+        mock_bot.send_message.assert_called_once()
+
+    def test_no_retry_when_bot_unavailable(self):
+        """_get_bot returns None → False immediately, 0 retries."""
+        with patch('backend.telegram_notifier._get_bot', return_value=None):
+            with patch('time.sleep') as mock_sleep:
+                result = send_completion_message(
+                    chat_id=123456,
+                    project_name='Test',
+                    items_count=10,
+                )
+
+        assert result is False
+        mock_sleep.assert_not_called()
+
+    def test_retry_attempt_count(self, mock_bot):
+        """send_message called exactly 3 times when first 2 fail with TelegramError."""
+        mock_bot.send_message.side_effect = [
+            TelegramError('Attempt 1 fail'),
+            TelegramError('Attempt 2 fail'),
+            None,  # 3rd succeeds
+        ]
+
+        with patch('backend.telegram_notifier._get_bot', return_value=mock_bot):
+            with patch('time.sleep'):
+                send_completion_message(
+                    chat_id=123456,
+                    project_name='Test',
+                    items_count=10,
+                )
+
+        assert mock_bot.send_message.call_count == 3
+
+    def test_success_path_unchanged(self, mock_bot):
+        """Normal success path — no retries triggered, returns True."""
+        with patch('backend.telegram_notifier._get_bot', return_value=mock_bot):
+            with patch('time.sleep') as mock_sleep:
+                result = send_completion_message(
+                    chat_id=123456,
+                    project_name='Test',
+                    items_count=10,
+                )
+
+        assert result is True
+        mock_bot.send_message.assert_called_once()
+        mock_sleep.assert_not_called()  # No failures = no retries

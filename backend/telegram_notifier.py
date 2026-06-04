@@ -12,6 +12,8 @@ import os
 import logging
 from typing import Optional
 
+from backend.retry_utils import retry_sync
+
 logger = logging.getLogger(__name__)
 
 # Optional import guard for telegram.Bot availability
@@ -60,6 +62,7 @@ def _get_bot() -> Optional[Bot]:
         return None
 
 
+@retry_sync(retryable_exceptions=(TelegramError,))
 def send_completion_message(
     chat_id: int,
     project_name: str,
@@ -105,12 +108,9 @@ def send_completion_message(
         )
         return True
 
-    except TelegramError as e:
-        logger.error(
-            f'Failed to send completion message: chat_id={chat_id}, error={e}'
-        )
-        return False
     except Exception as e:
+        if isinstance(e, TelegramError):
+            raise  # Let decorator handle retry
         logger.error(
             f'Unexpected error sending completion message: chat_id={chat_id}, error={e}',
             exc_info=True
@@ -118,6 +118,7 @@ def send_completion_message(
         return False
 
 
+@retry_sync(retryable_exceptions=(TelegramError,))
 def send_dlq_alert(
     task_id: str,
     error_message: str,
@@ -173,12 +174,9 @@ def send_dlq_alert(
         )
         return True
 
-    except TelegramError as e:
-        logger.error(
-            f'Failed to send DLQ alert: task_id={task_id}, error={e}'
-        )
-        return False
     except Exception as e:
+        if isinstance(e, TelegramError):
+            raise  # Let decorator handle retry
         logger.error(
             f'Unexpected error sending DLQ alert: task_id={task_id}, error={e}',
             exc_info=True
@@ -186,6 +184,7 @@ def send_dlq_alert(
         return False
 
 
+@retry_sync(retryable_exceptions=(TelegramError,))
 def send_invoice_verified(
     chat_id: int,
     invoice_id: int,
@@ -232,13 +231,9 @@ def send_invoice_verified(
         )
         return True
 
-    except TelegramError as e:
-        logger.error(
-            f'Failed to send invoice verified notification: '
-            f'chat_id={chat_id}, invoice_id={invoice_id}, error={e}'
-        )
-        return False
     except Exception as e:
+        if isinstance(e, TelegramError):
+            raise  # Let decorator handle retry
         logger.error(
             f'Unexpected error sending invoice verified notification: '
             f'chat_id={chat_id}, invoice_id={invoice_id}, error={e}',
@@ -247,6 +242,7 @@ def send_invoice_verified(
         return False
 
 
+@retry_sync(retryable_exceptions=(TelegramError,))
 def send_invoice_partial(
     chat_id: int,
     invoice_id: int,
@@ -296,13 +292,9 @@ def send_invoice_partial(
         )
         return True
 
-    except TelegramError as e:
-        logger.error(
-            f'Failed to send invoice partial notification: '
-            f'chat_id={chat_id}, invoice_id={invoice_id}, error={e}'
-        )
-        return False
     except Exception as e:
+        if isinstance(e, TelegramError):
+            raise  # Let decorator handle retry
         logger.error(
             f'Unexpected error sending invoice partial notification: '
             f'chat_id={chat_id}, invoice_id={invoice_id}, error={e}',
@@ -311,6 +303,7 @@ def send_invoice_partial(
         return False
 
 
+@retry_sync(retryable_exceptions=(TelegramError,))
 def send_invoice_clarification_needed(
     chat_id: int,
     invoice_id: int,
@@ -364,13 +357,9 @@ def send_invoice_clarification_needed(
         )
         return True
 
-    except TelegramError as e:
-        logger.error(
-            f'Failed to send invoice clarification notification: '
-            f'chat_id={chat_id}, invoice_id={invoice_id}, error={e}'
-        )
-        return False
     except Exception as e:
+        if isinstance(e, TelegramError):
+            raise  # Let decorator handle retry
         logger.error(
             f'Unexpected error sending invoice clarification notification: '
             f'chat_id={chat_id}, invoice_id={invoice_id}, error={e}',
@@ -379,6 +368,7 @@ def send_invoice_clarification_needed(
         return False
 
 
+@retry_sync(retryable_exceptions=(TelegramError,))
 def send_invoice_failed(
     chat_id: int,
     invoice_id: int,
@@ -422,13 +412,9 @@ def send_invoice_failed(
         )
         return True
 
-    except TelegramError as e:
-        logger.error(
-            f'Failed to send invoice failed notification: '
-            f'chat_id={chat_id}, invoice_id={invoice_id}, error={e}'
-        )
-        return False
     except Exception as e:
+        if isinstance(e, TelegramError):
+            raise  # Let decorator handle retry
         logger.error(
             f'Unexpected error sending invoice failed notification: '
             f'chat_id={chat_id}, invoice_id={invoice_id}, error={e}',
