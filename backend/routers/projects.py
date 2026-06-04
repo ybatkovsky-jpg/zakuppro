@@ -12,12 +12,14 @@ from typing import List
 import logging
 
 from backend.database import get_db
-from backend.models import User, Project, ProjectStatusHistory
-from backend.schemas import ProjectCreate, ProjectUpdate, ProjectResponse
+from backend.models import User, Project, ProjectItem, ProjectStatusHistory
+from backend.schemas import ProjectCreate, ProjectUpdate, ProjectResponse, ProjectReadinessResponse
 from backend.auth import get_current_user
 from backend.rbac import require_role, require_ownership, apply_ownership_filter
-from backend.services import stock_service
+from backend.services import stock_service, transition_service
+from backend.services.transition_service import PRODUCTION_READY_STATUSES
 from backend.models import Role
+import time
 
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/api/projects", tags=["projects"])
@@ -54,6 +56,92 @@ def list_projects(
 
     projects = query.offset(skip).limit(limit).all()
     return projects
+
+
+@router.get("/readiness", response_model=list[ProjectReadinessResponse])
+def project_readiness(
+    current_user: User = Depends(require_role([Role.OWNER, Role.MANAGER])),
+    db: Session = Depends(get_db)
+):
+    """
+    Readiness matrix for all accessible projects.
+
+    Returns per-project red/yellow/green readiness computed from ProjectItem
+    status counts. Green = all items in PRODUCTION_READY_STATUSES.
+    Yellow = no 'К закупке' but some items not yet ready.
+    Red = any 'К закупке' item. Empty project → green.
+
+    Access Control:
+        - Owner: sees all projects
+        - Manager: sees only own projects
+        - Warehouse: 403 Forbidden
+    """
+    start = time.time()
+
+    query = db.query(Project)
+    query = apply_ownership_filter(query, Project, current_user.id, current_user.role)
+    projects = query.all()
+
+    if not projects:
+        logger.info(
+            "readiness: computed for 0 projects in %.2fms",
+            (time.time() - start) * 1000,
+        )
+        return []
+
+    # Collect all project IDs for a single GROUP BY query
+    project_ids = [p.id for p in projects]
+    from sqlalchemy import func
+    status_rows = (
+        db.query(
+            ProjectItem.project_id,
+            ProjectItem.status,
+            func.count(ProjectItem.id).label("cnt"),
+        )
+        .filter(ProjectItem.project_id.in_(project_ids))
+        .group_by(ProjectItem.project_id, ProjectItem.status)
+        .all()
+    )
+
+    # Build per-project status counts
+    # {project_id: {status: count}}
+    status_map: dict[int, dict[str, int]] = {}
+    for pid, status, cnt in status_rows:
+        status_map.setdefault(pid, {})[status or ""] = cnt
+
+    results: list[ProjectReadinessResponse] = []
+    for project in projects:
+        breakdown = status_map.get(project.id, {})
+        total = sum(breakdown.values())
+        ready = sum(
+            cnt for s, cnt in breakdown.items()
+            if s in PRODUCTION_READY_STATUSES
+        )
+        has_k_zakupke = "К закупке" in breakdown
+        not_yet_ready = total - ready
+
+        if total == 0 or not_yet_ready == 0:
+            readiness = "green"
+        elif has_k_zakupke:
+            readiness = "red"
+        else:
+            readiness = "yellow"
+
+        results.append(ProjectReadinessResponse(
+            project_id=project.id,
+            project_name=project.name,
+            readiness=readiness,
+            ready_count=ready,
+            total_count=total,
+            breakdown=breakdown,
+        ))
+
+    elapsed_ms = (time.time() - start) * 1000
+    logger.info(
+        "readiness: computed for %d projects in %.2fms",
+        len(projects), elapsed_ms,
+    )
+    return results
 
 
 @router.get("/{project_id}", response_model=ProjectResponse)
@@ -174,6 +262,16 @@ def update_project(
     new_status = project.status
 
     if old_status != new_status:
+        # Check transition guard before allowing status change
+        can_transition, reason = transition_service.can_transition_to(
+            project, new_status, db
+        )
+        if not can_transition:
+            raise HTTPException(
+                status_code=422,
+                detail=reason,
+            )
+
         history = ProjectStatusHistory(
             project_id=project.id,
             from_status=old_status,

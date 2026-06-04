@@ -1,0 +1,18 @@
+{
+  "id": "ad854520-3e75-41ae-bcc4-9abf143b0c55",
+  "runtime": "python",
+  "purpose": "Verify T01: transition_service importable",
+  "script_chars": 170,
+  "started_at": "2026-06-04T09:47:28.742Z",
+  "finished_at": "2026-06-04T09:47:29.897Z",
+  "exit_code": 1,
+  "signal": null,
+  "timed_out": false,
+  "duration_ms": 1155,
+  "stdout_bytes": 0,
+  "stderr_bytes": 447,
+  "stdout_truncated": false,
+  "stderr_truncated": false,
+  "stdout_path": "D:\\CLAUDE\\Project\\zakuppro\\zakuppro\\.gsd\\exec\\ad854520-3e75-41ae-bcc4-9abf143b0c55.stdout",
+  "stderr_path": "D:\\CLAUDE\\Project\\zakuppro\\zakuppro\\.gsd\\exec\\ad854520-3e75-41ae-bcc4-9abf143b0c55.stderr"
+}

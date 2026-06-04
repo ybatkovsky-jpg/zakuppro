@@ -1,0 +1,18 @@
+{
+  "id": "c46f1f5c-06b9-49fc-ab2f-de32ca557d54",
+  "runtime": "python",
+  "purpose": "S02 verification: transition + stock service tests",
+  "script_chars": 619,
+  "started_at": "2026-06-04T10:11:34.406Z",
+  "finished_at": "2026-06-04T10:11:47.007Z",
+  "exit_code": 0,
+  "signal": null,
+  "timed_out": false,
+  "duration_ms": 12601,
+  "stdout_bytes": 1064,
+  "stderr_bytes": 102,
+  "stdout_truncated": false,
+  "stderr_truncated": false,
+  "stdout_path": "D:\\CLAUDE\\Project\\zakuppro\\zakuppro\\.gsd\\exec\\c46f1f5c-06b9-49fc-ab2f-de32ca557d54.stdout",
+  "stderr_path": "D:\\CLAUDE\\Project\\zakuppro\\zakuppro\\.gsd\\exec\\c46f1f5c-06b9-49fc-ab2f-de32ca557d54.stderr"
+}

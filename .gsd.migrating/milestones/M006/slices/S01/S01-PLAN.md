@@ -42,12 +42,12 @@ Upstream surfaces consumed: none (first slice in M006). New wiring: stock_servic
   - Files: `backend/routers/project_items.py`, `backend/tasks.py`
   - Verify: cd backend && python -c "from backend.routers.project_items import create_project_item, update_project_item; from backend.tasks import process_bom_to_project; print('All modified functions importable')"
 
-- [ ] **T04: Wire write-off and status history into project update router** `est:30m`
+- [x] **T04: Wire write-off and status history into project update router** `est:30m`
   Why: When a project transitions to 'В производстве', reserved stock must be written off and a status history record must be created. This is the final integration hook for S01.
   - Files: `backend/routers/projects.py`
   - Verify: cd backend && python -c "from backend.routers.projects import update_project; print('update_project importable')"
 
-- [ ] **T05: Write comprehensive tests and verify existing test suite** `est:1h`
+- [x] **T05: Write comprehensive tests and verify existing test suite** `est:1h`
   Why: S01 has a high risk rating and touches inventory integrity. Comprehensive tests are the only proof the invariant holds across all code paths. Tests must cover the round-trip scenario described in the roadmap demo.
   - Files: `backend/tests/test_stock_service.py`
   - Verify: cd backend && python -m pytest tests/test_stock_service.py -v --tb=short && python -m pytest tests/ -v --tb=short

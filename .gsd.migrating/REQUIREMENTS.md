@@ -30,16 +30,7 @@ This file is the explicit capability and coverage contract for the project.
 - Source: user
 - Primary owning slice: M006
 - Supporting slices: S01
-- Notes: S01 supports by providing accurate qty_reserved/qty_available values that S02's transition guard will read. Also creates ProjectStatusHistory model used by S02 for audit trail.
-
-### R013 — Резервирование на складе: при создании BOM автоматически резервирует доступные StockItem, списывает при выдаче в производство
-- Class: core-capability
-- Status: active
-- Description: Резервирование на складе: при создании BOM автоматически резервирует доступные StockItem, списывает при выдаче в производство
-- Why it matters: Прозрачность остатков. Менеджеры видят реальные доступные количества, а не общие остатки.
-- Source: user
-- Primary owning slice: S01
-- Notes: S01 directly implements reserve_for_project, write_off_for_production, and receive_stock. Enforces inventory invariant at service layer. Reservation triggers on ProjectItem create/update and Celery BOM task. Write-off triggers on project status change to В производстве.
+- Notes: S01 completed: ProjectStatusHistory model and audit trail created on every status change. S02 completed: transition_service.can_transition_to guard blocks transitions to В производстве when ProjectItems are not all На складе or Оплачено — returns 422 with item-level breakdown. 16 transition tests pass covering blocking/allowing/edge/integration scenarios. Wired into update_project before history recording and write-off.
 
 ### R014 — Матрица готовности проекта: цветовая индикация (Зелёный — всё есть, Жёлтый — часть в пути, Красный — не заказано)
 - Class: operability
@@ -49,7 +40,7 @@ This file is the explicit capability and coverage contract for the project.
 - Source: user
 - Primary owning slice: M006
 - Supporting slices: S01
-- Notes: S01 supports by ensuring StockItem quantities (qty_total, qty_reserved, qty_available) are accurate, which S03 queries for per-project readiness computation.
+- Notes: S01 completed: StockItem quantities (qty_total, qty_reserved, qty_available) are now guaranteed accurate by service-layer invariant enforcement. S03 can query these values for per-project readiness computation.
 
 ## Validated
 
@@ -135,6 +126,16 @@ This file is the explicit capability and coverage contract for the project.
 - Validation: S05 verification: docker-compose up -d starts all 7 services (db, api, rabbitmq, email-worker, celery-worker, telegram-bot, frontend). All services show healthy status in docker-compose ps. Smoke test (scripts/smoke-test.sh) validates login → create project → update status → delete workflow. Frontend accessible at http://localhost:3000, backend at http://localhost:8000.
 - Notes: S05 completes production readiness: Frontend runs in Docker Compose on port 3000, all 7 services healthy, smoke test validates create → update → delete workflow. Docker deployment documented in README.md.
 
+### R013 — Резервирование на складе: при создании BOM автоматически резервирует доступные StockItem, списывает при выдаче в производство
+- Class: core-capability
+- Status: validated
+- Description: Резервирование на складе: при создании BOM автоматически резервирует доступные StockItem, списывает при выдаче в производство
+- Why it matters: Прозрачность остатков. Менеджеры видят реальные доступные количества, а не общие остатки.
+- Source: user
+- Primary owning slice: S01
+- Validation: S01 delivered stock_service.py with reserve_for_project, write_off_for_production, and receive_stock primitives. Wired auto-reservation into ProjectItem create/update API and Celery BOM task. Wired write-off into project status transition to В производстве. POST /api/stock-items/{id}/receive endpoint with RBAC. Inventory invariant qty_total = qty_reserved + qty_available enforced at service layer with ValueError on violation. 36 tests pass covering all flows including round-trip scenarios.
+- Notes: S01 directly implements reserve_for_project, write_off_for_production, and receive_stock. Enforces inventory invariant at service layer. Reservation triggers on ProjectItem create/update and Celery BOM task. Write-off triggers on project status change to В производстве.
+
 ## Deferred
 
 ### R015 — Graceful shutdown и cleanup для всех сервисов (Celery workers, Telegram bot, FastAPI) с сохранением состояния задач
@@ -195,7 +196,7 @@ This file is the explicit capability and coverage contract for the project.
 | R010 | admin/support | validated | M004 | none | M004 Complete: S04 creates UnresolvedTransaction for unmatched payments. S05 provides full CRUD API with filters/search/bulk operations/audit trail. 55 tests (38 unit + 17 integration) verify manual reconciliation workflow. |
 | R011 | primary-user-loop | validated | M005 | none | S05 verification: docker-compose up -d starts all 7 services (db, api, rabbitmq, email-worker, celery-worker, telegram-bot, frontend). All services show healthy status in docker-compose ps. Smoke test (scripts/smoke-test.sh) validates login → create project → update status → delete workflow. Frontend accessible at http://localhost:3000, backend at http://localhost:8000. |
 | R012 | core-capability | active | M006 | S01 | unmapped |
-| R013 | core-capability | active | S01 | none | unmapped |
+| R013 | core-capability | validated | S01 | none | S01 delivered stock_service.py with reserve_for_project, write_off_for_production, and receive_stock primitives. Wired auto-reservation into ProjectItem create/update API and Celery BOM task. Wired write-off into project status transition to В производстве. POST /api/stock-items/{id}/receive endpoint with RBAC. Inventory invariant qty_total = qty_reserved + qty_available enforced at service layer with ValueError on violation. 36 tests pass covering all flows including round-trip scenarios. |
 | R014 | operability | active | M006 | S01 | unmapped |
 | R015 | continuity | deferred | none | none | unmapped |
 | R016 | quality-attribute | deferred | none | none | unmapped |
@@ -205,7 +206,7 @@ This file is the explicit capability and coverage contract for the project.
 
 ## Coverage Summary
 
-- Active requirements: 5
-- Mapped to slices: 5
-- Validated: 9 (R001, R002, R004, R005, R006, R007, R009, R010, R011)
+- Active requirements: 4
+- Mapped to slices: 4
+- Validated: 10 (R001, R002, R004, R005, R006, R007, R009, R010, R011, R013)
 - Unmapped active requirements: 0

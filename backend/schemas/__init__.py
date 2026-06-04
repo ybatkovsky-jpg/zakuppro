@@ -40,6 +40,7 @@ ProjectBase = _schemas.ProjectBase
 ProjectCreate = _schemas.ProjectCreate
 ProjectUpdate = _schemas.ProjectUpdate
 ProjectResponse = _schemas.ProjectResponse
+ProjectReadinessResponse = _schemas.ProjectReadinessResponse
 ProjectItemResponse = _schemas.ProjectItemResponse
 
 # ProjectItem schemas
@@ -134,6 +135,7 @@ __all__ = [
     "ProjectCreate",
     "ProjectUpdate",
     "ProjectResponse",
+    "ProjectReadinessResponse",
     "ProjectItemResponse",
     # ProjectItems
     "ProjectItemBase",

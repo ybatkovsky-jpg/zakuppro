@@ -1,16 +1,16 @@
 {
   "nodes": [
     {
-      "id": "milestone:M005",
-      "label": "M005: Frontend UI Integration",
+      "id": "milestone:M006",
+      "label": "M006: Business Logic Polish",
       "type": "milestone",
-      "description": "Active milestone: M005",
+      "description": "Active milestone: M006",
       "confidence": "EXTRACTED",
       "sourceFile": "STATE.md"
     },
     {
-      "id": "concept:phase:validating-milestone",
-      "label": "Phase: validating-milestone",
+      "id": "concept:phase:planning",
+      "label": "Phase: planning",
       "type": "concept",
       "confidence": "EXTRACTED",
       "sourceFile": "STATE.md"
@@ -712,6 +712,13 @@
       "confidence": "EXTRACTED"
     },
     {
+      "id": "milestone:M005",
+      "label": "M005: Frontend UI Integration",
+      "type": "milestone",
+      "confidence": "EXTRACTED",
+      "sourceFile": "milestones/M005/M005-ROADMAP.md"
+    },
+    {
       "id": "slice:M005:S01",
       "label": "S01: Frontend-Backend API Integration",
       "type": "slice",
@@ -897,11 +904,66 @@
       "confidence": "EXTRACTED"
     },
     {
-      "id": "milestone:M006",
-      "label": "M006: Business Logic Polish",
-      "type": "milestone",
+      "id": "slice:M006:S01",
+      "label": "S01: Stock Reservation Engine",
+      "type": "slice",
       "confidence": "EXTRACTED",
-      "sourceFile": "milestones/M006/M006-ROADMAP.md"
+      "sourceFile": "milestones/M006/slices/S01/S01-PLAN.md"
+    },
+    {
+      "id": "task:M006:S01:T01",
+      "label": "T01: Create ProjectStatusHistory model, migration, and schemas",
+      "type": "task",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "id": "task:M006:S01:T02",
+      "label": "T02: Build stock_service.py with three core primitives and add receive endpoint",
+      "type": "task",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "id": "task:M006:S01:T03",
+      "label": "T03: Wire reservation into ProjectItem create/update and Celery BOM task",
+      "type": "task",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "id": "task:M006:S01:T04",
+      "label": "T04: Wire write-off and status history into project update router",
+      "type": "task",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "id": "task:M006:S01:T05",
+      "label": "T05: Write comprehensive tests and verify existing test suite",
+      "type": "task",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "id": "slice:M006:S02",
+      "label": "S02: Kanban Guardrails",
+      "type": "slice",
+      "confidence": "EXTRACTED",
+      "sourceFile": "milestones/M006/slices/S02/S02-PLAN.md"
+    },
+    {
+      "id": "task:M006:S02:T01",
+      "label": "T01: Build transition_service.py with can_transition_to guard",
+      "type": "task",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "id": "task:M006:S02:T02",
+      "label": "T02: Wire transition guard into project update router",
+      "type": "task",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "id": "task:M006:S02:T03",
+      "label": "T03: Write transition guard tests and verify existing suite",
+      "type": "task",
+      "confidence": "EXTRACTED"
     },
     {
       "id": "milestone:M007",
@@ -2721,6 +2783,66 @@
       "confidence": "EXTRACTED"
     },
     {
+      "from": "milestone:M006",
+      "to": "slice:M006:S01",
+      "type": "contains",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "from": "slice:M006:S01",
+      "to": "task:M006:S01:T01",
+      "type": "contains",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "from": "slice:M006:S01",
+      "to": "task:M006:S01:T02",
+      "type": "contains",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "from": "slice:M006:S01",
+      "to": "task:M006:S01:T03",
+      "type": "contains",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "from": "slice:M006:S01",
+      "to": "task:M006:S01:T04",
+      "type": "contains",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "from": "slice:M006:S01",
+      "to": "task:M006:S01:T05",
+      "type": "contains",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "from": "milestone:M006",
+      "to": "slice:M006:S02",
+      "type": "contains",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "from": "slice:M006:S02",
+      "to": "task:M006:S02:T01",
+      "type": "contains",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "from": "slice:M006:S02",
+      "to": "task:M006:S02:T02",
+      "type": "contains",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "from": "slice:M006:S02",
+      "to": "task:M006:S02:T03",
+      "type": "contains",
+      "confidence": "EXTRACTED"
+    },
+    {
       "from": "milestone:M002",
       "to": "decision:M002:1",
       "type": "relates_to",
@@ -3561,5 +3683,5 @@
       "confidence": "EXTRACTED"
     }
   ],
-  "builtAt": "2026-06-03T12:39:37.951Z"
+  "builtAt": "2026-06-04T10:14:16.397Z"
 }

@@ -1,0 +1,7 @@
+[WARNING] Failed to read unmanaged installs: expected str, bytes or os.PathLike object, not NoneType
+Traceback (most recent call last):
+  File "<string>", line 1, in <module>
+    from backend.services.transition_service import can_transition_to
+  File "D:\CLAUDE\Project\zakuppro\zakuppro\backend\services\transition_service.py", line 11, in <module>
+    from sqlalchemy.orm import Session
+ModuleNotFoundError: No module named 'sqlalchemy'

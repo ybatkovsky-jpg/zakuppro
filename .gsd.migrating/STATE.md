@@ -1,9 +1,9 @@
 # GSD State
 
 **Active Milestone:** M006: Business Logic Polish
-**Active Slice:** S01: S01
-**Phase:** executing
-**Requirements Status:** 5 active · 9 validated · 5 deferred · 0 out of scope
+**Active Slice:** S03: Project Readiness Matrix
+**Phase:** planning
+**Requirements Status:** 4 active · 10 validated · 5 deferred · 0 out of scope
 
 ## Milestone Registry
 - ✅ **M001:** Foundation: Database Schema and Core API
@@ -21,4 +21,4 @@
 - None
 
 ## Next Action
-Execute T04: Wire write-off and status history into project update router in slice S01.
+Slice S03 has no DB tasks. Plan slice tasks before execution.

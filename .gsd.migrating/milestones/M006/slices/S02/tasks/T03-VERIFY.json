@@ -1,0 +1,30 @@
+{
+  "schemaVersion": 1,
+  "taskId": "T03",
+  "unitId": "M006/S02/T03",
+  "timestamp": 1780567564729,
+  "passed": false,
+  "discoverySource": "task-plan",
+  "checks": [
+    {
+      "command": "cd backend",
+      "exitCode": 0,
+      "durationMs": 107,
+      "verdict": "pass"
+    },
+    {
+      "command": "python -m pytest tests/test_transition_service.py -v --tb=short",
+      "exitCode": 4,
+      "durationMs": 867,
+      "verdict": "fail"
+    },
+    {
+      "command": "python -m pytest tests/ -v --tb=short",
+      "exitCode": 5,
+      "durationMs": 820,
+      "verdict": "fail"
+    }
+  ],
+  "retryAttempt": 1,
+  "maxRetries": 2
+}

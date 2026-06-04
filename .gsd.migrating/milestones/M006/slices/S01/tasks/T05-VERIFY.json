@@ -1,0 +1,30 @@
+{
+  "schemaVersion": 1,
+  "taskId": "T05",
+  "unitId": "M006/S01/T05",
+  "timestamp": 1780565132321,
+  "passed": false,
+  "discoverySource": "task-plan",
+  "checks": [
+    {
+      "command": "cd backend",
+      "exitCode": 0,
+      "durationMs": 19,
+      "verdict": "pass"
+    },
+    {
+      "command": "python -m pytest tests/test_stock_service.py -v --tb=short",
+      "exitCode": 4,
+      "durationMs": 920,
+      "verdict": "fail"
+    },
+    {
+      "command": "python -m pytest tests/ -v --tb=short",
+      "exitCode": 5,
+      "durationMs": 1354,
+      "verdict": "fail"
+    }
+  ],
+  "retryAttempt": 1,
+  "maxRetries": 2
+}

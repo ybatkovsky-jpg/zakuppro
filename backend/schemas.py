@@ -118,6 +118,16 @@ class ProjectResponse(ProjectBase):
     items: List[ProjectItemResponse] = []
 
 
+class ProjectReadinessResponse(BaseSchema):
+    """Schema for project readiness matrix endpoint response."""
+    project_id: int
+    project_name: str
+    readiness: str  # green, yellow, red
+    ready_count: int
+    total_count: int
+    breakdown: dict[str, int]
+
+
 # =============================================================================
 # ProjectItem Schemas
 # =============================================================================

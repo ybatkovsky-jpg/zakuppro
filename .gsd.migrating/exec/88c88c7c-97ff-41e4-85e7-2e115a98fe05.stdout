@@ -1,0 +1,7 @@
+
+STDERR: ImportError while loading conftest 'D:\CLAUDE\Project\zakuppro\zakuppro\backend\tests\conftest.py'.
+tests\conftest.py:11: in <module>
+    from sqlalchemy import create_engine
+E   ModuleNotFoundError: No module named 'sqlalchemy'
+
+EXIT_CODE: 4

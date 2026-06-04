@@ -1,7 +1,7 @@
 # Codebase Map
 
-Generated: 2026-06-04T09:02:40Z | Files: 500 | Described: 0/500
-<!-- gsd:codebase-meta {"generatedAt":"2026-06-04T09:02:40Z","fingerprint":"58f5acc6cc8abb2e6881cbd5948098d416b125e1","fileCount":500,"truncated":true} -->
+Generated: 2026-06-04T10:14:29Z | Files: 500 | Described: 0/500
+<!-- gsd:codebase-meta {"generatedAt":"2026-06-04T10:14:29Z","fingerprint":"02155572ee4355b3f3d3ed042cb915cd95d84e90","fileCount":500,"truncated":true} -->
 Note: Truncated to first 500 files. Run with higher --max-files to include all.
 
 ### (root)/
@@ -27,7 +27,7 @@ Note: Truncated to first 500 files. Run with higher --max-files to include all.
 - `.gsd.migrating/STATE.md`
 
 ### .gsd.migrating/activity/
-- *(262 files: 262 .jsonl)*
+- *(266 files: 266 .jsonl)*
 
 ### .gsd.migrating/audit/
 - `.gsd.migrating/audit/events.jsonl`
@@ -53,11 +53,3 @@ Note: Truncated to first 500 files. Run with higher --max-files to include all.
 - `.gsd.migrating/milestones/M001/M001-ROADMAP.md`
 - `.gsd.migrating/milestones/M001/M001-SUMMARY.md`
 - `.gsd.migrating/milestones/M001/M001-VALIDATION.md`
-
-### .gsd.migrating/milestones/M001/anchors/
-- `.gsd.migrating/milestones/M001/anchors/plan-slice.json`
-- `.gsd.migrating/milestones/M001/anchors/research-slice.json`
-
-### .gsd.migrating/milestones/M001/slices/S01/
-- `.gsd.migrating/milestones/M001/slices/S01/S01-PLAN.md`
-- `.gsd.migrating/milestones/M001/slices/S01/S01-SUMMARY.md`
