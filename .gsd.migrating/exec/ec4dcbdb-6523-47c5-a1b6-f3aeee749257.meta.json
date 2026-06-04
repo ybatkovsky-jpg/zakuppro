@@ -1,0 +1,18 @@
+{
+  "id": "ec4dcbdb-6523-47c5-a1b6-f3aeee749257",
+  "runtime": "bash",
+  "purpose": "Verify T03: test_email_worker.py -k shutdown",
+  "script_chars": 124,
+  "started_at": "2026-06-04T21:52:58.426Z",
+  "finished_at": "2026-06-04T21:52:58.505Z",
+  "exit_code": 1,
+  "signal": null,
+  "timed_out": false,
+  "duration_ms": 79,
+  "stdout_bytes": 544,
+  "stderr_bytes": 0,
+  "stdout_truncated": false,
+  "stderr_truncated": false,
+  "stdout_path": "D:\\CLAUDE\\Project\\zakuppro\\zakuppro\\.gsd\\exec\\ec4dcbdb-6523-47c5-a1b6-f3aeee749257.stdout",
+  "stderr_path": "D:\\CLAUDE\\Project\\zakuppro\\zakuppro\\.gsd\\exec\\ec4dcbdb-6523-47c5-a1b6-f3aeee749257.stderr"
+}

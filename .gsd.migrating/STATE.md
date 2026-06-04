@@ -1,7 +1,7 @@
 # GSD State
 
 **Active Milestone:** M007: Production Hardening
-**Active Slice:** S01: Health Checks & Graceful Shutdown
+**Active Slice:** S02: S02
 **Phase:** executing
 **Requirements Status:** 5 active · 14 validated · 0 deferred · 0 out of scope
 
@@ -21,4 +21,4 @@
 - None
 
 ## Next Action
-Execute T01: Add heartbeat to email-worker + Docker infrastructure (volume, healthchecks, stop_grace_period) in slice S01.
+Execute T02: Wire retry_async into email_notifier.py send_clarification_email and send_test_email in slice S02.

@@ -1,207 +1,121 @@
 {
-  "compiledAt": "2026-06-04T11:14:04.333Z",
-  "milestoneId": "M006",
+  "compiledAt": "2026-06-04T22:09:58.958Z",
+  "milestoneId": "M007",
   "pipeline": {
     "clarifyRoundLimit": 3,
     "researchSynthesized": true,
     "draftContextIncluded": false,
     "finalizedContextIncluded": true,
-    "sourcePhase": "completing-milestone"
+    "sourcePhase": "executing"
   },
   "nodes": [
     {
-      "id": "execute-task:M006:S01:T01",
+      "id": "execute-task:M007:S01:T01",
       "kind": "unit",
       "dependsOn": [],
       "writes": [],
       "metadata": {
         "unitType": "execute-task",
-        "unitId": "M006.S01.T01",
-        "title": "Added ProjectStatusHistory model, StockReceiveRequest and ProjectStatusHistoryResponse schemas, and migration 145abfb476cb",
+        "unitId": "M007.S01.T01",
+        "title": "Added heartbeat file writing to email-worker with atomic writes, Docker healthcheck volume/mounts, heartbeat-based healthchecks for email-worker and telegram-bot, stop_grace_period for all workers, and /data/health directory in Dockerfile",
         "status": "complete"
       }
     },
     {
-      "id": "execute-task:M006:S01:T02",
+      "id": "execute-task:M007:S01:T02",
       "kind": "unit",
       "dependsOn": [
-        "execute-task:M006:S01:T01"
+        "execute-task:M007:S01:T01"
       ],
       "writes": [],
       "metadata": {
         "unitType": "execute-task",
-        "unitId": "M006.S01.T02",
-        "title": "Built stock_service.py with reserve, write-off, and receive primitives, and added POST /api/stock-items/{id}/receive endpoint with RBAC",
+        "unitId": "M007.S01.T02",
+        "title": "Created test_health.py with 13 tests covering /health endpoint degraded states and heartbeat file check unit tests",
         "status": "complete"
       }
     },
     {
-      "id": "execute-task:M006:S01:T03",
+      "id": "execute-task:M007:S01:T03",
       "kind": "unit",
       "dependsOn": [
-        "execute-task:M006:S01:T02"
-      ],
-      "writes": [
-        "backend/routers/project_items.py",
-        "backend/tasks.py"
-      ],
-      "metadata": {
-        "unitType": "execute-task",
-        "unitId": "M006.S01.T03",
-        "title": "Wired stock_service.reserve_for_project into ProjectItem create/update API endpoints and the Celery process_bom_to_project task with live reserved_count.",
-        "status": "complete"
-      }
-    },
-    {
-      "id": "execute-task:M006:S01:T04",
-      "kind": "unit",
-      "dependsOn": [
-        "execute-task:M006:S01:T03"
+        "execute-task:M007:S01:T02"
       ],
       "writes": [],
       "metadata": {
         "unitType": "execute-task",
-        "unitId": "M006.S01.T04",
-        "title": "Wired write-off and ProjectStatusHistory creation into projects.py update_project, so production transitions trigger stock write-off and every status change creates an audit trail record",
+        "unitId": "M007.S01.T03",
+        "title": "Added heartbeat file writing + SIGTERM/SIGINT graceful shutdown to telegram-bot and worker_shutdown signal handler to Celery worker",
         "status": "complete"
       }
     },
     {
-      "id": "execute-task:M006:S01:T05",
-      "kind": "unit",
-      "dependsOn": [
-        "execute-task:M006:S01:T04"
-      ],
-      "writes": [
-        "backend/tests/test_stock_service.py"
-      ],
-      "metadata": {
-        "unitType": "execute-task",
-        "unitId": "M006.S01.T05",
-        "title": "Created backend/tests/test_stock_service.py with 36 tests covering reserve, write-off, receive, invariant validation, round-trip scenarios, API endpoints, and audit trail — all passing, no regressions",
-        "status": "complete"
-      }
-    },
-    {
-      "id": "complete-slice:M006:S01",
+      "id": "complete-slice:M007:S01",
       "kind": "verification",
       "dependsOn": [
-        "execute-task:M006:S01:T05"
+        "execute-task:M007:S01:T03"
       ],
       "metadata": {
         "unitType": "complete-slice",
-        "unitId": "M006.S01",
+        "unitId": "M007.S01",
         "title": "S01",
         "status": "complete"
       }
     },
     {
-      "id": "execute-task:M006:S02:T01",
+      "id": "execute-task:M007:S02:T01",
       "kind": "unit",
       "dependsOn": [],
-      "writes": [],
-      "metadata": {
-        "unitType": "execute-task",
-        "unitId": "M006.S02.T01",
-        "title": "Created transition_service.py with can_transition_to guard that checks ProjectItem statuses before allowing transition to В производстве",
-        "status": "complete"
-      }
-    },
-    {
-      "id": "execute-task:M006:S02:T02",
-      "kind": "unit",
-      "dependsOn": [
-        "execute-task:M006:S02:T01"
-      ],
-      "writes": [],
-      "metadata": {
-        "unitType": "execute-task",
-        "unitId": "M006.S02.T02",
-        "title": "Wired transition_service.can_transition_to guard into update_project, blocking invalid transitions with HTTP 422",
-        "status": "complete"
-      }
-    },
-    {
-      "id": "execute-task:M006:S02:T03",
-      "kind": "unit",
-      "dependsOn": [
-        "execute-task:M006:S02:T02"
-      ],
-      "writes": [],
-      "metadata": {
-        "unitType": "execute-task",
-        "unitId": "M006.S02.T03",
-        "title": "Fixed and verified transition guard tests: corrected auth token key, added owner_id to fixtures, fixed stock test item status to pass guard",
-        "status": "complete"
-      }
-    },
-    {
-      "id": "complete-slice:M006:S02",
-      "kind": "verification",
-      "dependsOn": [
-        "execute-task:M006:S02:T03"
-      ],
-      "metadata": {
-        "unitType": "complete-slice",
-        "unitId": "M006.S02",
-        "title": "S02",
-        "status": "complete"
-      }
-    },
-    {
-      "id": "execute-task:M006:S03:T01",
-      "kind": "unit",
-      "dependsOn": [],
-      "writes": [],
-      "metadata": {
-        "unitType": "execute-task",
-        "unitId": "M006.S03.T01",
-        "title": "Added GET /api/projects/readiness endpoint returning per-project green/yellow/red readiness with item counts by procurement stage, built on PRODUCTION_READY_STATUSES from transition_service",
-        "status": "complete"
-      }
-    },
-    {
-      "id": "execute-task:M006:S03:T02",
-      "kind": "unit",
-      "dependsOn": [
-        "execute-task:M006:S03:T01"
-      ],
-      "writes": [],
-      "metadata": {
-        "unitType": "execute-task",
-        "unitId": "M006.S03.T02",
-        "title": "Added ProjectReadinessResponse TypeScript type, fetchProjectReadiness API method, and Next.js proxy route GET /api/projects/readiness",
-        "status": "complete"
-      }
-    },
-    {
-      "id": "execute-task:M006:S03:T03",
-      "kind": "unit",
-      "dependsOn": [
-        "execute-task:M006:S03:T02"
-      ],
       "writes": [
-        "src/components/app/projects.tsx",
-        "src/components/app/dashboard.tsx"
+        "backend/retry_utils.py",
+        "backend/tests/test_retry_utils.py"
       ],
       "metadata": {
         "unitType": "execute-task",
-        "unitId": "M006.S03.T03",
-        "title": "Added readiness dots with click-to-expand tooltips on Dashboard recent project cards and fixed Kanban readinessMap prop pass-through bug",
+        "unitId": "M007.S02.T01",
+        "title": "Created retry_utils.py with sync and async exponential-backoff + jitter retry decorators, plus 13 passing unit tests",
         "status": "complete"
       }
     },
     {
-      "id": "complete-slice:M006:S03",
+      "id": "execute-task:M007:S02:T02",
+      "kind": "unit",
+      "dependsOn": [
+        "execute-task:M007:S02:T01"
+      ],
+      "writes": [],
+      "metadata": {
+        "unitType": "execute-task",
+        "unitId": "M007.S02.T02",
+        "title": "Wire retry_async into email_notifier.py send_clarification_email and send_test_email",
+        "status": "pending"
+      }
+    },
+    {
+      "id": "execute-task:M007:S02:T03",
+      "kind": "unit",
+      "dependsOn": [
+        "execute-task:M007:S02:T02"
+      ],
+      "writes": [],
+      "metadata": {
+        "unitType": "execute-task",
+        "unitId": "M007.S02.T03",
+        "title": "Wire retry_sync into telegram_notifier.py all 6 public notification functions",
+        "status": "pending"
+      }
+    },
+    {
+      "id": "complete-slice:M007:S02",
       "kind": "verification",
       "dependsOn": [
-        "execute-task:M006:S03:T03"
+        "execute-task:M007:S02:T03"
       ],
       "metadata": {
         "unitType": "complete-slice",
-        "unitId": "M006.S03",
-        "title": "S03",
-        "status": "complete"
+        "unitId": "M007.S02",
+        "title": "S02",
+        "status": "pending"
       }
     }
   ]

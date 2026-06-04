@@ -11,10 +11,10 @@
 
 ## Slices
 
-- [ ] **S01: Health Checks & Graceful Shutdown** `risk:medium` `depends:[]`
+- [x] **S01: S01** `risk:medium` `depends:[]`
   > After this: GET /health на каждом сервисе возвращает статус; docker-compose stop отрабатывает без потери задач
 
-- [ ] **S02: Retry with Exponential Backoff** `risk:medium` `depends:[]`
+- [ ] **S02: S02** `risk:medium` `depends:[]`
   > After this: Искусственный сбой OpenAI API → автоматический retry с растущей задержкой → успешный ответ или graceful failure
 
 - [ ] **S03: Role-Based Access in Web UI** `risk:high` `depends:[]`

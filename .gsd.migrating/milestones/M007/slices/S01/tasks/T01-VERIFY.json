@@ -1,0 +1,18 @@
+{
+  "schemaVersion": 1,
+  "taskId": "T01",
+  "unitId": "M007/S01/T01",
+  "timestamp": 1780576741429,
+  "passed": false,
+  "discoverySource": "task-plan",
+  "checks": [
+    {
+      "command": "python -m pytest backend/tests/test_email_worker.py -v",
+      "exitCode": 1,
+      "durationMs": 252,
+      "verdict": "fail"
+    }
+  ],
+  "retryAttempt": 1,
+  "maxRetries": 2
+}

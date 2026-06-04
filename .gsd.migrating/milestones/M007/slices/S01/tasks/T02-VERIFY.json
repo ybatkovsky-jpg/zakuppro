@@ -1,0 +1,18 @@
+{
+  "schemaVersion": 1,
+  "taskId": "T02",
+  "unitId": "M007/S01/T02",
+  "timestamp": 1780577818034,
+  "passed": false,
+  "discoverySource": "task-plan",
+  "checks": [
+    {
+      "command": "python -m pytest backend/tests/test_health.py -v",
+      "exitCode": 1,
+      "durationMs": 159,
+      "verdict": "fail"
+    }
+  ],
+  "retryAttempt": 1,
+  "maxRetries": 2
+}

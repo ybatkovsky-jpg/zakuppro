@@ -11,6 +11,7 @@ This file is the explicit capability and coverage contract for the project.
 - Why it matters: Сервисы должны останавливаться корректно, не теряя обрабатываемые задачи.
 - Source: inferred
 - Primary owning slice: M007 S01
+- Validation: S01 delivered: telegram-bot SIGTERM/SIGINT handler + shutdown flag, Celery worker_shutdown signal handler logging active task count, docker-compose.yml stop_grace_period (celery-worker=60s, email-worker=30s, telegram-bot=15s), Docker healthchecks using heartbeat freshness instead of ps aux | grep. Tests: 33 email-worker tests + 13 health endpoint tests + 2 shutdown tests all pass.
 
 ### R016 — Health check endpoints для всех сервисов (FastAPI, Celery workers, Telegram bot) для мониторинга статуса
 - Class: quality-attribute
@@ -19,6 +20,7 @@ This file is the explicit capability and coverage contract for the project.
 - Why it matters: Operational visibility. Нужно знать состояние всех компонентов системы.
 - Source: inferred
 - Primary owning slice: M007 S01
+- Validation: S01 delivered: /health endpoint returns email_worker and telegram_bot status via heartbeat file freshness checks (120s/90s thresholds) on shared Docker volume. All 5 services reported: db, rabbitmq, celery_worker, email_worker, telegram_bot. Tests: 13 health endpoint tests covering all-ok, 4 degradation paths, heartbeat freshness unit tests for both workers.
 
 ### R017 — DLQ UI/админка для просмотра и перезапуска неудачных задач с деталями ошибок
 - Class: admin/support
@@ -43,6 +45,7 @@ This file is the explicit capability and coverage contract for the project.
 - Why it matters: Надёжность при временных сбоях внешних сервисов.
 - Source: inferred
 - Primary owning slice: M007 S02
+- Notes: S02 planned: retry_utils.py with sync/async decorators will wrap 2 email functions (SMTPException retry) and 6 Telegram functions (TelegramError retry). LLM and Celery retry already exist. No direct bank API in codebase — the "bank API" reference was confirmed to mean email/Telegram notification pathways.
 
 ## Validated
 
@@ -199,8 +202,8 @@ This file is the explicit capability and coverage contract for the project.
 | R012 | core-capability | validated | M006 | S01 | unmapped |
 | R013 | core-capability | validated | S01 | none | S01 delivered stock_service.py with reserve_for_project, write_off_for_production, and receive_stock primitives. Wired auto-reservation into ProjectItem create/update API and Celery BOM task. Wired write-off into project status transition to В производстве. POST /api/stock-items/{id}/receive endpoint with RBAC. Inventory invariant qty_total = qty_reserved + qty_available enforced at service layer with ValueError on violation. 36 tests pass covering all flows including round-trip scenarios. |
 | R014 | operability | validated | M006 | S01 | S03 delivered GET /api/projects/readiness endpoint returning per-project green/yellow/red readiness with item counts by procurement stage. Backend computes readiness using PRODUCTION_READY_STATUSES from transition_service: green (all items На складе or Оплачено, or empty), yellow (no К закупке but some in transit: Запрошено or Счет получен), red (any К закупке). Frontend renders colored dots (green/amber/red) on Kanban DraggableProjectCard and Dashboard recent project cards with click-to-expand Popover tooltips showing per-status breakdowns. 12 backend tests verify readiness computation, RBAC (owner/manager), ownership filtering, and edge cases. TypeScript compilation clean. |
-| R015 | continuity | active | M007 S01 | none | unmapped |
-| R016 | quality-attribute | active | M007 S01 | none | unmapped |
+| R015 | continuity | active | M007 S01 | none | S01 delivered: telegram-bot SIGTERM/SIGINT handler + shutdown flag, Celery worker_shutdown signal handler logging active task count, docker-compose.yml stop_grace_period (celery-worker=60s, email-worker=30s, telegram-bot=15s), Docker healthchecks using heartbeat freshness instead of ps aux | grep. Tests: 33 email-worker tests + 13 health endpoint tests + 2 shutdown tests all pass. |
+| R016 | quality-attribute | active | M007 S01 | none | S01 delivered: /health endpoint returns email_worker and telegram_bot status via heartbeat file freshness checks (120s/90s thresholds) on shared Docker volume. All 5 services reported: db, rabbitmq, celery_worker, email_worker, telegram_bot. Tests: 13 health endpoint tests covering all-ok, 4 degradation paths, heartbeat freshness unit tests for both workers. |
 | R017 | admin/support | active | M007 S04 | none | unmapped |
 | R018 | compliance/security | active | M007 S03 | none | unmapped |
 | R019 | quality-attribute | active | M007 S02 | none | unmapped |

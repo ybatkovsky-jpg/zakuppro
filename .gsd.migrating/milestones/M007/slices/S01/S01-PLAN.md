@@ -33,17 +33,17 @@
 
 ## Tasks
 
-- [ ] **T01: Add heartbeat to email-worker + Docker infrastructure (volume, healthchecks, stop_grace_period)** `est:45m`
+- [x] **T01: Add heartbeat to email-worker + Docker infrastructure (volume, healthchecks, stop_grace_period)** `est:45m`
   Why: email-worker currently uses `ps aux | grep` for Docker healthcheck which is fragile. The FastAPI /health endpoint cannot check non-HTTP workers without a shared mechanism. Heartbeat files on a shared volume provide the lightest cross-container health signal.
   - Files: `backend/email_worker.py`, `docker-compose.yml`, `backend/Dockerfile`
   - Verify: python -m pytest backend/tests/test_email_worker.py -v
 
-- [ ] **T02: Extend FastAPI /health endpoint + lifespan + tests** `est:1h`
+- [x] **T02: Extend FastAPI /health endpoint + lifespan + tests** `est:1h`
   Why: The /health endpoint only checks db, rabbitmq, and celery_worker. R016 requires health checks for all services including email-worker and telegram-bot. Adding a lifespan context manager provides a hook for future shutdown cleanup (connection pools, etc.).
   - Files: `backend/routers/health.py`, `backend/main.py`, `backend/tests/test_health.py`
   - Verify: python -m pytest backend/tests/test_health.py -v
 
-- [ ] **T03: Add heartbeat + graceful shutdown to telegram-bot + Celery worker_shutdown signal** `est:45m`
+- [x] **T03: Add heartbeat + graceful shutdown to telegram-bot + Celery worker_shutdown signal** `est:45m`
   Why: telegram-bot has no heartbeat mechanism (needed by T02) and no SIGTERM/SIGINT handling for graceful Docker shutdown. Celery worker lacks a worker_shutdown signal handler for logging active task state during shutdown.
   - Files: `backend/telegram_bot.py`, `backend/celery_app.py`
   - Verify: python -m pytest backend/tests/test_email_worker.py -v -k shutdown
