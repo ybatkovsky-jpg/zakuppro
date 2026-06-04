@@ -281,7 +281,7 @@ def process_bom_to_project(self, file_path: str, chat_id: int) -> dict:
             - status: 'success' or 'error'
             - project_id: ID of created project
             - items_count: Number of ProjectItems created
-            - reserved_count: Number of reserved items (always 0 for now)
+            - reserved_count: Number of ProjectItems linked to StockItems after reservation
             - task_id: Celery task ID
 
     Raises:
@@ -321,6 +321,7 @@ def process_bom_to_project(self, file_path: str, chat_id: int) -> dict:
         from backend.database import SessionLocal
         from backend.models import Project, ProjectItem, FailedTask
         from backend.supplier_resolver import find_or_create_supplier
+        from backend.services import stock_service
         from backend.telegram_notifier import send_completion_message, send_dlq_alert
 
         db = SessionLocal()
@@ -377,12 +378,26 @@ def process_bom_to_project(self, file_path: str, chat_id: int) -> dict:
         db.commit()
         logger.info(f"Task {task_id}: Created {items_created} ProjectItem records")
 
+        # Step 5.5: Reserve stock for created ProjectItems
+        stock_service.reserve_for_project(project.id, db)
+        db.commit()
+
+        reserved_count = db.query(ProjectItem).filter(
+            ProjectItem.project_id == project.id,
+            ProjectItem.stock_item_id.isnot(None)
+        ).count()
+
+        logger.info(
+            f"Task {task_id}: Reserved stock for {reserved_count} items "
+            f"in project {project.id}"
+        )
+
         # Step 6: Send Telegram completion message
         telegram_sent = send_completion_message(
             chat_id=chat_id,
             project_name=project_name,
             items_count=items_created,
-            reserved_count=0
+            reserved_count=reserved_count
         )
 
         if telegram_sent:
@@ -394,7 +409,7 @@ def process_bom_to_project(self, file_path: str, chat_id: int) -> dict:
             'status': 'success',
             'project_id': project.id,
             'items_count': items_created,
-            'reserved_count': 0,
+            'reserved_count': reserved_count,
             'task_id': task_id,
         }
 

@@ -9,6 +9,7 @@ from typing import List
 from backend.database import get_db
 from backend.models import ProjectItem
 from backend.schemas import ProjectItemCreate, ProjectItemUpdate, ProjectItemResponse
+from backend.services import stock_service
 
 router = APIRouter(prefix="/api/project-items", tags=["project-items"])
 
@@ -45,6 +46,8 @@ def create_project_item(item_data: ProjectItemCreate, db: Session = Depends(get_
     db.add(new_item)
     db.commit()
     db.refresh(new_item)
+    stock_service.reserve_for_project(new_item.project_id, db)
+    db.commit()
     return new_item
 
 
@@ -66,6 +69,8 @@ def update_project_item(item_id: int, item_data: ProjectItemUpdate, db: Session 
 
     db.commit()
     db.refresh(item)
+    stock_service.reserve_for_project(item.project_id, db)
+    db.commit()
     return item
 
 
