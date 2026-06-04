@@ -1,7 +1,4 @@
-# GSD context snapshot (2026-06-03T10:49:26.470Z)
-
-## Active context
-Active: M005 / S04 / M005-S04-T08 - Write RBAC integration tests and verify slice
+# GSD context snapshot (2026-06-04T08:15:00.084Z)
 
 ## Top project memories
 - [MEM005] (architecture) SQLAlchemy 2.0 uses relationship(back_populates=...) for bidirectional relationships, not backref. This makes relationships explicit on both sides for clearer code.

@@ -1363,3 +1363,127 @@ def match_bank_transactions(self, bank_statement_id: Optional[int] = None, bank_
         if db is not None:
             db.close()
             logger.info(f"Task {task_id}: Database session closed")
+
+
+@app.task(name='tasks.send_delay_digest', bind=True)
+def send_delay_digest(self):
+    """
+    Daily 9:00 AM digest of all production task delays.
+
+    This task runs daily at 9:00 AM (configured in celery_app.py beat_schedule)
+    and sends a summary of all production tasks that are delayed beyond their
+    expected_completion_date or have a delay_reason set.
+
+    Returns:
+        dict: Summary of delays found and notification status
+    """
+    task_id = self.request.id
+    db = None
+    try:
+        from datetime import datetime
+        from backend.database import SessionLocal
+        from backend.models import ProductionTask, Project
+        from backend.models import DelayReason
+
+        logger.info(f"Task {task_id}: Starting delay digest")
+
+        db = SessionLocal()
+        now = datetime.utcnow()
+
+        # Query delayed tasks - either past due date OR has delay reason set
+        delayed_tasks = db.query(ProductionTask).join(Project).filter(
+            db.or_(
+                # Past expected completion date
+                db.and_(
+                    ProductionTask.expected_completion_date.isnot(None),
+                    ProductionTask.expected_completion_date < now
+                ),
+                # Has delay reason recorded
+                ProductionTask.delay_reason.isnot(None)
+            )
+        ).all()
+
+        logger.info(f"Task {task_id}: Found {len(delayed_tasks)} delayed tasks")
+
+        # Group by delay reason for summary
+        summary_by_reason = {}
+        delay_details = []
+
+        for task in delayed_tasks:
+            reason_key = task.delay_reason.value if task.delay_reason else "not_recorded"
+            if reason_key not in summary_by_reason:
+                summary_by_reason[reason_key] = []
+
+            is_late = (
+                task.expected_completion_date is not None and
+                task.expected_completion_date < now
+            )
+
+            delay_info = {
+                'task_id': task.id,
+                'project_id': task.project_id,
+                'project_name': task.project.name if task.project else 'Unknown',
+                'status': task.status,
+                'expected_completion_date': task.expected_completion_date.isoformat() if task.expected_completion_date else None,
+                'delay_reason': reason_key,
+                'custom_reason': task.custom_reason,
+                'is_late': is_late,
+            }
+            summary_by_reason[reason_key].append(delay_info)
+            delay_details.append(delay_info)
+
+        # Build digest message
+        digest_lines = [
+            f"=== Ежедневный дайджест задержек производства ===",
+            f"Дата: {now.strftime('%Y-%m-%d %H:%M')}",
+            f"Всего задач с задержками: {len(delayed_tasks)}",
+            ""
+        ]
+
+        for reason, tasks in summary_by_reason.items():
+            reason_label = {
+                'waiting_materials': 'Ожидание материалов',
+                'equipment_failure': 'Поломка оборудования',
+                'staff_shortage': 'Нехватка персонала',
+                'supplier_delay': 'Задержка поставщика',
+                'technical_issues': 'Технические проблемы',
+                'other': 'Другое',
+                'not_recorded': 'Причина не указана'
+            }.get(reason, reason)
+
+            digest_lines.append(f"— {reason_label}: {len(tasks)} задач")
+
+            for task in tasks[:3]:  # Show up to 3 examples per reason
+                late_mark = " (ПРОСРОЧЕНО)" if task['is_late'] else ""
+                digest_lines.append(f"  • Проект: {task['project_name']}, Статус: {task['status']}{late_mark}")
+                if task['custom_reason']:
+                    digest_lines.append(f"    Примечание: {task['custom_reason']}")
+            if len(tasks) > 3:
+                digest_lines.append(f"  ... и еще {len(tasks) - 3} задач")
+            digest_lines.append("")
+
+        digest_message = "\n".join(digest_lines)
+        logger.info(f"Task {task_id}: Delay digest generated:\n{digest_message}")
+
+        # TODO: Send via email/Telegram notification channel
+        # For now, just log and return summary
+
+        result = {
+            'status': 'success',
+            'total_delayed': len(delayed_tasks),
+            'summary_by_reason': {k: len(v) for k, v in summary_by_reason.items()},
+            'digest_message': digest_message,
+            'task_id': task_id,
+        }
+
+        logger.info(f"Task {task_id}: send_delay_digest completed")
+        return result
+
+    except Exception as e:
+        error_message = f"{type(e).__name__}: {str(e)}\n\n{traceback.format_exc()}"
+        logger.error(f"Task {task_id}: Error in delay digest - {error_message}")
+        raise
+
+    finally:
+        if db is not None:
+            db.close()

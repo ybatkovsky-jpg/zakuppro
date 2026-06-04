@@ -67,7 +67,7 @@ Backend auth infrastructure (models, JWT, RBAC) is complete and tested. Frontend
   - Files: `src/types/fastapi.ts`, `src/app/api/auth/login/route.ts`, `src/lib/api-client.ts`, `src/lib/auth.ts`
   - Verify: grep -q 'LoginRequest' src/types/fastapi.ts && grep -q 'LoginResponse' src/types/fastapi.ts && test -f src/app/api/auth/login/route.ts && test -f src/lib/auth.ts
 
-- [ ] **M005-S04-T08: Write RBAC integration tests and verify slice** `est:2h`
+- [x] **M005-S04-T08: Write RBAC integration tests and verify slice** `est:2h`
   ## Why
   RBAC is security-critical. Integration tests verify all role combinations work correctly and 403 responses are proper.
   - Files: `backend/tests/test_rbac_integration.py`

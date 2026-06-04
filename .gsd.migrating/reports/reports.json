@@ -19,6 +19,22 @@
       "doneMilestones": 3,
       "totalMilestones": 7,
       "phase": "pre-planning"
+    },
+    {
+      "filename": "M005-2026-06-03T22-33-31.html",
+      "generatedAt": "2026-06-03T22:33:31.232Z",
+      "milestoneId": "M005",
+      "milestoneTitle": "Frontend UI Integration",
+      "label": "M005: Frontend UI Integration",
+      "kind": "milestone",
+      "totalCost": 188.55344500000007,
+      "totalTokens": 8960712,
+      "totalDuration": 51073499,
+      "doneSlices": 25,
+      "totalSlices": 25,
+      "doneMilestones": 5,
+      "totalMilestones": 7,
+      "phase": "pre-planning"
     }
   ]
 }

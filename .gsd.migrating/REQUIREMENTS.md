@@ -22,16 +22,6 @@ This file is the explicit capability and coverage contract for the project.
 - Primary owning slice: M003
 - Validation: S01: InvoiceItem table created with sku, name, qty columns; Invoice.verification_result JSONB column; llm_provider.py wrapper supports OpenAI, Gemini, Claude with automatic fallback. S04: 9 integration tests verify exact SKU matching, RapidFuzz fuzzy name matching (>85% threshold), quantity discrepancy detection. Fuzzy matching logic complete with multi-tier strategy: exact SKU → OK, SKU differs + 85% similarity → clarification, quantity differs → partial.
 
-### R011 — Frontend UI (Next.js + Ant Design) с Kanban-досками проектов, таблицами спецификаций и экраном комплектации
-- Class: primary-user-loop
-- Status: active
-- Description: Frontend UI (Next.js + Ant Design) с Kanban-досками проектов, таблицами спецификаций и экраном комплектации
-- Why it matters: Менеджерам нужен визуальный интерфейс для управления проектами, статусами и комплектации.
-- Source: user
-- Primary owning slice: M005
-- Validation: S01: API integration layer complete. TypeScript types (src/types/fastapi.ts) and API client (src/lib/api-client.ts) proxy requests to FastAPI backend. Projects, Suppliers, Warehouse, and Analytics dashboard endpoints now fetch data from FastAPI. Build verification passed. Full UI integration (Kanban drag-and-drop) deferred to S02-S04.
-- Notes: Primary owning slice: M005. S01 delivered API proxy infrastructure; S02-S04 will deliver UI components (Kanban DnD, Analytics dashboard, RBAC).
-
 ### R012 — Kanban-логика с блокировками: переход в "Производство" невозможен пока не все позиции "На складе" или "Оплачено"
 - Class: core-capability
 - Status: active
@@ -39,6 +29,8 @@ This file is the explicit capability and coverage contract for the project.
 - Why it matters: Предотвращение ошибок. Нельзя запускать в производство недоукомплектованные проекты.
 - Source: user
 - Primary owning slice: M006
+- Supporting slices: S01
+- Notes: S01 supports by providing accurate qty_reserved/qty_available values that S02's transition guard will read. Also creates ProjectStatusHistory model used by S02 for audit trail.
 
 ### R013 — Резервирование на складе: при создании BOM автоматически резервирует доступные StockItem, списывает при выдаче в производство
 - Class: core-capability
@@ -46,7 +38,8 @@ This file is the explicit capability and coverage contract for the project.
 - Description: Резервирование на складе: при создании BOM автоматически резервирует доступные StockItem, списывает при выдаче в производство
 - Why it matters: Прозрачность остатков. Менеджеры видят реальные доступные количества, а не общие остатки.
 - Source: user
-- Primary owning slice: M006
+- Primary owning slice: S01
+- Notes: S01 directly implements reserve_for_project, write_off_for_production, and receive_stock. Enforces inventory invariant at service layer. Reservation triggers on ProjectItem create/update and Celery BOM task. Write-off triggers on project status change to В производстве.
 
 ### R014 — Матрица готовности проекта: цветовая индикация (Зелёный — всё есть, Жёлтый — часть в пути, Красный — не заказано)
 - Class: operability
@@ -55,6 +48,8 @@ This file is the explicit capability and coverage contract for the project.
 - Why it matters: Быстрая оценка комплектации. Менеджер видит статус проекта на одном экране.
 - Source: user
 - Primary owning slice: M006
+- Supporting slices: S01
+- Notes: S01 supports by ensuring StockItem quantities (qty_total, qty_reserved, qty_available) are accurate, which S03 queries for per-project readiness computation.
 
 ## Validated
 
@@ -130,6 +125,16 @@ This file is the explicit capability and coverage contract for the project.
 - Primary owning slice: M004
 - Validation: M004 Complete: S04 creates UnresolvedTransaction for unmatched payments. S05 provides full CRUD API with filters/search/bulk operations/audit trail. 55 tests (38 unit + 17 integration) verify manual reconciliation workflow.
 
+### R011 — Frontend UI (Next.js + Ant Design) с Kanban-досками проектов, таблицами спецификаций и экраном комплектации
+- Class: primary-user-loop
+- Status: validated
+- Description: Frontend UI (Next.js + Ant Design) с Kanban-досками проектов, таблицами спецификаций и экраном комплектации
+- Why it matters: Менеджерам нужен визуальный интерфейс для управления проектами, статусами и комплектации.
+- Source: user
+- Primary owning slice: M005
+- Validation: S05 verification: docker-compose up -d starts all 7 services (db, api, rabbitmq, email-worker, celery-worker, telegram-bot, frontend). All services show healthy status in docker-compose ps. Smoke test (scripts/smoke-test.sh) validates login → create project → update status → delete workflow. Frontend accessible at http://localhost:3000, backend at http://localhost:8000.
+- Notes: S05 completes production readiness: Frontend runs in Docker Compose on port 3000, all 7 services healthy, smoke test validates create → update → delete workflow. Docker deployment documented in README.md.
+
 ## Deferred
 
 ### R015 — Graceful shutdown и cleanup для всех сервисов (Celery workers, Telegram bot, FastAPI) с сохранением состояния задач
@@ -188,10 +193,10 @@ This file is the explicit capability and coverage contract for the project.
 | R008 | core-capability | active | M003 | none | S01: InvoiceItem table created with sku, name, qty columns; Invoice.verification_result JSONB column; llm_provider.py wrapper supports OpenAI, Gemini, Claude with automatic fallback. S04: 9 integration tests verify exact SKU matching, RapidFuzz fuzzy name matching (>85% threshold), quantity discrepancy detection. Fuzzy matching logic complete with multi-tier strategy: exact SKU → OK, SKU differs + 85% similarity → clarification, quantity differs → partial. |
 | R009 | integration | validated | M004 | none | M004 Complete: S02 1C ClientBank parser with INN extraction (56 tests). S03 Email Worker routes .txt to parse_bank_statement task (29 tests). S04 PaymentMatcher auto-matches by INN + amount ±5% (84 tests). S06 Manual upload fallback (13 tests). Total: 187 tests passing. End-to-end flow verified: manual upload → parsing → auto-matching → manual resolution → audit retrieval. |
 | R010 | admin/support | validated | M004 | none | M004 Complete: S04 creates UnresolvedTransaction for unmatched payments. S05 provides full CRUD API with filters/search/bulk operations/audit trail. 55 tests (38 unit + 17 integration) verify manual reconciliation workflow. |
-| R011 | primary-user-loop | active | M005 | none | S01: API integration layer complete. TypeScript types (src/types/fastapi.ts) and API client (src/lib/api-client.ts) proxy requests to FastAPI backend. Projects, Suppliers, Warehouse, and Analytics dashboard endpoints now fetch data from FastAPI. Build verification passed. Full UI integration (Kanban drag-and-drop) deferred to S02-S04. |
-| R012 | core-capability | active | M006 | none | unmapped |
-| R013 | core-capability | active | M006 | none | unmapped |
-| R014 | operability | active | M006 | none | unmapped |
+| R011 | primary-user-loop | validated | M005 | none | S05 verification: docker-compose up -d starts all 7 services (db, api, rabbitmq, email-worker, celery-worker, telegram-bot, frontend). All services show healthy status in docker-compose ps. Smoke test (scripts/smoke-test.sh) validates login → create project → update status → delete workflow. Frontend accessible at http://localhost:3000, backend at http://localhost:8000. |
+| R012 | core-capability | active | M006 | S01 | unmapped |
+| R013 | core-capability | active | S01 | none | unmapped |
+| R014 | operability | active | M006 | S01 | unmapped |
 | R015 | continuity | deferred | none | none | unmapped |
 | R016 | quality-attribute | deferred | none | none | unmapped |
 | R017 | admin/support | deferred | M005 | none | unmapped |
@@ -200,7 +205,7 @@ This file is the explicit capability and coverage contract for the project.
 
 ## Coverage Summary
 
-- Active requirements: 6
-- Mapped to slices: 6
-- Validated: 8 (R001, R002, R004, R005, R006, R007, R009, R010)
+- Active requirements: 5
+- Mapped to slices: 5
+- Validated: 9 (R001, R002, R004, R005, R006, R007, R009, R010, R011)
 - Unmapped active requirements: 0

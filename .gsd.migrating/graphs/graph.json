@@ -9,8 +9,8 @@
       "sourceFile": "STATE.md"
     },
     {
-      "id": "concept:phase:planning",
-      "label": "Phase: planning",
+      "id": "concept:phase:validating-milestone",
+      "label": "Phase: validating-milestone",
       "type": "concept",
       "confidence": "EXTRACTED",
       "sourceFile": "STATE.md"
@@ -842,8 +842,58 @@
     },
     {
       "id": "slice:M005:S04",
-      "label": "M005/S04",
+      "label": "S04: Role-Based Access Control (RBAC)",
       "type": "slice",
+      "confidence": "EXTRACTED",
+      "sourceFile": "milestones/M005/slices/S04/S04-PLAN.md"
+    },
+    {
+      "id": "slice:M005:S05",
+      "label": "S05: Production Readiness Polish",
+      "type": "slice",
+      "confidence": "EXTRACTED",
+      "sourceFile": "milestones/M005/slices/S05/S05-PLAN.md"
+    },
+    {
+      "id": "task:M005:S05:T01",
+      "label": "T01: Frontend Dockerfile",
+      "type": "task",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "id": "task:M005:S05:T02",
+      "label": "T02: Frontend Service in docker-compose.yml",
+      "type": "task",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "id": "task:M005:S05:T03",
+      "label": "T03: Missing Healthchecks for celery-worker and telegram-bot",
+      "type": "task",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "id": "task:M005:S05:T04",
+      "label": "T04: Database Migration on Backend Startup",
+      "type": "task",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "id": "task:M005:S05:T05",
+      "label": "T05: Smoke Test Script",
+      "type": "task",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "id": "task:M005:S05:T06",
+      "label": "T06: README.md Documentation",
+      "type": "task",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "id": "task:M005:S05:T07",
+      "label": "T07: Full Docker Compose Verification",
+      "type": "task",
       "confidence": "EXTRACTED"
     },
     {
@@ -2623,6 +2673,54 @@
       "confidence": "EXTRACTED"
     },
     {
+      "from": "milestone:M005",
+      "to": "slice:M005:S05",
+      "type": "contains",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "from": "slice:M005:S05",
+      "to": "task:M005:S05:T01",
+      "type": "contains",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "from": "slice:M005:S05",
+      "to": "task:M005:S05:T02",
+      "type": "contains",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "from": "slice:M005:S05",
+      "to": "task:M005:S05:T03",
+      "type": "contains",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "from": "slice:M005:S05",
+      "to": "task:M005:S05:T04",
+      "type": "contains",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "from": "slice:M005:S05",
+      "to": "task:M005:S05:T05",
+      "type": "contains",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "from": "slice:M005:S05",
+      "to": "task:M005:S05:T06",
+      "type": "contains",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "from": "slice:M005:S05",
+      "to": "task:M005:S05:T07",
+      "type": "contains",
+      "confidence": "EXTRACTED"
+    },
+    {
       "from": "milestone:M002",
       "to": "decision:M002:1",
       "type": "relates_to",
@@ -3463,5 +3561,5 @@
       "confidence": "EXTRACTED"
     }
   ],
-  "builtAt": "2026-06-03T05:01:50.315Z"
+  "builtAt": "2026-06-03T12:39:37.951Z"
 }

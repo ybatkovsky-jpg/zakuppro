@@ -471,11 +471,28 @@ class AuditHistoryListResponse(BaseSchema):
 
 
 # =============================================================================
+# Delay Reason Enum for ProductionTask Schemas
+# =============================================================================
+
+class DelayReason(str, enum.Enum):
+    """Standard delay reasons for production tasks."""
+    WAITING_MATERIALS = "waiting_materials"  # Ожидание материалов
+    EQUIPMENT_FAILURE = "equipment_failure"  # Поломка оборудования
+    STAFF_SHORTAGE = "staff_shortage"  # Нехватка персонала
+    SUPPLIER_DELAY = "supplier_delay"  # Задержка поставщика
+    TECHNICAL_ISSUES = "technical_issues"  # Технические проблемы
+    OTHER = "other"  # Другое (используется с custom_reason)
+
+
+# =============================================================================
 # ProductionTask Schemas
 # =============================================================================
 
 class ProductionTaskBase(BaseSchema):
     status: str = "Ожидание комплектации"
+    expected_completion_date: Optional[datetime] = None
+    delay_reason: Optional[DelayReason] = None
+    custom_reason: Optional[str] = None
 
 
 class ProductionTaskCreate(ProductionTaskBase):
@@ -486,6 +503,9 @@ class ProductionTaskCreate(ProductionTaskBase):
 class ProductionTaskUpdate(BaseSchema):
     """Schema for updating an existing production task."""
     status: Optional[str] = None
+    expected_completion_date: Optional[datetime] = None
+    delay_reason: Optional[DelayReason] = None
+    custom_reason: Optional[str] = None
 
 
 class ProductionTaskResponse(ProductionTaskBase):
@@ -536,3 +556,22 @@ class UploadBankStatementResponse(BaseSchema):
     statement_date: datetime
     period_start: datetime
     period_end: datetime
+
+
+# =============================================================================
+# Stock Reservation / Goods Receipt Schemas (M006)
+# =============================================================================
+
+class StockReceiveRequest(BaseModel):
+    """Schema for receiving goods into stock (goods receipt)."""
+    qty: int = Field(..., gt=0)
+
+
+class ProjectStatusHistoryResponse(BaseSchema):
+    """Schema for project status change audit trail."""
+    id: int
+    project_id: int
+    from_status: str
+    to_status: str
+    changed_by: Optional[int] = None
+    changed_at: datetime

@@ -137,6 +137,17 @@ app.conf.task_default_queue = 'default'
 app.conf.task_default_exchange = 'default'
 app.conf.task_default_routing_key = 'default'
 
+# Celery Beat Schedule - Periodic Tasks
+from celery.schedules import crontab
+
+app.conf.beat_schedule = {
+    # Daily 9:00 AM digest of all production task delays
+    'daily-delay-digest': {
+        'task': 'tasks.send_delay_digest',
+        'schedule': crontab(hour=9, minute=0),  # Daily at 9:00 AM
+    },
+}
+
 # Import tasks module to register tasks
 # Celery tasks are registered when the module is imported
 from backend import tasks  # noqa: F401

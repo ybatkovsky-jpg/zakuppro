@@ -1,0 +1,45 @@
+{
+  "schemaVersion": 1,
+  "milestoneId": "M005",
+  "sliceId": "S05",
+  "timestamp": 1780489268028,
+  "status": "fail",
+  "durationMs": 6,
+  "checks": [
+    {
+      "category": "tool",
+      "target": "T01 Verify",
+      "passed": false,
+      "message": "Unsafe or non-runnable Verify command: docker images | grep zakuppro-frontend (contains shell control syntax such as pipes, redirects, semicolons, backticks, or command substitution)",
+      "blocking": true
+    },
+    {
+      "category": "tool",
+      "target": "T02 Verify",
+      "passed": false,
+      "message": "Unsafe or non-runnable Verify command: docker-compose config | grep -A 20 'frontend' (contains shell control syntax such as pipes, redirects, semicolons, backticks, or command substitution)",
+      "blocking": true
+    },
+    {
+      "category": "tool",
+      "target": "T03 Verify",
+      "passed": false,
+      "message": "Unsafe or non-runnable Verify command: grep -A 5 'celery-worker:' docker-compose.yml | grep healthcheck (contains shell control syntax such as pipes, redirects, semicolons, backticks, or command substitution)",
+      "blocking": true
+    },
+    {
+      "category": "tool",
+      "target": "T03 Verify",
+      "passed": false,
+      "message": "Unsafe or non-runnable Verify command: grep -A 5 'telegram-bot:' docker-compose.yml | grep healthcheck (contains shell control syntax such as pipes, redirects, semicolons, backticks, or command substitution)",
+      "blocking": true
+    },
+    {
+      "category": "tool",
+      "target": "T07 Verify",
+      "passed": false,
+      "message": "Unsafe or non-runnable Verify command: docker-compose ps | grep -c 'healthy' | xargs -I {} test {} -eq 7 (contains shell control syntax such as pipes, redirects, semicolons, backticks, or command substitution)",
+      "blocking": true
+    }
+  ]
+}

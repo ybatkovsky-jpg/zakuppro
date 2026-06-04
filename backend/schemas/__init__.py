@@ -110,6 +110,10 @@ PaymentDynamicsPoint = _schemas.PaymentDynamicsPoint
 PaymentDynamicsResponse = _schemas.PaymentDynamicsResponse
 UploadBankStatementResponse = _schemas.UploadBankStatementResponse
 
+# Stock Reservation / Goods Receipt schemas (M006)
+StockReceiveRequest = _schemas.StockReceiveRequest
+ProjectStatusHistoryResponse = _schemas.ProjectStatusHistoryResponse
+
 __all__ = [
     # Verification
     "ItemVerification",
@@ -189,4 +193,7 @@ __all__ = [
     "PaymentDynamicsPoint",
     "PaymentDynamicsResponse",
     "UploadBankStatementResponse",
+    # Stock Reservation / Goods Receipt (M006)
+    "StockReceiveRequest",
+    "ProjectStatusHistoryResponse",
 ]

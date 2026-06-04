@@ -44,6 +44,7 @@ class User(Base):
 
     # Relationships
     owned_projects = relationship("Project", back_populates="owner")
+    status_changes = relationship("ProjectStatusHistory", back_populates="changed_by_user")
 
 
 class Project(Base):
@@ -64,6 +65,7 @@ class Project(Base):
     items = relationship("ProjectItem", back_populates="project", cascade="all, delete-orphan", lazy="selectin")
     purchase_orders = relationship("PurchaseOrder", back_populates="project", lazy="selectin")
     production_tasks = relationship("ProductionTask", back_populates="project", lazy="selectin")
+    status_history = relationship("ProjectStatusHistory", back_populates="project", cascade="all, delete-orphan", lazy="selectin")
 
 
 class ProjectItem(Base):
@@ -204,6 +206,20 @@ class StockItem(Base):
     project_items = relationship("ProjectItem", back_populates="stock_item")
 
 
+# =============================================================================
+# Delay Reason Enum for ProductionTask
+# =============================================================================
+
+class DelayReason(str, enum.Enum):
+    """Standard delay reasons for production tasks."""
+    WAITING_MATERIALS = "waiting_materials"  # Ожидание материалов
+    EQUIPMENT_FAILURE = "equipment_failure"  # Поломка оборудования
+    STAFF_SHORTAGE = "staff_shortage"  # Нехватка персонала
+    SUPPLIER_DELAY = "supplier_delay"  # Задержка поставщика
+    TECHNICAL_ISSUES = "technical_issues"  # Технические проблемы
+    OTHER = "other"  # Другое (используется с custom_reason)
+
+
 class ProductionTask(Base):
     """ProductionTask - manufacturing/assembly tasks for projects."""
     __tablename__ = "production_tasks"
@@ -211,6 +227,9 @@ class ProductionTask(Base):
     id = Column(Integer, primary_key=True, index=True)
     project_id = Column(Integer, ForeignKey("projects.id"), nullable=False)
     status = Column(String(50), nullable=False, default="Ожидание комплектации")  # Ожидание комплектации, В работе, Готов к отгрузке, У заказчика
+    expected_completion_date = Column(DateTime(timezone=True), nullable=True)  # Expected completion date for this task
+    delay_reason = Column(Enum(DelayReason), nullable=True)  # Standard delay reason enum
+    custom_reason = Column(Text, nullable=True)  # Custom delay description (used when delay_reason is OTHER or for additional context)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
 
@@ -286,3 +305,19 @@ class FailedTask(Base):
     chat_id = Column(Integer, nullable=True)  # Telegram chat_id for user notification
     context = Column(Text, nullable=True)  # JSON context for debugging/reprocessing
     created_at = Column(DateTime(timezone=True), server_default=func.now())
+
+
+class ProjectStatusHistory(Base):
+    """ProjectStatusHistory - audit trail of project status changes for Kanban guardrails."""
+    __tablename__ = "project_status_history"
+
+    id = Column(Integer, primary_key=True, index=True)
+    project_id = Column(Integer, ForeignKey("projects.id"), nullable=False)
+    from_status = Column(String(50), nullable=False)
+    to_status = Column(String(50), nullable=False)
+    changed_by = Column(Integer, ForeignKey("users.id"), nullable=True)
+    changed_at = Column(DateTime(timezone=True), server_default=func.now())
+
+    # Relationships
+    project = relationship("Project", back_populates="status_history")
+    changed_by_user = relationship("User", back_populates="status_changes")

@@ -21,10 +21,10 @@
 - [x] **S03: S03** `risk:medium` `depends:[]`
   > After this: Дашборд показывает метрики из FastAPI: paid_invoices_count, unpaid_invoices_count, total_paid_amount, total_unpaid_amount. Графики payment dynamics рендерятся данными из /api/analytics/payment-dynamics.
 
-- [ ] **S04: S04** `risk:high` `depends:[]`
+- [x] **S04: S04** `risk:high` `depends:[]`
   > After this: Пользователь 'manager' видит только свои проекты. Пользователь 'warehouse' видит только склад. Пользователь 'owner' видит всё. Попытка доступа к чужим данным возвращает 403.
 
-- [ ] **S05: Production Readiness Polish** `risk:low` `depends:[S01,S02,S03,S04]`
+- [x] **S05: S05** `risk:low` `depends:[]`
   > After this: Приложение запускается в Docker Compose. Frontend на порту 3000, backend на 8000. Все healthchecks green. Smoke test проходит: создать проект → обновить статус → удалить.
 
 ## Boundary Map

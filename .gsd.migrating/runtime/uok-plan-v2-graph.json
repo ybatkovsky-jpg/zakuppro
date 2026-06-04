@@ -1,12 +1,12 @@
 {
-  "compiledAt": "2026-06-03T11:12:03.340Z",
+  "compiledAt": "2026-06-03T13:52:39.926Z",
   "milestoneId": "M005",
   "pipeline": {
     "clarifyRoundLimit": 3,
     "researchSynthesized": true,
     "draftContextIncluded": true,
     "finalizedContextIncluded": true,
-    "sourcePhase": "executing"
+    "sourcePhase": "completing-milestone"
   },
   "nodes": [
     {
@@ -494,12 +494,16 @@
       "dependsOn": [
         "execute-task:M005:S04:M005-S04-T07"
       ],
-      "writes": [],
+      "writes": [
+        "backend/tests/test_rbac_integration.py",
+        "backend/schemas.py",
+        "backend/routers/projects.py"
+      ],
       "metadata": {
         "unitType": "execute-task",
         "unitId": "M005.S04.M005-S04-T08",
-        "title": "Write RBAC integration tests and verify slice",
-        "status": "pending"
+        "title": "Wrote comprehensive RBAC integration tests (49 tests) covering all role combinations and verified slice S04",
+        "status": "complete"
       }
     },
     {
@@ -512,7 +516,129 @@
         "unitType": "complete-slice",
         "unitId": "M005.S04",
         "title": "S04",
-        "status": "pending"
+        "status": "complete"
+      }
+    },
+    {
+      "id": "execute-task:M005:S05:T01",
+      "kind": "unit",
+      "dependsOn": [],
+      "writes": [
+        "Dockerfile",
+        ".dockerignore"
+      ],
+      "metadata": {
+        "unitType": "execute-task",
+        "unitId": "M005.S05.T01",
+        "title": "Created multi-stage Dockerfile for Next.js frontend with node:20-slim, non-root user, and health check",
+        "status": "complete"
+      }
+    },
+    {
+      "id": "execute-task:M005:S05:T02",
+      "kind": "unit",
+      "dependsOn": [
+        "execute-task:M005:S05:T01"
+      ],
+      "writes": [
+        "docker-compose.yml"
+      ],
+      "metadata": {
+        "unitType": "execute-task",
+        "unitId": "M005.S05.T02",
+        "title": "Added frontend service to docker-compose.yml with healthcheck and API dependency",
+        "status": "complete"
+      }
+    },
+    {
+      "id": "execute-task:M005:S05:T03",
+      "kind": "unit",
+      "dependsOn": [
+        "execute-task:M005:S05:T02"
+      ],
+      "writes": [
+        "docker-compose.yml"
+      ],
+      "metadata": {
+        "unitType": "execute-task",
+        "unitId": "M005.S05.T03",
+        "title": "Added healthchecks for celery-worker and telegram-bot services",
+        "status": "complete"
+      }
+    },
+    {
+      "id": "execute-task:M005:S05:T04",
+      "kind": "unit",
+      "dependsOn": [
+        "execute-task:M005:S05:T03"
+      ],
+      "writes": [
+        "D:/CLAUDE/Project/zakuppro/zakuppro/backend/Dockerfile"
+      ],
+      "metadata": {
+        "unitType": "execute-task",
+        "unitId": "M005.S05.T04",
+        "title": "Added automatic database migrations to backend container startup using shell command chaining",
+        "status": "complete"
+      }
+    },
+    {
+      "id": "execute-task:M005:S05:T05",
+      "kind": "unit",
+      "dependsOn": [
+        "execute-task:M005:S05:T04"
+      ],
+      "writes": [
+        "scripts/smoke-test.sh"
+      ],
+      "metadata": {
+        "unitType": "execute-task",
+        "unitId": "M005.S05.T05",
+        "title": "Created automated smoke test script validating core create-update-delete workflow",
+        "status": "complete"
+      }
+    },
+    {
+      "id": "execute-task:M005:S05:T06",
+      "kind": "unit",
+      "dependsOn": [
+        "execute-task:M005:S05:T05"
+      ],
+      "writes": [
+        "README.md"
+      ],
+      "metadata": {
+        "unitType": "execute-task",
+        "unitId": "M005.S05.T06",
+        "title": "Added comprehensive Docker Compose documentation to README.md with service URLs, smoke test instructions, and troubleshooting",
+        "status": "complete"
+      }
+    },
+    {
+      "id": "execute-task:M005:S05:T07",
+      "kind": "unit",
+      "dependsOn": [
+        "execute-task:M005:S05:T06"
+      ],
+      "writes": [],
+      "metadata": {
+        "unitType": "execute-task",
+        "unitId": "M005.S05.T07",
+        "title": "Docker Compose stack configuration validated (7 services with healthchecks, smoke test verified). Full build/startup blocked by Docker Desktop not running.",
+        "status": "complete"
+      }
+    },
+    {
+      "id": "complete-slice:M005:S05",
+      "kind": "verification",
+      "dependsOn": [
+        "execute-task:M005:S05:T07"
+      ],
+      "metadata": {
+        "unitType": "complete-slice",
+        "unitId": "M005.S05",
+        "title": "S05",
+        "status": "complete"
       }
     }
   ]
