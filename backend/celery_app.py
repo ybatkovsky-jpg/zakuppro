@@ -5,7 +5,11 @@ Configures Celery with RabbitMQ broker, DLQ setup, and task settings.
 """
 
 from celery import Celery
+from celery.signals import worker_shutdown
 import os
+import logging
+
+logger = logging.getLogger(__name__)
 
 # Broker URL - uses pyamqp for RabbitMQ connection
 # In Docker, 'rabbitmq' is the service name from docker-compose.yml
@@ -147,6 +151,23 @@ app.conf.beat_schedule = {
         'schedule': crontab(hour=9, minute=0),  # Daily at 9:00 AM
     },
 }
+
+@worker_shutdown.connect
+def on_worker_shutdown(**kwargs):
+    """Log worker shutdown event with active task count.
+
+    task_acks_late=True ensures unacknowledged tasks are re-delivered on restart.
+    """
+    active_count = 0
+    try:
+        inspect = app.control.inspect()
+        active = inspect.active()
+        if active:
+            active_count = sum(len(tasks) for tasks in active.values())
+    except Exception:
+        pass
+    logger.info('Celery worker shutting down — active_tasks=%d', active_count)
+
 
 # Import tasks module to register tasks
 # Celery tasks are registered when the module is imported

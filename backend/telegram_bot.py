@@ -5,7 +5,9 @@ Builds the bot application, registers handlers, and starts polling.
 """
 
 import os
+import signal
 import logging
+from datetime import datetime, timezone
 from pathlib import Path
 
 from telegram import Update
@@ -26,6 +28,46 @@ logger = logging.getLogger(__name__)
 UPLOAD_DIR = Path('/data/uploads')
 UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
 logger.info(f'Upload directory ready: {UPLOAD_DIR}')
+
+# Heartbeat file for Docker healthcheck and /health endpoint monitoring
+HEARTBEAT_FILE = Path('/data/health/telegram_bot_heartbeat')
+
+# Module-level shutdown flag set by signal handler
+shutdown_requested = False
+
+
+def _write_heartbeat(context=None) -> None:
+    """Write UTC timestamp to heartbeat file atomically.
+
+    Called every 30s by PTB JobQueue. Writes to /data/health/telegram_bot_heartbeat
+    so the /health endpoint and Docker healthcheck can verify the bot is alive.
+    """
+    try:
+        HEARTBEAT_FILE.parent.mkdir(parents=True, exist_ok=True)
+        timestamp = datetime.now(timezone.utc).isoformat()
+        tmp = HEARTBEAT_FILE.with_suffix('.tmp')
+        tmp.write_text(timestamp)
+        os.replace(tmp, HEARTBEAT_FILE)
+    except Exception:
+        logger.warning('Failed to write heartbeat', exc_info=True)
+
+
+def _handle_shutdown(signum: int, frame) -> None:
+    """Handle SIGTERM/SIGINT by setting the shutdown flag.
+
+    python-telegram-bot's run_polling() also installs its own handlers that
+    call application.stop(). Our handler runs first to set the flag for logging.
+    """
+    sig_name = signal.Signals(signum).name
+    logger.info('Received signal %s (%d), initiating graceful shutdown', sig_name, signum)
+    global shutdown_requested
+    shutdown_requested = True
+
+
+async def post_init(application: Application) -> None:
+    """Register recurring heartbeat job after application is built."""
+    application.job_queue.run_repeating(_write_heartbeat, interval=30, first=5)
+    logger.info('Heartbeat job registered (every 30s)')
 
 
 async def error_handler(update: Update, context) -> None:
@@ -67,9 +109,18 @@ def main() -> None:
     allowed_chat_ids = os.getenv('ALLOWED_CHAT_IDS', '')
     logger.info(f'ALLOWED_CHAT_IDS configured: {bool(allowed_chat_ids)}')
 
+    # Register signal handlers BEFORE building the application
+    # (PTB's run_polling also registers handlers; ours set the flag first)
+    signal.signal(signal.SIGTERM, _handle_shutdown)
+    signal.signal(signal.SIGINT, _handle_shutdown)
+    logger.info('Signal handlers registered for SIGTERM/SIGINT')
+
     # Build the application
     logger.info('Building Telegram bot application...')
     application = Application.builder().token(bot_token).build()
+
+    # Register post_init callback for heartbeat job
+    application.post_init = post_init
 
     # Register command handlers
     application.add_handler(CommandHandler('start', start_command))
@@ -103,7 +154,10 @@ def main() -> None:
         logger.error(f'Unexpected error: {e}', exc_info=True)
         raise
     finally:
-        logger.info('Bot shutdown complete')
+        if shutdown_requested:
+            logger.info('Telegram bot shutdown complete')
+        else:
+            logger.info('Bot shutdown complete')
 
 
 if __name__ == '__main__':

@@ -5,11 +5,15 @@ Aggregates status of all system services:
 - PostgreSQL database
 - RabbitMQ message broker
 - Celery worker
+- Email worker (heartbeat file)
+- Telegram bot (heartbeat file)
 """
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy import text
 from sqlalchemy.orm import Session
+from pathlib import Path
+from datetime import datetime, timezone
 import logging
 
 from backend.database import get_db
@@ -59,6 +63,62 @@ def check_rabbitmq() -> str:
         return 'error'
 
 
+def check_email_worker(
+    heartbeat_file: str = '/data/health/email_worker_heartbeat',
+    max_age: int = 120,
+) -> str:
+    """
+    Check email worker health by reading its heartbeat file.
+
+    Returns 'ok' if the heartbeat timestamp is within max_age seconds,
+    'error' if the file is missing, unparseable, or stale.
+    """
+    try:
+        timestamp_str = Path(heartbeat_file).read_text().strip()
+        heartbeat_time = datetime.fromisoformat(timestamp_str)
+        age = (datetime.now(timezone.utc) - heartbeat_time).total_seconds()
+        if age < max_age:
+            logger.info(f"Email worker health check: ok (heartbeat {age:.0f}s old)")
+            return 'ok'
+        else:
+            logger.warning(f"Email worker heartbeat is stale: {age:.0f}s old (max {max_age}s)")
+            return 'error'
+    except FileNotFoundError:
+        logger.warning(f"Email worker heartbeat file not found: {heartbeat_file}")
+        return 'error'
+    except (ValueError, OSError) as e:
+        logger.error(f"Email worker heartbeat unparseable: {e}")
+        return 'error'
+
+
+def check_telegram_bot(
+    heartbeat_file: str = '/data/health/telegram_bot_heartbeat',
+    max_age: int = 90,
+) -> str:
+    """
+    Check telegram bot health by reading its heartbeat file.
+
+    Returns 'ok' if the heartbeat timestamp is within max_age seconds,
+    'error' if the file is missing, unparseable, or stale.
+    """
+    try:
+        timestamp_str = Path(heartbeat_file).read_text().strip()
+        heartbeat_time = datetime.fromisoformat(timestamp_str)
+        age = (datetime.now(timezone.utc) - heartbeat_time).total_seconds()
+        if age < max_age:
+            logger.info(f"Telegram bot health check: ok (heartbeat {age:.0f}s old)")
+            return 'ok'
+        else:
+            logger.warning(f"Telegram bot heartbeat is stale: {age:.0f}s old (max {max_age}s)")
+            return 'error'
+    except FileNotFoundError:
+        logger.warning(f"Telegram bot heartbeat file not found: {heartbeat_file}")
+        return 'error'
+    except (ValueError, OSError) as e:
+        logger.error(f"Telegram bot heartbeat unparseable: {e}")
+        return 'error'
+
+
 @router.get("/health")
 async def health_check(db: Session = Depends(get_db)):
     """
@@ -85,15 +145,31 @@ async def health_check(db: Session = Depends(get_db)):
     # Check Celery worker
     celery_worker_status = check_celery_worker()
 
+    # Check email worker (heartbeat file)
+    email_worker_status = check_email_worker()
+
+    # Check telegram bot (heartbeat file)
+    telegram_bot_status = check_telegram_bot()
+
     # Aggregate overall status
-    all_ok = all(status == 'ok' for status in [db_status, rabbitmq_status, celery_worker_status])
+    all_ok = all(
+        status == 'ok' for status in [
+            db_status,
+            rabbitmq_status,
+            celery_worker_status,
+            email_worker_status,
+            telegram_bot_status,
+        ]
+    )
 
     if all_ok:
         return {
             "status": "ok",
             "db": db_status,
             "rabbitmq": rabbitmq_status,
-            "celery_worker": celery_worker_status
+            "celery_worker": celery_worker_status,
+            "email_worker": email_worker_status,
+            "telegram_bot": telegram_bot_status,
         }
     else:
         raise HTTPException(
@@ -102,6 +178,8 @@ async def health_check(db: Session = Depends(get_db)):
                 "status": "degraded",
                 "db": db_status,
                 "rabbitmq": rabbitmq_status,
-                "celery_worker": celery_worker_status
+                "celery_worker": celery_worker_status,
+                "email_worker": email_worker_status,
+                "telegram_bot": telegram_bot_status,
             }
         )

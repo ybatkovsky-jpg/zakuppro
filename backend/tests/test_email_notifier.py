@@ -2,6 +2,7 @@
 Unit tests for Email notification functions.
 """
 
+import asyncio
 import pytest
 import os
 from unittest.mock import Mock, patch, AsyncMock, MagicMock
@@ -273,8 +274,7 @@ class TestSendClarificationEmail:
 
     @pytest.mark.asyncio
     async def test_send_clarification_smtp_error(self):
-        """Test handling SMTP error during send."""
-        # Create a mock SMTP client that raises error on login
+        """Test handling SMTP error during send — retries with backoff, returns False when exhausted."""
         class FailingSMTP:
             async def __aenter__(self):
                 return self
@@ -290,10 +290,11 @@ class TestSendClarificationEmail:
 
         with patch('backend.email_notifier._check_smtp_config', return_value=True):
             with patch('aiosmtplib.SMTP', return_value=FailingSMTP()):
-                result = await send_clarification_email(
-                    supplier_email='supplier@example.com',
-                    invoice_number='INV-123'
-                )
+                with patch('asyncio.sleep', new_callable=AsyncMock):
+                    result = await send_clarification_email(
+                        supplier_email='supplier@example.com',
+                        invoice_number='INV-123'
+                    )
 
         assert result is False
 
@@ -390,8 +391,7 @@ class TestSendTestEmail:
 
     @pytest.mark.asyncio
     async def test_send_test_email_smtp_error(self):
-        """Test handling SMTP error during test email send."""
-        # Create a mock SMTP client that raises error on send_message
+        """Test handling SMTP error during test email send — retries with backoff, returns False when exhausted."""
         class FailingSMTP:
             async def __aenter__(self):
                 return self
@@ -407,7 +407,8 @@ class TestSendTestEmail:
 
         with patch('backend.email_notifier._check_smtp_config', return_value=True):
             with patch('aiosmtplib.SMTP', return_value=FailingSMTP()):
-                result = await send_test_email('test@example.com')
+                with patch('asyncio.sleep', new_callable=AsyncMock):
+                    result = await send_test_email('test@example.com')
 
         assert result is False
 
@@ -452,3 +453,121 @@ class TestEmailContent:
                 body = msg.get_content()
                 assert 'подтвердить' in body
                 assert 'точность' in body or 'Точность' in body
+
+
+@pytest.mark.skipif(not SMTP_AVAILABLE, reason='aiosmtplib not available')
+class TestEmailRetry:
+    """Tests for retry behavior with @retry_async decorator on email functions."""
+
+    @pytest.fixture
+    def mock_smtp(self):
+        """Create mock SMTP client that propagates exceptions from async with."""
+        smtp = AsyncMock()
+        smtp.__aenter__ = AsyncMock(return_value=smtp)
+        smtp.__aexit__ = AsyncMock(return_value=None)  # None = don't suppress exceptions
+        smtp.login = AsyncMock()
+        smtp.send_message = AsyncMock()
+        return smtp
+
+    @pytest.mark.asyncio
+    async def test_retry_on_smtpexception_then_succeed(self, mock_smtp):
+        """SMTP fails with SMTPException twice, succeeds on 3rd attempt."""
+        mock_smtp.send_message = AsyncMock(side_effect=[
+            SMTPException('Connection refused'),
+            SMTPException('TLS negotiation failed'),
+            None,  # Succeeds on 3rd
+        ])
+
+        with patch('backend.email_notifier._check_smtp_config', return_value=True):
+            with patch('aiosmtplib.SMTP', return_value=mock_smtp):
+                with patch('asyncio.sleep', new_callable=AsyncMock):
+                    result = await send_clarification_email(
+                        supplier_email='supplier@example.com',
+                        invoice_number='INV-123',
+                        supplier_name='Test Supplier',
+                    )
+
+        assert result is True
+        assert mock_smtp.send_message.call_count == 3
+
+    @pytest.mark.asyncio
+    async def test_retry_on_smtpexception_all_exhausted(self, mock_smtp):
+        """SMTP always fails with SMTPException — returns False after 3 attempts."""
+        mock_smtp.send_message = AsyncMock(
+            side_effect=SMTPException('Server unavailable')
+        )
+
+        with patch('backend.email_notifier._check_smtp_config', return_value=True):
+            with patch('aiosmtplib.SMTP', return_value=mock_smtp):
+                with patch('asyncio.sleep', new_callable=AsyncMock):
+                    result = await send_clarification_email(
+                        supplier_email='supplier@example.com',
+                        invoice_number='INV-123',
+                    )
+
+        assert result is False
+        assert mock_smtp.send_message.call_count == 3
+
+    @pytest.mark.asyncio
+    async def test_no_retry_on_non_smtp_exception(self):
+        """Non-SMTP exception (ValueError) — no retry, returns False immediately."""
+        with patch('backend.email_notifier._check_smtp_config', return_value=True):
+            with patch(
+                'backend.email_notifier._build_clarification_email',
+                side_effect=ValueError('Malformed email data'),
+            ):
+                with patch('asyncio.sleep', new_callable=AsyncMock) as mock_sleep:
+                    result = await send_clarification_email(
+                        supplier_email='supplier@example.com',
+                        invoice_number='INV-123',
+                    )
+
+        assert result is False
+        mock_sleep.assert_not_called()  # No retry = no sleep
+
+    @pytest.mark.asyncio
+    async def test_retry_attempt_count(self, mock_smtp):
+        """send_message called exactly 3 times when first 2 fail with SMTPException."""
+        mock_smtp.send_message = AsyncMock(side_effect=[
+            SMTPException('Attempt 1 fail'),
+            SMTPException('Attempt 2 fail'),
+            None,  # 3rd succeeds
+        ])
+
+        with patch('backend.email_notifier._check_smtp_config', return_value=True):
+            with patch('aiosmtplib.SMTP', return_value=mock_smtp):
+                with patch('asyncio.sleep', new_callable=AsyncMock):
+                    await send_clarification_email(
+                        supplier_email='supplier@example.com',
+                        invoice_number='INV-123',
+                    )
+
+        assert mock_smtp.send_message.call_count == 3
+
+    @pytest.mark.asyncio
+    async def test_success_no_retry(self, mock_smtp):
+        """Normal success path — no retries triggered, returns True."""
+        with patch('backend.email_notifier._check_smtp_config', return_value=True):
+            with patch('aiosmtplib.SMTP', return_value=mock_smtp):
+                with patch('asyncio.sleep', new_callable=AsyncMock) as mock_sleep:
+                    result = await send_clarification_email(
+                        supplier_email='supplier@example.com',
+                        invoice_number='INV-123',
+                    )
+
+        assert result is True
+        mock_smtp.send_message.assert_called_once()
+        mock_sleep.assert_not_called()  # No failures = no retries
+
+    @pytest.mark.asyncio
+    async def test_retry_respects_config(self):
+        """SMTP config check short-circuits before retry — returns False immediately."""
+        with patch('backend.email_notifier._check_smtp_config', return_value=False):
+            with patch('asyncio.sleep', new_callable=AsyncMock) as mock_sleep:
+                result = await send_clarification_email(
+                    supplier_email='supplier@example.com',
+                    invoice_number='INV-123',
+                )
+
+        assert result is False
+        mock_sleep.assert_not_called()  # Config check short-circuits

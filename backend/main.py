@@ -1,6 +1,9 @@
 """
 FastAPI application entry point for ZakupPro API.
 """
+import logging
+from contextlib import asynccontextmanager
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from backend.routers import (
@@ -18,11 +21,28 @@ from backend.routers import (
     analytics,
 )
 
+logger = logging.getLogger(__name__)
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    """Lifespan context manager for startup and shutdown events.
+
+    On startup: logs that the server is starting.
+    On shutdown: logs shutdown — placeholder for future cleanup
+    (DB connection pools, Celery shutdown, etc.).
+    """
+    logger.info("FastAPI starting up...")
+    yield
+    logger.info("FastAPI shutting down...")
+
+
 # Create FastAPI application
 app = FastAPI(
     title="ZakupPro API",
     version="0.1.0",
     description="API for procurement management system",
+    lifespan=lifespan,
 )
 
 # Configure CORS middleware for development

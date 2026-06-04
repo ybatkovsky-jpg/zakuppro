@@ -13,12 +13,15 @@ import logging
 from typing import Optional, List, Dict, Any
 from email.message import EmailMessage
 
+from backend.retry_utils import retry_async
+
 logger = logging.getLogger(__name__)
 
 # Optional import guard for aiosmtplib availability
 try:
     import aiosmtplib
     SMTP_AVAILABLE = True
+    _SMTP_RETRY_EXCEPTIONS = (aiosmtplib.SMTPException,)
 except ImportError:
     logger.warning(
         'aiosmtplib not available. '
@@ -26,6 +29,7 @@ except ImportError:
     )
     SMTP_AVAILABLE = False
     aiosmtplib = None  # type: ignore
+    _SMTP_RETRY_EXCEPTIONS = ()
 
 
 # Environment variables
@@ -138,6 +142,7 @@ def _build_clarification_email(
     return msg
 
 
+@retry_async(retryable_exceptions=_SMTP_RETRY_EXCEPTIONS)
 async def send_clarification_email(
     supplier_email: str,
     invoice_number: str,
@@ -199,12 +204,8 @@ async def send_clarification_email(
         )
         return True
 
-    except aiosmtplib.SMTPException as e:
-        logger.error(
-            f'SMTP error sending clarification email: '
-            f'to={supplier_email}, invoice={invoice_number}, error={e}'
-        )
-        return False
+    except aiosmtplib.SMTPException:
+        raise  # Let @retry_async decorator handle with backoff
     except Exception as e:
         logger.error(
             f'Unexpected error sending clarification email: '
@@ -214,6 +215,7 @@ async def send_clarification_email(
         return False
 
 
+@retry_async(retryable_exceptions=_SMTP_RETRY_EXCEPTIONS)
 async def send_test_email(
     to_email: str
 ) -> bool:
@@ -255,9 +257,8 @@ async def send_test_email(
         logger.info(f'Test email sent: to={to_email}')
         return True
 
-    except aiosmtplib.SMTPException as e:
-        logger.error(f'SMTP error sending test email: to={to_email}, error={e}')
-        return False
+    except aiosmtplib.SMTPException:
+        raise  # Let @retry_async decorator handle with backoff
     except Exception as e:
         logger.error(
             f'Unexpected error sending test email: to={to_email}, error={e}',
