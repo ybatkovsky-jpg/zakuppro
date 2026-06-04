@@ -1,0 +1,18 @@
+{
+  "schemaVersion": 1,
+  "taskId": "T02",
+  "unitId": "M006/S03/T02",
+  "timestamp": 1780569304764,
+  "passed": false,
+  "discoverySource": "task-plan",
+  "checks": [
+    {
+      "command": "test -f D:/CLAUDE/Project/zakuppro/zakuppro/src/app/api/projects/readiness/route.ts",
+      "exitCode": 1,
+      "durationMs": 29,
+      "verdict": "fail"
+    }
+  ],
+  "retryAttempt": 1,
+  "maxRetries": 2
+}

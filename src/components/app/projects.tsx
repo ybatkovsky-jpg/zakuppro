@@ -22,6 +22,7 @@ import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { Badge } from '@/components/ui/badge'
 import { Skeleton } from '@/components/ui/skeleton'
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 import {
   Table,
   TableBody,
@@ -85,6 +86,8 @@ import {
 import { EmptyState } from '@/components/app/empty-state'
 import { exportToCSV } from '@/lib/export-csv'
 import { pluralize } from '@/lib/utils'
+import { fetchProjectReadiness } from '@/lib/api/projects'
+import type { ProjectReadinessResponse } from '@/types/fastapi'
 
 // --- DnD Constants ---
 
@@ -174,6 +177,19 @@ interface DraggableProjectCardProps {
   deleteMutation: { mutate: (id: string) => void; isPending: boolean }
   formatDate: (d: string) => string
   index: number
+  readinessMap: Record<string, ProjectReadinessResponse>
+}
+
+const READINESS_COLORS: Record<string, string> = {
+  green: 'bg-green-500',
+  yellow: 'bg-amber-500',
+  red: 'bg-red-500',
+}
+
+const READINESS_LABELS: Record<string, string> = {
+  green: 'Все позиции готовы',
+  yellow: 'Часть позиций в процессе',
+  red: 'Требуется закупка',
 }
 
 function DraggableProjectCard({
@@ -183,7 +199,9 @@ function DraggableProjectCard({
   deleteMutation,
   formatDate,
   index,
+  readinessMap,
 }: DraggableProjectCardProps) {
+  const readiness = readinessMap[project.id]
   const { attributes, listeners, setNodeRef, isDragging } = useDraggable({
     id: project.id,
     data: { project, fromStatus: project.status },
@@ -282,6 +300,41 @@ function DraggableProjectCard({
             {new Intl.NumberFormat('ru-RU').format(budget)} ₽
           </span>
         )}
+        {/* Readiness indicator dot */}
+        {readiness && (
+          <Popover>
+            <PopoverTrigger asChild onClick={(e) => e.stopPropagation()}>
+              <span
+                className={`inline-flex items-center gap-1 rounded-full px-1.5 py-0.5 text-[11px] font-medium cursor-help ${readiness.total_count === 0 ? 'bg-green-100 text-green-700 dark:bg-green-950/30 dark:text-green-400' : ''}`}
+                title={READINESS_LABELS[readiness.readiness]}
+              >
+                <span className={`size-2.5 rounded-full ${READINESS_COLORS[readiness.readiness]}`} />
+                {readiness.total_count > 0 && (
+                  <span>{readiness.ready_count}/{readiness.total_count}</span>
+                )}
+              </span>
+            </PopoverTrigger>
+            <PopoverContent className="w-56 p-2 text-xs" onClick={(e) => e.stopPropagation()}>
+              <p className="font-semibold mb-2">{readiness.project_name}</p>
+              <p className="text-muted-foreground mb-1.5">
+                {READINESS_LABELS[readiness.readiness]} ({readiness.ready_count}/{readiness.total_count})
+              </p>
+              {Object.keys(readiness.breakdown).length > 0 && (
+                <div className="space-y-1">
+                  {Object.entries(readiness.breakdown).map(([status, count]) => (
+                    <div key={status} className="flex items-center justify-between">
+                      <span className="text-muted-foreground">{status}</span>
+                      <span className="font-mono font-medium">{count}</span>
+                    </div>
+                  ))}
+                </div>
+              )}
+              {readiness.total_count === 0 && (
+                <p className="text-muted-foreground">Нет позиций</p>
+              )}
+            </PopoverContent>
+          </Popover>
+        )}
       </div>
 
       {/* Date */}
@@ -301,9 +354,10 @@ interface KanbanColumnProps {
   navigateToProject: (id: string) => void
   deleteMutation: { mutate: (id: string) => void; isPending: boolean }
   formatDate: (d: string) => string
+  readinessMap: Record<string, ProjectReadinessResponse>
 }
 
-function KanbanColumn({ col, columnProjects, navigateToProject, deleteMutation, formatDate }: KanbanColumnProps) {
+function KanbanColumn({ col, columnProjects, navigateToProject, deleteMutation, formatDate, readinessMap }: KanbanColumnProps) {
   const { setNodeRef, isOver } = useDroppable({
     id: col.status,
     data: { status: col.status },
@@ -344,6 +398,7 @@ function KanbanColumn({ col, columnProjects, navigateToProject, deleteMutation, 
                 deleteMutation={deleteMutation}
                 formatDate={formatDate}
                 index={idx}
+                readinessMap={readinessMap}
               />
             ))
           )}
@@ -361,9 +416,10 @@ interface KanbanBoardProps {
   deleteMutation: { mutate: (id: string) => void; isPending: boolean }
   statusMutation: { mutate: (data: { projectId: string; status: string; comment?: string }) => void; isPending: boolean }
   formatDate: (d: string) => string
+  readinessMap: Record<string, ProjectReadinessResponse>
 }
 
-function KanbanBoard({ projects, navigateToProject, deleteMutation, statusMutation, formatDate }: KanbanBoardProps) {
+function KanbanBoard({ projects, navigateToProject, deleteMutation, statusMutation, formatDate, readinessMap }: KanbanBoardProps) {
   const { toast } = useToast()
 
   const projectsByStatus = useMemo(() => {
@@ -483,6 +539,7 @@ function KanbanBoard({ projects, navigateToProject, deleteMutation, statusMutati
                 navigateToProject={navigateToProject}
                 deleteMutation={deleteMutation}
                 formatDate={formatDate}
+                readinessMap={readinessMap}
               />
             )
           })}
@@ -577,6 +634,23 @@ export function Projects() {
       return res.json()
     },
   })
+
+  // Readiness data — supplementary, does not block rendering
+  const { data: readinessData = [] } = useQuery<ProjectReadinessResponse[]>({
+    queryKey: ['project-readiness'],
+    queryFn: async () => {
+      const result = await fetchProjectReadiness()
+      if (result.error) throw new Error(result.error.error)
+      return result.data ?? []
+    },
+    enabled: !isLoading && projects.length > 0,
+  })
+
+  const readinessMap = useMemo(() => {
+    const map: Record<string, ProjectReadinessResponse> = {}
+    readinessData.forEach((r) => (map[String(r.project_id)] = r))
+    return map
+  }, [readinessData])
 
   // --- Mutations ---
 
@@ -1003,6 +1077,7 @@ export function Projects() {
           deleteMutation={deleteMutation}
           statusMutation={statusMutation}
           formatDate={formatDate}
+          readinessMap={readinessMap}
         />
       ) : (
         <div className="rounded-xl border overflow-hidden overflow-x-auto">

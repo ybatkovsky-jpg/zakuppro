@@ -7,6 +7,7 @@ from unittest.mock import Mock, MagicMock, patch, call
 from email.message import Message
 from email.mime.multipart import MIMEMultipart
 from email.mime.application import MIMEApplication
+import os
 import signal
 import tempfile
 
@@ -59,6 +60,7 @@ class TestEmailWorker:
 
         assert worker.poll_interval == 60
         assert worker.processed_ids_file == temp_file
+        assert worker.heartbeat_file == '/data/health/email_worker_heartbeat'
         assert worker.processed_ids == set()
         assert worker.running is False
         assert worker.shutdown_requested is False
@@ -344,8 +346,75 @@ class TestEmailWorker:
         # Should increment error count
         assert worker.stats['errors'] == 1
 
+    def test_write_heartbeat_creates_file(self, worker):
+        """Test that _write_heartbeat creates the heartbeat file."""
+        tmpdir = tempfile.mkdtemp()
+        heartbeat_path = os.path.join(tmpdir, 'subdir', 'email_worker_heartbeat')
+        worker.heartbeat_file = heartbeat_path
+
+        worker._write_heartbeat()
+
+        assert os.path.exists(heartbeat_path)
+        content = open(heartbeat_path).read().strip()
+        # Should be a valid ISO timestamp
+        from datetime import datetime
+        parsed = datetime.fromisoformat(content)
+        assert parsed is not None
+
+    def test_write_heartbeat_atomic_replace(self, worker):
+        """Test that _write_heartbeat uses atomic replace (no .tmp leftover)."""
+        tmpdir = tempfile.mkdtemp()
+        heartbeat_path = os.path.join(tmpdir, 'email_worker_heartbeat')
+        worker.heartbeat_file = heartbeat_path
+
+        # Write initial heartbeat
+        worker._write_heartbeat()
+        first_content = open(heartbeat_path).read().strip()
+
+        # Write again — should replace atomically with no .tmp file leftover
+        import time
+        time.sleep(0.01)  # ensure different timestamp
+        worker._write_heartbeat()
+        second_content = open(heartbeat_path).read().strip()
+
+        assert first_content != second_content
+        assert not os.path.exists(heartbeat_path + '.tmp')
+
+    def test_poll_once_writes_heartbeat(self, worker, mock_imap_client):
+        """Test that poll_once writes heartbeat after successful poll."""
+        tmpdir = tempfile.mkdtemp()
+        heartbeat_path = os.path.join(tmpdir, 'email_worker_heartbeat')
+        worker.heartbeat_file = heartbeat_path
+
+        with patch('backend.email_worker.create_imap_client_from_env') as mock_create:
+            mock_create.return_value.__enter__.return_value = mock_imap_client
+
+            worker.poll_once()
+
+            # Heartbeat should be written
+            assert os.path.exists(heartbeat_path)
+
+    def test_poll_once_writes_heartbeat_on_error(self, worker):
+        """Test that poll_once writes heartbeat even when IMAP fails."""
+        tmpdir = tempfile.mkdtemp()
+        heartbeat_path = os.path.join(tmpdir, 'email_worker_heartbeat')
+        worker.heartbeat_file = heartbeat_path
+
+        with patch('backend.email_worker.create_imap_client_from_env') as mock_create:
+            mock_create.side_effect = Exception('Connection failed')
+
+            worker.poll_once()
+
+            # Heartbeat should still be written (finally block)
+            assert os.path.exists(heartbeat_path)
+            assert worker.stats['errors'] == 1
+
     def test_poll_once_no_emails(self, worker, mock_imap_client):
         """Test poll when no new emails."""
+        import tempfile, os
+        tmpdir = tempfile.mkdtemp()
+        worker.heartbeat_file = os.path.join(tmpdir, 'email_worker_heartbeat')
+
         with patch('backend.email_worker.create_imap_client_from_env') as mock_create:
             mock_create.return_value.__enter__.return_value = mock_imap_client
 
@@ -356,6 +425,10 @@ class TestEmailWorker:
 
     def test_poll_once_with_emails(self, worker, mock_imap_client, sample_email):
         """Test successful poll with new emails."""
+        import tempfile, os
+        tmpdir = tempfile.mkdtemp()
+        worker.heartbeat_file = os.path.join(tmpdir, 'email_worker_heartbeat')
+
         mock_imap_client.fetch_unread_emails.return_value = [('123', sample_email)]
         mock_imap_client.get_message_id.return_value = '<msg@example.com>'
         mock_imap_client.extract_attachments.return_value = [
@@ -373,9 +446,15 @@ class TestEmailWorker:
 
                 # Should process email
                 assert worker.stats['emails_processed'] == 1
+                # Heartbeat should be written
+                assert os.path.exists(worker.heartbeat_file)
 
     def test_poll_once_imap_error(self, worker, mock_imap_client):
         """Test handling IMAP error during poll."""
+        import tempfile, os
+        tmpdir = tempfile.mkdtemp()
+        worker.heartbeat_file = os.path.join(tmpdir, 'email_worker_heartbeat')
+
         with patch('backend.email_worker.create_imap_client_from_env') as mock_create:
             mock_create.side_effect = Exception('Connection failed')
 
@@ -383,6 +462,8 @@ class TestEmailWorker:
 
             # Should increment error count
             assert worker.stats['errors'] == 1
+            # Heartbeat should still be written (finally block)
+            assert os.path.exists(worker.heartbeat_file)
 
     def test_print_stats(self, worker):
         """Test statistics printing."""

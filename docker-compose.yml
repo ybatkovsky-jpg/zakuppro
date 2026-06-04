@@ -41,6 +41,8 @@ services:
     depends_on:
       db:
         condition: service_healthy
+    volumes:
+      - healthcheck_data:/data/health
     healthcheck:
       test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')"]
       interval: 30s
@@ -111,9 +113,11 @@ services:
         condition: service_healthy
     volumes:
       - uploads_data:/data/uploads
+      - healthcheck_data:/data/health
     restart: unless-stopped
+    stop_grace_period: 30s
     healthcheck:
-      test: ["CMD-SHELL", "ps aux | grep email_worker | grep -v grep || exit 1"]
+      test: ["CMD-SHELL", "test -f /data/health/email_worker_heartbeat && test $$(($$(date +%s) - $$(stat -c %Y /data/health/email_worker_heartbeat))) -lt 120"]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -147,6 +151,7 @@ services:
     depends_on:
       rabbitmq:
         condition: service_healthy
+    stop_grace_period: 60s
     healthcheck:
       test: ["CMD-SHELL", "celery -A backend.celery_app inspect ping --timeout=2 || exit 1"]
       interval: 30s
@@ -187,9 +192,11 @@ services:
         condition: service_healthy
     volumes:
       - uploads_data:/data/uploads
+      - healthcheck_data:/data/health
     restart: unless-stopped
+    stop_grace_period: 15s
     healthcheck:
-      test: ["CMD-SHELL", "ps aux | grep telegram_bot | grep -v grep || exit 1"]
+      test: ["CMD-SHELL", "test -f /data/health/telegram_bot_heartbeat && test $$(($$(date +%s) - $$(stat -c %Y /data/health/telegram_bot_heartbeat))) -lt 90"]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -225,6 +232,8 @@ volumes:
   rabbitmq_data:
     driver: local
   uploads_data:
+    driver: local
+  healthcheck_data:
     driver: local
 
 networks:

@@ -19,7 +19,7 @@
 - [x] **S02: S02** `risk:medium` `depends:[]`
   > After this: Try to drag a project to В производстве when some items are still К закупке — the transition is rejected with a clear reason. When all items are На складе or Оплачено, the transition succeeds. Status history is recorded on every change. The existing Kanban drag-and-drop still works for valid transitions.
 
-- [ ] **S03: Project Readiness Matrix** `risk:low` `depends:[S01,S02]`
+- [x] **S03: S03** `risk:low` `depends:[]`
   > After this: Open the projects dashboard — each project card shows a colored indicator: green (all items На складе or Оплачено), yellow (some items in transit: Запрошено or Счет получен), red (some items still К закупке). Click through to see the breakdown by item status.
 
 ## Boundary Map

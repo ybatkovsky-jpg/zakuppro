@@ -50,6 +50,9 @@ WORKDIR /app
 # Copy application code
 COPY --chown=appuser:appuser . .
 
+# Create health check data directory for heartbeat files
+RUN mkdir -p /data/health && chown appuser:appuser /data/health
+
 # Switch to non-root user
 USER appuser
 

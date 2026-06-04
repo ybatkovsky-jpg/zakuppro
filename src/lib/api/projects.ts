@@ -5,6 +5,7 @@
 import { apiClient, type ApiResult } from '@/lib/api-client';
 import type {
   ProjectResponse,
+  ProjectReadinessResponse,
   ProjectCreate,
   ProjectUpdate,
   ListQueryParams,
@@ -63,6 +64,17 @@ export async function deleteProject(
 }
 
 // =============================================================================
+// Readiness
+// =============================================================================
+
+/**
+ * Fetch readiness status for all projects
+ */
+export async function fetchProjectReadiness(): Promise<ApiResult<ProjectReadinessResponse[]>> {
+  return apiClient.get<ProjectReadinessResponse[]>(`${BASE_PATH}/readiness`);
+}
+
+// =============================================================================
 // Export grouped object
 // =============================================================================
 
@@ -72,6 +84,7 @@ export const projectsApi = {
   create: createProject,
   update: updateProject,
   delete: deleteProject,
+  readiness: fetchProjectReadiness,
 };
 
 export default projectsApi;

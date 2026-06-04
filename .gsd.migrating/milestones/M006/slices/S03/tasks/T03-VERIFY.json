@@ -1,0 +1,18 @@
+{
+  "schemaVersion": 1,
+  "taskId": "T03",
+  "unitId": "M006/S03/T03",
+  "timestamp": 1780570106817,
+  "passed": false,
+  "discoverySource": "task-plan",
+  "checks": [
+    {
+      "command": "grep -q 'readiness' D:/CLAUDE/Project/zakuppro/zakuppro/src/components/app/projects.tsx",
+      "exitCode": 1,
+      "durationMs": 76,
+      "verdict": "fail"
+    }
+  ],
+  "retryAttempt": 1,
+  "maxRetries": 2
+}

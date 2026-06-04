@@ -22,7 +22,7 @@ import os
 import time
 from typing import Set, Dict, Any
 from pathlib import Path
-from datetime import datetime
+from datetime import datetime, timezone
 
 from backend.celery_app import app
 from backend.services.imap_client import create_imap_client_from_env, IMAPError
@@ -55,6 +55,7 @@ class EmailWorker:
         self,
         poll_interval: int = 60,
         processed_ids_file: str = '/data/processed_message_ids.txt',
+        heartbeat_file: str = '/data/health/email_worker_heartbeat',
     ):
         """
         Initialize email worker.
@@ -62,9 +63,11 @@ class EmailWorker:
         Args:
             poll_interval: Seconds between IMAP polls (default 60)
             processed_ids_file: File to persist processed Message-IDs
+            heartbeat_file: File to write heartbeat timestamp for health checks
         """
         self.poll_interval = poll_interval
         self.processed_ids_file = processed_ids_file
+        self.heartbeat_file = heartbeat_file
         self.processed_ids: Set[str] = set()
         self.running = False
         self.shutdown_requested = False
@@ -294,17 +297,16 @@ class EmailWorker:
 
                 if not emails:
                     logger.info("No new emails to process")
-                    return
+                else:
+                    logger.info(f"Found {len(emails)} unread emails")
 
-                logger.info(f"Found {len(emails)} unread emails")
+                    # Process each email
+                    for uid, message in emails:
+                        if self.shutdown_requested:
+                            logger.info("Shutdown requested, stopping poll")
+                            break
 
-                # Process each email
-                for uid, message in emails:
-                    if self.shutdown_requested:
-                        logger.info("Shutdown requested, stopping poll")
-                        break
-
-                    self.process_email(uid, message, imap_client)
+                        self.process_email(uid, message, imap_client)
 
         except IMAPError as e:
             logger.error(f"IMAP error during poll: {e}")
@@ -312,6 +314,26 @@ class EmailWorker:
         except Exception as e:
             logger.error(f"Unexpected error during poll: {e}")
             self.stats['errors'] += 1
+        finally:
+            # Write heartbeat after each poll iteration (success or fail)
+            self._write_heartbeat()
+
+    def _write_heartbeat(self) -> None:
+        """Write current UTC timestamp to heartbeat file atomically.
+
+        Used by Docker healthcheck and /health endpoint to verify
+        the worker is alive and polling.
+        """
+        try:
+            heartbeat_path = Path(self.heartbeat_file)
+            heartbeat_path.parent.mkdir(parents=True, exist_ok=True)
+
+            # Atomic write: temp file then os.replace
+            tmp_path = heartbeat_path.with_suffix('.tmp')
+            tmp_path.write_text(datetime.now(timezone.utc).isoformat())
+            os.replace(tmp_path, heartbeat_path)
+        except Exception as e:
+            logger.error(f"Failed to write heartbeat file: {e}")
 
     def print_stats(self) -> None:
         """Print current statistics."""
@@ -409,10 +431,17 @@ def main():
         '/data/processed_message_ids.txt'
     )
 
+    # Get heartbeat file path
+    heartbeat_file = os.getenv(
+        'EMAIL_WORKER_HEARTBEAT_FILE',
+        '/data/health/email_worker_heartbeat'
+    )
+
     # Create and start worker
     worker = EmailWorker(
         poll_interval=poll_interval,
         processed_ids_file=processed_ids_file,
+        heartbeat_file=heartbeat_file,
     )
 
     try:

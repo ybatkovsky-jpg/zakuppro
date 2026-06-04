@@ -50,6 +50,19 @@ export interface ProjectResponse extends ProjectBase {
 }
 
 // =============================================================================
+// Project Readiness Types
+// =============================================================================
+
+export interface ProjectReadinessResponse {
+  project_id: number;
+  project_name: string;
+  readiness: 'green' | 'yellow' | 'red';
+  ready_count: number;
+  total_count: number;
+  breakdown: Record<string, number>;
+}
+
+// =============================================================================
 // ProjectItem Types
 // =============================================================================
 

@@ -12,6 +12,7 @@ import {
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 import { motion, useMotionValue, useTransform, animate } from 'framer-motion'
 import {
   BarChart,
@@ -63,6 +64,8 @@ import {
 import { formatRelativeTime, pluralize } from '@/lib/utils'
 import { useMemo, useEffect, useState, useRef } from 'react'
 import Image from 'next/image'
+import { fetchProjectReadiness } from '@/lib/api/projects'
+import type { ProjectReadinessResponse } from '@/types/fastapi'
 import { FinancialMetricsCard } from '@/components/app/financial-metrics-card'
 import { PaymentDynamicsChart } from '@/components/app/payment-dynamics-chart'
 
@@ -1213,6 +1216,36 @@ export function Dashboard() {
 
   if (!data) return null
 
+  // Readiness query — supplementary data, does not block rendering
+  const { data: readinessData = [] } = useQuery<ProjectReadinessResponse[]>({
+    queryKey: ['projectReadiness'],
+    queryFn: async () => {
+      const result = await fetchProjectReadiness()
+      if (result.error) throw new Error(result.error.error)
+      return result.data ?? []
+    },
+    enabled: data.recentProjects.length > 0,
+  })
+
+  const readinessMap = useMemo(() => {
+    const map: Record<string, ProjectReadinessResponse> = {}
+    readinessData.forEach((r) => (map[String(r.project_id)] = r))
+    return map
+  }, [readinessData])
+
+  // Readiness color helpers
+  const READINESS_COLORS: Record<string, string> = {
+    green: 'bg-green-500',
+    yellow: 'bg-amber-500',
+    red: 'bg-red-500',
+  }
+
+  const READINESS_LABELS: Record<string, string> = {
+    green: 'Все позиции готовы',
+    yellow: 'Часть позиций в процессе',
+    red: 'Требуется закупка',
+  }
+
   const formatAmount = (amount: number) =>
     new Intl.NumberFormat('ru-RU', {
       style: 'currency',
@@ -1942,6 +1975,7 @@ export function Dashboard() {
                   {data.recentProjects.map((project, idx) => {
                     const borderColorClass = STATUS_BORDER_COLORS[project.status] ?? 'border-l-slate-400'
                     const gradientBg = STATUS_GRADIENT_BG[project.status] ?? 'from-slate-50/80 to-transparent'
+                    const readiness = readinessMap[project.id]
 
                     return (
                       <motion.button
@@ -1961,7 +1995,43 @@ export function Dashboard() {
                             <h4 className="truncate font-medium leading-tight group-hover:text-primary transition-colors">
                               {project.name}
                             </h4>
-                            {getStatusBadge(project.status)}
+                            <div className="flex items-center gap-1.5 shrink-0">
+                              {getStatusBadge(project.status)}
+                              {readiness && (
+                                <Popover>
+                                  <PopoverTrigger asChild onClick={(e) => e.stopPropagation()}>
+                                    <span
+                                      className="inline-flex items-center gap-0.5 rounded-full px-1.5 py-0.5 text-[11px] font-medium cursor-help"
+                                      title={READINESS_LABELS[readiness.readiness]}
+                                    >
+                                      <span className={`size-2.5 rounded-full ${READINESS_COLORS[readiness.readiness]}`} />
+                                      {readiness.total_count > 0 && (
+                                        <span>{readiness.ready_count}/{readiness.total_count}</span>
+                                      )}
+                                    </span>
+                                  </PopoverTrigger>
+                                  <PopoverContent className="w-56 p-2 text-xs" onClick={(e) => e.stopPropagation()}>
+                                    <p className="font-semibold mb-2">{readiness.project_name}</p>
+                                    <p className="text-muted-foreground mb-1.5">
+                                      {READINESS_LABELS[readiness.readiness]} ({readiness.ready_count}/{readiness.total_count})
+                                    </p>
+                                    {Object.keys(readiness.breakdown).length > 0 && (
+                                      <div className="space-y-1">
+                                        {Object.entries(readiness.breakdown).map(([status, count]) => (
+                                          <div key={status} className="flex items-center justify-between">
+                                            <span className="text-muted-foreground">{status}</span>
+                                            <span className="font-mono font-medium">{count}</span>
+                                          </div>
+                                        ))}
+                                      </div>
+                                    )}
+                                    {readiness.total_count === 0 && (
+                                      <p className="text-muted-foreground">Нет позиций</p>
+                                    )}
+                                  </PopoverContent>
+                                </Popover>
+                              )}
+                            </div>
                           </div>
                           <div className="mt-1.5 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-muted-foreground">
                             {project.customerName && (

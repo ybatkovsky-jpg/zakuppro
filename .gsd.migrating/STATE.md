@@ -1,9 +1,9 @@
 # GSD State
 
-**Active Milestone:** M006: Business Logic Polish
-**Active Slice:** S03: Project Readiness Matrix
-**Phase:** planning
-**Requirements Status:** 4 active · 10 validated · 5 deferred · 0 out of scope
+**Active Milestone:** M007: Production Hardening
+**Active Slice:** S01: Health Checks & Graceful Shutdown
+**Phase:** executing
+**Requirements Status:** 5 active · 14 validated · 0 deferred · 0 out of scope
 
 ## Milestone Registry
 - ✅ **M001:** Foundation: Database Schema and Core API
@@ -11,8 +11,8 @@
 - ✅ **M003:** Email + Invoice Processing
 - ✅ **M004:** Bank Integration + Financials
 - ✅ **M005:** Frontend UI Integration
-- 🔄 **M006:** Business Logic Polish
-- ⬜ **M007:** M007
+- ✅ **M006:** Business Logic Polish
+- 🔄 **M007:** Production Hardening
 
 ## Recent Decisions
 - None recorded
@@ -21,4 +21,4 @@
 - None
 
 ## Next Action
-Slice S03 has no DB tasks. Plan slice tasks before execution.
+Execute T01: Add heartbeat to email-worker + Docker infrastructure (volume, healthchecks, stop_grace_period) in slice S01.

@@ -35,6 +35,22 @@
       "doneMilestones": 5,
       "totalMilestones": 7,
       "phase": "pre-planning"
+    },
+    {
+      "filename": "M006-2026-06-04T11-20-52.html",
+      "generatedAt": "2026-06-04T11:20:52.435Z",
+      "milestoneId": "M006",
+      "milestoneTitle": "Business Logic Polish",
+      "label": "M006: Business Logic Polish",
+      "kind": "milestone",
+      "totalCost": 216.26501800000008,
+      "totalTokens": 10657795,
+      "totalDuration": 56219952,
+      "doneSlices": 28,
+      "totalSlices": 32,
+      "doneMilestones": 6,
+      "totalMilestones": 7,
+      "phase": "planning"
     }
   ]
 }

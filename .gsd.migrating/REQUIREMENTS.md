@@ -4,43 +4,45 @@ This file is the explicit capability and coverage contract for the project.
 
 ## Active
 
-### R003 — AI-Agent Worker для парсинга Excel файлов с помощью pandas и распознавания структуры таблиц (артикул, название, поставщик) через GPT-4o
-- Class: core-capability
+### R015 — Graceful shutdown и cleanup для всех сервисов (Celery workers, Telegram bot, FastAPI) с сохранением состояния задач
+- Class: continuity
 - Status: active
-- Description: AI-Agent Worker для парсинга Excel файлов с помощью pandas и распознавания структуры таблиц (артикул, название, поставщик) через GPT-4o
-- Why it matters: Автоматизация создания BOM из Excel. LLM нужна для dirty таблиц (объединенные ячейки, многоэтажные шапки).
-- Source: user
-- Primary owning slice: M002
-- Validation: S03 verification passed: Celery task parse_excel_bom registered with @app.task, pandas reads Excel files, OpenAI GPT-4o extracts structure with json_schema, Pydantic validates output. Test file sample_bom.xlsx with Russian headers validates dirty table handling.
+- Description: Graceful shutdown и cleanup для всех сервисов (Celery workers, Telegram bot, FastAPI) с сохранением состояния задач
+- Why it matters: Сервисы должны останавливаться корректно, не теряя обрабатываемые задачи.
+- Source: inferred
+- Primary owning slice: M007 S01
 
-### R008 — Сверка счетов (Invoice Verification) через LLM с fuzzy matching для опечаток в названиях и артикулах
-- Class: core-capability
+### R016 — Health check endpoints для всех сервисов (FastAPI, Celery workers, Telegram bot) для мониторинга статуса
+- Class: quality-attribute
 - Status: active
-- Description: Сверка счетов (Invoice Verification) через LLM с fuzzy matching для опечаток в названиях и артикулах
-- Why it matters: Поставщики часто меняют названия. Fuzzy matching + LLM позволяет автоматически сверять счета с заказами.
-- Source: user
-- Primary owning slice: M003
-- Validation: S01: InvoiceItem table created with sku, name, qty columns; Invoice.verification_result JSONB column; llm_provider.py wrapper supports OpenAI, Gemini, Claude with automatic fallback. S04: 9 integration tests verify exact SKU matching, RapidFuzz fuzzy name matching (>85% threshold), quantity discrepancy detection. Fuzzy matching logic complete with multi-tier strategy: exact SKU → OK, SKU differs + 85% similarity → clarification, quantity differs → partial.
+- Description: Health check endpoints для всех сервисов (FastAPI, Celery workers, Telegram bot) для мониторинга статуса
+- Why it matters: Operational visibility. Нужно знать состояние всех компонентов системы.
+- Source: inferred
+- Primary owning slice: M007 S01
 
-### R012 — Kanban-логика с блокировками: переход в "Производство" невозможен пока не все позиции "На складе" или "Оплачено"
-- Class: core-capability
+### R017 — DLQ UI/админка для просмотра и перезапуска неудачных задач с деталями ошибок
+- Class: admin/support
 - Status: active
-- Description: Kanban-логика с блокировками: переход в "Производство" невозможен пока не все позиции "На складе" или "Оплачено"
-- Why it matters: Предотвращение ошибок. Нельзя запускать в производство недоукомплектованные проекты.
-- Source: user
-- Primary owning slice: M006
-- Supporting slices: S01
-- Notes: S01 completed: ProjectStatusHistory model and audit trail created on every status change. S02 completed: transition_service.can_transition_to guard blocks transitions to В производстве when ProjectItems are not all На складе or Оплачено — returns 422 with item-level breakdown. 16 transition tests pass covering blocking/allowing/edge/integration scenarios. Wired into update_project before history recording and write-off.
+- Description: DLQ UI/админка для просмотра и перезапуска неудачных задач с деталями ошибок
+- Why it matters: Удобное управление ошибками без запросов к БД или логам.
+- Source: inferred
+- Primary owning slice: M007 S04
 
-### R014 — Матрица готовности проекта: цветовая индикация (Зелёный — всё есть, Жёлтый — часть в пути, Красный — не заказано)
-- Class: operability
+### R018 — Ролевая модель в Web UI: Владелец (видит всё), Менеджер (только свои проекты), Склад (только остатки)
+- Class: compliance/security
 - Status: active
-- Description: Матрица готовности проекта: цветовая индикация (Зелёный — всё есть, Жёлтый — часть в пути, Красный — не заказано)
-- Why it matters: Быстрая оценка комплектации. Менеджер видит статус проекта на одном экране.
+- Description: Ролевая модель в Web UI: Владелец (видит всё), Менеджер (только свои проекты), Склад (только остатки)
+- Why it matters: Безопасность доступа. Разные пользователи должны видеть только свои данные.
 - Source: user
-- Primary owning slice: M006
-- Supporting slices: S01
-- Notes: S01 completed: StockItem quantities (qty_total, qty_reserved, qty_available) are now guaranteed accurate by service-layer invariant enforcement. S03 can query these values for per-project readiness computation.
+- Primary owning slice: M007 S03
+
+### R019 — Retry с exponential backoff для всех external calls (OpenAI API, email, bank API)
+- Class: quality-attribute
+- Status: active
+- Description: Retry с exponential backoff для всех external calls (OpenAI API, email, bank API)
+- Why it matters: Надёжность при временных сбоях внешних сервисов.
+- Source: inferred
+- Primary owning slice: M007 S02
 
 ## Validated
 
@@ -61,6 +63,15 @@ This file is the explicit capability and coverage contract for the project.
 - Source: user
 - Primary owning slice: M002
 - Validation: S01 established RabbitMQ 3-management with DLQ configuration, Celery worker service with health checks. S01-UAT.md verifies RabbitMQ and Celery worker connectivity.
+
+### R003 — AI-Agent Worker для парсинга Excel файлов с помощью pandas и распознавания структуры таблиц (артикул, название, поставщик) через GPT-4o
+- Class: core-capability
+- Status: validated
+- Description: AI-Agent Worker для парсинга Excel файлов с помощью pandas и распознавания структуры таблиц (артикул, название, поставщик) через GPT-4o
+- Why it matters: Автоматизация создания BOM из Excel. LLM нужна для dirty таблиц (объединенные ячейки, многоэтажные шапки).
+- Source: user
+- Primary owning slice: M002
+- Validation: S03 verification passed: Celery task parse_excel_bom registered with @app.task, pandas reads Excel files, OpenAI GPT-4o extracts structure with json_schema, Pydantic validates output. Test file sample_bom.xlsx with Russian headers validates dirty table handling.
 
 ### R004 — Flow 1: Загрузка BOM через Telegram → парсинг Excel → создание Project + ProjectItem в БД → ответ владельцу со статистикой
 - Class: core-capability
@@ -98,6 +109,15 @@ This file is the explicit capability and coverage contract for the project.
 - Primary owning slice: M003
 - Validation: S05 verification passed: email_notifier.py implements SMTP outbound with aiosmtplib async client. 19 tests covering config validation, email building, async SMTP operations, Russian content. send_clarification_email sends to supplier with BCC to company. Non-blocking pattern matches telegram_notifier.
 
+### R008 — Сверка счетов (Invoice Verification) через LLM с fuzzy matching для опечаток в названиях и артикулах
+- Class: core-capability
+- Status: validated
+- Description: Сверка счетов (Invoice Verification) через LLM с fuzzy matching для опечаток в названиях и артикулах
+- Why it matters: Поставщики часто меняют названия. Fuzzy matching + LLM позволяет автоматически сверять счета с заказами.
+- Source: user
+- Primary owning slice: M003
+- Validation: S01: InvoiceItem table created with sku, name, qty columns; Invoice.verification_result JSONB column; llm_provider.py wrapper supports OpenAI, Gemini, Claude with automatic fallback. S04: 9 integration tests verify exact SKU matching, RapidFuzz fuzzy name matching (>85% threshold), quantity discrepancy detection. Fuzzy matching logic complete with multi-tier strategy: exact SKU → OK, SKU differs + 85% similarity → clarification, quantity differs → partial.
+
 ### R009 — Bank Worker для загрузки выписки (по API банка или через email) и мапинга платежей к счетам по ИНН и сумме
 - Class: integration
 - Status: validated
@@ -126,6 +146,16 @@ This file is the explicit capability and coverage contract for the project.
 - Validation: S05 verification: docker-compose up -d starts all 7 services (db, api, rabbitmq, email-worker, celery-worker, telegram-bot, frontend). All services show healthy status in docker-compose ps. Smoke test (scripts/smoke-test.sh) validates login → create project → update status → delete workflow. Frontend accessible at http://localhost:3000, backend at http://localhost:8000.
 - Notes: S05 completes production readiness: Frontend runs in Docker Compose on port 3000, all 7 services healthy, smoke test validates create → update → delete workflow. Docker deployment documented in README.md.
 
+### R012 — Kanban-логика с блокировками: переход в "Производство" невозможен пока не все позиции "На складе" или "Оплачено"
+- Class: core-capability
+- Status: validated
+- Description: Kanban-логика с блокировками: переход в "Производство" невозможен пока не все позиции "На складе" или "Оплачено"
+- Why it matters: Предотвращение ошибок. Нельзя запускать в производство недоукомплектованные проекты.
+- Source: user
+- Primary owning slice: M006
+- Supporting slices: S01
+- Notes: Validated by M006 S02. can_transition_to guard blocks transition to В производстве when ProjectItems are not all На складе or Оплачено. S02 delivered 16 tests (11 unit + 5 integration) verifying blocking/allowing/edge cases. HTTP 422 returns item-level breakdown. Guard wired into update_project before write-off (no side effects on blocked transitions). Backend test: `pytest tests/test_transition_service.py -v` — 16 passed, 0 failed. Cross-slice: S01 ProjectStatusHistory model + S02 guard = complete audit trail. Verification evidence: gsd_exec run 2a95123c-21a4-4564-8d0f-5339e2b8b1f5.
+
 ### R013 — Резервирование на складе: при создании BOM автоматически резервирует доступные StockItem, списывает при выдаче в производство
 - Class: core-capability
 - Status: validated
@@ -136,47 +166,18 @@ This file is the explicit capability and coverage contract for the project.
 - Validation: S01 delivered stock_service.py with reserve_for_project, write_off_for_production, and receive_stock primitives. Wired auto-reservation into ProjectItem create/update API and Celery BOM task. Wired write-off into project status transition to В производстве. POST /api/stock-items/{id}/receive endpoint with RBAC. Inventory invariant qty_total = qty_reserved + qty_available enforced at service layer with ValueError on violation. 36 tests pass covering all flows including round-trip scenarios.
 - Notes: S01 directly implements reserve_for_project, write_off_for_production, and receive_stock. Enforces inventory invariant at service layer. Reservation triggers on ProjectItem create/update and Celery BOM task. Write-off triggers on project status change to В производстве.
 
-## Deferred
-
-### R015 — Graceful shutdown и cleanup для всех сервисов (Celery workers, Telegram bot, FastAPI) с сохранением состояния задач
-- Class: continuity
-- Status: deferred
-- Description: Graceful shutdown и cleanup для всех сервисов (Celery workers, Telegram bot, FastAPI) с сохранением состояния задач
-- Why it matters: Сервисы должны останавливаться корректно, не теряя обрабатываемые задачи.
-- Source: inferred
-- Primary owning slice: none
-
-### R016 — Health check endpoints для всех сервисов (FastAPI, Celery workers, Telegram bot) для мониторинга статуса
-- Class: quality-attribute
-- Status: deferred
-- Description: Health check endpoints для всех сервисов (FastAPI, Celery workers, Telegram bot) для мониторинга статуса
-- Why it matters: Operational visibility. Нужно знать состояние всех компонентов системы.
-- Source: inferred
-- Primary owning slice: none
-
-### R017 — DLQ UI/админка для просмотра и перезапуска неудачных задач с деталями ошибок
-- Class: admin/support
-- Status: deferred
-- Description: DLQ UI/админка для просмотра и перезапуска неудачных задач с деталями ошибок
-- Why it matters: Удобное управление ошибками без запросов к БД или логам.
-- Source: inferred
-- Primary owning slice: M005
-
-### R018 — Ролевая модель в Web UI: Владелец (видит всё), Менеджер (только свои проекты), Склад (только остатки)
-- Class: compliance/security
-- Status: deferred
-- Description: Ролевая модель в Web UI: Владелец (видит всё), Менеджер (только свои проекты), Склад (только остатки)
-- Why it matters: Безопасность доступа. Разные пользователи должны видеть только свои данные.
+### R014 — Матрица готовности проекта: цветовая индикация (Зелёный — всё есть, Жёлтый — часть в пути, Красный — не заказано)
+- Class: operability
+- Status: validated
+- Description: Матрица готовности проекта: цветовая индикация (Зелёный — всё есть, Жёлтый — часть в пути, Красный — не заказано)
+- Why it matters: Быстрая оценка комплектации. Менеджер видит статус проекта на одном экране.
 - Source: user
-- Primary owning slice: M005
+- Primary owning slice: M006
+- Supporting slices: S01
+- Validation: S03 delivered GET /api/projects/readiness endpoint returning per-project green/yellow/red readiness with item counts by procurement stage. Backend computes readiness using PRODUCTION_READY_STATUSES from transition_service: green (all items На складе or Оплачено, or empty), yellow (no К закупке but some in transit: Запрошено or Счет получен), red (any К закупке). Frontend renders colored dots (green/amber/red) on Kanban DraggableProjectCard and Dashboard recent project cards with click-to-expand Popover tooltips showing per-status breakdowns. 12 backend tests verify readiness computation, RBAC (owner/manager), ownership filtering, and edge cases. TypeScript compilation clean.
+- Notes: S03 completes the readiness matrix: backend readiness endpoint, frontend visual indicators in both Kanban and Dashboard views. Complete end-to-end flow: DB ProjectItem.status counts → FastAPI endpoint → Next.js proxy → React components with colored indicators.
 
-### R019 — Retry с exponential backoff для всех external calls (OpenAI API, email, bank API)
-- Class: quality-attribute
-- Status: deferred
-- Description: Retry с exponential backoff для всех external calls (OpenAI API, email, bank API)
-- Why it matters: Надёжность при временных сбоях внешних сервисов.
-- Source: inferred
-- Primary owning slice: none
+## Deferred
 
 ## Out of Scope
 
@@ -186,27 +187,27 @@ This file is the explicit capability and coverage contract for the project.
 |---|---|---|---|---|---|
 | R001 | integration | validated | M002 | none | S02 implemented document handler, authorization middleware (AuthMiddleware with ALLOWED_CHAT_IDS), file persistence, and outbound Telegram notifications via telegram_notifier.py. S02-UAT.md TC1-TC2 verify authorization and access. |
 | R002 | core-capability | validated | M002 | none | S01 established RabbitMQ 3-management with DLQ configuration, Celery worker service with health checks. S01-UAT.md verifies RabbitMQ and Celery worker connectivity. |
-| R003 | core-capability | active | M002 | none | S03 verification passed: Celery task parse_excel_bom registered with @app.task, pandas reads Excel files, OpenAI GPT-4o extracts structure with json_schema, Pydantic validates output. Test file sample_bom.xlsx with Russian headers validates dirty table handling. |
+| R003 | core-capability | validated | M002 | none | S03 verification passed: Celery task parse_excel_bom registered with @app.task, pandas reads Excel files, OpenAI GPT-4o extracts structure with json_schema, Pydantic validates output. Test file sample_bom.xlsx with Russian headers validates dirty table handling. |
 | R004 | core-capability | validated | M002 | none | S04 process_bom_to_project orchestrates full flow: Excel from Telegram → AI parsing → Project/ProjectItem DB creation → Telegram notifications. Integration test test_process_bom_to_project_task_success verifies. |
 | R005 | failure-visibility | validated | M002 | none | S04 implemented FailedTask model with task_id, error_message, file_path, chat_id, context. DLQ alert via send_dlq_alert to TELEGRAM_OWNER_CHAT_ID. Integration test confirms error path. |
 | R006 | operability | validated | M002 | none | S02 added telegram-bot service to docker-compose.yml with restart: unless-stopped, volume mounts, and ALLOWED_CHAT_IDS environment variable for authorization. |
 | R007 | integration | validated | M003 | none | S05 verification passed: email_notifier.py implements SMTP outbound with aiosmtplib async client. 19 tests covering config validation, email building, async SMTP operations, Russian content. send_clarification_email sends to supplier with BCC to company. Non-blocking pattern matches telegram_notifier. |
-| R008 | core-capability | active | M003 | none | S01: InvoiceItem table created with sku, name, qty columns; Invoice.verification_result JSONB column; llm_provider.py wrapper supports OpenAI, Gemini, Claude with automatic fallback. S04: 9 integration tests verify exact SKU matching, RapidFuzz fuzzy name matching (>85% threshold), quantity discrepancy detection. Fuzzy matching logic complete with multi-tier strategy: exact SKU → OK, SKU differs + 85% similarity → clarification, quantity differs → partial. |
+| R008 | core-capability | validated | M003 | none | S01: InvoiceItem table created with sku, name, qty columns; Invoice.verification_result JSONB column; llm_provider.py wrapper supports OpenAI, Gemini, Claude with automatic fallback. S04: 9 integration tests verify exact SKU matching, RapidFuzz fuzzy name matching (>85% threshold), quantity discrepancy detection. Fuzzy matching logic complete with multi-tier strategy: exact SKU → OK, SKU differs + 85% similarity → clarification, quantity differs → partial. |
 | R009 | integration | validated | M004 | none | M004 Complete: S02 1C ClientBank parser with INN extraction (56 tests). S03 Email Worker routes .txt to parse_bank_statement task (29 tests). S04 PaymentMatcher auto-matches by INN + amount ±5% (84 tests). S06 Manual upload fallback (13 tests). Total: 187 tests passing. End-to-end flow verified: manual upload → parsing → auto-matching → manual resolution → audit retrieval. |
 | R010 | admin/support | validated | M004 | none | M004 Complete: S04 creates UnresolvedTransaction for unmatched payments. S05 provides full CRUD API with filters/search/bulk operations/audit trail. 55 tests (38 unit + 17 integration) verify manual reconciliation workflow. |
 | R011 | primary-user-loop | validated | M005 | none | S05 verification: docker-compose up -d starts all 7 services (db, api, rabbitmq, email-worker, celery-worker, telegram-bot, frontend). All services show healthy status in docker-compose ps. Smoke test (scripts/smoke-test.sh) validates login → create project → update status → delete workflow. Frontend accessible at http://localhost:3000, backend at http://localhost:8000. |
-| R012 | core-capability | active | M006 | S01 | unmapped |
+| R012 | core-capability | validated | M006 | S01 | unmapped |
 | R013 | core-capability | validated | S01 | none | S01 delivered stock_service.py with reserve_for_project, write_off_for_production, and receive_stock primitives. Wired auto-reservation into ProjectItem create/update API and Celery BOM task. Wired write-off into project status transition to В производстве. POST /api/stock-items/{id}/receive endpoint with RBAC. Inventory invariant qty_total = qty_reserved + qty_available enforced at service layer with ValueError on violation. 36 tests pass covering all flows including round-trip scenarios. |
-| R014 | operability | active | M006 | S01 | unmapped |
-| R015 | continuity | deferred | none | none | unmapped |
-| R016 | quality-attribute | deferred | none | none | unmapped |
-| R017 | admin/support | deferred | M005 | none | unmapped |
-| R018 | compliance/security | deferred | M005 | none | unmapped |
-| R019 | quality-attribute | deferred | none | none | unmapped |
+| R014 | operability | validated | M006 | S01 | S03 delivered GET /api/projects/readiness endpoint returning per-project green/yellow/red readiness with item counts by procurement stage. Backend computes readiness using PRODUCTION_READY_STATUSES from transition_service: green (all items На складе or Оплачено, or empty), yellow (no К закупке but some in transit: Запрошено or Счет получен), red (any К закупке). Frontend renders colored dots (green/amber/red) on Kanban DraggableProjectCard and Dashboard recent project cards with click-to-expand Popover tooltips showing per-status breakdowns. 12 backend tests verify readiness computation, RBAC (owner/manager), ownership filtering, and edge cases. TypeScript compilation clean. |
+| R015 | continuity | active | M007 S01 | none | unmapped |
+| R016 | quality-attribute | active | M007 S01 | none | unmapped |
+| R017 | admin/support | active | M007 S04 | none | unmapped |
+| R018 | compliance/security | active | M007 S03 | none | unmapped |
+| R019 | quality-attribute | active | M007 S02 | none | unmapped |
 
 ## Coverage Summary
 
-- Active requirements: 4
-- Mapped to slices: 4
-- Validated: 10 (R001, R002, R004, R005, R006, R007, R009, R010, R011, R013)
+- Active requirements: 5
+- Mapped to slices: 5
+- Validated: 14 (R001, R002, R003, R004, R005, R006, R007, R008, R009, R010, R011, R012, R013, R014)
 - Unmapped active requirements: 0

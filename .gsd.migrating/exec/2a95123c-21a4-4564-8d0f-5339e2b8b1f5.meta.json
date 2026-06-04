@@ -1,0 +1,18 @@
+{
+  "id": "2a95123c-21a4-4564-8d0f-5339e2b8b1f5",
+  "runtime": "bash",
+  "purpose": "S03 slice verification: readiness + stock_service + transition_service tests",
+  "script_chars": 186,
+  "started_at": "2026-06-04T10:51:36.324Z",
+  "finished_at": "2026-06-04T10:51:36.395Z",
+  "exit_code": 1,
+  "signal": null,
+  "timed_out": false,
+  "duration_ms": 71,
+  "stdout_bytes": 544,
+  "stderr_bytes": 0,
+  "stdout_truncated": false,
+  "stderr_truncated": false,
+  "stdout_path": "D:\\CLAUDE\\Project\\zakuppro\\zakuppro\\.gsd\\exec\\2a95123c-21a4-4564-8d0f-5339e2b8b1f5.stdout",
+  "stderr_path": "D:\\CLAUDE\\Project\\zakuppro\\zakuppro\\.gsd\\exec\\2a95123c-21a4-4564-8d0f-5339e2b8b1f5.stderr"
+}
