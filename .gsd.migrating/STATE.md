@@ -21,4 +21,4 @@
 - None
 
 ## Next Action
-Execute T02: Build stock_service.py with three core primitives and add receive endpoint in slice S01.
+Execute T03: Wire reservation into ProjectItem create/update and Celery BOM task in slice S01.

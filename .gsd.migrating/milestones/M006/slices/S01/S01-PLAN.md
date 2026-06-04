@@ -32,7 +32,7 @@ Upstream surfaces consumed: none (first slice in M006). New wiring: stock_servic
   - Files: `backend/models.py`, `backend/schemas.py`, `backend/alembic/versions/xxxx_add_project_status_history.py`
   - Verify: cd backend && python -c "from backend.models import ProjectStatusHistory; print('Model OK')" && python -c "from backend.schemas import StockReceiveRequest, ProjectStatusHistoryResponse; print('Schemas OK')" && python -m alembic upgrade head && python -m alembic downgrade -1 && python -m alembic upgrade head
 
-- [ ] **T02: Build stock_service.py with three core primitives and add receive endpoint** `est:1h`
+- [x] **T02: Build stock_service.py with three core primitives and add receive endpoint** `est:1h`
   Why: stock_service.py is the single entry point for all stock mutations, enforcing the invariant qty_total = qty_reserved + qty_available at the service layer (per MEM105). The receive endpoint gives warehouse operators a way to record incoming goods.
   - Files: `backend/services/stock_service.py`, `backend/routers/stock_items.py`, `backend/schemas.py`
   - Verify: cd backend && python -c "from backend.services.stock_service import reserve_for_project, write_off_for_production, receive_stock; print('All functions importable')" && python -c "from backend.routers.stock_items import router; print('Router has receive endpoint')"

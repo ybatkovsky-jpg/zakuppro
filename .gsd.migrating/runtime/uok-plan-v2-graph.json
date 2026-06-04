@@ -1,5 +1,5 @@
 {
-  "compiledAt": "2026-06-04T08:48:09.665Z",
+  "compiledAt": "2026-06-04T08:53:21.014Z",
   "milestoneId": "M006",
   "pipeline": {
     "clarifyRoundLimit": 3,
@@ -31,8 +31,8 @@
       "metadata": {
         "unitType": "execute-task",
         "unitId": "M006.S01.T02",
-        "title": "Build stock_service.py with three core primitives and add receive endpoint",
-        "status": "pending"
+        "title": "Built stock_service.py with reserve, write-off, and receive primitives, and added POST /api/stock-items/{id}/receive endpoint with RBAC",
+        "status": "complete"
       }
     },
     {
