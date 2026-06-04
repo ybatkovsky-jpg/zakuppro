@@ -5,7 +5,7 @@
 Главная боль: нужно жестко контролировать процесс закупок и производства по каждому проекту, чтобы ничего не забывать и не косячить на любом из этапов.
 
 Сейчас учет ведется хаотично:
-1. Операционный учет — в Google Таблице (https://docs.google.com/spreadsheets/d/1BkY_wtmI7EcHrEssuytejy2OSltuCDGUaM1MNKrNvhA/edit?gid=0#gid=0).
+1. Операционный учет — в Google Таблице.
 2. Управленческий учет и задачи — частично реализованы в MVP (https://github.com/ybatkovsky-jpg/erp-mvp.git).
 3. Ведение проектов — частично реализовано в MVP (https://github.com/ybatkovsky-jpg/zakuppro.git).
 
