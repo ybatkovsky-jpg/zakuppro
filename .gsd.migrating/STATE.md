@@ -21,4 +21,4 @@
 - None
 
 ## Next Action
-Execute T03: Wire reservation into ProjectItem create/update and Celery BOM task in slice S01.
+Execute T04: Wire write-off and status history into project update router in slice S01.

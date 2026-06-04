@@ -1,7 +1,7 @@
-# GSD context snapshot (2026-06-04T08:53:14.396Z)
+# GSD context snapshot (2026-06-04T09:02:37.861Z)
 
 ## Active context
-Active: M006 / S01 / T03 - Wire reservation into ProjectItem create/update and Celery BOM task
+Active: M006 / S01 / T04 - Wire write-off and status history into project update router
 
 ## Top project memories
 - [MEM005] (architecture) SQLAlchemy 2.0 uses relationship(back_populates=...) for bidirectional relationships, not backref. This makes relationships explicit on both sides for clearer code.

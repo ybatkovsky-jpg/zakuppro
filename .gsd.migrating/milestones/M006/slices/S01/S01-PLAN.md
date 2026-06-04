@@ -37,7 +37,7 @@ Upstream surfaces consumed: none (first slice in M006). New wiring: stock_servic
   - Files: `backend/services/stock_service.py`, `backend/routers/stock_items.py`, `backend/schemas.py`
   - Verify: cd backend && python -c "from backend.services.stock_service import reserve_for_project, write_off_for_production, receive_stock; print('All functions importable')" && python -c "from backend.routers.stock_items import router; print('Router has receive endpoint')"
 
-- [ ] **T03: Wire reservation into ProjectItem create/update and Celery BOM task** `est:45m`
+- [x] **T03: Wire reservation into ProjectItem create/update and Celery BOM task** `est:45m`
   Why: Reservation must fire automatically when ProjectItems are created (API or Celery task). This task hooks stock_service.reserve_for_project into the two code paths that create ProjectItems.
   - Files: `backend/routers/project_items.py`, `backend/tasks.py`
   - Verify: cd backend && python -c "from backend.routers.project_items import create_project_item, update_project_item; from backend.tasks import process_bom_to_project; print('All modified functions importable')"

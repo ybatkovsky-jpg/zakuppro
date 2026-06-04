@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "exported_at": "2026-06-04T08:53:01.069Z",
+  "exported_at": "2026-06-04T09:02:30.209Z",
   "milestones": [
     {
       "id": "M001",
@@ -6730,19 +6730,26 @@
       "milestone_id": "M006",
       "slice_id": "S01",
       "id": "T03",
-      "title": "Wire reservation into ProjectItem create/update and Celery BOM task",
-      "status": "pending",
-      "one_liner": "",
-      "narrative": "",
-      "verification_result": "",
+      "title": "Wired stock_service.reserve_for_project into ProjectItem create/update API endpoints and the Celery process_bom_to_project task with live reserved_count.",
+      "status": "complete",
+      "one_liner": "Wired stock_service.reserve_for_project into ProjectItem create/update API endpoints and the Celery process_bom_to_project task with live reserved_count.",
+      "narrative": "Wired the stock reservation primitive into both code paths that create ProjectItems:\n\n1. **`backend/routers/project_items.py`**: Added `from backend.services import stock_service` import. In `create_project_item`, after the initial commit + refresh, called `stock_service.reserve_for_project(new_item.project_id, db)` followed by a second `db.commit()` to persist reservation changes. Same pattern in `update_project_item` after the update commit — re-reserving for the project to capture SKU/qty changes.\n\n2. **`backend/tasks.py`**: Added `from backend.services import stock_service` import in the DB operations block. After Step 5 (ProjectItem creation + commit), call `stock_service.reserve_for_project(project.id, db)` + `db.commit()`. Count linked items via `db.query(ProjectItem).filter(project_id=..., stock_item_id.isnot(None)).count()`. Pass the live `reserved_count` to both `send_completion_message()` and the result dict. Updated the docstring to reflect that reserved_count is no longer hardcoded.\n\nThe reservation fires automatically on API creates/updates and during async BOM processing. StockItem quantities adjust in response, making warehouse state visible via GET /api/stock-items.",
+      "verification_result": "Ran import verification from project root: `python -c \"from backend.routers.project_items import create_project_item, update_project_item; from backend.tasks import process_bom_to_project; print('All modified functions importable')\"` — all three functions imported successfully with the new stock_service wiring. No syntax or import errors.",
       "duration": "",
-      "completed_at": null,
+      "completed_at": "2026-06-04T09:02:30.167Z",
       "blocker_discovered": false,
-      "deviations": "",
-      "known_issues": "",
-      "key_files": [],
-      "key_decisions": [],
-      "full_summary_md": "",
+      "deviations": "The task plan said to call `reserve_for_project(item_data.project_id, db)` after `create_project_item`. Used `new_item.project_id` instead for clarity since the new item object is available post-refresh.",
+      "known_issues": "None",
+      "key_files": [
+        "backend/routers/project_items.py",
+        "backend/tasks.py"
+      ],
+      "key_decisions": [
+        "Reservation fires post-commit in API endpoints so the ProjectItem row exists before stock_service.reserve_for_project queries by project_id",
+        "Second db.commit() after reserve_for_project to persist the StockItem quantity changes within the same request scope",
+        "Reserved count in tasks.py is derived from ProjectItem.stock_item_id IS NOT NULL after reservation — the authoritative signal that a match and reservation occurred"
+      ],
+      "full_summary_md": "---\nid: T03\nparent: S01\nmilestone: M006\nkey_files:\n  - backend/routers/project_items.py\n  - backend/tasks.py\nkey_decisions:\n  - Reservation fires post-commit in API endpoints so the ProjectItem row exists before stock_service.reserve_for_project queries by project_id\n  - Second db.commit() after reserve_for_project to persist the StockItem quantity changes within the same request scope\n  - Reserved count in tasks.py is derived from ProjectItem.stock_item_id IS NOT NULL after reservation — the authoritative signal that a match and reservation occurred\nduration: \nverification_result: passed\ncompleted_at: 2026-06-04T09:02:30.163Z\nblocker_discovered: false\n---\n\n# T03: Wired stock_service.reserve_for_project into ProjectItem create/update API endpoints and the Celery process_bom_to_project task with live reserved_count.\n\n**Wired stock_service.reserve_for_project into ProjectItem create/update API endpoints and the Celery process_bom_to_project task with live reserved_count.**\n\n## What Happened\n\nWired the stock reservation primitive into both code paths that create ProjectItems:\n\n1. **`backend/routers/project_items.py`**: Added `from backend.services import stock_service` import. In `create_project_item`, after the initial commit + refresh, called `stock_service.reserve_for_project(new_item.project_id, db)` followed by a second `db.commit()` to persist reservation changes. Same pattern in `update_project_item` after the update commit — re-reserving for the project to capture SKU/qty changes.\n\n2. **`backend/tasks.py`**: Added `from backend.services import stock_service` import in the DB operations block. After Step 5 (ProjectItem creation + commit), call `stock_service.reserve_for_project(project.id, db)` + `db.commit()`. Count linked items via `db.query(ProjectItem).filter(project_id=..., stock_item_id.isnot(None)).count()`. Pass the live `reserved_count` to both `send_completion_message()` and the result dict. Updated the docstring to reflect that reserved_count is no longer hardcoded.\n\nThe reservation fires automatically on API creates/updates and during async BOM processing. StockItem quantities adjust in response, making warehouse state visible via GET /api/stock-items.\n\n## Verification\n\nRan import verification from project root: `python -c \"from backend.routers.project_items import create_project_item, update_project_item; from backend.tasks import process_bom_to_project; print('All modified functions importable')\"` — all three functions imported successfully with the new stock_service wiring. No syntax or import errors.\n\n## Verification Evidence\n\n| # | Command | Exit Code | Verdict | Duration |\n|---|---------|-----------|---------|----------|\n| 1 | `cd D:/CLAUDE/Project/zakuppro/zakuppro && python -c \"from backend.routers.project_items import create_project_item, update_project_item; from backend.tasks import process_bom_to_project; print('All modified functions importable')\"` | 0 | pass | 1500ms |\n\n## Deviations\n\nThe task plan said to call `reserve_for_project(item_data.project_id, db)` after `create_project_item`. Used `new_item.project_id` instead for clarity since the new item object is available post-refresh.\n\n## Known Issues\n\nNone\n\n## Files Created/Modified\n\n- `backend/routers/project_items.py`\n- `backend/tasks.py`\n",
       "description": "Why: Reservation must fire automatically when ProjectItems are created (API or Celery task). This task hooks stock_service.reserve_for_project into the two code paths that create ProjectItems.\n\nDo:\n1. In `backend/routers/project_items.py`, after creating a ProjectItem (`create_project_item`), call `stock_service.reserve_for_project(item_data.project_id, db)` post-commit. After updating a ProjectItem (`update_project_item`), call `stock_service.reserve_for_project(item.project_id, db)` post-commit.\n2. In `backend/tasks.py` `process_bom_to_project`, after Step 5 (ProjectItem creation + commit), call `stock_service.reserve_for_project(project.id, db)`. Count reserved items. Update the `reserved_count` value in the Telegram completion message (currently hardcoded 0) and in the result dict.\n\nDone when: Creating a ProjectItem with matching warehouse SKU triggers reservation (verified via T05 tests). process_bom_to_project task passes reserved_count > 0 when StockItems match.",
       "estimate": "45m",
       "files": [
@@ -9825,6 +9832,17 @@
       "verdict": "pass",
       "duration_ms": 360,
       "created_at": "2026-06-04T08:53:01.021Z"
+    },
+    {
+      "id": 277,
+      "task_id": "T03",
+      "slice_id": "S01",
+      "milestone_id": "M006",
+      "command": "cd D:/CLAUDE/Project/zakuppro/zakuppro && python -c \"from backend.routers.project_items import create_project_item, update_project_item; from backend.tasks import process_bom_to_project; print('All modified functions importable')\"",
+      "exit_code": 0,
+      "verdict": "pass",
+      "duration_ms": 1500,
+      "created_at": "2026-06-04T09:02:30.167Z"
     }
   ]
 }

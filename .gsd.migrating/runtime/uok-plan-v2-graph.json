@@ -1,5 +1,5 @@
 {
-  "compiledAt": "2026-06-04T08:53:21.014Z",
+  "compiledAt": "2026-06-04T09:02:41.411Z",
   "milestoneId": "M006",
   "pipeline": {
     "clarifyRoundLimit": 3,
@@ -41,12 +41,15 @@
       "dependsOn": [
         "execute-task:M006:S01:T02"
       ],
-      "writes": [],
+      "writes": [
+        "backend/routers/project_items.py",
+        "backend/tasks.py"
+      ],
       "metadata": {
         "unitType": "execute-task",
         "unitId": "M006.S01.T03",
-        "title": "Wire reservation into ProjectItem create/update and Celery BOM task",
-        "status": "pending"
+        "title": "Wired stock_service.reserve_for_project into ProjectItem create/update API endpoints and the Celery process_bom_to_project task with live reserved_count.",
+        "status": "complete"
       }
     },
     {

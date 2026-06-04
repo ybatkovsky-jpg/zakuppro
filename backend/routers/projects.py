@@ -12,10 +12,11 @@ from typing import List
 import logging
 
 from backend.database import get_db
-from backend.models import User, Project
+from backend.models import User, Project, ProjectStatusHistory
 from backend.schemas import ProjectCreate, ProjectUpdate, ProjectResponse
 from backend.auth import get_current_user
 from backend.rbac import require_role, require_ownership, apply_ownership_filter
+from backend.services import stock_service
 from backend.models import Role
 
 logger = logging.getLogger(__name__)
@@ -164,9 +165,29 @@ def update_project(
     # Verify ownership (owner bypass, manager must own)
     require_ownership(project, current_user.id, current_user.role)
 
+    old_status = project.status
+
     update_data = project_data.model_dump(exclude_unset=True)
     for field, value in update_data.items():
         setattr(project, field, value)
+
+    new_status = project.status
+
+    if old_status != new_status:
+        history = ProjectStatusHistory(
+            project_id=project.id,
+            from_status=old_status,
+            to_status=new_status,
+            changed_by=current_user.id,
+        )
+        db.add(history)
+        logger.info(
+            "Project %s status changed from '%s' to '%s' by user %s",
+            project.id, old_status, new_status, current_user.id,
+        )
+
+        if new_status == "В производстве":
+            stock_service.write_off_for_production(project_id, db)
 
     db.commit()
     db.refresh(project)
