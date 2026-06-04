@@ -1,4 +1,7 @@
-# GSD context snapshot (2026-06-04T08:15:00.084Z)
+# GSD context snapshot (2026-06-04T08:48:05.130Z)
+
+## Active context
+Active: M006 / S01 / T02 - Build stock_service.py with three core primitives and add receive endpoint
 
 ## Top project memories
 - [MEM005] (architecture) SQLAlchemy 2.0 uses relationship(back_populates=...) for bidirectional relationships, not backref. This makes relationships explicit on both sides for clearer code.

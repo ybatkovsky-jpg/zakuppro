@@ -1,644 +1,93 @@
 {
-  "compiledAt": "2026-06-03T13:52:39.926Z",
-  "milestoneId": "M005",
+  "compiledAt": "2026-06-04T08:48:09.665Z",
+  "milestoneId": "M006",
   "pipeline": {
     "clarifyRoundLimit": 3,
     "researchSynthesized": true,
-    "draftContextIncluded": true,
+    "draftContextIncluded": false,
     "finalizedContextIncluded": true,
-    "sourcePhase": "completing-milestone"
+    "sourcePhase": "executing"
   },
   "nodes": [
     {
-      "id": "execute-task:M005:S01:T01",
+      "id": "execute-task:M006:S01:T01",
       "kind": "unit",
       "dependsOn": [],
-      "writes": [
-        "src/types/fastapi.ts",
-        "src/lib/api-client.ts",
-        "src/lib/api/projects.ts",
-        "src/lib/api/suppliers.ts",
-        "src/lib/api/stock-items.ts",
-        "src/lib/api/invoices.ts",
-        "src/lib/api/analytics.ts",
-        "src/lib/api/index.ts",
-        ".env"
-      ],
+      "writes": [],
       "metadata": {
         "unitType": "execute-task",
-        "unitId": "M005.S01.T01",
-        "title": "Created TypeScript types and API client for FastAPI backend integration",
+        "unitId": "M006.S01.T01",
+        "title": "Added ProjectStatusHistory model, StockReceiveRequest and ProjectStatusHistoryResponse schemas, and migration 145abfb476cb",
         "status": "complete"
       }
     },
     {
-      "id": "execute-task:M005:S01:T02",
+      "id": "execute-task:M006:S01:T02",
       "kind": "unit",
       "dependsOn": [
-        "execute-task:M005:S01:T01"
+        "execute-task:M006:S01:T01"
       ],
-      "writes": [
-        "src/app/api/projects/route.ts",
-        "src/app/api/projects/[id]/route.ts",
-        "src/app/api/projects/[id]/status/route.ts",
-        "src/app/api/projects/[id]/export/route.ts",
-        "src/app/api/projects/[id]/history/route.ts"
-      ],
+      "writes": [],
       "metadata": {
         "unitType": "execute-task",
-        "unitId": "M005.S01.T02",
-        "title": "Replaced Projects API routes with FastAPI proxy routes",
-        "status": "complete"
+        "unitId": "M006.S01.T02",
+        "title": "Build stock_service.py with three core primitives and add receive endpoint",
+        "status": "pending"
       }
     },
     {
-      "id": "execute-task:M005:S01:T03",
+      "id": "execute-task:M006:S01:T03",
       "kind": "unit",
       "dependsOn": [
-        "execute-task:M005:S01:T02"
+        "execute-task:M006:S01:T02"
       ],
-      "writes": [
-        "src/app/api/suppliers/route.ts",
-        "src/app/api/suppliers/[id]/route.ts"
-      ],
+      "writes": [],
       "metadata": {
         "unitType": "execute-task",
-        "unitId": "M005.S01.T03",
-        "title": "Replaced Suppliers API routes with FastAPI proxy routes",
-        "status": "complete"
+        "unitId": "M006.S01.T03",
+        "title": "Wire reservation into ProjectItem create/update and Celery BOM task",
+        "status": "pending"
       }
     },
     {
-      "id": "execute-task:M005:S01:T04",
+      "id": "execute-task:M006:S01:T04",
       "kind": "unit",
       "dependsOn": [
-        "execute-task:M005:S01:T03"
+        "execute-task:M006:S01:T03"
       ],
-      "writes": [
-        "src/app/api/warehouse/route.ts",
-        "src/app/api/warehouse/[id]/route.ts",
-        "src/app/api/warehouse/export/route.ts",
-        "src/app/api/warehouse/transactions/route.ts"
-      ],
+      "writes": [],
       "metadata": {
         "unitType": "execute-task",
-        "unitId": "M005.S01.T04",
-        "title": "Replaced warehouse Prisma routes with FastAPI proxy, mapping WarehouseItem to StockItem fields",
-        "status": "complete"
+        "unitId": "M006.S01.T04",
+        "title": "Wire write-off and status history into project update router",
+        "status": "pending"
       }
     },
     {
-      "id": "execute-task:M005:S01:T05",
+      "id": "execute-task:M006:S01:T05",
       "kind": "unit",
       "dependsOn": [
-        "execute-task:M005:S01:T04"
+        "execute-task:M006:S01:T04"
       ],
-      "writes": [
-        "src/app/api/invoices/route.ts",
-        "src/app/api/invoices/[id]/route.ts",
-        "src/app/api/invoices/[id]/reconcile/route.ts"
-      ],
+      "writes": [],
       "metadata": {
         "unitType": "execute-task",
-        "unitId": "M005.S01.T05",
-        "title": "Kept invoices in Prisma with FastAPI migration notes; architectural mismatch between Prisma Invoice (direct project/supplier links) and FastAPI Invoice (purchase_order_id) requires frontend schema changes for full migration",
-        "status": "complete"
+        "unitId": "M006.S01.T05",
+        "title": "Write comprehensive tests and verify existing test suite",
+        "status": "pending"
       }
     },
     {
-      "id": "execute-task:M005:S01:T06",
-      "kind": "unit",
-      "dependsOn": [
-        "execute-task:M005:S01:T05"
-      ],
-      "writes": [
-        "src/app/api/analytics/dashboard/route.ts",
-        "src/app/api/analytics/payment-dynamics/route.ts",
-        "src/app/api/analytics/pipeline/route.ts",
-        "src/app/api/analytics/suppliers/route.ts"
-      ],
-      "metadata": {
-        "unitType": "execute-task",
-        "unitId": "M005.S01.T06",
-        "title": "Created dashboard and payment-dynamics proxy routes to FastAPI analytics backend; kept pipeline and suppliers on Prisma with migration notes",
-        "status": "complete"
-      }
-    },
-    {
-      "id": "execute-task:M005:S01:T07",
-      "kind": "unit",
-      "dependsOn": [
-        "execute-task:M005:S01:T06"
-      ],
-      "writes": [
-        ".gsd/milestones/M005/slices/S01/MIGRATION_STATUS.md",
-        "src/app/api/stats/route.ts",
-        "src/app/api/notifications/route.ts",
-        "src/app/api/search/route.ts",
-        "src/app/api/company/route.ts",
-        "src/app/api/requests/route.ts",
-        "src/app/api/deliveries/route.ts",
-        "src/app/api/activity/route.ts",
-        "src/app/api/settings/telegram/route.ts",
-        "src/app/api/settings/email/route.ts",
-        "src/app/api/settings/ai/route.ts",
-        "src/app/api/automation/route.ts",
-        "src/app/api/automation/execute/route.ts",
-        "src/app/api/seed/route.ts"
-      ],
-      "metadata": {
-        "unitType": "execute-task",
-        "unitId": "M005.S01.T07",
-        "title": "Documented Prisma migration status in MIGRATION_STATUS.md; added TODO comments to 27 Prisma-using routes; verified 11 migrated routes have no Prisma imports",
-        "status": "complete"
-      }
-    },
-    {
-      "id": "complete-slice:M005:S01",
+      "id": "complete-slice:M006:S01",
       "kind": "verification",
       "dependsOn": [
-        "execute-task:M005:S01:T07"
+        "execute-task:M006:S01:T05"
       ],
       "metadata": {
         "unitType": "complete-slice",
-        "unitId": "M005.S01",
+        "unitId": "M006.S01",
         "title": "S01",
-        "status": "complete"
-      }
-    },
-    {
-      "id": "execute-task:M005:S02:T01",
-      "kind": "unit",
-      "dependsOn": [],
-      "writes": [
-        "src/components/app/projects.tsx"
-      ],
-      "metadata": {
-        "unitType": "execute-task",
-        "unitId": "M005.S02.T01",
-        "title": "Added @dnd-kit/core imports and VALID_TRANSITIONS constant to projects.tsx for drag-and-drop foundation",
-        "status": "complete"
-      }
-    },
-    {
-      "id": "execute-task:M005:S02:T02",
-      "kind": "unit",
-      "dependsOn": [
-        "execute-task:M005:S02:T01"
-      ],
-      "writes": [
-        "src/components/app/projects.tsx"
-      ],
-      "metadata": {
-        "unitType": "execute-task",
-        "unitId": "M005.S02.T02",
-        "title": "Created DraggableProjectCard component with useDraggable hook, isolating DnD logic from rendering",
-        "status": "complete"
-      }
-    },
-    {
-      "id": "execute-task:M005:S02:T03",
-      "kind": "unit",
-      "dependsOn": [
-        "execute-task:M005:S02:T02"
-      ],
-      "writes": [
-        "src/components/app/projects.tsx"
-      ],
-      "metadata": {
-        "unitType": "execute-task",
-        "unitId": "M005.S02.T03",
-        "title": "Converted Kanban columns to droppable zones with useDroppable hook and isOver highlight",
-        "status": "complete"
-      }
-    },
-    {
-      "id": "execute-task:M005:S02:T04",
-      "kind": "unit",
-      "dependsOn": [
-        "execute-task:M005:S02:T03"
-      ],
-      "writes": [
-        "src/components/app/projects.tsx"
-      ],
-      "metadata": {
-        "unitType": "execute-task",
-        "unitId": "M005.S02.T04",
-        "title": "Implemented DnD context wrapper with onDragEnd handler, DragOverlay, and status update API integration",
-        "status": "complete"
-      }
-    },
-    {
-      "id": "execute-task:M005:S02:T05",
-      "kind": "unit",
-      "dependsOn": [
-        "execute-task:M005:S02:T04"
-      ],
-      "writes": [
-        "src/components/app/projects.tsx"
-      ],
-      "metadata": {
-        "unitType": "execute-task",
-        "unitId": "M005.S02.T05",
-        "title": "Added React Query mutation for status updates, replacing direct fetch in onDragEnd with proper mutation integration",
-        "status": "complete"
-      }
-    },
-    {
-      "id": "execute-task:M005:S02:T06",
-      "kind": "unit",
-      "dependsOn": [
-        "execute-task:M005:S02:T05"
-      ],
-      "writes": [
-        "src/components/app/projects.tsx"
-      ],
-      "metadata": {
-        "unitType": "execute-task",
-        "unitId": "M005.S02.T06",
-        "title": "Added TouchSensor for mobile support and enhanced DragOverlay with column-matching styles, stats display, and improved visual feedback",
-        "status": "complete"
-      }
-    },
-    {
-      "id": "execute-task:M005:S02:T07",
-      "kind": "unit",
-      "dependsOn": [
-        "execute-task:M005:S02:T06"
-      ],
-      "writes": [],
-      "metadata": {
-        "unitType": "execute-task",
-        "unitId": "M005.S02.T07",
-        "title": "Cannot complete slice due to lint errors in fastapi.ts requiring code fixes",
-        "status": "complete"
-      }
-    },
-    {
-      "id": "complete-slice:M005:S02",
-      "kind": "verification",
-      "dependsOn": [
-        "execute-task:M005:S02:T07"
-      ],
-      "metadata": {
-        "unitType": "complete-slice",
-        "unitId": "M005.S02",
-        "title": "S02",
-        "status": "complete"
-      }
-    },
-    {
-      "id": "execute-task:M005:S03:T01",
-      "kind": "unit",
-      "dependsOn": [],
-      "writes": [
-        "src/components/app/financial-metrics-card.tsx"
-      ],
-      "metadata": {
-        "unitType": "execute-task",
-        "unitId": "M005.S03.T01",
-        "title": "Created FinancialMetricsCard component with loading, error, and empty states, displaying paid/unpaid/pending invoice counts and amounts from FastAPI analytics",
-        "status": "complete"
-      }
-    },
-    {
-      "id": "execute-task:M005:S03:T02",
-      "kind": "unit",
-      "dependsOn": [
-        "execute-task:M005:S03:T01"
-      ],
-      "writes": [
-        "src/components/app/payment-dynamics-chart.tsx"
-      ],
-      "metadata": {
-        "unitType": "execute-task",
-        "unitId": "M005.S03.T02",
-        "title": "Created PaymentDynamicsChart component with Recharts AreaChart, date range presets, group_by selector, and loading/error/empty states",
-        "status": "complete"
-      }
-    },
-    {
-      "id": "execute-task:M005:S03:T03",
-      "kind": "unit",
-      "dependsOn": [
-        "execute-task:M005:S03:T02"
-      ],
-      "writes": [
-        "src/components/app/payment-dynamics-chart.tsx",
-        "src/components/app/dashboard.tsx"
-      ],
-      "metadata": {
-        "unitType": "execute-task",
-        "unitId": "M005.S03.T03",
-        "title": "Integrated FinancialMetricsCard and PaymentDynamicsChart components into the dashboard with proper responsive layout",
-        "status": "complete"
-      }
-    },
-    {
-      "id": "execute-task:M005:S03:T04",
-      "kind": "unit",
-      "dependsOn": [
-        "execute-task:M005:S03:T03"
-      ],
-      "writes": [
-        "src/app/api/analytics/dashboard/route.ts",
-        "src/app/api/analytics/payment-dynamics/route.ts",
-        "src/lib/api/analytics.ts"
-      ],
-      "metadata": {
-        "unitType": "execute-task",
-        "unitId": "M005.S03.T04",
-        "title": "Fixed TypeScript null safety issues in analytics API routes and verified successful build",
-        "status": "complete"
-      }
-    },
-    {
-      "id": "complete-slice:M005:S03",
-      "kind": "verification",
-      "dependsOn": [
-        "execute-task:M005:S03:T04"
-      ],
-      "metadata": {
-        "unitType": "complete-slice",
-        "unitId": "M005.S03",
-        "title": "S03",
-        "status": "complete"
-      }
-    },
-    {
-      "id": "execute-task:M005:S04:M005-S04-T01",
-      "kind": "unit",
-      "dependsOn": [],
-      "writes": [
-        "backend/models.py",
-        "backend/schemas.py",
-        "backend/alembic/versions/rbac_models_add_rbac.py",
-        "backend/scripts/seed_owner.py"
-      ],
-      "metadata": {
-        "unitType": "execute-task",
-        "unitId": "M005.S04.M005-S04-T01",
-        "title": "Added User model with RBAC roles, owner relationship to Project, migration, and auth schemas",
-        "status": "complete"
-      }
-    },
-    {
-      "id": "execute-task:M005:S04:M005-S04-T02",
-      "kind": "unit",
-      "dependsOn": [
-        "execute-task:M005:S04:M005-S04-T01"
-      ],
-      "writes": [
-        "backend/auth.py",
-        "backend/schemas.py",
-        "backend/schemas/__init__.py",
-        ".env"
-      ],
-      "metadata": {
-        "unitType": "execute-task",
-        "unitId": "M005.S04.M005-S04-T02",
-        "title": "Implemented JWT authentication module with token creation, verification, and user dependency",
-        "status": "complete"
-      }
-    },
-    {
-      "id": "execute-task:M005:S04:M005-S04-T03",
-      "kind": "unit",
-      "dependsOn": [
-        "execute-task:M005:S04:M005-S04-T02"
-      ],
-      "writes": [
-        "backend/rbac.py"
-      ],
-      "metadata": {
-        "unitType": "execute-task",
-        "unitId": "M005.S04.M005-S04-T03",
-        "title": "Created RBAC authorization middleware with role-based access control, ownership checks, and query filtering utilities",
-        "status": "complete"
-      }
-    },
-    {
-      "id": "execute-task:M005:S04:M005-S04-T04",
-      "kind": "unit",
-      "dependsOn": [
-        "execute-task:M005:S04:M005-S04-T03"
-      ],
-      "writes": [
-        "backend/routers/auth.py",
-        "backend/main.py",
-        "backend/README.md"
-      ],
-      "metadata": {
-        "unitType": "execute-task",
-        "unitId": "M005.S04.M005-S04-T04",
-        "title": "Created JWT login endpoint and integrated auth router into main application",
-        "status": "complete"
-      }
-    },
-    {
-      "id": "execute-task:M005:S04:M005-S04-T05",
-      "kind": "unit",
-      "dependsOn": [
-        "execute-task:M005:S04:M005-S04-T04"
-      ],
-      "writes": [
-        "backend/routers/projects.py"
-      ],
-      "metadata": {
-        "unitType": "execute-task",
-        "unitId": "M005.S04.M005-S04-T05",
-        "title": "Updated projects router with RBAC enforcement for owner, manager, and warehouse roles",
-        "status": "complete"
-      }
-    },
-    {
-      "id": "execute-task:M005:S04:M005-S04-T06",
-      "kind": "unit",
-      "dependsOn": [
-        "execute-task:M005:S04:M005-S04-T05"
-      ],
-      "writes": [
-        "backend/routers/stock_items.py",
-        "backend/routers/suppliers.py",
-        "backend/routers/analytics.py"
-      ],
-      "metadata": {
-        "unitType": "execute-task",
-        "unitId": "M005.S04.M005-S04-T06",
-        "title": "Updated stock_items, suppliers, and analytics routers with RBAC (JWT auth and role-based access control)",
-        "status": "complete"
-      }
-    },
-    {
-      "id": "execute-task:M005:S04:M005-S04-T07",
-      "kind": "unit",
-      "dependsOn": [
-        "execute-task:M005:S04:M005-S04-T06"
-      ],
-      "writes": [
-        "src/types/fastapi.ts",
-        "src/lib/api-client.ts",
-        "src/app/api/auth/login/route.ts",
-        "src/lib/auth.ts"
-      ],
-      "metadata": {
-        "unitType": "execute-task",
-        "unitId": "M005.S04.M005-S04-T07",
-        "title": "Implemented frontend auth types, login API proxy, JWT token storage, and auth helper functions",
-        "status": "complete"
-      }
-    },
-    {
-      "id": "execute-task:M005:S04:M005-S04-T08",
-      "kind": "unit",
-      "dependsOn": [
-        "execute-task:M005:S04:M005-S04-T07"
-      ],
-      "writes": [
-        "backend/tests/test_rbac_integration.py",
-        "backend/schemas.py",
-        "backend/routers/projects.py"
-      ],
-      "metadata": {
-        "unitType": "execute-task",
-        "unitId": "M005.S04.M005-S04-T08",
-        "title": "Wrote comprehensive RBAC integration tests (49 tests) covering all role combinations and verified slice S04",
-        "status": "complete"
-      }
-    },
-    {
-      "id": "complete-slice:M005:S04",
-      "kind": "verification",
-      "dependsOn": [
-        "execute-task:M005:S04:M005-S04-T08"
-      ],
-      "metadata": {
-        "unitType": "complete-slice",
-        "unitId": "M005.S04",
-        "title": "S04",
-        "status": "complete"
-      }
-    },
-    {
-      "id": "execute-task:M005:S05:T01",
-      "kind": "unit",
-      "dependsOn": [],
-      "writes": [
-        "Dockerfile",
-        ".dockerignore"
-      ],
-      "metadata": {
-        "unitType": "execute-task",
-        "unitId": "M005.S05.T01",
-        "title": "Created multi-stage Dockerfile for Next.js frontend with node:20-slim, non-root user, and health check",
-        "status": "complete"
-      }
-    },
-    {
-      "id": "execute-task:M005:S05:T02",
-      "kind": "unit",
-      "dependsOn": [
-        "execute-task:M005:S05:T01"
-      ],
-      "writes": [
-        "docker-compose.yml"
-      ],
-      "metadata": {
-        "unitType": "execute-task",
-        "unitId": "M005.S05.T02",
-        "title": "Added frontend service to docker-compose.yml with healthcheck and API dependency",
-        "status": "complete"
-      }
-    },
-    {
-      "id": "execute-task:M005:S05:T03",
-      "kind": "unit",
-      "dependsOn": [
-        "execute-task:M005:S05:T02"
-      ],
-      "writes": [
-        "docker-compose.yml"
-      ],
-      "metadata": {
-        "unitType": "execute-task",
-        "unitId": "M005.S05.T03",
-        "title": "Added healthchecks for celery-worker and telegram-bot services",
-        "status": "complete"
-      }
-    },
-    {
-      "id": "execute-task:M005:S05:T04",
-      "kind": "unit",
-      "dependsOn": [
-        "execute-task:M005:S05:T03"
-      ],
-      "writes": [
-        "D:/CLAUDE/Project/zakuppro/zakuppro/backend/Dockerfile"
-      ],
-      "metadata": {
-        "unitType": "execute-task",
-        "unitId": "M005.S05.T04",
-        "title": "Added automatic database migrations to backend container startup using shell command chaining",
-        "status": "complete"
-      }
-    },
-    {
-      "id": "execute-task:M005:S05:T05",
-      "kind": "unit",
-      "dependsOn": [
-        "execute-task:M005:S05:T04"
-      ],
-      "writes": [
-        "scripts/smoke-test.sh"
-      ],
-      "metadata": {
-        "unitType": "execute-task",
-        "unitId": "M005.S05.T05",
-        "title": "Created automated smoke test script validating core create-update-delete workflow",
-        "status": "complete"
-      }
-    },
-    {
-      "id": "execute-task:M005:S05:T06",
-      "kind": "unit",
-      "dependsOn": [
-        "execute-task:M005:S05:T05"
-      ],
-      "writes": [
-        "README.md"
-      ],
-      "metadata": {
-        "unitType": "execute-task",
-        "unitId": "M005.S05.T06",
-        "title": "Added comprehensive Docker Compose documentation to README.md with service URLs, smoke test instructions, and troubleshooting",
-        "status": "complete"
-      }
-    },
-    {
-      "id": "execute-task:M005:S05:T07",
-      "kind": "unit",
-      "dependsOn": [
-        "execute-task:M005:S05:T06"
-      ],
-      "writes": [],
-      "metadata": {
-        "unitType": "execute-task",
-        "unitId": "M005.S05.T07",
-        "title": "Docker Compose stack configuration validated (7 services with healthchecks, smoke test verified). Full build/startup blocked by Docker Desktop not running.",
-        "status": "complete"
-      }
-    },
-    {
-      "id": "complete-slice:M005:S05",
-      "kind": "verification",
-      "dependsOn": [
-        "execute-task:M005:S05:T07"
-      ],
-      "metadata": {
-        "unitType": "complete-slice",
-        "unitId": "M005.S05",
-        "title": "S05",
-        "status": "complete"
+        "status": "pending"
       }
     }
   ]

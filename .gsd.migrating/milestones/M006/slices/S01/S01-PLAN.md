@@ -27,7 +27,7 @@ Upstream surfaces consumed: none (first slice in M006). New wiring: stock_servic
 
 ## Tasks
 
-- [ ] **T01: Create ProjectStatusHistory model, migration, and schemas** `est:30m`
+- [x] **T01: Create ProjectStatusHistory model, migration, and schemas** `est:30m`
   Why: ProjectStatusHistory is needed by S02 for Kanban guardrail audit trail, but S01 must write it first so status change tracking works from the start. This task lays the data foundation for both S01 write-off recording and S02 transition validation.
   - Files: `backend/models.py`, `backend/schemas.py`, `backend/alembic/versions/xxxx_add_project_status_history.py`
   - Verify: cd backend && python -c "from backend.models import ProjectStatusHistory; print('Model OK')" && python -c "from backend.schemas import StockReceiveRequest, ProjectStatusHistoryResponse; print('Schemas OK')" && python -m alembic upgrade head && python -m alembic downgrade -1 && python -m alembic upgrade head

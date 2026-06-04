@@ -1,7 +1,7 @@
 # GSD State
 
 **Active Milestone:** M006: Business Logic Polish
-**Active Slice:** S01: Stock Reservation Engine
+**Active Slice:** S01: S01
 **Phase:** executing
 **Requirements Status:** 5 active · 9 validated · 5 deferred · 0 out of scope
 
@@ -21,4 +21,4 @@
 - None
 
 ## Next Action
-Execute T01: Create ProjectStatusHistory model, migration, and schemas in slice S01.
+Execute T02: Build stock_service.py with three core primitives and add receive endpoint in slice S01.

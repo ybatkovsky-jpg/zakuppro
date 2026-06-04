@@ -13,7 +13,7 @@
 
 ## Slices
 
-- [ ] **S01: Stock Reservation Engine** `risk:high` `depends:[]`
+- [ ] **S01: S01** `risk:high` `depends:[]`
   > After this: Create a project with BOM items matching existing warehouse SKUs — StockItem.qty_reserved increases and qty_available decreases automatically. Move project to production — reserved stock is written off (qty_total and qty_reserved decrease). Receive goods via new endpoint — qty_total and qty_available increase. Run the round-trip test proving qty_total = qty_reserved + qty_available always holds.
 
 - [ ] **S02: Kanban Guardrails** `risk:medium` `depends:[S01]`

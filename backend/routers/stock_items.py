@@ -13,7 +13,7 @@ from typing import List
 
 from backend.database import get_db
 from backend.models import StockItem
-from backend.schemas import StockItemCreate, StockItemUpdate, StockItemResponse
+from backend.schemas import StockItemCreate, StockItemUpdate, StockItemResponse, StockReceiveRequest
 from backend.rbac import require_role, Role
 from backend.models import User
 
@@ -122,3 +122,42 @@ def delete_stock_item(
     db.delete(item)
     db.commit()
     logger.info(f"User {current_user.id} deleted stock item {item_id}")
+
+
+@router.post("/{item_id}/receive", response_model=StockItemResponse)
+def receive_stock_item(
+    item_id: int,
+    receive_data: StockReceiveRequest,
+    current_user: User = Depends(require_role([Role.OWNER, Role.MANAGER, Role.WAREHOUSE])),
+    db: Session = Depends(get_db)
+):
+    """
+    Receive goods into stock (goods receipt).
+    Owner, manager, and warehouse roles per D036 decision.
+    Accepts StockReceiveRequest body, calls receive_stock() service,
+    returns updated StockItemResponse.
+    """
+    from backend.services.stock_service import receive_stock
+
+    stock_item = db.query(StockItem).filter(StockItem.id == item_id).first()
+    if not stock_item:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"StockItem with id {item_id} not found"
+        )
+
+    try:
+        receive_stock(item_id, receive_data.qty, db)
+        db.commit()
+        db.refresh(stock_item)
+        logger.info(
+            "User %s received %s units of stock_item_id=%s",
+            current_user.id, receive_data.qty, item_id,
+        )
+        return stock_item
+    except ValueError as e:
+        db.rollback()
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(e)
+        )
