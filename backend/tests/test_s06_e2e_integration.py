@@ -87,7 +87,7 @@ def mock_task_request():
 @pytest.fixture
 def mock_notification_dispatch():
     """Mock dispatch_invoice_notifications for non-blocking verification."""
-    with patch('backend.tasks.dispatch_invoice_notifications') as mock_dispatch:
+    with patch('backend.services.notification_service.dispatch_invoice_notifications') as mock_dispatch:
         mock_dispatch.return_value = None
         yield mock_dispatch
 
@@ -96,56 +96,35 @@ def mock_notification_dispatch():
 # Helper Functions (reused from S03/S04 patterns)
 # =============================================================================
 
-def call_parse_invoice_task(filename, file_content, metadata, task_request):
+def call_parse_invoice_task(filename, file_content, metadata, task_request, db_session=None):
     """
     Helper function to call parse_invoice task business logic directly.
 
-    Bypasses Celery task wrapper to test core business logic with mocked context.
-    Reused from S03 integration tests.
+    Bypasses Celery task wrapper and BaseTask.run_with_context orchestration,
+    calling the execute() method directly with the test DB session.
     """
     from backend.tasks import parse_invoice
 
-    # Create a mock task instance (self) with request attribute
-    class MockTaskInstance:
-        def __init__(self, request_mock):
-            self.request = request_mock
-            self.id = request_mock.id
-
-    mock_self = MockTaskInstance(task_request)
-
-    # Get the actual function from the task object
-    bound_method = parse_invoice.__wrapped__
-    actual_func = bound_method.__func__  # Get the raw function
-
-    # Call the function with our mock self as the first argument
-    return actual_func(mock_self, filename, file_content, metadata)
+    # Call execute() directly, bypassing run_with_context's DB session management
+    return parse_invoice.execute(
+        db_session,
+        filename=filename,
+        file_content=file_content,
+        metadata=metadata,
+    )
 
 
 def call_verify_invoice_task(invoice_id, task_request, db_session):
     """
     Helper function to call verify_invoice task business logic directly.
 
-    Bypasses Celery task wrapper to test core business logic with mocked context.
-    Reused from S04 integration tests.
+    Bypasses Celery task wrapper and BaseTask.run_with_context orchestration,
+    calling the execute() method directly with the test DB session.
     """
     from backend.tasks import verify_invoice_task
 
-    # Create a mock task instance (self) with request attribute
-    class MockTaskInstance:
-        def __init__(self, request_mock):
-            self.request = request_mock
-            self.id = request_mock.id
-
-    mock_self = MockTaskInstance(task_request)
-
-    # Get the actual function from the task object
-    bound_method = verify_invoice_task.__wrapped__
-    actual_func = bound_method.__func__
-
-    # Patch SessionLocal to use test session
-    with patch('backend.database.SessionLocal', return_value=db_session):
-        # Call the function with our mock self as the first argument
-        return actual_func(mock_self, invoice_id)
+    # Call execute() directly, bypassing run_with_context's DB session management
+    return verify_invoice_task.execute(db_session, invoice_id=invoice_id)
 
 
 # =============================================================================
@@ -233,8 +212,7 @@ class TestHappyPathE2E:
             'raw_text': 'Sample invoice text for exact match test'
         }
 
-        with patch('backend.services.invoice_parser.create_invoice_parser') as mock_factory, \
-             patch('backend.database.SessionLocal', return_value=db_session):
+        with patch('backend.services.invoice_parser.create_invoice_parser') as mock_factory:
             mock_parser = Mock()
             mock_parser.parse_file.return_value = mock_parse_result
             mock_factory.return_value = mock_parser
@@ -250,7 +228,8 @@ class TestHappyPathE2E:
                     'to': 'invoices@zakuppro.com',
                     'uid': 12345
                 },
-                mock_task_request
+                mock_task_request,
+                db_session=db_session,
             )
 
         # Verify parse result
@@ -380,8 +359,7 @@ class TestHappyPathE2E:
             'raw_text': 'Fuzzy match test'
         }
 
-        with patch('backend.services.invoice_parser.create_invoice_parser') as mock_factory, \
-             patch('backend.database.SessionLocal', return_value=db_session):
+        with patch('backend.services.invoice_parser.create_invoice_parser') as mock_factory:
             mock_parser = Mock()
             mock_parser.parse_file.return_value = mock_parse_result
             mock_factory.return_value = mock_parser
@@ -397,7 +375,8 @@ class TestHappyPathE2E:
                     'to': 'invoices@zakuppro.com',
                     'uid': 2
                 },
-                mock_task_request
+                mock_task_request,
+                db_session=db_session,
             )
 
         invoice_id = parse_result['invoice_id']
@@ -491,8 +470,7 @@ class TestHappyPathE2E:
             'raw_text': 'Quantity discrepancy test'
         }
 
-        with patch('backend.services.invoice_parser.create_invoice_parser') as mock_factory, \
-             patch('backend.database.SessionLocal', return_value=db_session):
+        with patch('backend.services.invoice_parser.create_invoice_parser') as mock_factory:
             mock_parser = Mock()
             mock_parser.parse_file.return_value = mock_parse_result
             mock_factory.return_value = mock_parser
@@ -508,7 +486,8 @@ class TestHappyPathE2E:
                     'to': 'invoices@zakuppro.com',
                     'uid': 3
                 },
-                mock_task_request
+                mock_task_request,
+                db_session=db_session,
             )
 
         invoice_id = parse_result['invoice_id']
@@ -596,8 +575,7 @@ class TestHappyPathE2E:
             'raw_text': 'Verification failure test'
         }
 
-        with patch('backend.services.invoice_parser.create_invoice_parser') as mock_factory, \
-             patch('backend.database.SessionLocal', return_value=db_session):
+        with patch('backend.services.invoice_parser.create_invoice_parser') as mock_factory:
             mock_parser = Mock()
             mock_parser.parse_file.return_value = mock_parse_result
             mock_factory.return_value = mock_parser
@@ -613,7 +591,8 @@ class TestHappyPathE2E:
                     'to': 'invoices@zakuppro.com',
                     'uid': 4
                 },
-                mock_task_request
+                mock_task_request,
+                db_session=db_session,
             )
 
         invoice_id = parse_result['invoice_id']
@@ -682,8 +661,7 @@ class TestErrorPathE2E:
             "Rate limit exceeded: 429 Too Many Requests"
         )
 
-        with patch('backend.services.invoice_parser.create_invoice_parser', return_value=mock_parser), \
-             patch('backend.database.SessionLocal', return_value=db_session):
+        with patch('backend.services.invoice_parser.create_invoice_parser', return_value=mock_parser):
 
             # LLMRateLimitError should propagate (Celery handles retries)
             with pytest.raises(LLMRateLimitError, match="Rate limit exceeded"):
@@ -698,7 +676,8 @@ class TestErrorPathE2E:
                         'to': 'invoices@zakuppro.com',
                         'uid': 10
                     },
-                    mock_task_request
+                    mock_task_request,
+                    db_session=db_session,
                 )
 
         # Note: In production, Celery retry would catch this and retry.
@@ -745,8 +724,7 @@ class TestErrorPathE2E:
             'raw_text': 'test'
         }
 
-        with patch('backend.services.invoice_parser.create_invoice_parser') as mock_factory, \
-             patch('backend.database.SessionLocal', return_value=db_session):
+        with patch('backend.services.invoice_parser.create_invoice_parser') as mock_factory:
             mock_parser = Mock()
             mock_parser.parse_file.return_value = mock_parse_result
             mock_factory.return_value = mock_parser
@@ -762,7 +740,8 @@ class TestErrorPathE2E:
                     'to': 'invoices@zakuppro.com',
                     'uid': 11
                 },
-                mock_task_request
+                mock_task_request,
+                db_session=db_session,
             )
 
         invoice_id = parse_result['invoice_id']
@@ -771,8 +750,7 @@ class TestErrorPathE2E:
         # Now mock verify_invoice to raise unexpected error
         mock_task_request.id = 'verify-error-dlq-001'
 
-        with patch('backend.services.invoice_verifier.verify_invoice') as mock_verify, \
-             patch('backend.database.SessionLocal', return_value=db_session):
+        with patch('backend.services.invoice_verifier.verify_invoice') as mock_verify:
 
             # Simulate unexpected error (e.g., database connection lost)
             mock_verify.side_effect = RuntimeError("Database connection lost during verification")
@@ -848,8 +826,7 @@ class TestErrorPathE2E:
             'raw_text': 'test'
         }
 
-        with patch('backend.services.invoice_parser.create_invoice_parser') as mock_factory, \
-             patch('backend.database.SessionLocal', return_value=db_session):
+        with patch('backend.services.invoice_parser.create_invoice_parser') as mock_factory:
             mock_parser = Mock()
             mock_parser.parse_file.return_value = mock_parse_result
             mock_factory.return_value = mock_parser
@@ -865,15 +842,15 @@ class TestErrorPathE2E:
                     'to': 'invoices@zakuppro.com',
                     'uid': 12
                 },
-                mock_task_request
+                mock_task_request,
+                db_session=db_session,
             )
 
         invoice_id = parse_result['invoice_id']
         print(f"✓ Parse complete: invoice_id={invoice_id}")
 
         # Mock notification dispatch to raise exception
-        with patch('backend.tasks.dispatch_invoice_notifications') as mock_dispatch, \
-             patch('backend.database.SessionLocal', return_value=db_session):
+        with patch('backend.services.notification_service.dispatch_invoice_notifications') as mock_dispatch:
 
             mock_dispatch.side_effect = RuntimeError("Telegram API timeout")
 
@@ -942,8 +919,7 @@ class TestErrorPathE2E:
             'raw_text': 'test'
         }
 
-        with patch('backend.services.invoice_parser.create_invoice_parser') as mock_factory, \
-             patch('backend.database.SessionLocal', return_value=db_session):
+        with patch('backend.services.invoice_parser.create_invoice_parser') as mock_factory:
             mock_parser = Mock()
             mock_parser.parse_file.return_value = mock_parse_result
             mock_factory.return_value = mock_parser
@@ -959,7 +935,8 @@ class TestErrorPathE2E:
                     'to': 'invoices@zakuppro.com',
                     'uid': 13
                 },
-                mock_task_request
+                mock_task_request,
+                db_session=db_session,
             )
 
         invoice_id = parse_result['invoice_id']
@@ -968,7 +945,6 @@ class TestErrorPathE2E:
         # Mock Telegram notification to raise exception
         # Also mock TELEGRAM_OWNER_CHAT_ID env var to enable notification dispatch
         with patch('backend.telegram_notifier.send_invoice_verified') as mock_send, \
-             patch('backend.database.SessionLocal', return_value=db_session), \
              patch('os.getenv', return_value='123456'):
 
             mock_send.side_effect = RuntimeError("Telegram network timeout")
@@ -1020,8 +996,7 @@ class TestErrorPathDLQ:
             'raw_text': ''
         }
 
-        with patch('backend.services.invoice_parser.create_invoice_parser') as mock_factory, \
-             patch('backend.database.SessionLocal', return_value=db_session):
+        with patch('backend.services.invoice_parser.create_invoice_parser') as mock_factory:
             mock_parser = Mock()
             mock_parser.parse_file.return_value = mock_parse_result
             mock_factory.return_value = mock_parser
@@ -1039,7 +1014,8 @@ class TestErrorPathDLQ:
                         'to': 'invoices@zakuppro.com',
                         'uid': 5
                     },
-                    mock_task_request
+                    mock_task_request,
+                    db_session=db_session,
                 )
 
         # Verify FailedTask record created
@@ -1104,8 +1080,7 @@ class TestErrorPathDLQ:
             'raw_text': ''
         }
 
-        with patch('backend.services.invoice_parser.create_invoice_parser') as mock_factory, \
-             patch('backend.database.SessionLocal', return_value=db_session):
+        with patch('backend.services.invoice_parser.create_invoice_parser') as mock_factory:
             mock_parser = Mock()
             mock_parser.parse_file.return_value = mock_parse_result
             mock_factory.return_value = mock_parser
@@ -1123,7 +1098,8 @@ class TestErrorPathDLQ:
                         'to': 'invoices@zakuppro.com',
                         'uid': 5
                     },
-                    mock_task_request
+                    mock_task_request,
+                    db_session=db_session,
                 )
 
         # Verify FailedTask record created
@@ -1265,8 +1241,7 @@ class TestDirtyFixtureValidation:
             'raw_text': 'Dirty Excel with merged cells'
         }
 
-        with patch('backend.services.invoice_parser.create_invoice_parser') as mock_factory, \
-             patch('backend.database.SessionLocal', return_value=db_session):
+        with patch('backend.services.invoice_parser.create_invoice_parser') as mock_factory:
             mock_parser = Mock()
             mock_parser.parse_file.return_value = mock_parse_result
             mock_factory.return_value = mock_parser
@@ -1282,7 +1257,8 @@ class TestDirtyFixtureValidation:
                     'to': 'invoices@zakuppro.com',
                     'uid': 20
                 },
-                mock_task_request
+                mock_task_request,
+                db_session=db_session,
             )
 
         # Verify parse result
@@ -1394,8 +1370,7 @@ class TestDirtyFixtureValidation:
             'raw_text': 'Счет на оплату'  # Russian text: Invoice for payment
         }
 
-        with patch('backend.services.invoice_parser.create_invoice_parser') as mock_factory, \
-             patch('backend.database.SessionLocal', return_value=db_session):
+        with patch('backend.services.invoice_parser.create_invoice_parser') as mock_factory:
             mock_parser = Mock()
             mock_parser.parse_file.return_value = mock_parse_result
             mock_factory.return_value = mock_parser
@@ -1411,7 +1386,8 @@ class TestDirtyFixtureValidation:
                     'to': 'invoices@zakuppro.com',
                     'uid': 21
                 },
-                mock_task_request
+                mock_task_request,
+                db_session=db_session,
             )
 
         # Verify parse result
@@ -1501,8 +1477,7 @@ class TestDirtyFixtureValidation:
             'raw_text': 'Счет на оплату товаров'
         }
 
-        with patch('backend.services.invoice_parser.create_invoice_parser') as mock_factory, \
-             patch('backend.database.SessionLocal', return_value=db_session):
+        with patch('backend.services.invoice_parser.create_invoice_parser') as mock_factory:
             mock_parser = Mock()
             mock_parser.parse_file.return_value = mock_parse_result
             mock_factory.return_value = mock_parser
@@ -1518,7 +1493,8 @@ class TestDirtyFixtureValidation:
                     'to': 'invoices@zakuppro.com',
                     'uid': 22
                 },
-                mock_task_request
+                mock_task_request,
+                db_session=db_session,
             )
 
         invoice_id = parse_result['invoice_id']
@@ -1538,7 +1514,6 @@ class TestDirtyFixtureValidation:
 
         # Mock Telegram notification to capture messages
         with patch('backend.telegram_notifier.send_invoice_verified') as mock_telegram, \
-             patch('backend.database.SessionLocal', return_value=db_session), \
              patch('os.getenv', return_value='123456'):  # Enable Telegram
 
             verify_result = call_verify_invoice_task(invoice_id, mock_task_request, db_session)

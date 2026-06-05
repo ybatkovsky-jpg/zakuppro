@@ -117,7 +117,7 @@ class TestNotificationRoutingLogic:
 
         with patch('os.getenv', side_effect=selective_getenv), \
              patch('backend.telegram_notifier.send_invoice_verified') as mock_verified:
-            from backend.tasks import dispatch_invoice_notifications
+            from backend.services.notification_service import dispatch_invoice_notifications
             dispatch_invoice_notifications(mock_verification_result, 1, mock_db)
 
             mock_verified.assert_called_once()
@@ -149,7 +149,7 @@ class TestNotificationRoutingLogic:
 
         with patch('os.getenv', side_effect=selective_getenv), \
              patch('backend.telegram_notifier.send_invoice_partial') as mock_partial:
-            from backend.tasks import dispatch_invoice_notifications
+            from backend.services.notification_service import dispatch_invoice_notifications
             dispatch_invoice_notifications(verification_result, 1, mock_db)
 
             mock_partial.assert_called_once()
@@ -170,7 +170,7 @@ class TestNotificationRoutingLogic:
 
         with patch('os.getenv', side_effect=selective_getenv), \
              patch('backend.telegram_notifier.send_invoice_failed') as mock_failed:
-            from backend.tasks import dispatch_invoice_notifications
+            from backend.services.notification_service import dispatch_invoice_notifications
             dispatch_invoice_notifications(verification_result, 1, mock_db)
 
             mock_failed.assert_called_once()
@@ -201,7 +201,7 @@ class TestNotificationRoutingLogic:
         with patch('os.getenv', side_effect=selective_getenv), \
              patch('backend.telegram_notifier.send_invoice_clarification_needed') as mock_telegram, \
              patch('backend.email_notifier.send_clarification_email') as mock_email:
-            from backend.tasks import dispatch_invoice_notifications
+            from backend.services.notification_service import dispatch_invoice_notifications
             dispatch_invoice_notifications(verification_result, 1, mock_db)
 
             mock_telegram.assert_called_once()
@@ -218,7 +218,7 @@ class TestNotificationRoutingLogic:
 
         with patch('os.getenv', side_effect=no_chat_id_getenv), \
              patch('backend.telegram_notifier.send_invoice_verified') as mock_verified:
-            from backend.tasks import dispatch_invoice_notifications
+            from backend.services.notification_service import dispatch_invoice_notifications
             dispatch_invoice_notifications(mock_verification_result, 1, mock_db)
 
             mock_verified.assert_not_called()
@@ -234,7 +234,7 @@ class TestNotificationRoutingLogic:
 
         with patch('os.getenv', side_effect=invalid_chat_id_getenv), \
              patch('backend.telegram_notifier.send_invoice_verified') as mock_verified:
-            from backend.tasks import dispatch_invoice_notifications
+            from backend.services.notification_service import dispatch_invoice_notifications
             dispatch_invoice_notifications(mock_verification_result, 1, mock_db)
 
             mock_verified.assert_not_called()
@@ -247,7 +247,7 @@ class TestNotificationNonBlocking:
         """Test notification returning False doesn't raise exception."""
         with patch('os.getenv', side_effect=selective_getenv), \
              patch('backend.telegram_notifier.send_invoice_verified', return_value=False):
-            from backend.tasks import dispatch_invoice_notifications
+            from backend.services.notification_service import dispatch_invoice_notifications
             # Should not raise
             dispatch_invoice_notifications(mock_verification_result, 1, mock_db)
 
@@ -255,7 +255,7 @@ class TestNotificationNonBlocking:
         """Test notification raising exception is caught and logged."""
         with patch('os.getenv', side_effect=selective_getenv), \
              patch('backend.telegram_notifier.send_invoice_verified', side_effect=Exception('Failed')):
-            from backend.tasks import dispatch_invoice_notifications
+            from backend.services.notification_service import dispatch_invoice_notifications
             # Should not raise
             dispatch_invoice_notifications(mock_verification_result, 1, mock_db)
 
@@ -285,7 +285,7 @@ class TestNotificationRoutingTable:
 
         with patch('os.getenv', side_effect=selective_getenv), \
              patch(f'backend.telegram_notifier.{notification_function}') as mock_notif:
-            from backend.tasks import dispatch_invoice_notifications
+            from backend.services.notification_service import dispatch_invoice_notifications
             dispatch_invoice_notifications(verification_result, 1, mock_db)
 
             # For clarification_needed, both email and telegram are called

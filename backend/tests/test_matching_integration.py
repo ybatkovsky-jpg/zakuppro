@@ -13,7 +13,7 @@ from __future__ import annotations
 import pytest
 from decimal import Decimal
 from datetime import datetime
-from unittest.mock import Mock, patch
+from unittest.mock import Mock
 from pathlib import Path
 
 # Import after adding project root to path
@@ -49,32 +49,22 @@ def call_match_bank_transactions_task_helper(
     bank_statement_id=None,
     bank_transaction_id=None,
     task_request=None,
+    db_session=None,
 ):
     """
     Helper function to call match_bank_transactions task business logic directly.
 
-    This bypasses the Celery task wrapper to test core business logic
-    with mocked context, simulating what the Celery worker would do.
+    This bypasses the Celery task wrapper and the BaseTask.run_with_context
+    orchestration, calling the execute() method directly with the test DB session.
     """
     from backend.tasks import match_bank_transactions
 
-    # Create a mock task instance (self) with request attribute
-    class MockTaskInstance:
-        def __init__(self, request_mock):
-            self.request = request_mock
-            self.id = request_mock.id
-            # Mock retry method
-            self.retry = Mock(side_effect=Exception("Should not retry in tests"))
-
-    mock_self = MockTaskInstance(task_request)
-
-    # Get the actual function from the task object
-    # The __wrapped__ attribute gives us the bound method
-    bound_method = match_bank_transactions.__wrapped__
-    actual_func = bound_method.__func__  # Get the raw function
-
-    # Call the actual function with our mock self
-    return actual_func(mock_self, bank_statement_id, bank_transaction_id)
+    # Call execute() directly, bypassing run_with_context's DB session management
+    return match_bank_transactions.execute(
+        db_session,
+        bank_statement_id=bank_statement_id,
+        bank_transaction_id=bank_transaction_id,
+    )
 
 
 @pytest.fixture
@@ -411,55 +401,55 @@ class TestMatchingIntegration:
         transaction_id = data["transaction"].id
         bank_stmt_id = data["bank_stmt"].id
 
-        with patch('backend.database.SessionLocal', return_value=db_session):
-            # Call match_bank_transactions task
-            result = call_match_bank_transactions_task_helper(
-                bank_statement_id=bank_stmt_id,
-                task_request=mock_task_request,
-            )
+        # Call match_bank_transactions task
+        result = call_match_bank_transactions_task_helper(
+            bank_statement_id=bank_stmt_id,
+            task_request=mock_task_request,
+            db_session=db_session,
+        )
 
-            # Verify task result
-            assert result['status'] == 'success'
-            assert result['matched_count'] == 1
-            assert result['unresolved_count'] == 0
-            assert len(result['payment_ids']) == 1
+        # Verify task result
+        assert result['status'] == 'success'
+        assert result['matched_count'] == 1
+        assert result['unresolved_count'] == 0
+        assert len(result['payment_ids']) == 1
 
-            # Verify Payment record created
-            payments = db_session.query(Payment).all()
-            assert len(payments) == 1
+        # Verify Payment record created
+        payments = db_session.query(Payment).all()
+        assert len(payments) == 1
 
-            payment = payments[0]
-            assert payment.invoice_id == invoice_id
-            assert payment.amount == Decimal("100000.00")
-            assert payment.bank_transaction_id == str(transaction_id)
-            assert payment.payment_date == data["transaction"].transaction_date
+        payment = payments[0]
+        assert payment.invoice_id == invoice_id
+        assert payment.amount == Decimal("100000.00")
+        assert payment.bank_transaction_id == str(transaction_id)
+        assert payment.payment_date == data["transaction"].transaction_date
 
-            # Verify Invoice.status updated (re-query from DB)
-            invoice = db_session.query(Invoice).filter(Invoice.id == invoice_id).first()
-            assert invoice.status == "Оплачен"
+        # Verify Invoice.status updated (re-query from DB)
+        invoice = db_session.query(Invoice).filter(Invoice.id == invoice_id).first()
+        assert invoice.status == "Оплачен"
 
-            # Verify TransactionMatchingAudit record created
-            audits = db_session.query(TransactionMatchingAudit).all()
-            assert len(audits) == 1
+        # Verify TransactionMatchingAudit record created
+        audits = db_session.query(TransactionMatchingAudit).all()
+        assert len(audits) == 1
 
-            audit = audits[0]
-            assert audit.bank_transaction_id == transaction_id
-            assert audit.invoice_id == invoice_id
-            assert audit.matched_by == "auto"
-            assert audit.confidence_score == Decimal("1.00")
-            assert audit.matched_at is not None
+        audit = audits[0]
+        assert audit.bank_transaction_id == transaction_id
+        assert audit.invoice_id == invoice_id
+        assert audit.matched_by == "auto"
+        assert audit.confidence_score == Decimal("1.00")
+        assert audit.matched_at is not None
 
-            # Verify matching_context JSON contains algorithm metadata
-            assert audit.matching_context is not None
-            context = audit.matching_context
-            assert context['algorithm'] == "inn_tolerance_match"
-            assert context['supplier_inn'] == "7701234567"
-            assert context['transaction_amount'] == "100000.00"
-            assert context['invoice_total'] == "100000.00"
-            assert context['confidence_score'] == "1.00"
-            assert 'tolerance_min' in context
-            assert 'tolerance_max' in context
-            assert context['tolerance_percent'] == 5.0
+        # Verify matching_context JSON contains algorithm metadata
+        assert audit.matching_context is not None
+        context = audit.matching_context
+        assert context['algorithm'] == "inn_tolerance_match"
+        assert context['supplier_inn'] == "7701234567"
+        assert context['transaction_amount'] == "100000.00"
+        assert context['invoice_total'] == "100000.00"
+        assert context['confidence_score'] == "1.00"
+        assert 'tolerance_min' in context
+        assert 'tolerance_max' in context
+        assert context['tolerance_percent'] == 5.0
 
     def test_tolerance_match_creates_payment_with_confidence(
         self, db_session, matching_test_data_tolerance, mock_task_request
@@ -477,42 +467,42 @@ class TestMatchingIntegration:
         transaction_id = data["transaction"].id
         bank_stmt_id = data["bank_stmt"].id
 
-        with patch('backend.database.SessionLocal', return_value=db_session):
-            result = call_match_bank_transactions_task_helper(
-                bank_statement_id=bank_stmt_id,
-                task_request=mock_task_request,
-            )
+        result = call_match_bank_transactions_task_helper(
+            bank_statement_id=bank_stmt_id,
+            task_request=mock_task_request,
+            db_session=db_session,
+        )
 
-            assert result['status'] == 'success'
-            assert result['matched_count'] == 1
-            assert result['unresolved_count'] == 0
+        assert result['status'] == 'success'
+        assert result['matched_count'] == 1
+        assert result['unresolved_count'] == 0
 
-            # Verify Payment created
-            payments = db_session.query(Payment).all()
-            assert len(payments) == 1
+        # Verify Payment created
+        payments = db_session.query(Payment).all()
+        assert len(payments) == 1
 
-            payment = payments[0]
-            assert payment.invoice_id == invoice_id
-            assert payment.amount == Decimal("98000.00")
+        payment = payments[0]
+        assert payment.invoice_id == invoice_id
+        assert payment.amount == Decimal("98000.00")
 
-            # Verify Invoice.status updated (re-query from DB)
-            invoice = db_session.query(Invoice).filter(Invoice.id == invoice_id).first()
-            assert invoice.status == "Оплачен"
+        # Verify Invoice.status updated (re-query from DB)
+        invoice = db_session.query(Invoice).filter(Invoice.id == invoice_id).first()
+        assert invoice.status == "Оплачен"
 
-            # Verify TransactionMatchingAudit with <1.00 confidence
-            audits = db_session.query(TransactionMatchingAudit).all()
-            assert len(audits) == 1
+        # Verify TransactionMatchingAudit with <1.00 confidence
+        audits = db_session.query(TransactionMatchingAudit).all()
+        assert len(audits) == 1
 
-            audit = audits[0]
-            # Confidence should be less than 1.00 but >= 0.85
-            assert Decimal("0.85") <= audit.confidence_score < Decimal("1.00")
-            assert audit.confidence_score >= Decimal("0.85")
+        audit = audits[0]
+        # Confidence should be less than 1.00 but >= 0.85
+        assert Decimal("0.85") <= audit.confidence_score < Decimal("1.00")
+        assert audit.confidence_score >= Decimal("0.85")
 
-            # Verify matching_context shows amount difference
-            context = audit.matching_context
-            assert context['transaction_amount'] == "98000.00"
-            assert context['invoice_total'] == "100000.00"
-            assert context['amount_difference'] == "2000.00"
+        # Verify matching_context shows amount difference
+        context = audit.matching_context
+        assert context['transaction_amount'] == "98000.00"
+        assert context['invoice_total'] == "100000.00"
+        assert context['amount_difference'] == "2000.00"
 
     def test_ambiguous_match_creates_unresolved_transaction(
         self, db_session, matching_test_data_ambiguous, mock_task_request
@@ -532,40 +522,40 @@ class TestMatchingIntegration:
         transaction_id = data["transaction"].id
         bank_stmt_id = data["bank_stmt"].id
 
-        with patch('backend.database.SessionLocal', return_value=db_session):
-            result = call_match_bank_transactions_task_helper(
-                bank_statement_id=bank_stmt_id,
-                task_request=mock_task_request,
-            )
+        result = call_match_bank_transactions_task_helper(
+            bank_statement_id=bank_stmt_id,
+            task_request=mock_task_request,
+            db_session=db_session,
+        )
 
-            assert result['status'] == 'success'
-            assert result['matched_count'] == 0
-            assert result['unresolved_count'] == 1
+        assert result['status'] == 'success'
+        assert result['matched_count'] == 0
+        assert result['unresolved_count'] == 1
 
-            # Verify NO Payment created
-            payments = db_session.query(Payment).all()
-            assert len(payments) == 0
+        # Verify NO Payment created
+        payments = db_session.query(Payment).all()
+        assert len(payments) == 0
 
-            # Verify UnresolvedTransaction created
-            unresolved = db_session.query(UnresolvedTransaction).all()
-            assert len(unresolved) == 1
+        # Verify UnresolvedTransaction created
+        unresolved = db_session.query(UnresolvedTransaction).all()
+        assert len(unresolved) == 1
 
-            ur = unresolved[0]
-            assert ur.amount == data["transaction"].amount
-            assert ur.bank_date == data["transaction"].transaction_date
-            assert ur.status == "Не распределено"
-            # Description should reference the transaction
-            assert data["transaction"].description in ur.description or str(transaction_id) in ur.description
+        ur = unresolved[0]
+        assert ur.amount == data["transaction"].amount
+        assert ur.bank_date == data["transaction"].transaction_date
+        assert ur.status == "Не распределено"
+        # Description should reference the transaction
+        assert data["transaction"].description in ur.description or str(transaction_id) in ur.description
 
-            # Verify neither invoice status changed (re-query from DB)
-            invoice1 = db_session.query(Invoice).filter(Invoice.id == invoice1_id).first()
-            invoice2 = db_session.query(Invoice).filter(Invoice.id == invoice2_id).first()
-            assert invoice1.status == "Ожидает оплаты"
-            assert invoice2.status == "Ожидает оплаты"
+        # Verify neither invoice status changed (re-query from DB)
+        invoice1 = db_session.query(Invoice).filter(Invoice.id == invoice1_id).first()
+        invoice2 = db_session.query(Invoice).filter(Invoice.id == invoice2_id).first()
+        assert invoice1.status == "Ожидает оплаты"
+        assert invoice2.status == "Ожидает оплаты"
 
-            # Verify NO TransactionMatchingAudit created
-            audits = db_session.query(TransactionMatchingAudit).all()
-            assert len(audits) == 0
+        # Verify NO TransactionMatchingAudit created
+        audits = db_session.query(TransactionMatchingAudit).all()
+        assert len(audits) == 0
 
     def test_unknown_supplier_creates_unresolved_transaction(
         self, db_session, matching_test_data_unknown_supplier, mock_task_request
@@ -582,28 +572,28 @@ class TestMatchingIntegration:
         transaction_id = data["transaction"].id
         bank_stmt_id = data["bank_stmt"].id
 
-        with patch('backend.database.SessionLocal', return_value=db_session):
-            result = call_match_bank_transactions_task_helper(
-                bank_statement_id=bank_stmt_id,
-                task_request=mock_task_request,
-            )
+        result = call_match_bank_transactions_task_helper(
+            bank_statement_id=bank_stmt_id,
+            task_request=mock_task_request,
+            db_session=db_session,
+        )
 
-            assert result['status'] == 'success'
-            assert result['matched_count'] == 0
-            assert result['unresolved_count'] == 1
+        assert result['status'] == 'success'
+        assert result['matched_count'] == 0
+        assert result['unresolved_count'] == 1
 
-            # Verify NO Payment created
-            payments = db_session.query(Payment).all()
-            assert len(payments) == 0
+        # Verify NO Payment created
+        payments = db_session.query(Payment).all()
+        assert len(payments) == 0
 
-            # Verify UnresolvedTransaction created
-            unresolved = db_session.query(UnresolvedTransaction).all()
-            assert len(unresolved) == 1
+        # Verify UnresolvedTransaction created
+        unresolved = db_session.query(UnresolvedTransaction).all()
+        assert len(unresolved) == 1
 
-            ur = unresolved[0]
-            assert ur.amount == data["transaction"].amount
-            assert ur.bank_date == data["transaction"].transaction_date
-            assert ur.status == "Не распределено"
+        ur = unresolved[0]
+        assert ur.amount == data["transaction"].amount
+        assert ur.bank_date == data["transaction"].transaction_date
+        assert ur.status == "Не распределено"
 
     def test_statement_with_multiple_transactions(
         self, db_session, mock_task_request
@@ -697,34 +687,34 @@ class TestMatchingIntegration:
         db_session.add_all([txn1, txn2, txn3])
         db_session.flush()
 
-        with patch('backend.database.SessionLocal', return_value=db_session):
-            result = call_match_bank_transactions_task_helper(
-                bank_statement_id=bank_stmt_id,
-                task_request=mock_task_request,
-            )
+        result = call_match_bank_transactions_task_helper(
+            bank_statement_id=bank_stmt_id,
+            task_request=mock_task_request,
+            db_session=db_session,
+        )
 
-            assert result['status'] == 'success'
-            assert result['matched_count'] == 2
-            assert result['unresolved_count'] == 1
-            assert len(result['payment_ids']) == 2
+        assert result['status'] == 'success'
+        assert result['matched_count'] == 2
+        assert result['unresolved_count'] == 1
+        assert len(result['payment_ids']) == 2
 
-            # Verify 2 Payments created
-            payments = db_session.query(Payment).all()
-            assert len(payments) == 2
+        # Verify 2 Payments created
+        payments = db_session.query(Payment).all()
+        assert len(payments) == 2
 
-            # Verify 1 UnresolvedTransaction
-            unresolved = db_session.query(UnresolvedTransaction).all()
-            assert len(unresolved) == 1
+        # Verify 1 UnresolvedTransaction
+        unresolved = db_session.query(UnresolvedTransaction).all()
+        assert len(unresolved) == 1
 
-            # Verify 2 TransactionMatchingAudit records
-            audits = db_session.query(TransactionMatchingAudit).all()
-            assert len(audits) == 2
+        # Verify 2 TransactionMatchingAudit records
+        audits = db_session.query(TransactionMatchingAudit).all()
+        assert len(audits) == 2
 
-            # Verify both invoices marked as paid (re-query from DB)
-            invoice1 = db_session.query(Invoice).filter(Invoice.id == invoice1_id).first()
-            invoice2 = db_session.query(Invoice).filter(Invoice.id == invoice2_id).first()
-            assert invoice1.status == "Оплачен"
-            assert invoice2.status == "Оплачен"
+        # Verify both invoices marked as paid (re-query from DB)
+        invoice1 = db_session.query(Invoice).filter(Invoice.id == invoice1_id).first()
+        invoice2 = db_session.query(Invoice).filter(Invoice.id == invoice2_id).first()
+        assert invoice1.status == "Оплачен"
+        assert invoice2.status == "Оплачен"
 
     def test_single_transaction_mode(
         self, db_session, matching_test_data_exact, mock_task_request
@@ -740,24 +730,24 @@ class TestMatchingIntegration:
         invoice_id = data["invoice"].id
         transaction_id = data["transaction"].id
 
-        with patch('backend.database.SessionLocal', return_value=db_session):
-            result = call_match_bank_transactions_task_helper(
-                bank_transaction_id=transaction_id,
-                task_request=mock_task_request,
-            )
+        result = call_match_bank_transactions_task_helper(
+            bank_transaction_id=transaction_id,
+            task_request=mock_task_request,
+            db_session=db_session,
+        )
 
-            assert result['status'] == 'success'
-            assert result['matched_count'] == 1
-            assert result['unresolved_count'] == 0
+        assert result['status'] == 'success'
+        assert result['matched_count'] == 1
+        assert result['unresolved_count'] == 0
 
-            # Verify Payment created
-            payments = db_session.query(Payment).all()
-            assert len(payments) == 1
-            assert payments[0].invoice_id == invoice_id
+        # Verify Payment created
+        payments = db_session.query(Payment).all()
+        assert len(payments) == 1
+        assert payments[0].invoice_id == invoice_id
 
-            # Verify Invoice.status updated (re-query from DB)
-            invoice = db_session.query(Invoice).filter(Invoice.id == invoice_id).first()
-            assert invoice.status == "Оплачен"
+        # Verify Invoice.status updated (re-query from DB)
+        invoice = db_session.query(Invoice).filter(Invoice.id == invoice_id).first()
+        assert invoice.status == "Оплачен"
 
     def test_paid_invoice_not_rematched(
         self, db_session, matching_test_data_exact, mock_task_request
@@ -778,19 +768,19 @@ class TestMatchingIntegration:
         invoice.status = "Оплачен"
         db_session.commit()
 
-        with patch('backend.database.SessionLocal', return_value=db_session):
-            result = call_match_bank_transactions_task_helper(
-                bank_statement_id=bank_stmt.id,
-                task_request=mock_task_request,
-            )
+        result = call_match_bank_transactions_task_helper(
+            bank_statement_id=bank_stmt.id,
+            task_request=mock_task_request,
+            db_session=db_session,
+        )
 
-            # Should not match - invoice already paid
-            assert result['matched_count'] == 0
-            assert result['unresolved_count'] == 1
+        # Should not match - invoice already paid
+        assert result['matched_count'] == 0
+        assert result['unresolved_count'] == 1
 
-            # Verify no new Payment created
-            payments = db_session.query(Payment).all()
-            assert len(payments) == 0
+        # Verify no new Payment created
+        payments = db_session.query(Payment).all()
+        assert len(payments) == 0
 
     def test_matching_context_completeness(
         self, db_session, matching_test_data_exact, mock_task_request
@@ -815,38 +805,38 @@ class TestMatchingIntegration:
         data = matching_test_data_exact
         bank_stmt = data["bank_stmt"]
 
-        with patch('backend.database.SessionLocal', return_value=db_session):
-            call_match_bank_transactions_task_helper(
-                bank_statement_id=bank_stmt.id,
-                task_request=mock_task_request,
-            )
+        call_match_bank_transactions_task_helper(
+            bank_statement_id=bank_stmt.id,
+            task_request=mock_task_request,
+            db_session=db_session,
+        )
 
-            audit = db_session.query(TransactionMatchingAudit).first()
-            context = audit.matching_context
+        audit = db_session.query(TransactionMatchingAudit).first()
+        context = audit.matching_context
 
-            # Verify all required fields
-            required_fields = [
-                'algorithm',
-                'supplier_inn',
-                'transaction_amount',
-                'invoice_total',
-                'amount_difference',
-                'tolerance_min',
-                'tolerance_max',
-                'tolerance_percent',
-                'transaction_date',
-                'confidence_score',
-                'invoice_id',
-                'purchase_order_id',
-            ]
+        # Verify all required fields
+        required_fields = [
+            'algorithm',
+            'supplier_inn',
+            'transaction_amount',
+            'invoice_total',
+            'amount_difference',
+            'tolerance_min',
+            'tolerance_max',
+            'tolerance_percent',
+            'transaction_date',
+            'confidence_score',
+            'invoice_id',
+            'purchase_order_id',
+        ]
 
-            for field in required_fields:
-                assert field in context, f"Missing field in matching_context: {field}"
+        for field in required_fields:
+            assert field in context, f"Missing field in matching_context: {field}"
 
-            # Verify data types
-            assert isinstance(context['tolerance_percent'], (int, float))
-            assert isinstance(context['invoice_id'], int)
-            assert isinstance(context['purchase_order_id'], int)
+        # Verify data types
+        assert isinstance(context['tolerance_percent'], (int, float))
+        assert isinstance(context['invoice_id'], int)
+        assert isinstance(context['purchase_order_id'], int)
 
     def test_confidence_score_calculation(
         self, db_session, mock_task_request
@@ -913,14 +903,14 @@ class TestMatchingIntegration:
         db_session.flush()
         txn_exact_id = txn_exact.id
 
-        with patch('backend.database.SessionLocal', return_value=db_session):
-            call_match_bank_transactions_task_helper(
-                bank_transaction_id=txn_exact_id,
-                task_request=mock_task_request,
-            )
+        call_match_bank_transactions_task_helper(
+            bank_transaction_id=txn_exact_id,
+            task_request=mock_task_request,
+            db_session=db_session,
+        )
 
-            audit = db_session.query(TransactionMatchingAudit).first()
-            assert audit.confidence_score == Decimal("1.00")
+        audit = db_session.query(TransactionMatchingAudit).first()
+        assert audit.confidence_score == Decimal("1.00")
 
         # Clean up for next test
         db_session.rollback()
@@ -978,14 +968,14 @@ class TestMatchingIntegration:
         db_session.flush()
         txn_mid_id = txn_mid.id
 
-        with patch('backend.database.SessionLocal', return_value=db_session):
-            call_match_bank_transactions_task_helper(
-                bank_transaction_id=txn_mid_id,
-                task_request=mock_task_request,
-            )
+        call_match_bank_transactions_task_helper(
+            bank_transaction_id=txn_mid_id,
+            task_request=mock_task_request,
+            db_session=db_session,
+        )
 
-            audit = db_session.query(TransactionMatchingAudit).order_by(
-                TransactionMatchingAudit.id.desc()
-            ).first()
-            # Mid-tolerance should be around 0.92-0.93
-            assert Decimal("0.90") <= audit.confidence_score < Decimal("1.00")
+        audit = db_session.query(TransactionMatchingAudit).order_by(
+            TransactionMatchingAudit.id.desc()
+        ).first()
+        # Mid-tolerance should be around 0.92-0.93
+        assert Decimal("0.90") <= audit.confidence_score < Decimal("1.00")

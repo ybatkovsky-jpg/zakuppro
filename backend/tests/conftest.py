@@ -8,6 +8,16 @@ Fixtures:
 - auth_client: FastAPI TestClient with DB isolation AND authenticated owner user
 """
 import os
+
+# ---------------------------------------------------------------------------
+# CRITICAL: Force SQLite for tests BEFORE any backend module is imported.
+# The backend.database module creates a global SQLAlchemy engine at import
+# time.  If DATABASE_URL points to PostgreSQL (or an invalid URL), the
+# import itself will fail.  Setting the env var here ensures the engine
+# is created with a valid SQLite URL that requires no external services.
+# ---------------------------------------------------------------------------
+os.environ["DATABASE_URL"] = "sqlite:///:memory:"
+
 import pytest
 from sqlalchemy import create_engine, text
 from sqlalchemy.orm import sessionmaker, Session

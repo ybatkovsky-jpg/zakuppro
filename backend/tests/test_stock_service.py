@@ -654,6 +654,7 @@ class TestReservationOnProjectItemCreate:
         """Create TestClient with users, project, and stock item."""
         from backend.main import app
         from backend.database import get_db, Base
+        from backend.auth import get_current_user, get_current_active_user, create_access_token
         from fastapi.testclient import TestClient
         from sqlalchemy import create_engine
         from sqlalchemy.orm import sessionmaker
@@ -698,8 +699,22 @@ class TestReservationOnProjectItemCreate:
             finally:
                 pass
 
+        def override_get_current_user():
+            return session.query(User).filter(User.id == owner_id).first()
+
+        def override_get_current_active_user():
+            return session.query(User).filter(User.id == owner_id).first()
+
         app.dependency_overrides[get_db] = override_get_db
+        app.dependency_overrides[get_current_user] = override_get_current_user
+        app.dependency_overrides[get_current_active_user] = override_get_current_active_user
+
+        access_token = create_access_token(
+            data={"user_id": owner_id, "role": Role.OWNER.value}
+        )
+
         client = TestClient(app)
+        client.headers["Authorization"] = f"Bearer {access_token}"
 
         yield client, session, project_id, owner_id
 
@@ -743,6 +758,7 @@ class TestWriteOffOnStatusChange:
         """Create TestClient with users, project, and stock item."""
         from backend.main import app
         from backend.database import get_db, Base
+        from backend.auth import get_current_user, get_current_active_user, create_access_token
         from fastapi.testclient import TestClient
         from sqlalchemy import create_engine
         from sqlalchemy.orm import sessionmaker
@@ -794,8 +810,22 @@ class TestWriteOffOnStatusChange:
             finally:
                 pass
 
+        def override_get_current_user():
+            return session.query(User).filter(User.id == owner_id).first()
+
+        def override_get_current_active_user():
+            return session.query(User).filter(User.id == owner_id).first()
+
         app.dependency_overrides[get_db] = override_get_db
+        app.dependency_overrides[get_current_user] = override_get_current_user
+        app.dependency_overrides[get_current_active_user] = override_get_current_active_user
+
+        access_token = create_access_token(
+            data={"user_id": owner_id, "role": Role.OWNER.value}
+        )
+
         client = TestClient(app)
+        client.headers["Authorization"] = f"Bearer {access_token}"
 
         yield client, session, project_id, owner_id
 

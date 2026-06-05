@@ -3,6 +3,10 @@ Database connection and session management for the application.
 
 Uses SQLAlchemy 2.0 declarative style (DeclarativeBase) and
 configurable SQL echo via the DB_ECHO environment variable.
+
+Supports both PostgreSQL (production) and SQLite (testing) backends.
+SQLite-compatible engine parameters are selected automatically based on
+the DATABASE_URL scheme.
 """
 
 import os
@@ -27,21 +31,29 @@ DATABASE_URL = os.getenv(
 # Set DB_ECHO=true to enable (useful for debugging).
 DB_ECHO = os.getenv("DB_ECHO", "false").lower() in ("true", "1", "yes")
 
-# Pool size and max overflow for production workloads
-DB_POOL_SIZE = int(os.getenv("DB_POOL_SIZE", "5"))
-DB_MAX_OVERFLOW = int(os.getenv("DB_MAX_OVERFLOW", "10"))
-
 # ---------------------------------------------------------------------------
-# Engine
+# Engine — build kwargs depending on backend (PostgreSQL vs SQLite)
 # ---------------------------------------------------------------------------
 
-engine = create_engine(
-    DATABASE_URL,
-    pool_pre_ping=True,   # Verify connections before using them
-    echo=DB_ECHO,         # Configurable SQL logging (was hardcoded True)
-    pool_size=DB_POOL_SIZE,
-    max_overflow=DB_MAX_OVERFLOW,
-)
+_is_sqlite = DATABASE_URL.startswith("sqlite")
+
+_engine_kwargs: dict = {
+    "echo": DB_ECHO,
+}
+
+if _is_sqlite:
+    # SQLite does not support pool_size / max_overflow / pool_pre_ping
+    _engine_kwargs["connect_args"] = {"check_same_thread": False}
+else:
+    # Pool size and max overflow for production workloads (PostgreSQL)
+    DB_POOL_SIZE = int(os.getenv("DB_POOL_SIZE", "5"))
+    DB_MAX_OVERFLOW = int(os.getenv("DB_MAX_OVERFLOW", "10"))
+
+    _engine_kwargs["pool_pre_ping"] = True
+    _engine_kwargs["pool_size"] = DB_POOL_SIZE
+    _engine_kwargs["max_overflow"] = DB_MAX_OVERFLOW
+
+engine = create_engine(DATABASE_URL, **_engine_kwargs)
 
 # ---------------------------------------------------------------------------
 # Session factory

@@ -152,11 +152,13 @@ class TestProjectSchemas:
             client="Test Client",
             status="Проектирование",
             total_cost=10000.00,
+            owner_id=1,
             created_at=now,
             updated_at=now,
             items=[]
         )
         assert schema.id == 1
+        assert schema.owner_id == 1
         assert schema.items == []
 
 
@@ -425,6 +427,7 @@ class TestSchemaConfiguration:
             client="Test Client",
             status="Проектирование",
             total_cost=10000.00,
+            owner_id=1,
             created_at=now,
             updated_at=None,
             items=[]
@@ -444,6 +447,7 @@ class TestSchemaConfiguration:
             client="Test Client",
             status="Проектирование",
             total_cost=10000.00,
+            owner_id=1,
             created_at=now,
             updated_at=None,
             items=[]

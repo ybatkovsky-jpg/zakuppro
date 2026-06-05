@@ -39,14 +39,13 @@ from backend.models import (
 )
 from backend.auth import create_access_token
 
-# Test database - use file-based SQLite to ensure data persists across connections
-import tempfile
-import os
+# Test database - use in-memory SQLite with StaticPool for cross-connection persistence
+from sqlalchemy.pool import StaticPool
 
-test_db_file = tempfile.mktemp(suffix=".db")
 test_engine = create_engine(
-    f"sqlite:///{test_db_file}",
-    connect_args={"check_same_thread": False}
+    "sqlite:///:memory:",
+    connect_args={"check_same_thread": False},
+    poolclass=StaticPool,
 )
 
 
@@ -184,20 +183,12 @@ def test_client_with_db():
             yield client
 
         app.dependency_overrides.clear()
-        if original_get_db:
-            app.dependency_overrides[get_db] = original_get_db
     finally:
         session.close()
         try:
             Base.metadata.drop_all(test_engine)
         except:
-            pass  # Ignore drop errors on Windows
-        # Clean up test database file (may fail on Windows due to file locking)
-        try:
-            if os.path.exists(test_db_file):
-                os.unlink(test_db_file)
-        except PermissionError:
-            pass  # File will be cleaned up by temp dir cleanup
+            pass  # Ignore drop errors
 
 
 def get_auth_headers_for_client(client: TestClient, username: str) -> dict:
