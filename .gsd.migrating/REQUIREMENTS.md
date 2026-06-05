@@ -22,14 +22,6 @@ This file is the explicit capability and coverage contract for the project.
 - Primary owning slice: M007 S01
 - Validation: S01 delivered: /health endpoint returns email_worker and telegram_bot status via heartbeat file freshness checks (120s/90s thresholds) on shared Docker volume. All 5 services reported: db, rabbitmq, celery_worker, email_worker, telegram_bot. Tests: 13 health endpoint tests covering all-ok, 4 degradation paths, heartbeat freshness unit tests for both workers.
 
-### R017 — DLQ UI/админка для просмотра и перезапуска неудачных задач с деталями ошибок
-- Class: admin/support
-- Status: active
-- Description: DLQ UI/админка для просмотра и перезапуска неудачных задач с деталями ошибок
-- Why it matters: Удобное управление ошибками без запросов к БД или логам.
-- Source: inferred
-- Primary owning slice: M007 S04
-
 ## Validated
 
 ### R001 — Telegram Bot для приёма Excel файлов от владельца, авторизации по chat_id, и отправки уведомлений о статусе операций
@@ -163,6 +155,16 @@ This file is the explicit capability and coverage contract for the project.
 - Validation: S03 delivered GET /api/projects/readiness endpoint returning per-project green/yellow/red readiness with item counts by procurement stage. Backend computes readiness using PRODUCTION_READY_STATUSES from transition_service: green (all items На складе or Оплачено, or empty), yellow (no К закупке but some in transit: Запрошено or Счет получен), red (any К закупке). Frontend renders colored dots (green/amber/red) on Kanban DraggableProjectCard and Dashboard recent project cards with click-to-expand Popover tooltips showing per-status breakdowns. 12 backend tests verify readiness computation, RBAC (owner/manager), ownership filtering, and edge cases. TypeScript compilation clean.
 - Notes: S03 completes the readiness matrix: backend readiness endpoint, frontend visual indicators in both Kanban and Dashboard views. Complete end-to-end flow: DB ProjectItem.status counts → FastAPI endpoint → Next.js proxy → React components with colored indicators.
 
+### R017 — DLQ UI/админка для просмотра и перезапуска неудачных задач с деталями ошибок
+- Class: admin/support
+- Status: validated
+- Description: DLQ UI/админка для просмотра и перезапуска неудачных задач с деталями ошибок
+- Why it matters: Удобное управление ошибками без запросов к БД или логам.
+- Source: inferred
+- Primary owning slice: M007 S04
+- Validation: S04 delivered: Backend API with 3 endpoints (list/detail/retry) gated to owner role, 23 tests pass. Frontend FailedTasks component with paginated table, detail Sheet drawer, retry AlertDialog. Sidebar admin section with AlertTriangle icon. Full RBAC: owner sees nav item + gets API access, non-owner sees neither (403).
+- Notes: S04 complete. 4 tasks delivered: T01 backend API + tests (23 pass), T02 TypeScript types + API client, T03 FailedTasks component, T04 sidebar navigation wiring. Retry flow: deserialize context JSON → celery_app.app.tasks[task_name].apply_async(kwargs=context_dict). Frontend: TanStack Query list → Sheet detail drawer → AlertDialog confirmation → useMutation retry → invalidate query → toast.
+
 ### R018 — Ролевая модель в Web UI: Владелец (видит всё), Менеджер (только свои проекты), Склад (только остатки)
 - Class: compliance/security
 - Status: validated
@@ -206,13 +208,13 @@ This file is the explicit capability and coverage contract for the project.
 | R014 | operability | validated | M006 | S01 | S03 delivered GET /api/projects/readiness endpoint returning per-project green/yellow/red readiness with item counts by procurement stage. Backend computes readiness using PRODUCTION_READY_STATUSES from transition_service: green (all items На складе or Оплачено, or empty), yellow (no К закупке but some in transit: Запрошено or Счет получен), red (any К закупке). Frontend renders colored dots (green/amber/red) on Kanban DraggableProjectCard and Dashboard recent project cards with click-to-expand Popover tooltips showing per-status breakdowns. 12 backend tests verify readiness computation, RBAC (owner/manager), ownership filtering, and edge cases. TypeScript compilation clean. |
 | R015 | continuity | active | M007 S01 | none | S01 delivered: telegram-bot SIGTERM/SIGINT handler + shutdown flag, Celery worker_shutdown signal handler logging active task count, docker-compose.yml stop_grace_period (celery-worker=60s, email-worker=30s, telegram-bot=15s), Docker healthchecks using heartbeat freshness instead of ps aux | grep. Tests: 33 email-worker tests + 13 health endpoint tests + 2 shutdown tests all pass. |
 | R016 | quality-attribute | active | M007 S01 | none | S01 delivered: /health endpoint returns email_worker and telegram_bot status via heartbeat file freshness checks (120s/90s thresholds) on shared Docker volume. All 5 services reported: db, rabbitmq, celery_worker, email_worker, telegram_bot. Tests: 13 health endpoint tests covering all-ok, 4 degradation paths, heartbeat freshness unit tests for both workers. |
-| R017 | admin/support | active | M007 S04 | none | unmapped |
+| R017 | admin/support | validated | M007 S04 | none | S04 delivered: Backend API with 3 endpoints (list/detail/retry) gated to owner role, 23 tests pass. Frontend FailedTasks component with paginated table, detail Sheet drawer, retry AlertDialog. Sidebar admin section with AlertTriangle icon. Full RBAC: owner sees nav item + gets API access, non-owner sees neither (403). |
 | R018 | compliance/security | validated | M007 S03 | none | S03 delivered: All 6 backend routers secured with require_role guards (125 integration tests passing). AuthProvider React context with reactive useAuth hook, LoginPage, sidebar role filtering, view access guards, and per-component action button gating across 6 frontend components. TypeScript compilation clean for all auth-related files. |
 | R019 | quality-attribute | validated | M007 S02 | none | S02 delivered: retry_utils.py with retry_sync and retry_async decorators (exponential backoff + jitter). All 6 Telegram functions wrapped with @retry_sync(TelegramError), 2 email functions wrapped with @retry_async(SMTPException). 61 tests pass covering retry count, backoff timing, jitter, non-retryable skip, and max-retry exhaustion. LLM and Celery retry already existed — this closes the final gaps in email/Telegram notification pathways. |
 
 ## Coverage Summary
 
-- Active requirements: 3
-- Mapped to slices: 3
-- Validated: 16 (R001, R002, R003, R004, R005, R006, R007, R008, R009, R010, R011, R012, R013, R014, R018, R019)
+- Active requirements: 2
+- Mapped to slices: 2
+- Validated: 17 (R001, R002, R003, R004, R005, R006, R007, R008, R009, R010, R011, R012, R013, R014, R017, R018, R019)
 - Unmapped active requirements: 0

@@ -1,4 +1,4 @@
-# GSD context snapshot (2026-06-05T04:58:24.782Z)
+# GSD context snapshot (2026-06-05T05:28:54.890Z)
 
 ## Top project memories
 - [MEM005] (architecture) SQLAlchemy 2.0 uses relationship(back_populates=...) for bidirectional relationships, not backref. This makes relationships explicit on both sides for clearer code.
@@ -9,5 +9,5 @@
 - [MEM004] (pattern) Pydantic v2 requires model_config = ConfigDict(from_attributes=True) for ORM mode, not the inner Config class from v1.
 
 ## Recent gsd_exec runs
-- [46a932f3-0c92-4b24-9cc3-6727635fded5] bash exit:1 — S03 T02-T04 fresh TypeScript verification
-- [ff930866-e7b4-4cba-9460-b31ba9f3e973] bash exit:1 — S03 T01 RBAC integration tests verification
+- [ff4de8c8-c18b-4fc5-af55-ff2c705a8fd6] bash exit:1 — Backend tests for admin_failed_tasks (T01 verification)
+- [65280ca1-9205-4a02-9a27-bb9327408712] bash exit:1 — TypeScript compilation check for S04 verification

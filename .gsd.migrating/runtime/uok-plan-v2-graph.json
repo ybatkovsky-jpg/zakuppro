@@ -1,12 +1,12 @@
 {
-  "compiledAt": "2026-06-05T04:53:44.513Z",
+  "compiledAt": "2026-06-05T05:35:37.135Z",
   "milestoneId": "M007",
   "pipeline": {
     "clarifyRoundLimit": 3,
     "researchSynthesized": true,
     "draftContextIncluded": false,
     "finalizedContextIncluded": true,
-    "sourcePhase": "summarizing"
+    "sourcePhase": "completing-milestone"
   },
   "nodes": [
     {
@@ -185,7 +185,78 @@
         "unitType": "complete-slice",
         "unitId": "M007.S03",
         "title": "S03",
-        "status": "pending"
+        "status": "complete"
+      }
+    },
+    {
+      "id": "execute-task:M007:S04:T01",
+      "kind": "unit",
+      "dependsOn": [],
+      "writes": [],
+      "metadata": {
+        "unitType": "execute-task",
+        "unitId": "M007.S04.T01",
+        "title": "Created backend API endpoints (list, detail, retry) for FailedTask DLQ records with OWNER-only RBAC and comprehensive test coverage.",
+        "status": "complete"
+      }
+    },
+    {
+      "id": "execute-task:M007:S04:T02",
+      "kind": "unit",
+      "dependsOn": [
+        "execute-task:M007:S04:T01"
+      ],
+      "writes": [
+        "src/types/fastapi.ts",
+        "src/lib/api/failed-tasks.ts",
+        "src/lib/api/index.ts"
+      ],
+      "metadata": {
+        "unitType": "execute-task",
+        "unitId": "M007.S04.T02",
+        "title": "Added FailedTask TypeScript interfaces to fastapi.ts, created failed-tasks.ts API client module following invoices.ts pattern, and updated barrel exports in api/index.ts.",
+        "status": "complete"
+      }
+    },
+    {
+      "id": "execute-task:M007:S04:T03",
+      "kind": "unit",
+      "dependsOn": [
+        "execute-task:M007:S04:T02"
+      ],
+      "writes": [],
+      "metadata": {
+        "unitType": "execute-task",
+        "unitId": "M007.S04.T03",
+        "title": "Built FailedTasks admin component with paginated table, detail Sheet drawer showing full error traceback and context JSON, retry action with AlertDialog confirmation, and owner-only RBAC gating on retry button and sidebar nav item.",
+        "status": "complete"
+      }
+    },
+    {
+      "id": "execute-task:M007:S04:T04",
+      "kind": "unit",
+      "dependsOn": [
+        "execute-task:M007:S04:T03"
+      ],
+      "writes": [],
+      "metadata": {
+        "unitType": "execute-task",
+        "unitId": "M007.S04.T04",
+        "title": "Restructured sidebar to place failed-tasks under a separate \"Администрирование\" group with AlertTriangle icon, gated to owner role only",
+        "status": "complete"
+      }
+    },
+    {
+      "id": "complete-slice:M007:S04",
+      "kind": "verification",
+      "dependsOn": [
+        "execute-task:M007:S04:T04"
+      ],
+      "metadata": {
+        "unitType": "complete-slice",
+        "unitId": "M007.S04",
+        "title": "S04",
+        "status": "complete"
       }
     }
   ]

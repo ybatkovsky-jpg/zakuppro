@@ -20,7 +20,7 @@
 - [x] **S03: S03** `risk:high` `depends:[]`
   > After this: Владелец видит все проекты и склад, Менеджер — только свои проекты, Склад — только остатки
 
-- [ ] **S04: DLQ Admin UI** `risk:medium` `depends:[]`
+- [x] **S04: S04** `risk:medium` `depends:[]`
   > After this: Страница /admin/failed-tasks с таблицей неудачных задач, кнопкой Retry и деталями ошибок
 
 ## Boundary Map

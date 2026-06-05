@@ -1,9 +1,9 @@
 # GSD State
 
 **Active Milestone:** M007: Production Hardening
-**Active Slice:** S04: DLQ Admin UI
-**Phase:** planning
-**Requirements Status:** 3 active · 16 validated · 0 deferred · 0 out of scope
+**Active Slice:** None
+**Phase:** completing-milestone
+**Requirements Status:** 2 active · 17 validated · 0 deferred · 0 out of scope
 
 ## Milestone Registry
 - ✅ **M001:** Foundation: Database Schema and Core API
@@ -21,4 +21,4 @@
 - None
 
 ## Next Action
-Slice S04 has no DB tasks. Plan slice tasks before execution.
+All slices complete in M007. Write milestone summary.

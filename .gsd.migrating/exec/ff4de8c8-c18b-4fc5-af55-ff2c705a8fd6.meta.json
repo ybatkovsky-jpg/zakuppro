@@ -1,0 +1,18 @@
+{
+  "id": "ff4de8c8-c18b-4fc5-af55-ff2c705a8fd6",
+  "runtime": "bash",
+  "purpose": "Backend tests for admin_failed_tasks (T01 verification)",
+  "script_chars": 129,
+  "started_at": "2026-06-05T05:25:47.132Z",
+  "finished_at": "2026-06-05T05:25:47.210Z",
+  "exit_code": 1,
+  "signal": null,
+  "timed_out": false,
+  "duration_ms": 78,
+  "stdout_bytes": 544,
+  "stderr_bytes": 0,
+  "stdout_truncated": false,
+  "stderr_truncated": false,
+  "stdout_path": "D:\\CLAUDE\\Project\\zakuppro\\zakuppro\\.gsd\\exec\\ff4de8c8-c18b-4fc5-af55-ff2c705a8fd6.stdout",
+  "stderr_path": "D:\\CLAUDE\\Project\\zakuppro\\zakuppro\\.gsd\\exec\\ff4de8c8-c18b-4fc5-af55-ff2c705a8fd6.stderr"
+}
