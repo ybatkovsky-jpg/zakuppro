@@ -17,6 +17,7 @@ import { Invoices } from '@/components/app/invoices'
 import { Analytics } from '@/components/app/analytics'
 import { Automation } from '@/components/app/automation'
 import { Settings } from '@/components/app/settings'
+import { FailedTasks } from '@/components/app/failed-tasks'
 import { GlobalSearch } from '@/components/app/global-search'
 import { ThemeToggle } from '@/components/app/theme-toggle'
 import { NotificationCenter } from '@/components/app/notification-center'
@@ -37,6 +38,7 @@ const pageTitles: Record<string, string> = {
   automation: 'Автоматизация',
   warehouse: 'Склад',
   settings: 'Настройки',
+  'failed-tasks': 'Неудачные задачи',
 }
 
 function AppContent() {
@@ -48,7 +50,7 @@ function AppContent() {
 
   // Role-based view access map
   const roleViewAccess: Record<string, ViewType[]> = {
-    owner: ['dashboard', 'projects', 'project-detail', 'suppliers', 'supplier-detail', 'warehouse', 'requests', 'invoices', 'analytics', 'automation', 'settings'],
+    owner: ['dashboard', 'projects', 'project-detail', 'suppliers', 'supplier-detail', 'warehouse', 'requests', 'invoices', 'analytics', 'automation', 'settings', 'failed-tasks'],
     manager: ['dashboard', 'projects', 'project-detail', 'suppliers', 'supplier-detail', 'warehouse', 'requests', 'invoices', 'analytics', 'automation'],
     warehouse: ['dashboard', 'warehouse'],
   }
@@ -135,6 +137,7 @@ function AppContent() {
           {isViewAuthorized && currentView === 'automation' && <Automation />}
           {isViewAuthorized && currentView === 'warehouse' && <Warehouse />}
           {isViewAuthorized && currentView === 'settings' && <Settings />}
+          {isViewAuthorized && currentView === 'failed-tasks' && <FailedTasks />}
         </div>
       </main>
       <AIAssistant />
