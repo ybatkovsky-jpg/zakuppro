@@ -31,9 +31,13 @@ ZakupPro автоматизирует полный цикл от специфи�
 
 ### Frontend
 - **Next.js 16.1.1** с App Router
-- **TypeScript 5**
-- **Tailwind CSS 4** + shadcn/ui (Radix UI)
+- **React 19** + **TypeScript 5**
+- **Tailwind CSS 4** + **shadcn/ui** (Radix UI primitives)
+- **Zustand** для стейт-менеджмента
+- **@tanstack/react-query** + **@tanstack/react-table**
+- **Recharts** для графиков, **Framer Motion** для анимаций
 - **@dnd-kit** для Kanban drag-and-drop
+- **react-hook-form** + **zod** для валидации форм
 - **Prisma** с SQLite для mock данных (dev mode)
 
 ### Интеграции
@@ -49,30 +53,42 @@ ZakupPro автоматизирует полный цикл от специфи�
 | M002 | ✅ Pass | RabbitMQ, Celery, Telegram Bot, Excel parsing, AI integration |
 | M003 | ✅ Pass | IMAP ingest, invoice parsing/verification, notifications, 221 tests |
 | M004 | ✅ Pass | Bank statement import, payment matching, analytics, export, 237 tests |
-| M005 | 🚧 In Progress | Frontend UI, RBAC, auth, production deployment |
-| M006 | 📋 Queued | Business Logic Polish (Kanban, комплектация, склад) |
+| M005 | ✅ Pass | Frontend UI (Next.js + shadcn/ui), Kanban, таблицы спецификаций |
+| M006 | ✅ Pass | Business Logic Polish: Kanban guardrails, stock reservation, readiness matrix |
+| M007 | 🚧 In Progress | Production Hardening: graceful shutdown, health endpoints, retry, RBAC UI, DLQ admin |
 
 ## Структура проекта
 
 ```
 zakuppro/
-├── backend/              # FastAPI backend
+├── backend/                  # FastAPI backend
 │   ├── app/
-│   │   ├── api/         # FastAPI routers (projects, suppliers, invoices...)
-│   │   ├── core/        # Config, security, database
-│   │   ├── models/      # SQLAlchemy ORM models
-│   │   ├── schemas/     # Pydantic v2 schemas
-│   │   ├── services/    # Business logic (LLM, matching, verification)
-│   │   └── workers/     # Celery tasks, email worker, telegram bot
-│   ├── tests/           # Pytest tests (500+ passing)
-│   ├── alembic/         # Database migrations
-│   └── requirements.txt # Python dependencies
-├── mini-services/       # Frontend services
-│   └── telegram-bot/    # Next.js Telegram Web App
-├── .gsd/                # GSD project management (artifacts, milestones)
-├── docker-compose.yml   # All services orchestration
-├── .env                 # Environment variables (template)
-└── README.md           # This file
+│   │   ├── routers/         # FastAPI routers (12 модулей)
+│   │   ├── models.py        # SQLAlchemy ORM (17 моделей)
+│   │   ├── schemas/         # Pydantic v2 schemas
+│   │   ├── services/        # Business logic (8 сервисов)
+│   │   ├── tasks.py         # Celery tasks (~59KB)
+│   │   ├── workers/         # Email worker, Telegram bot
+│   │   ├── llm_provider.py  # Multi-LLM wrapper (OpenAI/Claude/Gemini)
+│   │   └── handlers/        # Telegram bot handlers
+│   ├── tests/               # Pytest tests (36+ файлов)
+│   ├── alembic/             # Database migrations
+│   └── requirements.txt
+├── src/                     # Next.js frontend (App Router)
+│   ├── app/                 # Страницы и API route proxies
+│   ├── components/          # React компоненты (app/ + ui/)
+│   ├── lib/                 # API client, auth, утилиты
+│   ├── types/               # TypeScript типы для FastAPI
+│   ├── store/               # Zustand state management
+│   └── hooks/               # React hooks
+├── mini-services/           # Микросервисы
+│   └── telegram-bot/        # Standalone Telegram Web App (Bun + TS)
+├── prisma/                  # Prisma schema (SQLite для dev)
+├── scripts/                 # Утилиты (smoke-test.sh, start-dev.sh)
+├── .gsd/                    # GSD project management
+├── docker-compose.yml       # Оркестрация всех сервисов
+├── .env.example             # Шаблон переменных окружения
+└── README.md
 ```
 
 ## Быстрый старт
@@ -235,16 +251,23 @@ SECRET_KEY=your-secret-key-change-in-production
 
 ## API Endpoints
 
-Запущено на `http://localhost:8000`
+Запущено на `http://localhost:8000`, 12 роутеров.
 
-- `GET /health` — Health check
-- `POST /api/auth/login` — JWT authentication
-- `GET /api/projects` — List projects
-- `POST /api/projects` — Create project
-- `GET /api/suppliers` — List suppliers
-- `POST /api/invoices/upload` — Upload invoice for parsing
-- `GET /api/analytics/dashboard` — Dashboard metrics
-- `GET /docs` — Interactive API documentation (Swagger)
+| Категория | Endpoints |
+|-----------|-----------|
+| Health | `GET /health` — multi-service health check (DB, RabbitMQ, Celery, workers) |
+| Auth | `POST /api/auth/login` — JWT authentication |
+| Projects | `GET/POST /api/projects`, `GET/PUT/DELETE /api/projects/{id}` |
+| Project Items | `GET/POST /api/project-items`, `PUT/DELETE /api/project-items/{id}` |
+| Suppliers | `GET/POST /api/suppliers`, `PUT/DELETE /api/suppliers/{id}` |
+| Stock | `GET/POST /api/stock-items`, `POST /api/stock-items/receive` |
+| Invoices | `GET/POST /api/invoices`, `POST /api/invoices/upload` |
+| Payments | `GET/POST /api/payments` |
+| Purchase Orders | `GET/POST /api/purchase-orders` |
+| Production Tasks | `GET/POST /api/production-tasks` |
+| Unresolved Transactions | `GET/POST /api/unresolved-transactions`, search, bulk operations |
+| Analytics | `GET /api/analytics/dashboard`, `/payment-dynamics`, `/pipeline`, `/suppliers` |
+| Docs | `GET /docs` — Swagger UI |
 
 ## Тестирование
 
@@ -262,9 +285,9 @@ pytest tests/m001/
 pytest tests/m004/
 ```
 
-**Текущее покрытие:** 81% для новых компонентов, ~500 тестов passing.
+**Текущее покрытие:** 36+ тестовых файлов, покрывающих все milestones (M001-M007).
 
-## Роли пользователей (M005)
+## Роли пользователей
 
 | Роль | Права |
 |------|-------|
@@ -279,7 +302,16 @@ pytest tests/m004/
 
 ## Развертывание в продакшене
 
-### Observability (M005)
+### Production Hardening (M007)
+
+Текущий milestone. Ключевые improvements:
+- **Graceful shutdown** — все сервисы (FastAPI, Celery, Email Worker, Telegram Bot) с SIGTERM/SIGINT handlers
+- **Health endpoints** — multi-service health check с fail-fast (503 при деградации любого сервиса)
+- **Retry с exponential backoff** — `@retry_async`/`@retry_sync` для LLM, email, Telegram, bank statement
+- **RBAC UI** — role-based access в веб-интерфейсе
+- **DLQ Admin UI** — просмотр и повторная обработка failed tasks
+
+### Observability
 
 - **Логирование:** Структурированные JSON-логи (stdout) с `request_id` корреляцией
 - **Метрики:** Prometheus + Grafana (system health, business metrics, Celery queue)
@@ -288,27 +320,38 @@ pytest tests/m004/
 ### Деплой
 
 ```bash
-# Production build
-docker-compose -f docker-compose.prod.yml up -d
+# Production build (все 7 сервисов)
+docker-compose up -d
 
-# Или отдельные сервисы
-docker-compose up -d db rabbitmq api celery-worker telegram-bot
+# Или выборочно
+docker-compose up -d db rabbitmq api celery-worker telegram-bot email-worker frontend
 ```
 
 ## Архитектурные решения
 
-### Patterns
-- **Modular routers** — отдельный роутер на сущность (projects.py, suppliers.py)
+### Backend Patterns
+- **Modular routers** — отдельный роутер на сущность (12 роутеров)
 - **Cascade delete** — только для иерархических связей (Project → ProjectItem)
 - **lazy='selectin'** — предотвращение N+1 запросов
-- **LLM provider wrapper** — автоматический fallback на transient errors
+- **LLM provider wrapper** — Strategy pattern, автоматический fallback (OpenAI → Claude → Gemini)
 - **Non-blocking notifications** — ошибки логируются, не блокируют pipeline
 - **FailedTask DLQ** — персистентность failed Celery tasks для retry/inspection
+- **Retry с exponential backoff** — декораторы `@retry_async`/`@retry_sync` для внешних вызовов
+- **RBAC** — 6 ролей, множественные роли на пользователя, JWT-based
+- **Stock reservation** — reserve → write-off → receive с invariant enforcement
+- **Kanban guardrails** — `can_transition_to()` с PRODUCTION_READY_STATUSES
+
+### Frontend Patterns
+- **App Router** — Next.js 16 с серверными и клиентскими компонентами
+- **API proxy** — 43 route handlers для проксирования к FastAPI backend
+- **Zustand** — централизованный стейт-менеджмент
+- **shadcn/ui** — 40+ UI компонентов на Radix primitives
 
 ### Database
 - **SQLAlchemy 2.0** с async/await
 - **relationship(back_populates=...)** — bidirectional relationships
 - **JSONB** для гибких полей (verification_result, parsed_data)
+- **17 ORM моделей** — от Project до TransactionMatchingAudit
 
 ### Message Queue
 - **RabbitMQ 3-management** с DLQ configuration
