@@ -1,0 +1,31 @@
+{
+  "schemaVersion": 1,
+  "milestoneId": "M007",
+  "sliceId": "S03",
+  "timestamp": 1780627243298,
+  "status": "fail",
+  "durationMs": 11,
+  "checks": [
+    {
+      "category": "tool",
+      "target": "T02 Verify",
+      "passed": false,
+      "message": "Unsafe or non-runnable Verify command: npx tsc --noEmit --pretty 2>&1 | head -20 (contains shell control syntax such as pipes, redirects, semicolons, backticks, or command substitution)",
+      "blocking": true
+    },
+    {
+      "category": "tool",
+      "target": "T03 Verify",
+      "passed": false,
+      "message": "Unsafe or non-runnable Verify command: npx tsc --noEmit --pretty 2>&1 | head -20 (contains shell control syntax such as pipes, redirects, semicolons, backticks, or command substitution)",
+      "blocking": true
+    },
+    {
+      "category": "tool",
+      "target": "T04 Verify",
+      "passed": false,
+      "message": "Unsafe or non-runnable Verify command: npx tsc --noEmit --pretty 2>&1 | head -20 (contains shell control syntax such as pipes, redirects, semicolons, backticks, or command substitution)",
+      "blocking": true
+    }
+  ]
+}

@@ -8,6 +8,20 @@
 import type { ApiError } from '@/types/fastapi';
 
 // =============================================================================
+// 401 Unauthorized Callback
+// =============================================================================
+
+let _onUnauthorized: (() => void) | null = null
+
+/**
+ * Register a callback invoked when the API returns a 401 response.
+ * Used by AuthProvider to auto-logout on token expiration.
+ */
+export function setOnUnauthorized(callback: (() => void) | null): void {
+  _onUnauthorized = callback
+}
+
+// =============================================================================
 // Configuration
 // =============================================================================
 
@@ -181,6 +195,10 @@ export async function apiFetch<T>(
 
     // Check for error status
     if (!response.ok) {
+      // Trigger auto-logout on 401 (token expired/invalid)
+      if (response.status === 401 && _onUnauthorized) {
+        _onUnauthorized()
+      }
       const error = transformError(response, body);
       return { data: null, error };
     }

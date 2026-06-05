@@ -1,7 +1,7 @@
 """
 Authentication router for ZakupPro API.
 
-Provides login endpoint for JWT token authentication.
+Provides login endpoint for JWT token authentication and GET /users/me for current user info.
 Logs failed login attempts for security monitoring.
 """
 from fastapi import APIRouter, Depends, HTTPException, status, Request
@@ -12,8 +12,8 @@ import logging
 
 from backend.database import get_db
 from backend.models import User
-from backend.schemas import LoginRequest, LoginResponse
-from backend.auth import create_access_token
+from backend.schemas import LoginRequest, LoginResponse, UserResponse
+from backend.auth import create_access_token, get_current_active_user
 
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/api/auth", tags=["Authentication"])
@@ -88,3 +88,19 @@ async def login(
         token_type="bearer",
         role=user.role
     )
+
+
+@router.get("/users/me", response_model=UserResponse)
+def get_current_user_info(
+    current_user: User = Depends(get_current_active_user)
+):
+    """
+    Return the current authenticated user's profile information.
+
+    Used by the frontend to hydrate user info on app load / page refresh.
+    Returns id, username, email, role, created_at, updated_at.
+
+    Requires valid JWT token.
+    """
+    return current_user
+

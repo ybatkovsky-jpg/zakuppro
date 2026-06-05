@@ -63,8 +63,8 @@ class Project(Base):
     # Relationships
     owner = relationship("User", back_populates="owned_projects")
     items = relationship("ProjectItem", back_populates="project", cascade="all, delete-orphan", lazy="selectin")
-    purchase_orders = relationship("PurchaseOrder", back_populates="project", lazy="selectin")
-    production_tasks = relationship("ProductionTask", back_populates="project", lazy="selectin")
+    purchase_orders = relationship("PurchaseOrder", back_populates="project", cascade="all, delete-orphan", lazy="selectin")
+    production_tasks = relationship("ProductionTask", back_populates="project", cascade="all, delete-orphan", lazy="selectin")
     status_history = relationship("ProjectStatusHistory", back_populates="project", cascade="all, delete-orphan", lazy="selectin")
 
 
@@ -101,7 +101,7 @@ class Supplier(Base):
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
 
     # Relationships
-    purchase_orders = relationship("PurchaseOrder", back_populates="supplier", lazy="selectin")
+    purchase_orders = relationship("PurchaseOrder", back_populates="supplier", cascade="all, delete-orphan", lazy="selectin")
     project_items = relationship("ProjectItem", back_populates="supplier")
 
 
@@ -119,7 +119,7 @@ class PurchaseOrder(Base):
     # Relationships
     project = relationship("Project", back_populates="purchase_orders")
     supplier = relationship("Supplier", back_populates="purchase_orders")
-    invoices = relationship("Invoice", back_populates="purchase_order", lazy="selectin")
+    invoices = relationship("Invoice", back_populates="purchase_order", cascade="all, delete-orphan", lazy="selectin")
 
 
 class Invoice(Base):
@@ -138,7 +138,7 @@ class Invoice(Base):
 
     # Relationships
     purchase_order = relationship("PurchaseOrder", back_populates="invoices")
-    payments = relationship("Payment", back_populates="invoice", lazy="selectin")
+    payments = relationship("Payment", back_populates="invoice", cascade="all, delete-orphan", lazy="selectin")
     items = relationship("InvoiceItem", back_populates="invoice", cascade="all, delete-orphan", lazy="selectin")
 
 

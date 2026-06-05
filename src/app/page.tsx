@@ -3,6 +3,8 @@
 import { SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar'
 import { AppSidebar } from '@/components/app/app-sidebar'
 import { useAppStore } from '@/store/app-store'
+import { useAuth } from '@/components/providers/auth-provider'
+import { LoginPage } from '@/components/app/login-page'
 import { Dashboard } from '@/components/app/dashboard'
 import { Projects } from '@/components/app/projects'
 import { ProjectDetail } from '@/components/app/project-detail'
@@ -18,6 +20,8 @@ import { GlobalSearch } from '@/components/app/global-search'
 import { ThemeToggle } from '@/components/app/theme-toggle'
 import { NotificationCenter } from '@/components/app/notification-center'
 import { AIAssistant } from '@/components/app/ai-assistant'
+import { Button } from '@/components/ui/button'
+import { LogOut } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 
 const pageTitles: Record<string, string> = {
@@ -36,6 +40,7 @@ const pageTitles: Record<string, string> = {
 
 function AppContent() {
   const { currentView } = useAppStore()
+  const { user, logout } = useAuth()
 
   const pageTitle = pageTitles[currentView] ?? 'ПРОМЕБЕЛЬ'
   const hasOwnHeader = (currentView as string) === 'project-detail' || (currentView as string) === 'supplier-detail'
@@ -80,9 +85,23 @@ function AppContent() {
             </>
           )}
           <div className="ml-auto flex items-center gap-1.5">
+            {user && (
+              <span className="text-xs text-muted-foreground mr-1 hidden sm:inline">
+                {user.username}
+              </span>
+            )}
             <ThemeToggle />
             <NotificationCenter />
             <GlobalSearch />
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={logout}
+              title="Выйти"
+              className="text-muted-foreground hover:text-destructive"
+            >
+              <LogOut className="h-4 w-4" />
+            </Button>
           </div>
         </div>
         <div className={`page-transition ${hasOwnHeader ? '' : 'p-6'}`}>
@@ -105,5 +124,16 @@ function AppContent() {
 }
 
 export default function Home() {
+  const { isAuthenticated, isLoading } = useAuth()
+
+  if (isLoading) {
+    // Show nothing while checking stored token — avoids flash of login page
+    return null
+  }
+
+  if (!isAuthenticated) {
+    return <LoginPage />
+  }
+
   return <AppContent />
 }

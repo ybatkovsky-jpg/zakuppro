@@ -14,10 +14,10 @@
 - [x] **S01: S01** `risk:medium` `depends:[]`
   > After this: GET /health на каждом сервисе возвращает статус; docker-compose stop отрабатывает без потери задач
 
-- [ ] **S02: S02** `risk:medium` `depends:[]`
+- [x] **S02: S02** `risk:medium` `depends:[]`
   > After this: Искусственный сбой OpenAI API → автоматический retry с растущей задержкой → успешный ответ или graceful failure
 
-- [ ] **S03: Role-Based Access in Web UI** `risk:high` `depends:[]`
+- [ ] **S03: S03** `risk:high` `depends:[]`
   > After this: Владелец видит все проекты и склад, Менеджер — только свои проекты, Склад — только остатки
 
 - [ ] **S04: DLQ Admin UI** `risk:medium` `depends:[]`

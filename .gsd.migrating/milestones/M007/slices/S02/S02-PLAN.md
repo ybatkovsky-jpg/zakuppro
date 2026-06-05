@@ -37,7 +37,7 @@ Upstream: aiosmtplib.SMTPException, telegram.error.TelegramError, codebase retry
   - Files: `backend/email_notifier.py`, `backend/tests/test_email_notifier.py`
   - Verify: pytest backend/tests/test_email_notifier.py -v
 
-- [ ] **T03: Wire retry_sync into telegram_notifier.py all 6 public notification functions** `est:35m`
+- [x] **T03: Wire retry_sync into telegram_notifier.py all 6 public notification functions** `est:35m`
   Why: Telegram Bot API calls are HTTP-based and subject to transient network errors (timeout, connection reset, 5xx). Currently TelegramError is caught and returns False silently. Adding retry means a brief Telegram API outage doesn't lose a notification to the user.
   - Files: `backend/telegram_notifier.py`, `backend/tests/test_telegram_notifications.py`
   - Verify: pytest backend/tests/test_telegram_notifications.py -v

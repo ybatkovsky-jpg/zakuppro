@@ -1,5 +1,5 @@
 {
-  "compiledAt": "2026-06-04T23:04:56.617Z",
+  "compiledAt": "2026-06-05T04:11:52.592Z",
   "milestoneId": "M007",
   "pipeline": {
     "clarifyRoundLimit": 3,
@@ -104,8 +104,8 @@
       "metadata": {
         "unitType": "execute-task",
         "unitId": "M007.S02.T03",
-        "title": "Applied @retry_sync(TelegramError) to all 6 telegram_notifier.py functions, removed internal TelegramError catches, added 6 retry tests — 23/23 passing",
-        "status": "pending"
+        "title": "Applied @retry_sync(TelegramError) to all 6 telegram_notifier.py functions, re-raised TelegramError to decorator for retry, added 6 retry tests — 23/23 passing",
+        "status": "complete"
       }
     },
     {
@@ -118,6 +118,73 @@
         "unitType": "complete-slice",
         "unitId": "M007.S02",
         "title": "S02",
+        "status": "complete"
+      }
+    },
+    {
+      "id": "execute-task:M007:S03:T01",
+      "kind": "unit",
+      "dependsOn": [],
+      "writes": [],
+      "metadata": {
+        "unitType": "execute-task",
+        "unitId": "M007.S03.T01",
+        "title": "Applied RBAC guards to all 6 unprotected routers, added GET /users/me, fixed cascade deletes, and added 76 new integration tests (125 total passing)",
+        "status": "complete"
+      }
+    },
+    {
+      "id": "execute-task:M007:S03:T02",
+      "kind": "unit",
+      "dependsOn": [
+        "execute-task:M007:S03:T01"
+      ],
+      "writes": [],
+      "metadata": {
+        "unitType": "execute-task",
+        "unitId": "M007.S03.T02",
+        "title": "Create AuthProvider context + LoginPage + wire into app shell",
+        "status": "pending"
+      }
+    },
+    {
+      "id": "execute-task:M007:S03:T03",
+      "kind": "unit",
+      "dependsOn": [
+        "execute-task:M007:S03:T02"
+      ],
+      "writes": [],
+      "metadata": {
+        "unitType": "execute-task",
+        "unitId": "M007.S03.T03",
+        "title": "Filter sidebar navigation and guard views by user role",
+        "status": "pending"
+      }
+    },
+    {
+      "id": "execute-task:M007:S03:T04",
+      "kind": "unit",
+      "dependsOn": [
+        "execute-task:M007:S03:T03"
+      ],
+      "writes": [],
+      "metadata": {
+        "unitType": "execute-task",
+        "unitId": "M007.S03.T04",
+        "title": "Add per-component role-based visibility gating for action buttons and sections",
+        "status": "pending"
+      }
+    },
+    {
+      "id": "complete-slice:M007:S03",
+      "kind": "verification",
+      "dependsOn": [
+        "execute-task:M007:S03:T04"
+      ],
+      "metadata": {
+        "unitType": "complete-slice",
+        "unitId": "M007.S03",
+        "title": "S03",
         "status": "pending"
       }
     }

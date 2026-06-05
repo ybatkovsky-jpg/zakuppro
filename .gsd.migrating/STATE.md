@@ -1,9 +1,9 @@
 # GSD State
 
 **Active Milestone:** M007: Production Hardening
-**Active Slice:** S02: S02
+**Active Slice:** S03: S03
 **Phase:** executing
-**Requirements Status:** 5 active · 14 validated · 0 deferred · 0 out of scope
+**Requirements Status:** 4 active · 15 validated · 0 deferred · 0 out of scope
 
 ## Milestone Registry
 - ✅ **M001:** Foundation: Database Schema and Core API
@@ -21,4 +21,4 @@
 - None
 
 ## Next Action
-Execute T03: Applied @retry_sync(TelegramError) to all 6 telegram_notifier.py functions, removed internal TelegramError catches, added 6 retry tests — 23/23 passing in slice S02.
+Execute T02: Create AuthProvider context + LoginPage + wire into app shell in slice S03.

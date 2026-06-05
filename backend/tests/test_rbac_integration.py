@@ -32,7 +32,11 @@ from sqlalchemy.orm import sessionmaker
 project_root = Path(__file__).parent.parent.parent
 sys.path.insert(0, str(project_root))
 
-from backend.models import Base, User, Project, StockItem, Supplier, Role
+from backend.models import (
+    Base, User, Project, StockItem, Supplier, Role,
+    PurchaseOrder, Invoice, Payment, ProjectItem, ProductionTask,
+    UnresolvedTransaction
+)
 from backend.auth import create_access_token
 
 # Test database - use file-based SQLite to ensure data persists across connections
@@ -107,6 +111,62 @@ def test_client_with_db():
         # Create test supplier (matching Supplier model structure)
         supplier = Supplier(name="Supplier X", email="supplier@example.com", requisites="INN: 1234567890")
         session.add(supplier)
+        session.flush()
+
+        # Create purchase order (linked to project1, owned by manager1)
+        po = PurchaseOrder(
+            project_id=project1.id,
+            supplier_id=supplier.id,
+            status="Сформирован"
+        )
+        session.add(po)
+        session.flush()
+
+        # Create invoice (linked to purchase_order above -> project1)
+        invoice = Invoice(
+            purchase_order_id=po.id,
+            status="Ожидает сверки"
+        )
+        session.add(invoice)
+        session.flush()
+
+        # Create payment (linked to invoice -> purchase_order -> project1)
+        payment = Payment(
+            invoice_id=invoice.id,
+            amount=5000.00,
+            payment_date=datetime.utcnow()
+        )
+        session.add(payment)
+        session.flush()
+
+        # Create project item (linked to project1)
+        project_item = ProjectItem(
+            project_id=project1.id,
+            name="Test BOM Item",
+            sku="BOM001",
+            qty=10,
+            status="К закупке"
+        )
+        session.add(project_item)
+        session.flush()
+
+        # Create production task (linked to project1)
+        prod_task = ProductionTask(
+            project_id=project1.id,
+            status="Ожидание комплектации"
+        )
+        session.add(prod_task)
+        session.flush()
+
+        # Create unresolved transaction (no ownership chain)
+        unresolved = UnresolvedTransaction(
+            amount=7500.00,
+            description="Test bank transaction",
+            bank_date=datetime.utcnow(),
+            status="Не распределено"
+        )
+        session.add(unresolved)
+
         session.commit()  # Commit all data
 
         # Override get_db to use our test engine
@@ -607,3 +667,568 @@ class TestCrossRoleIsolation:
         projects = response.json()
         project_ids = [p["id"] for p in projects]
         assert 1 not in project_ids  # Project 1 belongs to manager1
+
+
+# =============================================================================
+# GET /users/me Tests
+# =============================================================================
+
+class TestUsersMe:
+    """Test GET /users/me endpoint."""
+
+    def test_users_me_returns_current_user(self, test_client_with_db: TestClient):
+        """GET /users/me returns authenticated user info."""
+        headers = get_auth_headers_for_client(test_client_with_db, "owner_user")
+        response = test_client_with_db.get("/api/auth/users/me", headers=headers)
+        assert response.status_code == 200
+        data = response.json()
+        assert data["username"] == "owner_user"
+        assert data["email"] == "owner@example.com"
+        assert data["role"] == "owner"
+
+    def test_users_me_manager(self, test_client_with_db: TestClient):
+        """GET /users/me returns manager user info."""
+        headers = get_auth_headers_for_client(test_client_with_db, "manager1_user")
+        response = test_client_with_db.get("/api/auth/users/me", headers=headers)
+        assert response.status_code == 200
+        data = response.json()
+        assert data["username"] == "manager1_user"
+        assert data["role"] == "manager"
+
+    def test_users_me_warehouse(self, test_client_with_db: TestClient):
+        """GET /users/me returns warehouse user info."""
+        headers = get_auth_headers_for_client(test_client_with_db, "warehouse_user")
+        response = test_client_with_db.get("/api/auth/users/me", headers=headers)
+        assert response.status_code == 200
+        data = response.json()
+        assert data["username"] == "warehouse_user"
+        assert data["role"] == "warehouse"
+
+    def test_users_me_requires_auth(self, test_client_with_db: TestClient):
+        """GET /users/me without token returns 401."""
+        response = test_client_with_db.get("/api/auth/users/me")
+        assert response.status_code == 401
+
+
+# =============================================================================
+# No Auth Tests — New Routers
+# =============================================================================
+
+class TestNoAuthNewRouters:
+    """Test that the 6 newly protected routers require authentication."""
+
+    def test_purchase_orders_requires_auth(self, test_client_with_db: TestClient):
+        response = test_client_with_db.get("/api/purchase-orders/")
+        assert response.status_code == 401
+
+    def test_invoices_requires_auth(self, test_client_with_db: TestClient):
+        response = test_client_with_db.get("/api/invoices/")
+        assert response.status_code == 401
+
+    def test_payments_requires_auth(self, test_client_with_db: TestClient):
+        response = test_client_with_db.get("/api/payments/")
+        assert response.status_code == 401
+
+    def test_project_items_requires_auth(self, test_client_with_db: TestClient):
+        response = test_client_with_db.get("/api/project-items/")
+        assert response.status_code == 401
+
+    def test_production_tasks_requires_auth(self, test_client_with_db: TestClient):
+        response = test_client_with_db.get("/api/production-tasks/")
+        assert response.status_code == 401
+
+    def test_unresolved_transactions_requires_auth(self, test_client_with_db: TestClient):
+        response = test_client_with_db.get("/api/unresolved-transactions/")
+        assert response.status_code == 401
+
+    def test_invoice_single_requires_auth(self, test_client_with_db: TestClient):
+        response = test_client_with_db.get("/api/invoices/1")
+        assert response.status_code == 401
+
+    def test_payment_single_requires_auth(self, test_client_with_db: TestClient):
+        response = test_client_with_db.get("/api/payments/1")
+        assert response.status_code == 401
+
+
+# =============================================================================
+# Owner Access Tests — New Routers
+# =============================================================================
+
+class TestOwnerAccessNewRouters:
+    """Owner role has full access to all new router endpoints."""
+
+    def test_owner_list_purchase_orders(self, test_client_with_db: TestClient):
+        headers = get_auth_headers_for_client(test_client_with_db, "owner_user")
+        response = test_client_with_db.get("/api/purchase-orders/", headers=headers)
+        assert response.status_code == 200
+        assert len(response.json()) >= 1
+
+    def test_owner_get_purchase_order(self, test_client_with_db: TestClient):
+        headers = get_auth_headers_for_client(test_client_with_db, "owner_user")
+        response = test_client_with_db.get("/api/purchase-orders/1", headers=headers)
+        assert response.status_code == 200
+        assert response.json()["status"] == "Сформирован"
+
+    def test_owner_create_purchase_order(self, test_client_with_db: TestClient):
+        headers = get_auth_headers_for_client(test_client_with_db, "owner_user")
+        response = test_client_with_db.post("/api/purchase-orders/", json={
+            "project_id": 1,
+            "supplier_id": 1
+        }, headers=headers)
+        assert response.status_code == 201
+
+    def test_owner_update_purchase_order(self, test_client_with_db: TestClient):
+        headers = get_auth_headers_for_client(test_client_with_db, "owner_user")
+        response = test_client_with_db.put("/api/purchase-orders/1", json={
+            "status": "Отправлен"
+        }, headers=headers)
+        assert response.status_code == 200
+        assert response.json()["status"] == "Отправлен"
+
+    def test_owner_delete_purchase_order(self, test_client_with_db: TestClient):
+        headers = get_auth_headers_for_client(test_client_with_db, "owner_user")
+        response = test_client_with_db.delete("/api/purchase-orders/1", headers=headers)
+        assert response.status_code == 204
+
+    def test_owner_list_invoices(self, test_client_with_db: TestClient):
+        headers = get_auth_headers_for_client(test_client_with_db, "owner_user")
+        response = test_client_with_db.get("/api/invoices/", headers=headers)
+        assert response.status_code == 200
+        assert len(response.json()) >= 1
+
+    def test_owner_get_invoice(self, test_client_with_db: TestClient):
+        headers = get_auth_headers_for_client(test_client_with_db, "owner_user")
+        response = test_client_with_db.get("/api/invoices/1", headers=headers)
+        assert response.status_code == 200
+
+    def test_owner_create_invoice(self, test_client_with_db: TestClient):
+        headers = get_auth_headers_for_client(test_client_with_db, "owner_user")
+        response = test_client_with_db.post("/api/invoices/", json={
+            "purchase_order_id": 1
+        }, headers=headers)
+        assert response.status_code == 201
+
+    def test_owner_update_invoice(self, test_client_with_db: TestClient):
+        headers = get_auth_headers_for_client(test_client_with_db, "owner_user")
+        response = test_client_with_db.put("/api/invoices/1", json={
+            "status": "Сверен"
+        }, headers=headers)
+        assert response.status_code == 200
+        assert response.json()["status"] == "Сверен"
+
+    def test_owner_delete_invoice(self, test_client_with_db: TestClient):
+        headers = get_auth_headers_for_client(test_client_with_db, "owner_user")
+        response = test_client_with_db.delete("/api/invoices/1", headers=headers)
+        assert response.status_code == 204
+
+    def test_owner_list_payments(self, test_client_with_db: TestClient):
+        headers = get_auth_headers_for_client(test_client_with_db, "owner_user")
+        response = test_client_with_db.get("/api/payments/", headers=headers)
+        assert response.status_code == 200
+        assert len(response.json()) >= 1
+
+    def test_owner_get_payment(self, test_client_with_db: TestClient):
+        headers = get_auth_headers_for_client(test_client_with_db, "owner_user")
+        response = test_client_with_db.get("/api/payments/1", headers=headers)
+        assert response.status_code == 200
+
+    def test_owner_create_payment(self, test_client_with_db: TestClient):
+        headers = get_auth_headers_for_client(test_client_with_db, "owner_user")
+        response = test_client_with_db.post("/api/payments/", json={
+            "invoice_id": 1,
+            "amount": 1000.00,
+            "payment_date": "2026-01-01T00:00:00"
+        }, headers=headers)
+        assert response.status_code == 201
+
+    def test_owner_update_payment(self, test_client_with_db: TestClient):
+        headers = get_auth_headers_for_client(test_client_with_db, "owner_user")
+        response = test_client_with_db.put("/api/payments/1", json={
+            "amount": 6000.00
+        }, headers=headers)
+        assert response.status_code == 200
+
+    def test_owner_delete_payment(self, test_client_with_db: TestClient):
+        headers = get_auth_headers_for_client(test_client_with_db, "owner_user")
+        response = test_client_with_db.delete("/api/payments/1", headers=headers)
+        assert response.status_code == 204
+
+    def test_owner_list_project_items(self, test_client_with_db: TestClient):
+        headers = get_auth_headers_for_client(test_client_with_db, "owner_user")
+        response = test_client_with_db.get("/api/project-items/", headers=headers)
+        assert response.status_code == 200
+        assert len(response.json()) >= 1
+
+    def test_owner_get_project_item(self, test_client_with_db: TestClient):
+        headers = get_auth_headers_for_client(test_client_with_db, "owner_user")
+        response = test_client_with_db.get("/api/project-items/1", headers=headers)
+        assert response.status_code == 200
+        assert response.json()["name"] == "Test BOM Item"
+
+    def test_owner_create_project_item(self, test_client_with_db: TestClient):
+        headers = get_auth_headers_for_client(test_client_with_db, "owner_user")
+        response = test_client_with_db.post("/api/project-items/", json={
+            "project_id": 1,
+            "name": "Owner Item",
+            "sku": "OWN001",
+            "qty": 5
+        }, headers=headers)
+        assert response.status_code == 201
+
+    def test_owner_update_project_item(self, test_client_with_db: TestClient):
+        headers = get_auth_headers_for_client(test_client_with_db, "owner_user")
+        response = test_client_with_db.put("/api/project-items/1", json={
+            "name": "Updated BOM"
+        }, headers=headers)
+        assert response.status_code == 200
+
+    def test_owner_delete_project_item(self, test_client_with_db: TestClient):
+        headers = get_auth_headers_for_client(test_client_with_db, "owner_user")
+        response = test_client_with_db.delete("/api/project-items/1", headers=headers)
+        assert response.status_code == 204
+
+    def test_owner_list_production_tasks(self, test_client_with_db: TestClient):
+        headers = get_auth_headers_for_client(test_client_with_db, "owner_user")
+        response = test_client_with_db.get("/api/production-tasks/", headers=headers)
+        assert response.status_code == 200
+        assert len(response.json()) >= 1
+
+    def test_owner_get_production_task(self, test_client_with_db: TestClient):
+        headers = get_auth_headers_for_client(test_client_with_db, "owner_user")
+        response = test_client_with_db.get("/api/production-tasks/1", headers=headers)
+        assert response.status_code == 200
+
+    def test_owner_create_production_task(self, test_client_with_db: TestClient):
+        headers = get_auth_headers_for_client(test_client_with_db, "owner_user")
+        response = test_client_with_db.post("/api/production-tasks/", json={
+            "project_id": 1
+        }, headers=headers)
+        assert response.status_code == 201
+
+    def test_owner_update_production_task(self, test_client_with_db: TestClient):
+        headers = get_auth_headers_for_client(test_client_with_db, "owner_user")
+        response = test_client_with_db.put("/api/production-tasks/1", json={
+            "status": "В работе"
+        }, headers=headers)
+        assert response.status_code == 200
+        assert response.json()["status"] == "В работе"
+
+    def test_owner_delete_production_task(self, test_client_with_db: TestClient):
+        headers = get_auth_headers_for_client(test_client_with_db, "owner_user")
+        response = test_client_with_db.delete("/api/production-tasks/1", headers=headers)
+        assert response.status_code == 204
+
+    def test_owner_list_unresolved_transactions(self, test_client_with_db: TestClient):
+        headers = get_auth_headers_for_client(test_client_with_db, "owner_user")
+        response = test_client_with_db.get("/api/unresolved-transactions/", headers=headers)
+        assert response.status_code == 200
+        assert len(response.json()) >= 1
+
+    def test_owner_get_unresolved_transaction(self, test_client_with_db: TestClient):
+        headers = get_auth_headers_for_client(test_client_with_db, "owner_user")
+        response = test_client_with_db.get("/api/unresolved-transactions/1", headers=headers)
+        assert response.status_code == 200
+
+    def test_owner_create_unresolved_transaction(self, test_client_with_db: TestClient):
+        headers = get_auth_headers_for_client(test_client_with_db, "owner_user")
+        response = test_client_with_db.post("/api/unresolved-transactions/", json={
+            "amount": 3000.00,
+            "description": "New bank tx",
+            "bank_date": "2026-01-01T00:00:00"
+        }, headers=headers)
+        assert response.status_code == 201
+
+    def test_owner_update_unresolved_transaction(self, test_client_with_db: TestClient):
+        headers = get_auth_headers_for_client(test_client_with_db, "owner_user")
+        response = test_client_with_db.put("/api/unresolved-transactions/1", json={
+            "description": "Updated description"
+        }, headers=headers)
+        assert response.status_code == 200
+
+    def test_owner_delete_unresolved_transaction(self, test_client_with_db: TestClient):
+        headers = get_auth_headers_for_client(test_client_with_db, "owner_user")
+        response = test_client_with_db.delete("/api/unresolved-transactions/1", headers=headers)
+        assert response.status_code == 204
+
+
+# =============================================================================
+# Warehouse Access Tests — New Routers (all should be 403)
+# =============================================================================
+
+class TestWarehouseAccessNewRouters:
+    """Warehouse role has no access to any of the 6 new routers."""
+
+    def test_warehouse_cannot_access_purchase_orders(self, test_client_with_db: TestClient):
+        headers = get_auth_headers_for_client(test_client_with_db, "warehouse_user")
+        response = test_client_with_db.get("/api/purchase-orders/", headers=headers)
+        assert response.status_code == 403
+        data = response.json()["detail"]
+        assert "PERMISSION_DENIED" in data["error_code"]
+
+    def test_warehouse_cannot_access_invoices(self, test_client_with_db: TestClient):
+        headers = get_auth_headers_for_client(test_client_with_db, "warehouse_user")
+        response = test_client_with_db.get("/api/invoices/", headers=headers)
+        assert response.status_code == 403
+
+    def test_warehouse_cannot_access_payments(self, test_client_with_db: TestClient):
+        headers = get_auth_headers_for_client(test_client_with_db, "warehouse_user")
+        response = test_client_with_db.get("/api/payments/", headers=headers)
+        assert response.status_code == 403
+
+    def test_warehouse_cannot_access_project_items(self, test_client_with_db: TestClient):
+        headers = get_auth_headers_for_client(test_client_with_db, "warehouse_user")
+        response = test_client_with_db.get("/api/project-items/", headers=headers)
+        assert response.status_code == 403
+
+    def test_warehouse_cannot_access_production_tasks(self, test_client_with_db: TestClient):
+        headers = get_auth_headers_for_client(test_client_with_db, "warehouse_user")
+        response = test_client_with_db.get("/api/production-tasks/", headers=headers)
+        assert response.status_code == 403
+
+    def test_warehouse_cannot_access_unresolved_transactions(self, test_client_with_db: TestClient):
+        headers = get_auth_headers_for_client(test_client_with_db, "warehouse_user")
+        response = test_client_with_db.get("/api/unresolved-transactions/", headers=headers)
+        assert response.status_code == 403
+
+    def test_warehouse_cannot_get_single_purchase_order(self, test_client_with_db: TestClient):
+        headers = get_auth_headers_for_client(test_client_with_db, "warehouse_user")
+        response = test_client_with_db.get("/api/purchase-orders/1", headers=headers)
+        assert response.status_code == 403
+
+    def test_warehouse_cannot_get_single_invoice(self, test_client_with_db: TestClient):
+        headers = get_auth_headers_for_client(test_client_with_db, "warehouse_user")
+        response = test_client_with_db.get("/api/invoices/1", headers=headers)
+        assert response.status_code == 403
+
+
+# =============================================================================
+# Manager Access Tests — New Routers (Ownership Filtering)
+# =============================================================================
+
+class TestManagerAccessNewRouters:
+    """Manager sees only own resources through ownership chains."""
+
+    def test_manager1_list_purchase_orders_sees_own(self, test_client_with_db: TestClient):
+        """Manager1 sees purchase orders in own project (project1)."""
+        headers = get_auth_headers_for_client(test_client_with_db, "manager1_user")
+        response = test_client_with_db.get("/api/purchase-orders/", headers=headers)
+        assert response.status_code == 200
+        orders = response.json()
+        assert len(orders) >= 1
+        # All visible POs should belong to project 1 (manager1's project)
+        po_ids = [o["id"] for o in orders]
+        assert 1 in po_ids
+
+    def test_manager1_get_own_purchase_order(self, test_client_with_db: TestClient):
+        """Manager1 can access own purchase order."""
+        headers = get_auth_headers_for_client(test_client_with_db, "manager1_user")
+        response = test_client_with_db.get("/api/purchase-orders/1", headers=headers)
+        assert response.status_code == 200
+
+    def test_manager1_create_purchase_order_in_own_project(self, test_client_with_db: TestClient):
+        """Manager1 can create PO in own project."""
+        headers = get_auth_headers_for_client(test_client_with_db, "manager1_user")
+        response = test_client_with_db.post("/api/purchase-orders/", json={
+            "project_id": 1,
+            "supplier_id": 1
+        }, headers=headers)
+        assert response.status_code == 201
+
+    def test_manager1_cannot_create_purchase_order_in_other_project(self, test_client_with_db: TestClient):
+        """Manager1 gets 403 creating PO in manager2's project."""
+        headers = get_auth_headers_for_client(test_client_with_db, "manager1_user")
+        response = test_client_with_db.post("/api/purchase-orders/", json={
+            "project_id": 2,
+            "supplier_id": 1
+        }, headers=headers)
+        assert response.status_code == 403
+
+    def test_manager1_list_invoices_sees_own(self, test_client_with_db: TestClient):
+        """Manager1 sees invoices in own projects (via PO chain)."""
+        headers = get_auth_headers_for_client(test_client_with_db, "manager1_user")
+        response = test_client_with_db.get("/api/invoices/", headers=headers)
+        assert response.status_code == 200
+        invoices = response.json()
+        assert len(invoices) >= 1
+
+    def test_manager1_get_own_invoice(self, test_client_with_db: TestClient):
+        """Manager1 can access own invoice."""
+        headers = get_auth_headers_for_client(test_client_with_db, "manager1_user")
+        response = test_client_with_db.get("/api/invoices/1", headers=headers)
+        assert response.status_code == 200
+
+    def test_manager1_create_invoice_in_own_project(self, test_client_with_db: TestClient):
+        """Manager1 can create invoice for own project's PO."""
+        headers = get_auth_headers_for_client(test_client_with_db, "manager1_user")
+        response = test_client_with_db.post("/api/invoices/", json={
+            "purchase_order_id": 1
+        }, headers=headers)
+        assert response.status_code == 201
+
+    def test_manager1_list_payments_sees_own(self, test_client_with_db: TestClient):
+        """Manager1 sees payments in own projects (via invoice chain)."""
+        headers = get_auth_headers_for_client(test_client_with_db, "manager1_user")
+        response = test_client_with_db.get("/api/payments/", headers=headers)
+        assert response.status_code == 200
+        payments = response.json()
+        assert len(payments) >= 1
+
+    def test_manager1_get_own_payment(self, test_client_with_db: TestClient):
+        """Manager1 can access own payment."""
+        headers = get_auth_headers_for_client(test_client_with_db, "manager1_user")
+        response = test_client_with_db.get("/api/payments/1", headers=headers)
+        assert response.status_code == 200
+
+    def test_manager1_list_project_items_sees_own(self, test_client_with_db: TestClient):
+        headers = get_auth_headers_for_client(test_client_with_db, "manager1_user")
+        response = test_client_with_db.get("/api/project-items/", headers=headers)
+        assert response.status_code == 200
+        items = response.json()
+        assert len(items) >= 1
+
+    def test_manager1_get_own_project_item(self, test_client_with_db: TestClient):
+        headers = get_auth_headers_for_client(test_client_with_db, "manager1_user")
+        response = test_client_with_db.get("/api/project-items/1", headers=headers)
+        assert response.status_code == 200
+
+    def test_manager1_create_project_item_in_own_project(self, test_client_with_db: TestClient):
+        headers = get_auth_headers_for_client(test_client_with_db, "manager1_user")
+        response = test_client_with_db.post("/api/project-items/", json={
+            "project_id": 1,
+            "name": "Manager Item",
+            "sku": "MGR001",
+            "qty": 3
+        }, headers=headers)
+        assert response.status_code == 201
+
+    def test_manager1_cannot_create_project_item_in_other_project(self, test_client_with_db: TestClient):
+        headers = get_auth_headers_for_client(test_client_with_db, "manager1_user")
+        response = test_client_with_db.post("/api/project-items/", json={
+            "project_id": 2,
+            "name": "Should Fail",
+            "sku": "BAD001",
+            "qty": 1
+        }, headers=headers)
+        assert response.status_code == 403
+
+    def test_manager1_list_production_tasks_sees_own(self, test_client_with_db: TestClient):
+        headers = get_auth_headers_for_client(test_client_with_db, "manager1_user")
+        response = test_client_with_db.get("/api/production-tasks/", headers=headers)
+        assert response.status_code == 200
+        tasks = response.json()
+        assert len(tasks) >= 1
+
+    def test_manager1_get_own_production_task(self, test_client_with_db: TestClient):
+        headers = get_auth_headers_for_client(test_client_with_db, "manager1_user")
+        response = test_client_with_db.get("/api/production-tasks/1", headers=headers)
+        assert response.status_code == 200
+
+    def test_manager1_create_production_task_in_own_project(self, test_client_with_db: TestClient):
+        headers = get_auth_headers_for_client(test_client_with_db, "manager1_user")
+        response = test_client_with_db.post("/api/production-tasks/", json={
+            "project_id": 1
+        }, headers=headers)
+        assert response.status_code == 201
+
+    def test_manager1_cannot_create_production_task_in_other_project(self, test_client_with_db: TestClient):
+        headers = get_auth_headers_for_client(test_client_with_db, "manager1_user")
+        response = test_client_with_db.post("/api/production-tasks/", json={
+            "project_id": 2
+        }, headers=headers)
+        assert response.status_code == 403
+
+    def test_manager1_list_unresolved_transactions(self, test_client_with_db: TestClient):
+        """Manager can see unresolved transactions (role-gated, no ownership filter)."""
+        headers = get_auth_headers_for_client(test_client_with_db, "manager1_user")
+        response = test_client_with_db.get("/api/unresolved-transactions/", headers=headers)
+        assert response.status_code == 200
+        assert len(response.json()) >= 1
+
+    def test_manager1_get_unresolved_transaction(self, test_client_with_db: TestClient):
+        headers = get_auth_headers_for_client(test_client_with_db, "manager1_user")
+        response = test_client_with_db.get("/api/unresolved-transactions/1", headers=headers)
+        assert response.status_code == 200
+
+
+# =============================================================================
+# Cross-Role Isolation Tests — New Routers
+# =============================================================================
+
+class TestCrossRoleIsolationNewRouters:
+    """Test that manager1 cannot access manager2's resources through new routers."""
+
+    def test_manager1_cannot_see_manager2_purchase_orders(self, test_client_with_db: TestClient):
+        """Manager1 list doesn't include POs from manager2's projects."""
+        headers = get_auth_headers_for_client(test_client_with_db, "manager1_user")
+        response = test_client_with_db.get("/api/purchase-orders/", headers=headers)
+        assert response.status_code == 200
+        orders = response.json()
+        # PO id=1 belongs to project1 (manager1), verify no PO from project2
+        for o in orders:
+            assert o["project_id"] == 1  # all visible POs belong to project1
+
+    def test_manager1_cannot_see_manager2_invoices(self, test_client_with_db: TestClient):
+        """Manager1 list doesn't include invoices from manager2's projects."""
+        headers = get_auth_headers_for_client(test_client_with_db, "manager1_user")
+        response = test_client_with_db.get("/api/invoices/", headers=headers)
+        assert response.status_code == 200
+        invoices = response.json()
+        # All visible invoices should belong to PO 1 (project1)
+        for inv in invoices:
+            assert inv["purchase_order_id"] == 1
+
+    def test_manager1_cannot_see_manager2_payments(self, test_client_with_db: TestClient):
+        """Manager1 list doesn't include payments from manager2's projects."""
+        headers = get_auth_headers_for_client(test_client_with_db, "manager1_user")
+        response = test_client_with_db.get("/api/payments/", headers=headers)
+        assert response.status_code == 200
+        payments = response.json()
+        for p in payments:
+            assert p["invoice_id"] == 1  # all visible belong to invoice 1 (project1)
+
+    def test_manager1_cannot_see_manager2_project_items(self, test_client_with_db: TestClient):
+        """Manager1 list doesn't include items from manager2's projects."""
+        headers = get_auth_headers_for_client(test_client_with_db, "manager1_user")
+        response = test_client_with_db.get("/api/project-items/", headers=headers)
+        assert response.status_code == 200
+        items = response.json()
+        for item in items:
+            assert item["project_id"] == 1
+
+    def test_manager1_cannot_see_manager2_production_tasks(self, test_client_with_db: TestClient):
+        """Manager1 list doesn't include tasks from manager2's projects."""
+        headers = get_auth_headers_for_client(test_client_with_db, "manager1_user")
+        response = test_client_with_db.get("/api/production-tasks/", headers=headers)
+        assert response.status_code == 200
+        tasks = response.json()
+        for t in tasks:
+            assert t["project_id"] == 1
+
+    def test_warehouse_403_has_correct_error_code_on_all_new_routers(self, test_client_with_db: TestClient):
+        """All new routers return structured 403 for warehouse role."""
+        headers = get_auth_headers_for_client(test_client_with_db, "warehouse_user")
+        routes = [
+            "/api/purchase-orders/", "/api/invoices/", "/api/payments/",
+            "/api/project-items/", "/api/production-tasks/",
+            "/api/unresolved-transactions/"
+        ]
+        for route in routes:
+            response = test_client_with_db.get(route, headers=headers)
+            assert response.status_code == 403, f"{route} should return 403"
+            data = response.json()["detail"]
+            assert data["error_code"] == "PERMISSION_DENIED", f"{route} missing error_code"
+            assert "user_role" in data, f"{route} missing user_role"
+            assert data["user_role"] == "warehouse", f"{route} user_role mismatch"
+
+    def test_manager_ownership_filter_returns_empty_for_cross_project_access(self, test_client_with_db: TestClient):
+        """Manager2 sees empty lists for all owned resources (none in manager1's project)."""
+        # Manager2 owns project2; all test data is linked to project1 (manager1's)
+        headers = get_auth_headers_for_client(test_client_with_db, "manager2_user")
+        routes_to_check = [
+            "/api/purchase-orders/", "/api/invoices/", "/api/payments/",
+            "/api/project-items/", "/api/production-tasks/"
+        ]
+        for route in routes_to_check:
+            response = test_client_with_db.get(route, headers=headers)
+            assert response.status_code == 200
+            assert response.json() == [], f"{route} should return empty for manager2"

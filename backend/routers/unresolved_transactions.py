@@ -1,6 +1,13 @@
 """
 UnresolvedTransaction CRUD router for ZakupPro API.
-Provides endpoints for managing unresolved bank transactions.
+
+Provides endpoints for managing unresolved bank transactions with role-based access control.
+- Owner: full CRUD access to all unresolved transactions
+- Manager: full CRUD access to all unresolved transactions (no per-user filtering — no ownership path)
+- Warehouse: no access (403 Forbidden)
+
+Note: UnresolvedTransaction has no project ownership chain, so it's role-gated
+to owner/manager only without per-user filtering.
 """
 from fastapi import APIRouter, Depends, HTTPException, status, Query
 from sqlalchemy.orm import Session, joinedload
@@ -13,7 +20,7 @@ import logging
 from backend.database import get_db
 from backend.models import (
     UnresolvedTransaction, Supplier, PurchaseOrder, Invoice, InvoiceItem,
-    Payment, TransactionMatchingAudit
+    Payment, TransactionMatchingAudit, User, Role
 )
 from backend.schemas import (
     UnresolvedTransactionCreate,
@@ -28,6 +35,7 @@ from backend.schemas import (
     TransactionMatchingAuditResponse,
     AuditHistoryListResponse
 )
+from backend.rbac import require_role
 
 logger = logging.getLogger(__name__)
 
@@ -46,10 +54,16 @@ def list_unresolved_transactions(
     search: Optional[str] = Query(None, description="Search in description field (case-insensitive partial match)"),
     order_by: Optional[str] = Query("bank_date", description="Field to order by (id, amount, bank_date, created_at)"),
     order_dir: Optional[str] = Query("desc", description="Sort direction: 'asc' or 'desc'"),
+    current_user: User = Depends(require_role([Role.OWNER, Role.MANAGER])),
     db: Session = Depends(get_db)
 ):
     """
     List unresolved transactions with filtering, search, and pagination.
+
+    Access Control:
+        - Owner: full access to all unresolved transactions
+        - Manager: full access to all unresolved transactions
+        - Warehouse: 403 Forbidden
 
     Filters:
     - status: Filter by transaction status
@@ -128,10 +142,16 @@ def get_audit_history(
     date_from: Optional[datetime] = Query(None, description="Filter from this matched_at date (inclusive)"),
     date_to: Optional[datetime] = Query(None, description="Filter until this matched_at date (inclusive)"),
     matched_by: Optional[str] = Query(None, description="Filter by matched_by value (e.g., 'auto', 'manual')"),
+    current_user: User = Depends(require_role([Role.OWNER, Role.MANAGER])),
     db: Session = Depends(get_db)
 ):
     """
     Get audit history for transaction matching with filters.
+
+    Access Control:
+        - Owner: full access
+        - Manager: full access
+        - Warehouse: 403 Forbidden
 
     Returns records from TransactionMatchingAudit with nested details:
     - bank_transaction: For auto-matched bank transactions
@@ -208,9 +228,18 @@ def get_audit_history(
 
 
 @router.get("/{transaction_id}", response_model=UnresolvedTransactionResponse)
-def get_unresolved_transaction(transaction_id: int, db: Session = Depends(get_db)):
+def get_unresolved_transaction(
+    transaction_id: int,
+    current_user: User = Depends(require_role([Role.OWNER, Role.MANAGER])),
+    db: Session = Depends(get_db)
+):
     """
     Get a single unresolved transaction by ID.
+
+    Access Control:
+        - Owner: full access
+        - Manager: full access
+        - Warehouse: 403 Forbidden
     """
     transaction = db.query(UnresolvedTransaction).filter(UnresolvedTransaction.id == transaction_id).first()
     if not transaction:
@@ -222,21 +251,41 @@ def get_unresolved_transaction(transaction_id: int, db: Session = Depends(get_db
 
 
 @router.post("/", response_model=UnresolvedTransactionResponse, status_code=status.HTTP_201_CREATED)
-def create_unresolved_transaction(transaction_data: UnresolvedTransactionCreate, db: Session = Depends(get_db)):
+def create_unresolved_transaction(
+    transaction_data: UnresolvedTransactionCreate,
+    current_user: User = Depends(require_role([Role.OWNER, Role.MANAGER])),
+    db: Session = Depends(get_db)
+):
     """
     Create a new unresolved transaction.
+
+    Access Control:
+        - Owner: can create
+        - Manager: can create
+        - Warehouse: 403 Forbidden
     """
     new_transaction = UnresolvedTransaction(**transaction_data.model_dump())
     db.add(new_transaction)
     db.commit()
     db.refresh(new_transaction)
+    logger.info(f"User {current_user.id} (role: {current_user.role.value}) created unresolved transaction {new_transaction.id}")
     return new_transaction
 
 
 @router.put("/{transaction_id}", response_model=UnresolvedTransactionResponse)
-def update_unresolved_transaction(transaction_id: int, transaction_data: UnresolvedTransactionUpdate, db: Session = Depends(get_db)):
+def update_unresolved_transaction(
+    transaction_id: int,
+    transaction_data: UnresolvedTransactionUpdate,
+    current_user: User = Depends(require_role([Role.OWNER, Role.MANAGER])),
+    db: Session = Depends(get_db)
+):
     """
     Update an existing unresolved transaction.
+
+    Access Control:
+        - Owner: can update
+        - Manager: can update
+        - Warehouse: 403 Forbidden
     """
     transaction = db.query(UnresolvedTransaction).filter(UnresolvedTransaction.id == transaction_id).first()
     if not transaction:
@@ -251,13 +300,23 @@ def update_unresolved_transaction(transaction_id: int, transaction_data: Unresol
 
     db.commit()
     db.refresh(transaction)
+    logger.info(f"User {current_user.id} (role: {current_user.role.value}) updated unresolved transaction {transaction.id}")
     return transaction
 
 
 @router.delete("/{transaction_id}", status_code=status.HTTP_204_NO_CONTENT)
-def delete_unresolved_transaction(transaction_id: int, db: Session = Depends(get_db)):
+def delete_unresolved_transaction(
+    transaction_id: int,
+    current_user: User = Depends(require_role([Role.OWNER, Role.MANAGER])),
+    db: Session = Depends(get_db)
+):
     """
     Delete an unresolved transaction.
+
+    Access Control:
+        - Owner: can delete
+        - Manager: can delete
+        - Warehouse: 403 Forbidden
     """
     transaction = db.query(UnresolvedTransaction).filter(UnresolvedTransaction.id == transaction_id).first()
     if not transaction:
@@ -268,12 +327,23 @@ def delete_unresolved_transaction(transaction_id: int, db: Session = Depends(get
 
     db.delete(transaction)
     db.commit()
+    logger.info(f"User {current_user.id} (role: {current_user.role.value}) deleted unresolved transaction {transaction.id}")
+    return None
 
 
 @router.get("/{transaction_id}/candidates", response_model=List[InvoiceCandidateResponse])
-def get_invoice_candidates(transaction_id: int, db: Session = Depends(get_db)):
+def get_invoice_candidates(
+    transaction_id: int,
+    current_user: User = Depends(require_role([Role.OWNER, Role.MANAGER])),
+    db: Session = Depends(get_db)
+):
     """
     Get invoice candidate suggestions for an unresolved transaction.
+
+    Access Control:
+        - Owner: full access
+        - Manager: full access
+        - Warehouse: 403 Forbidden
 
     Uses relaxed matching tolerances (10% amount, 90 days) to suggest
     potential invoices for manual reconciliation.
@@ -393,10 +463,16 @@ def get_invoice_candidates(transaction_id: int, db: Session = Depends(get_db)):
 def manual_match_transaction(
     transaction_id: int,
     match_data: ManualMatchRequest,
+    current_user: User = Depends(require_role([Role.OWNER, Role.MANAGER])),
     db: Session = Depends(get_db)
 ):
     """
     Manually match an unresolved transaction to an invoice.
+
+    Access Control:
+        - Owner: can match
+        - Manager: can match
+        - Warehouse: 403 Forbidden
 
     Creates a Payment record linking the transaction to the invoice,
     creates a TransactionMatchingAudit entry with matched_by='manual',
@@ -516,10 +592,16 @@ def manual_match_transaction(
 @router.post("/bulk-match", response_model=BulkMatchResponse, status_code=status.HTTP_200_OK)
 def bulk_manual_match_transactions(
     match_request: BulkMatchRequest,
+    current_user: User = Depends(require_role([Role.OWNER, Role.MANAGER])),
     db: Session = Depends(get_db)
 ):
     """
     Bulk match multiple unresolved transactions to invoices.
+
+    Access Control:
+        - Owner: can match
+        - Manager: can match
+        - Warehouse: 403 Forbidden
 
     Processes a list of (unresolved_transaction_id, invoice_id, optional amount) tuples.
     Validates all inputs first, then wraps all match operations in a database transaction.
