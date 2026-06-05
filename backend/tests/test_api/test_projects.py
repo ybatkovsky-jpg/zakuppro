@@ -17,7 +17,7 @@ from fastapi.testclient import TestClient
 class TestCreateProject:
     """Test POST /api/projects endpoint."""
 
-    def test_create_project_success(self, test_client: TestClient):
+    def test_create_project_success(self, auth_client: TestClient):
         """POST returns 201 with created project including id."""
         payload = {
             "name": "New Construction Project",
@@ -25,7 +25,7 @@ class TestCreateProject:
             "status": "Проектирование",
             "total_cost": 250000.00
         }
-        response = test_client.post("/api/projects/", json=payload)
+        response = auth_client.post("/api/projects/", json=payload)
 
         assert response.status_code == 201
         data = response.json()
@@ -38,25 +38,25 @@ class TestCreateProject:
         assert isinstance(data["items"], list)
         assert len(data["items"]) == 0
 
-    def test_create_project_with_defaults(self, test_client: TestClient):
+    def test_create_project_with_defaults(self, auth_client: TestClient):
         """POST creates project with default values for optional fields."""
         payload = {
             "name": "Default Project",
             "client": "Default Client"
         }
-        response = test_client.post("/api/projects/", json=payload)
+        response = auth_client.post("/api/projects/", json=payload)
 
         assert response.status_code == 201
         data = response.json()
         assert data["status"] == "Проектирование"  # Default value
         assert data["total_cost"] is None
 
-    def test_create_project_validation_missing_name(self, test_client: TestClient):
+    def test_create_project_validation_missing_name(self, auth_client: TestClient):
         """POST returns 422 when required field 'name' is missing."""
         payload = {
             "client": "Client Without Name"
         }
-        response = test_client.post("/api/projects/", json=payload)
+        response = auth_client.post("/api/projects/", json=payload)
 
         assert response.status_code == 422
         data = response.json()
@@ -65,23 +65,23 @@ class TestCreateProject:
         error_detail = str(data)
         assert "name" in error_detail or "field required" in error_detail.lower()
 
-    def test_create_project_validation_missing_client(self, test_client: TestClient):
+    def test_create_project_validation_missing_client(self, auth_client: TestClient):
         """POST returns 422 when required field 'client' is missing."""
         payload = {
             "name": "Orphan Project"
         }
-        response = test_client.post("/api/projects/", json=payload)
+        response = auth_client.post("/api/projects/", json=payload)
 
         assert response.status_code == 422
 
-    def test_create_project_validation_extra_fields(self, test_client: TestClient):
+    def test_create_project_validation_extra_fields(self, auth_client: TestClient):
         """POST ignores extra fields not in schema (FastAPI default)."""
         payload = {
             "name": "Extra Project",
             "client": "Test Client",
             "unexpected_field": "should_be_ignored"
         }
-        response = test_client.post("/api/projects/", json=payload)
+        response = auth_client.post("/api/projects/", json=payload)
 
         assert response.status_code == 201
         data = response.json()
@@ -91,28 +91,28 @@ class TestCreateProject:
 class TestListProjects:
     """Test GET /api/projects endpoint."""
 
-    def test_list_projects_empty(self, test_client: TestClient):
+    def test_list_projects_empty(self, auth_client: TestClient):
         """GET returns empty list when no projects exist."""
-        response = test_client.get("/api/projects/")
+        response = auth_client.get("/api/projects/")
 
         assert response.status_code == 200
         data = response.json()
         assert isinstance(data, list)
         assert len(data) == 0
 
-    def test_list_projects_with_data(self, test_client: TestClient):
+    def test_list_projects_with_data(self, auth_client: TestClient):
         """GET returns list of all projects."""
         # Create two projects
-        test_client.post("/api/projects/", json={
+        auth_client.post("/api/projects/", json={
             "name": "Project A",
             "client": "Client A"
         })
-        test_client.post("/api/projects/", json={
+        auth_client.post("/api/projects/", json={
             "name": "Project B",
             "client": "Client B"
         })
 
-        response = test_client.get("/api/projects/")
+        response = auth_client.get("/api/projects/")
 
         assert response.status_code == 200
         data = response.json()
@@ -120,29 +120,29 @@ class TestListProjects:
         assert data[0]["name"] == "Project A"
         assert data[1]["name"] == "Project B"
 
-    def test_list_projects_pagination(self, test_client: TestClient):
+    def test_list_projects_pagination(self, auth_client: TestClient):
         """GET respects skip and limit query parameters."""
         # Create 5 projects
         for i in range(5):
-            test_client.post("/api/projects/", json={
+            auth_client.post("/api/projects/", json={
                 "name": f"Project {i}",
                 "client": f"Client {i}"
             })
 
         # Test skip
-        response = test_client.get("/api/projects/?skip=2")
+        response = auth_client.get("/api/projects/?skip=2")
         assert response.status_code == 200
         data = response.json()
         assert len(data) == 3
 
         # Test limit
-        response = test_client.get("/api/projects/?limit=3")
+        response = auth_client.get("/api/projects/?limit=3")
         assert response.status_code == 200
         data = response.json()
         assert len(data) == 3
 
         # Test both
-        response = test_client.get("/api/projects/?skip=1&limit=2")
+        response = auth_client.get("/api/projects/?skip=1&limit=2")
         assert response.status_code == 200
         data = response.json()
         assert len(data) == 2
@@ -151,16 +151,16 @@ class TestListProjects:
 class TestGetProject:
     """Test GET /api/projects/{id} endpoint."""
 
-    def test_get_project_success(self, test_client: TestClient):
+    def test_get_project_success(self, auth_client: TestClient):
         """GET returns project with id."""
-        create_response = test_client.post("/api/projects/", json={
+        create_response = auth_client.post("/api/projects/", json={
             "name": "Target Project",
             "client": "Target Client",
             "status": "В работе"
         })
         project_id = create_response.json()["id"]
 
-        response = test_client.get(f"/api/projects/{project_id}")
+        response = auth_client.get(f"/api/projects/{project_id}")
 
         assert response.status_code == 200
         data = response.json()
@@ -169,10 +169,10 @@ class TestGetProject:
         assert data["client"] == "Target Client"
         assert data["status"] == "В работе"
 
-    def test_get_project_with_eager_loaded_items(self, test_client: TestClient):
+    def test_get_project_with_eager_loaded_items(self, auth_client: TestClient):
         """GET returns project with items array included (eager loading)."""
         # Create project via API
-        project_response = test_client.post("/api/projects/", json={
+        project_response = auth_client.post("/api/projects/", json={
             "name": "Project with Items",
             "client": "Items Client",
             "status": "Проектирование"
@@ -181,7 +181,7 @@ class TestGetProject:
 
         # Create items via API
         for i in range(3):
-            test_client.post("/api/project-items/", json={
+            auth_client.post("/api/project-items/", json={
                 "project_id": project_id,
                 "name": f"Item {i}",
                 "sku": f"SKU-{i}",
@@ -189,7 +189,7 @@ class TestGetProject:
                 "status": "К закупке"
             })
 
-        response = test_client.get(f"/api/projects/{project_id}")
+        response = auth_client.get(f"/api/projects/{project_id}")
 
         assert response.status_code == 200
         data = response.json()
@@ -202,9 +202,9 @@ class TestGetProject:
         assert "sku" in data["items"][0]
         assert "qty" in data["items"][0]
 
-    def test_get_project_not_found(self, test_client: TestClient):
+    def test_get_project_not_found(self, auth_client: TestClient):
         """GET returns 404 when project id doesn't exist."""
-        response = test_client.get("/api/projects/99999")
+        response = auth_client.get("/api/projects/99999")
 
         assert response.status_code == 404
         data = response.json()
@@ -215,9 +215,9 @@ class TestGetProject:
 class TestUpdateProject:
     """Test PUT /api/projects/{id} endpoint."""
 
-    def test_update_project_success(self, test_client: TestClient):
+    def test_update_project_success(self, auth_client: TestClient):
         """PUT modifies project fields and returns updated data."""
-        create_response = test_client.post("/api/projects/", json={
+        create_response = auth_client.post("/api/projects/", json={
             "name": "Original Name",
             "client": "Original Client",
             "status": "Проектирование"
@@ -228,7 +228,7 @@ class TestUpdateProject:
             "name": "Updated Name",
             "status": "В работе"
         }
-        response = test_client.put(f"/api/projects/{project_id}", json=update_payload)
+        response = auth_client.put(f"/api/projects/{project_id}", json=update_payload)
 
         assert response.status_code == 200
         data = response.json()
@@ -237,9 +237,9 @@ class TestUpdateProject:
         assert data["client"] == "Original Client"  # Unchanged
         assert data["status"] == "В работе"
 
-    def test_update_project_partial(self, test_client: TestClient):
+    def test_update_project_partial(self, auth_client: TestClient):
         """PUT with partial fields only updates provided fields."""
-        create_response = test_client.post("/api/projects/", json={
+        create_response = auth_client.post("/api/projects/", json={
             "name": "Partial Update Test",
             "client": "Test Client",
             "status": "Проектирование",
@@ -248,7 +248,7 @@ class TestUpdateProject:
         project_id = create_response.json()["id"]
 
         # Only update total_cost
-        response = test_client.put(f"/api/projects/{project_id}", json={
+        response = auth_client.put(f"/api/projects/{project_id}", json={
             "total_cost": 5000.0
         })
 
@@ -257,9 +257,9 @@ class TestUpdateProject:
         assert data["total_cost"] == 5000.0
         assert data["name"] == "Partial Update Test"  # Unchanged
 
-    def test_update_project_not_found(self, test_client: TestClient):
+    def test_update_project_not_found(self, auth_client: TestClient):
         """PUT returns 404 when project id doesn't exist."""
-        response = test_client.put("/api/projects/99999", json={
+        response = auth_client.put("/api/projects/99999", json={
             "name": "Should Not Work"
         })
 
@@ -269,27 +269,27 @@ class TestUpdateProject:
 class TestDeleteProject:
     """Test DELETE /api/projects/{id} endpoint."""
 
-    def test_delete_project_success(self, test_client: TestClient):
+    def test_delete_project_success(self, auth_client: TestClient):
         """DELETE removes project and returns 204."""
-        create_response = test_client.post("/api/projects/", json={
+        create_response = auth_client.post("/api/projects/", json={
             "name": "To Be Deleted",
             "client": "Doomed Client"
         })
         project_id = create_response.json()["id"]
 
-        response = test_client.delete(f"/api/projects/{project_id}")
+        response = auth_client.delete(f"/api/projects/{project_id}")
 
         assert response.status_code == 204
         assert response.content == b""
 
         # Verify project is gone
-        get_response = test_client.get(f"/api/projects/{project_id}")
+        get_response = auth_client.get(f"/api/projects/{project_id}")
         assert get_response.status_code == 404
 
-    def test_delete_project_cascade_items(self, test_client: TestClient):
+    def test_delete_project_cascade_items(self, auth_client: TestClient):
         """DELETE cascade deletes associated project items."""
         # Create project via API
-        project_response = test_client.post("/api/projects/", json={
+        project_response = auth_client.post("/api/projects/", json={
             "name": "Cascade Test Project",
             "client": "Cascade Client",
             "status": "Проектирование"
@@ -297,14 +297,14 @@ class TestDeleteProject:
         project_id = project_response.json()["id"]
 
         # Create items via API
-        item1_response = test_client.post("/api/project-items/", json={
+        item1_response = auth_client.post("/api/project-items/", json={
             "project_id": project_id,
             "name": "Doomed Item 1",
             "sku": "DOOM-1",
             "qty": 10,
             "status": "К закупке"
         })
-        item2_response = test_client.post("/api/project-items/", json={
+        item2_response = auth_client.post("/api/project-items/", json={
             "project_id": project_id,
             "name": "Doomed Item 2",
             "sku": "DOOM-2",
@@ -314,20 +314,20 @@ class TestDeleteProject:
         item_ids = [item1_response.json()["id"], item2_response.json()["id"]]
 
         # Delete project via API
-        response = test_client.delete(f"/api/projects/{project_id}")
+        response = auth_client.delete(f"/api/projects/{project_id}")
         assert response.status_code == 204
 
         # Verify items are cascade deleted by trying to GET them
         # They should return 404 since project was deleted
         for item_id in item_ids:
-            item_response = test_client.get(f"/api/project-items/{item_id}")
+            item_response = auth_client.get(f"/api/project-items/{item_id}")
             # Items should be deleted (404) or we get some error
             # With cascade delete, items are removed
             assert item_response.status_code == 404
 
-    def test_delete_project_not_found(self, test_client: TestClient):
+    def test_delete_project_not_found(self, auth_client: TestClient):
         """DELETE returns 404 when project id doesn't exist."""
-        response = test_client.delete("/api/projects/99999")
+        response = auth_client.delete("/api/projects/99999")
 
         assert response.status_code == 404
 
@@ -335,17 +335,17 @@ class TestDeleteProject:
 class TestProjectItemsIntegration:
     """Test project-item relationship through API."""
 
-    def test_project_response_includes_items_array(self, test_client: TestClient):
+    def test_project_response_includes_items_array(self, auth_client: TestClient):
         """Verify ProjectResponse schema includes empty items array by default."""
         # Create project via API
-        project_response = test_client.post("/api/projects/", json={
+        project_response = auth_client.post("/api/projects/", json={
             "name": "Empty Items Project",
             "client": "Test Client",
             "status": "Проектирование"
         })
         project_id = project_response.json()["id"]
 
-        response = test_client.get(f"/api/projects/{project_id}")
+        response = auth_client.get(f"/api/projects/{project_id}")
 
         assert response.status_code == 200
         data = response.json()

@@ -8,7 +8,7 @@ from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
 import enum
 
-# Handle both cases: when backend is a package and when running directly from backend directory
+# Import Base from database module (SQLAlchemy 2.0 DeclarativeBase style)
 try:
     from backend.database import Base
 except ImportError:

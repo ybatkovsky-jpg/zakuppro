@@ -10,7 +10,7 @@ from email.mime.application import MIMEApplication
 import imaplib
 import ssl
 
-from services.imap_client import (
+from backend.services.imap_client import (
     IMAPClient,
     IMAPError,
     IMAPConnectionError,
@@ -211,7 +211,7 @@ class TestIMAPClient:
         mock_conn.login.side_effect = [imaplib.IMAP4.error('Temporary failure'), ('OK', [])]
 
         with patch.object(IMAPClient, '_create_connection', return_value=mock_conn):
-            with patch('services.imap_client.time.sleep') as mock_sleep:
+            with patch('backend.services.imap_client.time.sleep') as mock_sleep:
                 result = client.connect()
 
                 assert result is True
@@ -351,7 +351,7 @@ class TestIMAPClient:
         """Test extract_attachments delegates to AttachmentExtractor."""
         message = Message()
 
-        with patch('services.imap_client.AttachmentExtractor.extract_attachments') as mock_extract:
+        with patch('backend.services.imap_client.AttachmentExtractor.extract_attachments') as mock_extract:
             mock_extract.return_value = [('file.pdf', b'content', 'application/pdf')]
             client.connection = Mock()
             client._is_connected = True
@@ -372,8 +372,8 @@ class TestIMAPClient:
 
     def test_create_connection_ssl(self, client):
         """Test SSL connection creation."""
-        with patch('services.imap_client.ssl.create_default_context') as mock_context:
-            with patch('services.imap_client.imaplib.IMAP4_SSL') as mock_imap:
+        with patch('backend.services.imap_client.ssl.create_default_context') as mock_context:
+            with patch('backend.services.imap_client.imaplib.IMAP4_SSL') as mock_imap:
                 client._create_connection()
 
                 mock_context.assert_called_once()
@@ -383,7 +383,7 @@ class TestIMAPClient:
         """Test non-SSL connection creation."""
         client.use_ssl = False
 
-        with patch('services.imap_client.imaplib.IMAP4') as mock_imap:
+        with patch('backend.services.imap_client.imaplib.IMAP4') as mock_imap:
             client._create_connection()
 
             mock_imap.assert_called_once_with('imap.example.com', 993)

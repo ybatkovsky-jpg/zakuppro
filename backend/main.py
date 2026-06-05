@@ -46,18 +46,29 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
-# Configure CORS middleware for development
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=[
+# Configure CORS middleware
+# Origins are configurable via CORS_ORIGINS env var (comma-separated).
+# Default: local dev origins only.
+import os
+_cors_origins_str = os.getenv("CORS_ORIGINS", "")
+if _cors_origins_str:
+    # Production: explicit list from env
+    _cors_origins = [o.strip() for o in _cors_origins_str.split(",") if o.strip()]
+else:
+    # Development defaults
+    _cors_origins = [
         "http://localhost:3000",
         "http://localhost:5173",
         "http://127.0.0.1:3000",
         "http://127.0.0.1:5173",
-    ],
+    ]
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=_cors_origins,
     allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_methods=["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
+    allow_headers=["Authorization", "Content-Type", "Accept"],
 )
 
 # Include routers

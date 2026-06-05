@@ -24,7 +24,19 @@ load_dotenv()
 # Configuration
 # =============================================================================
 
-SECRET_KEY = os.getenv("JWT_SECRET_KEY", "your-secret-key-change-in-production")
+SECRET_KEY = os.getenv("JWT_SECRET_KEY")
+if not SECRET_KEY:
+    # In production, JWT_SECRET_KEY MUST be set via environment variable.
+    # The fallback below is ONLY for local development and will raise a
+    # warning at startup.
+    SECRET_KEY = "dev-only-secret-key-DO-NOT-USE-IN-PRODUCTION"
+    import warnings
+    warnings.warn(
+        "JWT_SECRET_KEY is not set! Using insecure default. "
+        "Set JWT_SECRET_KEY environment variable in production.",
+        RuntimeWarning,
+        stacklevel=2,
+    )
 ALGORITHM = os.getenv("JWT_ALGORITHM", "HS256")
 ACCESS_TOKEN_EXPIRE_MINUTES = int(os.getenv("JWT_ACCESS_TOKEN_EXPIRE_MINUTES", "30"))
 

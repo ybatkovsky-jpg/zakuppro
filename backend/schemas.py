@@ -3,10 +3,13 @@ Pydantic v2 schemas for the Mini-MRP system.
 Provides request/response validation for all entities.
 Uses from_attributes=True for ORM mode compatibility with SQLAlchemy.
 """
-from pydantic import BaseModel, ConfigDict, EmailStr, Field
+from pydantic import BaseModel, ConfigDict, EmailStr, Field, model_validator
 from typing import Optional, List, Literal
 from datetime import datetime
 import enum
+
+# Import canonical enums from the domain model layer (single source of truth)
+from backend.models import Role, DelayReason
 
 
 # =============================================================================
@@ -16,17 +19,6 @@ import enum
 class BaseSchema(BaseModel):
     """Base schema with ORM mode enabled for Pydantic v2."""
     model_config = ConfigDict(from_attributes=True)
-
-
-# =============================================================================
-# Role Enum for Auth Schemas
-# =============================================================================
-
-class Role(str, enum.Enum):
-    """User roles for Role-Based Access Control (RBAC)."""
-    OWNER = "owner"      # Full access to all resources
-    MANAGER = "manager"  # Access only to own projects
-    WAREHOUSE = "warehouse"  # Access only to warehouse operations
 
 
 # =============================================================================
@@ -211,12 +203,16 @@ class StockItemCreate(StockItemBase):
 
 
 class StockItemUpdate(BaseSchema):
-    """Schema for updating an existing stock item."""
+    """Schema for updating an existing stock item.
+
+    IMPORTANT: qty_total, qty_reserved, qty_available are intentionally
+    excluded from direct update. Mutations must go through
+    backend.services.stock_service to enforce the invariant:
+        qty_total = qty_reserved + qty_available
+    Only name and sku can be updated via this schema.
+    """
     name: Optional[str] = None
     sku: Optional[str] = None
-    qty_total: Optional[int] = None
-    qty_reserved: Optional[int] = None
-    qty_available: Optional[int] = None
 
 
 class StockItemResponse(StockItemBase):
@@ -481,22 +477,9 @@ class AuditHistoryListResponse(BaseSchema):
 
 
 # =============================================================================
-# Delay Reason Enum for ProductionTask Schemas
-# =============================================================================
-
-class DelayReason(str, enum.Enum):
-    """Standard delay reasons for production tasks."""
-    WAITING_MATERIALS = "waiting_materials"  # Ожидание материалов
-    EQUIPMENT_FAILURE = "equipment_failure"  # Поломка оборудования
-    STAFF_SHORTAGE = "staff_shortage"  # Нехватка персонала
-    SUPPLIER_DELAY = "supplier_delay"  # Задержка поставщика
-    TECHNICAL_ISSUES = "technical_issues"  # Технические проблемы
-    OTHER = "other"  # Другое (используется с custom_reason)
-
-
-# =============================================================================
 # ProductionTask Schemas
 # =============================================================================
+# NOTE: DelayReason is imported from backend.models (single source of truth).
 
 class ProductionTaskBase(BaseSchema):
     status: str = "Ожидание комплектации"
