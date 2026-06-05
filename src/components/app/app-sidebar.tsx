@@ -15,6 +15,7 @@ import {
   SidebarSeparator,
 } from '@/components/ui/sidebar'
 import { useAppStore, type ViewType } from '@/store/app-store'
+import { useAuth } from '@/components/providers/auth-provider'
 import Image from 'next/image'
 import {
   LayoutDashboard,
@@ -62,6 +63,19 @@ function getRussianDate(): string {
 
 export function AppSidebar() {
   const { currentView, navigate } = useAppStore()
+  const { role } = useAuth()
+
+  // Filter nav items based on user role
+  const visibleMainNavItems = role
+    ? mainNavItems.filter((item) => {
+        if (role === 'owner') return true
+        if (role === 'manager') return true // all main nav items visible
+        if (role === 'warehouse') return item.view === 'dashboard' || item.view === 'warehouse'
+        return true
+      })
+    : mainNavItems
+
+  const showSettings = role === 'owner'
 
   // Fetch stats for indicator dots and badges
   const { data: stats } = useQuery<StatsData>({
@@ -170,21 +184,25 @@ export function AppSidebar() {
           <SidebarGroupLabel>Навигация</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
-              {mainNavItems.map(renderNavItem)}
+              {visibleMainNavItems.map(renderNavItem)}
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
 
-        <SidebarSeparator className="mx-2 opacity-50" />
+        {showSettings && (
+          <>
+            <SidebarSeparator className="mx-2 opacity-50" />
 
-        <SidebarGroup>
-          <SidebarGroupLabel className="sr-only">Система</SidebarGroupLabel>
-          <SidebarGroupContent>
-            <SidebarMenu>
-              {renderNavItem(settingsNavItem)}
-            </SidebarMenu>
-          </SidebarGroupContent>
-        </SidebarGroup>
+            <SidebarGroup>
+              <SidebarGroupLabel className="sr-only">Система</SidebarGroupLabel>
+              <SidebarGroupContent>
+                <SidebarMenu>
+                  {renderNavItem(settingsNavItem)}
+                </SidebarMenu>
+              </SidebarGroupContent>
+            </SidebarGroup>
+          </>
+        )}
       </SidebarContent>
 
       <SidebarFooter className="border-t border-sidebar-border bg-gradient-to-t from-sidebar-accent/20 to-transparent">

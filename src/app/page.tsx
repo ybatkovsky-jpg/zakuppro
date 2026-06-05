@@ -1,8 +1,9 @@
 'use client'
 
+import { useEffect } from 'react'
 import { SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar'
 import { AppSidebar } from '@/components/app/app-sidebar'
-import { useAppStore } from '@/store/app-store'
+import { useAppStore, type ViewType } from '@/store/app-store'
 import { useAuth } from '@/components/providers/auth-provider'
 import { LoginPage } from '@/components/app/login-page'
 import { Dashboard } from '@/components/app/dashboard'
@@ -40,10 +41,27 @@ const pageTitles: Record<string, string> = {
 
 function AppContent() {
   const { currentView } = useAppStore()
-  const { user, logout } = useAuth()
+  const { user, role, logout } = useAuth()
 
   const pageTitle = pageTitles[currentView] ?? 'ПРОМЕБЕЛЬ'
   const hasOwnHeader = (currentView as string) === 'project-detail' || (currentView as string) === 'supplier-detail'
+
+  // Role-based view access map
+  const roleViewAccess: Record<string, ViewType[]> = {
+    owner: ['dashboard', 'projects', 'project-detail', 'suppliers', 'supplier-detail', 'warehouse', 'requests', 'invoices', 'analytics', 'automation', 'settings'],
+    manager: ['dashboard', 'projects', 'project-detail', 'suppliers', 'supplier-detail', 'warehouse', 'requests', 'invoices', 'analytics', 'automation'],
+    warehouse: ['dashboard', 'warehouse'],
+  }
+
+  const allowedViews = role ? (roleViewAccess[role] ?? []) : []
+  const isViewAuthorized = !role || allowedViews.includes(currentView)
+
+  // Redirect to dashboard if current view is unauthorized for the user's role
+  useEffect(() => {
+    if (role && !allowedViews.includes(currentView)) {
+      useAppStore.getState().navigate('dashboard')
+    }
+  }, [role, currentView, allowedViews])
 
   // Breadcrumb section
   const getBreadcrumb = () => {
@@ -105,17 +123,18 @@ function AppContent() {
           </div>
         </div>
         <div className={`page-transition ${hasOwnHeader ? '' : 'p-6'}`}>
-          {currentView === 'dashboard' && <Dashboard />}
-          {currentView === 'projects' && <Projects />}
-          {currentView === 'project-detail' && <ProjectDetail />}
-          {currentView === 'suppliers' && <Suppliers />}
-          {currentView === 'supplier-detail' && <SupplierDetail />}
-          {currentView === 'requests' && <Requests />}
-          {currentView === 'invoices' && <Invoices />}
-          {currentView === 'analytics' && <Analytics />}
-          {currentView === 'automation' && <Automation />}
-          {currentView === 'warehouse' && <Warehouse />}
-          {currentView === 'settings' && <Settings />}
+          {!isViewAuthorized && <Dashboard />}
+          {isViewAuthorized && currentView === 'dashboard' && <Dashboard />}
+          {isViewAuthorized && currentView === 'projects' && <Projects />}
+          {isViewAuthorized && currentView === 'project-detail' && <ProjectDetail />}
+          {isViewAuthorized && currentView === 'suppliers' && <Suppliers />}
+          {isViewAuthorized && currentView === 'supplier-detail' && <SupplierDetail />}
+          {isViewAuthorized && currentView === 'requests' && <Requests />}
+          {isViewAuthorized && currentView === 'invoices' && <Invoices />}
+          {isViewAuthorized && currentView === 'analytics' && <Analytics />}
+          {isViewAuthorized && currentView === 'automation' && <Automation />}
+          {isViewAuthorized && currentView === 'warehouse' && <Warehouse />}
+          {isViewAuthorized && currentView === 'settings' && <Settings />}
         </div>
       </main>
       <AIAssistant />
