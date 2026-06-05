@@ -2,6 +2,7 @@
 
 import { useQuery } from '@tanstack/react-query'
 import { motion } from 'framer-motion'
+import { useAuth } from '@/components/providers/auth-provider'
 import { useEffect, useState } from 'react'
 import {
   BarChart3,
@@ -952,6 +953,20 @@ function getAreaPath(
 // ── Main Component ─────────────────────────────────────────
 
 export function Analytics() {
+  const { role } = useAuth()
+
+  if (role === 'warehouse') {
+    return (
+      <div className="flex items-center justify-center py-20">
+        <EmptyState
+          icon={AlertTriangle}
+          title="Доступ закрыт"
+          description="Для просмотра аналитики обратитесь к руководителю"
+        />
+      </div>
+    )
+  }
+
   return (
     <motion.div
       className="space-y-6"

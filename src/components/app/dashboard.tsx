@@ -2,6 +2,7 @@
 
 import { useQuery } from '@tanstack/react-query'
 import { useAppStore } from '@/store/app-store'
+import { useAuth } from '@/components/providers/auth-provider'
 import {
   Card,
   CardContent,
@@ -1181,6 +1182,7 @@ function QuickActionCard({
 
 export function Dashboard() {
   const { navigate, navigateToProject } = useAppStore()
+  const { role } = useAuth()
 
   const { data, isLoading, error } = useQuery<StatsData>({
     queryKey: ['stats'],
@@ -2070,6 +2072,7 @@ export function Dashboard() {
           </CardHeader>
           <CardContent>
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+              {role !== 'warehouse' && (
               <QuickActionCard
                 icon={FolderKanban}
                 label="Новый проект"
@@ -2078,6 +2081,8 @@ export function Dashboard() {
                 iconColor="text-primary"
                 onClick={() => navigate('projects')}
               />
+              )}
+              {role === 'owner' && (
               <QuickActionCard
                 icon={Building2}
                 label="Добавить поставщика"
@@ -2086,6 +2091,7 @@ export function Dashboard() {
                 iconColor="text-sky-600 dark:text-sky-400"
                 onClick={() => navigate('suppliers')}
               />
+              )}
               <QuickActionCard
                 icon={Warehouse}
                 label="Записать на склад"
@@ -2094,6 +2100,7 @@ export function Dashboard() {
                 iconColor="text-teal-600 dark:text-teal-400"
                 onClick={() => navigate('warehouse')}
               />
+              {role !== 'warehouse' && (
               <QuickActionCard
                 icon={Mail}
                 label="Создать запрос"
@@ -2102,6 +2109,7 @@ export function Dashboard() {
                 iconColor="text-violet-600 dark:text-violet-400"
                 onClick={() => navigate('requests')}
               />
+              )}
             </div>
           </CardContent>
         </Card>

@@ -31,6 +31,7 @@ import {
 } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { EmptyState } from '@/components/app/empty-state'
+import { useAuth } from '@/components/providers/auth-provider'
 import { useAppStore } from '@/store/app-store'
 
 import { Button } from '@/components/ui/button'
@@ -498,8 +499,8 @@ function SupplierCard({
 }: {
   supplier: Supplier
   analytics: SupplierAnalytics | null
-  onEdit: (supplier: Supplier) => void
-  onDelete: (supplier: Supplier) => void
+  onEdit?: (supplier: Supplier) => void
+  onDelete?: (supplier: Supplier) => void
   onClick: () => void
 }) {
   const projectCount = supplier._count?.projectItems ?? 0
@@ -591,6 +592,7 @@ function SupplierCard({
               </div>
             </div>
             <div className="flex shrink-0 gap-1 opacity-0 group-hover:opacity-100 transition-all duration-200 group-hover:translate-x-0 translate-x-1">
+              {onEdit && (
               <Tooltip>
                 <TooltipTrigger asChild>
                   <Button
@@ -607,6 +609,8 @@ function SupplierCard({
                 </TooltipTrigger>
                 <TooltipContent>Редактировать</TooltipContent>
               </Tooltip>
+              )}
+              {onDelete && (
               <Tooltip>
                 <TooltipTrigger asChild>
                   <Button
@@ -623,6 +627,7 @@ function SupplierCard({
                 </TooltipTrigger>
                 <TooltipContent>Удалить</TooltipContent>
               </Tooltip>
+              )}
             </div>
           </div>
         </CardHeader>
@@ -763,6 +768,8 @@ function formatMoney(n: number): string {
 
 // === Main Component ===
 export function Suppliers() {
+  const { role } = useAuth()
+  const canWrite = role === 'owner'
   const { toast } = useToast()
   const queryClient = useQueryClient()
   const { navigateToSupplier } = useAppStore()
@@ -964,10 +971,12 @@ export function Suppliers() {
               База поставщиков и контактов
             </p>
           </div>
+          {canWrite && (
           <Button onClick={openAddDialog} className="gap-2 shrink-0 transition-all duration-200 hover:shadow-md hover:-translate-y-0.5 hover:scale-[1.02]">
             <Plus className="h-4 w-4" />
             Добавить поставщика
           </Button>
+          )}
         </div>
       </div>
 
@@ -1105,7 +1114,7 @@ export function Suppliers() {
         <EmptyState
           type={search || categoryFilter ? 'search' : 'suppliers'}
           action={
-            !search && !categoryFilter
+            !search && !categoryFilter && canWrite
               ? {
                   label: 'Добавить поставщика',
                   onClick: openAddDialog,
@@ -1122,8 +1131,8 @@ export function Suppliers() {
                 key={supplier.id}
                 supplier={supplier}
                 analytics={analyticsMap.get(supplier.id) ?? null}
-                onEdit={openEditDialog}
-                onDelete={openDeleteDialog}
+                onEdit={canWrite ? openEditDialog : undefined}
+                onDelete={canWrite ? openDeleteDialog : undefined}
                 onClick={() => navigateToSupplier(supplier.id)}
               />
             ))}

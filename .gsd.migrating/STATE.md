@@ -21,4 +21,4 @@
 - None
 
 ## Next Action
-Execute T02: Create AuthProvider context + LoginPage + wire into app shell in slice S03.
+Execute T04: Add per-component role-based visibility gating for action buttons and sections in slice S03.

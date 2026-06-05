@@ -3,6 +3,7 @@
 import { useState, useRef, useMemo } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useAppStore } from '@/store/app-store'
+import { useAuth } from '@/components/providers/auth-provider'
 import { useToast } from '@/hooks/use-toast'
 import {
   DndContext,
@@ -599,6 +600,8 @@ function KanbanBoard({ projects, navigateToProject, deleteMutation, statusMutati
 // --- Main Component ---
 
 export function Projects() {
+  const { role } = useAuth()
+  const canWrite = role !== 'warehouse'
   const { navigateToProject } = useAppStore()
   const { toast } = useToast()
   const queryClient = useQueryClient()
@@ -873,6 +876,7 @@ export function Projects() {
               CSV
             </Button>
             {/* Create Project Dialog */}
+            {canWrite && (
             <Dialog open={createOpen} onOpenChange={(open) => { setCreateOpen(open); if (!open) resetCreateForm() }}>
               <DialogTrigger asChild>
                 <Button className="bg-gradient-to-r from-primary to-primary/80 text-primary-foreground transition-all duration-200 hover:shadow-lg hover:-translate-y-0.5 hover:scale-[1.02] hover:brightness-110">
@@ -931,8 +935,10 @@ export function Projects() {
                 </form>
               </DialogContent>
             </Dialog>
+            )}
 
             {/* Upload Excel Dialog */}
+            {canWrite && (
             <Dialog open={uploadOpen} onOpenChange={(open) => { setUploadOpen(open); if (!open) resetUploadForm() }}>
               <DialogTrigger asChild>
                 <Button variant="outline" className="transition-all duration-200 hover:shadow-md hover:-translate-y-0.5 hover:border-primary/30">
@@ -1000,6 +1006,7 @@ export function Projects() {
                 </form>
               </DialogContent>
             </Dialog>
+            )}
           </div>
         </div>
       </div>
@@ -1064,11 +1071,11 @@ export function Projects() {
       {projects.length === 0 ? (
         <EmptyState
           type="projects"
-          action={{
+          action={canWrite ? {
             label: 'Новый проект',
             onClick: () => setCreateOpen(true),
             icon: PlusCircle,
-          }}
+          } : undefined}
         />
       ) : viewMode === 'kanban' ? (
         <KanbanBoard
@@ -1187,6 +1194,7 @@ export function Projects() {
                               <Download className="h-4 w-4" />
                               Экспорт в Excel
                             </DropdownMenuItem>
+                            {canWrite && (
                             <AlertDialogTrigger asChild>
                               <DropdownMenuItem
                                 className="text-destructive focus:text-destructive"
@@ -1196,6 +1204,7 @@ export function Projects() {
                                 Удалить
                               </DropdownMenuItem>
                             </AlertDialogTrigger>
+                            )}
                           </DropdownMenuContent>
                         </DropdownMenu>
                         <AlertDialogContent>

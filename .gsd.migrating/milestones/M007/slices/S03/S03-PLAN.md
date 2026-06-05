@@ -37,12 +37,12 @@ What remains before milestone is truly usable end-to-end: M007 S04 (DLQ Admin UI
   - Files: `backend/routers/purchase_orders.py`, `backend/routers/invoices.py`, `backend/routers/payments.py`, `backend/routers/project_items.py`, `backend/routers/production_tasks.py`, `backend/routers/unresolved_transactions.py`, `backend/routers/auth.py`, `backend/tests/test_rbac_integration.py`
   - Verify: cd backend && python -m pytest tests/test_rbac_integration.py -v
 
-- [ ] **T02: Create AuthProvider context + LoginPage + wire into app shell** `est:1.5h`
+- [x] **T02: Create AuthProvider context + LoginPage + wire into app shell** `est:1.5h`
   Why: Frontend has no reactive auth state — components must call getUserRole() directly from localStorage, which is brittle and non-reactive. No login UI exists. Before any role-based UI work can happen, the app needs a React context that provides user, role, token, login(), and logout() reactively, plus a login page that gates the entire app.
   - Files: `src/components/providers/auth-provider.tsx`, `src/components/app/login-page.tsx`, `src/app/page.tsx`, `src/app/layout.tsx`, `src/lib/auth.ts`
   - Verify: cd src && npx tsc --noEmit --pretty 2>&1 | head -20
 
-- [ ] **T03: Filter sidebar navigation and guard views by user role** `est:1h`
+- [x] **T03: Filter sidebar navigation and guard views by user role** `est:1h`
   Why: Currently all 9 navigation items are visible to every user regardless of role. A warehouse user sees "Проекты", "Счета", "Аналитика" etc. — all links that lead to 403 errors or empty pages. The sidebar must filter items based on role, and the view router must block unauthorized view types.
   - Files: `src/components/app/app-sidebar.tsx`, `src/app/page.tsx`
   - Verify: cd src && npx tsc --noEmit --pretty 2>&1 | head -20

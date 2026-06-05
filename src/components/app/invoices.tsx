@@ -91,6 +91,7 @@ import {
   Eye,
 } from 'lucide-react'
 import { EmptyState } from '@/components/app/empty-state'
+import { useAuth } from '@/components/providers/auth-provider'
 import { exportToCSV } from '@/lib/export-csv'
 import { openReport } from '@/lib/print-report'
 import { motion, AnimatePresence } from 'framer-motion'
@@ -933,6 +934,7 @@ function ReconciliationSheet({
 // ── Main Component ─────────────────────────────────────────
 
 export function Invoices() {
+  const { role } = useAuth()
   const queryClient = useQueryClient()
 
   // Filters
@@ -1275,6 +1277,18 @@ export function Invoices() {
 
   if (invoicesLoading) {
     return <InvoicePageSkeleton />
+  }
+
+  if (role === 'warehouse') {
+    return (
+      <div className="flex items-center justify-center py-20">
+        <EmptyState
+          type="invoices"
+          title="Доступ закрыт"
+          description="Для просмотра счетов обратитесь к руководителю"
+        />
+      </div>
+    )
   }
 
   return (

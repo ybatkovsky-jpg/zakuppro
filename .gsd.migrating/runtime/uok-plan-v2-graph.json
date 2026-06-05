@@ -1,5 +1,5 @@
 {
-  "compiledAt": "2026-06-05T04:11:52.592Z",
+  "compiledAt": "2026-06-05T04:39:37.675Z",
   "milestoneId": "M007",
   "pipeline": {
     "clarifyRoundLimit": 3,
@@ -143,8 +143,8 @@
       "metadata": {
         "unitType": "execute-task",
         "unitId": "M007.S03.T02",
-        "title": "Create AuthProvider context + LoginPage + wire into app shell",
-        "status": "pending"
+        "title": "Created AuthProvider context with reactive useAuth hook, LoginPage with form UI, wired auth gate into app shell, and registered 401 auto-logout callback",
+        "status": "complete"
       }
     },
     {
@@ -157,8 +157,8 @@
       "metadata": {
         "unitType": "execute-task",
         "unitId": "M007.S03.T03",
-        "title": "Filter sidebar navigation and guard views by user role",
-        "status": "pending"
+        "title": "Added role-based sidebar filtering and view access guards — warehouse sees only dashboard + warehouse, manager sees all except settings, owner sees everything",
+        "status": "complete"
       }
     },
     {

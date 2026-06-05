@@ -2,6 +2,7 @@
 
 import { useState, useCallback, useMemo } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { useAuth } from '@/components/providers/auth-provider'
 import { useToast } from '@/hooks/use-toast'
 import {
   Search,
@@ -684,6 +685,8 @@ function ZoneBadge({ location }: { location: string }) {
 
 // === Main Component ===
 export function Warehouse() {
+  const { role } = useAuth()
+  const canWrite = role === 'owner' || role === 'manager'
   const { toast } = useToast()
   const queryClient = useQueryClient()
 
@@ -1048,19 +1051,23 @@ export function Warehouse() {
             </p>
           </div>
           <div className="flex gap-2 flex-wrap">
-            <Button onClick={openAddDialog} className="gap-2 shrink-0 transition-all duration-200 hover:shadow-md hover:-translate-y-0.5 hover:scale-[1.02]">
-              <Plus className="h-4 w-4" />
-              Добавить
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setQuickAddVisible(!quickAddVisible)}
-              className="gap-1.5 shrink-0 transition-all duration-200 hover:shadow-md"
-            >
-              <Hash className="h-3.5 w-3.5" />
-              Быстрое добавление
-            </Button>
+            {canWrite && (
+              <Button onClick={openAddDialog} className="gap-2 shrink-0 transition-all duration-200 hover:shadow-md hover:-translate-y-0.5 hover:scale-[1.02]">
+                <Plus className="h-4 w-4" />
+                Добавить
+              </Button>
+            )}
+            {canWrite && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setQuickAddVisible(!quickAddVisible)}
+                className="gap-1.5 shrink-0 transition-all duration-200 hover:shadow-md"
+              >
+                <Hash className="h-3.5 w-3.5" />
+                Быстрое добавление
+              </Button>
+            )}
             <Button
               type="button"
               variant="outline"
@@ -1252,7 +1259,7 @@ export function Warehouse() {
                   </CardDescription>
                 </div>
               </div>
-              {lowStockItems.length > 0 && (
+              {lowStockItems.length > 0 && canWrite && (
                 <Button
                   variant="outline"
                   size="sm"
@@ -1329,6 +1336,7 @@ export function Warehouse() {
                     Снять выбор
                   </Button>
                 </div>
+                {canWrite && (
                 <div className="flex gap-2">
                   <Button
                     variant="outline"
@@ -1349,6 +1357,7 @@ export function Warehouse() {
                     Списать
                   </Button>
                 </div>
+                )}
               </div>
             </CardContent>
           </Card>
@@ -1647,32 +1656,36 @@ export function Warehouse() {
                                 <TooltipContent>Пополнить</TooltipContent>
                               </Tooltip>
                             )}
-                            <Tooltip>
-                              <TooltipTrigger asChild>
-                                <Button
-                                  variant="ghost"
-                                  size="icon"
-                                  className="h-7 w-7"
-                                  onClick={() => openEditDialog(item)}
-                                >
-                                  <Pencil className="h-3.5 w-3.5" />
-                                </Button>
-                              </TooltipTrigger>
-                              <TooltipContent>Редактировать</TooltipContent>
-                            </Tooltip>
-                            <Tooltip>
-                              <TooltipTrigger asChild>
-                                <Button
-                                  variant="ghost"
-                                  size="icon"
-                                  className="h-7 w-7 text-destructive hover:text-destructive"
-                                  onClick={() => openDeleteDialog(item)}
-                                >
-                                  <Trash2 className="h-3.5 w-3.5" />
-                                </Button>
-                              </TooltipTrigger>
-                              <TooltipContent>Удалить</TooltipContent>
-                            </Tooltip>
+                            {canWrite && (
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    className="h-7 w-7"
+                                    onClick={() => openEditDialog(item)}
+                                  >
+                                    <Pencil className="h-3.5 w-3.5" />
+                                  </Button>
+                                </TooltipTrigger>
+                                <TooltipContent>Редактировать</TooltipContent>
+                              </Tooltip>
+                            )}
+                            {canWrite && (
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    className="h-7 w-7 text-destructive hover:text-destructive"
+                                    onClick={() => openDeleteDialog(item)}
+                                  >
+                                    <Trash2 className="h-3.5 w-3.5" />
+                                  </Button>
+                                </TooltipTrigger>
+                                <TooltipContent>Удалить</TooltipContent>
+                              </Tooltip>
+                            )}
                           </div>
                         </TableCell>
                       </TableRow>
