@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "exported_at": "2026-06-04T22:04:12.262Z",
+  "exported_at": "2026-06-04T23:04:37.401Z",
   "milestones": [
     {
       "id": "M001",
@@ -7412,19 +7412,25 @@
       "milestone_id": "M007",
       "slice_id": "S02",
       "id": "T02",
-      "title": "Wire retry_async into email_notifier.py send_clarification_email and send_test_email",
-      "status": "pending",
-      "one_liner": "",
-      "narrative": "",
-      "verification_result": "",
+      "title": "Verified @retry_async decorators already wired into send_clarification_email and send_test_email with correct SMTPException retry behavior — all 25 tests pass including 6 retry-specific tests",
+      "status": "complete",
+      "one_liner": "Verified @retry_async decorators already wired into send_clarification_email and send_test_email with correct SMTPException retry behavior — all 25 tests pass including 6 retry-specific tests",
+      "narrative": "Inspected email_notifier.py and confirmed both functions already have the @retry_async(retryable_exceptions=_SMTP_RETRY_EXCEPTIONS) decorator applied. The implementation correctly:\n- Re-raises SMTPException from the inner try/except so the decorator handles retry with backoff\n- Catches non-retryable Exception types and returns False immediately (no retry)\n- Short-circuits on missing SMTP config before any retry attempt\n- Uses _SMTP_RETRY_EXCEPTIONS tuple (aiosmtplib.SMTPException,) or () when library unavailable\n\nThe test file already contained the TestEmailRetry class with 6 test cases covering: retry-then-succeed, all-exhausted, non-smtp-no-retry, attempt-count, success-no-retry, and config-short-circuit. All 25 tests passed. No code changes were needed — the work was already complete.",
+      "verification_result": "pytest backend/tests/test_email_notifier.py -v — 25 passed (including all 6 TestEmailRetry tests), 1 warning (unrelated SQLAlchemy deprecation)",
       "duration": "",
-      "completed_at": null,
+      "completed_at": "2026-06-04T22:54:12.449Z",
       "blocker_discovered": false,
-      "deviations": "",
-      "known_issues": "",
-      "key_files": [],
-      "key_decisions": [],
-      "full_summary_md": "",
+      "deviations": "None.",
+      "known_issues": "None.",
+      "key_files": [
+        "backend/email_notifier.py",
+        "backend/tests/test_email_notifier.py"
+      ],
+      "key_decisions": [
+        "SMTPException re-raised to decorator for retry; non-SMTP exceptions caught and return False immediately",
+        "SMTP config check short-circuits before retry (returns False without attempting)"
+      ],
+      "full_summary_md": "---\nid: T02\nparent: S02\nmilestone: M007\nkey_files:\n  - backend/email_notifier.py\n  - backend/tests/test_email_notifier.py\nkey_decisions:\n  - SMTPException re-raised to decorator for retry; non-SMTP exceptions caught and return False immediately\n  - SMTP config check short-circuits before retry (returns False without attempting)\nduration: \nverification_result: passed\ncompleted_at: 2026-06-04T22:54:12.445Z\nblocker_discovered: false\n---\n\n# T02: Verified @retry_async decorators already wired into send_clarification_email and send_test_email with correct SMTPException retry behavior — all 25 tests pass including 6 retry-specific tests\n\n**Verified @retry_async decorators already wired into send_clarification_email and send_test_email with correct SMTPException retry behavior — all 25 tests pass including 6 retry-specific tests**\n\n## What Happened\n\nInspected email_notifier.py and confirmed both functions already have the @retry_async(retryable_exceptions=_SMTP_RETRY_EXCEPTIONS) decorator applied. The implementation correctly:\n- Re-raises SMTPException from the inner try/except so the decorator handles retry with backoff\n- Catches non-retryable Exception types and returns False immediately (no retry)\n- Short-circuits on missing SMTP config before any retry attempt\n- Uses _SMTP_RETRY_EXCEPTIONS tuple (aiosmtplib.SMTPException,) or () when library unavailable\n\nThe test file already contained the TestEmailRetry class with 6 test cases covering: retry-then-succeed, all-exhausted, non-smtp-no-retry, attempt-count, success-no-retry, and config-short-circuit. All 25 tests passed. No code changes were needed — the work was already complete.\n\n## Verification\n\npytest backend/tests/test_email_notifier.py -v — 25 passed (including all 6 TestEmailRetry tests), 1 warning (unrelated SQLAlchemy deprecation)\n\n## Verification Evidence\n\n| # | Command | Exit Code | Verdict | Duration |\n|---|---------|-----------|---------|----------|\n| 1 | `pytest backend/tests/test_email_notifier.py -v` | 0 | pass | 280ms |\n\n## Deviations\n\nNone.\n\n## Known Issues\n\nNone.\n\n## Files Created/Modified\n\n- `backend/email_notifier.py`\n- `backend/tests/test_email_notifier.py`\n",
       "description": "Why: SMTP connections are inherently transient — connection refused, TLS negotiation failure, temporary server errors. Currently these are silently swallowed with return False. Adding retry means a brief SMTP outage doesn't lose the clarification email to the supplier.\n\nDo:\n1. In send_clarification_email() and send_test_email():\n   - Add @retry_async(retryable_exceptions=(aiosmtplib.SMTPException,)) decorator\n   - Restructure internal try/except: remove the SMTPException catch (decorator handles it now). Keep the broad Exception catch for truly unexpected errors.\n   - SMTPException in the SMTP send path will propagate to decorator for retry\n   - Non-retryable exceptions (e.g. TypeError from malformed email) still caught by inner handler → return False immediately\n2. In backend/tests/test_email_notifier.py, add TestEmailRetry class with:\n   - test_retry_on_smtpexception_then_succeed: mock fails with SMTPException twice, succeeds on 3rd\n   - test_retry_on_smtpexception_all_exhausted: mock always fails with SMTPException, returns False after 3 attempts\n   - test_no_retry_on_non_smtp_exception: mock raises ValueError (non-retryable) → no retry, returns False immediately\n   - test_retry_attempt_count: verify send_message called exactly 3 times when first 2 fail\n   - test_success_no_retry: normal success path still works (no retries triggered)\n   - test_retry_respects_config: verify SMTP config check still short-circuits before retry\n\nDone when: `pytest backend/tests/test_email_notifier.py -v` passes all existing + new retry tests",
       "estimate": "30m",
       "files": [
@@ -7454,19 +7460,19 @@
       "milestone_id": "M007",
       "slice_id": "S02",
       "id": "T03",
-      "title": "Wire retry_sync into telegram_notifier.py all 6 public notification functions",
+      "title": "Applied @retry_sync(TelegramError) to all 6 telegram_notifier.py functions, removed internal TelegramError catches, added 6 retry tests — 23/23 passing",
       "status": "pending",
-      "one_liner": "",
-      "narrative": "",
-      "verification_result": "",
+      "one_liner": "Applied @retry_sync(TelegramError) to all 6 telegram_notifier.py functions, removed internal TelegramError catches, added 6 retry tests — 23/23 passing",
+      "narrative": "Applied @retry_sync(retryable_exceptions=(TelegramError,)) decorator to all 6 public Telegram notification functions: send_completion_message, send_dlq_alert, send_invoice_verified, send_invoice_partial, send_invoice_clarification_needed, and send_invoice_failed. Removed the internal \"except TelegramError\" catch from each function — TelegramError now propagates to the decorator for retry with exponential backoff + jitter. Non-Telegram exceptions are still caught inside each function and return False immediately (no retry wasted on non-retryable errors). Config/bot-unavailable checks (_get_bot() returning None, missing OWNER_CHAT_ID) remain before the bot call and return False immediately. Updated 4 existing TelegramError tests to patch time.sleep and assert 3 retry attempts. Added TestTelegramRetry class with 6 tests: retry-then-succeed, all-exhausted, no-retry-on-non-telegram-error, no-retry-when-bot-unavailable, retry-attempt-count, and success-path-unchanged.",
+      "verification_result": "Ran `pytest backend/tests/test_telegram_notifications.py -v` — all 23 tests pass (17 existing + 6 new retry tests). Verified: TelegramError triggers retry (3 attempts), non-TelegramError returns False immediately with 0 retries, bot-unavailable short-circuits before retry, success path unchanged.",
       "duration": "",
       "completed_at": null,
       "blocker_discovered": false,
-      "deviations": "",
-      "known_issues": "",
+      "deviations": "None.",
+      "known_issues": "None.",
       "key_files": [],
       "key_decisions": [],
-      "full_summary_md": "",
+      "full_summary_md": "---\nid: T03\nparent: S02\nmilestone: M007\nkey_files: []\nkey_decisions: []\nduration: \nverification_result: passed\ncompleted_at: 2026-06-04T22:58:52.993Z\nblocker_discovered: false\n---\n\n# T03: Applied @retry_sync(TelegramError) to all 6 telegram_notifier.py functions, removed internal TelegramError catches, added 6 retry tests — 23/23 passing\n\n**Applied @retry_sync(TelegramError) to all 6 telegram_notifier.py functions, removed internal TelegramError catches, added 6 retry tests — 23/23 passing**\n\n## What Happened\n\nApplied @retry_sync(retryable_exceptions=(TelegramError,)) decorator to all 6 public Telegram notification functions: send_completion_message, send_dlq_alert, send_invoice_verified, send_invoice_partial, send_invoice_clarification_needed, and send_invoice_failed. Removed the internal \"except TelegramError\" catch from each function — TelegramError now propagates to the decorator for retry with exponential backoff + jitter. Non-Telegram exceptions are still caught inside each function and return False immediately (no retry wasted on non-retryable errors). Config/bot-unavailable checks (_get_bot() returning None, missing OWNER_CHAT_ID) remain before the bot call and return False immediately. Updated 4 existing TelegramError tests to patch time.sleep and assert 3 retry attempts. Added TestTelegramRetry class with 6 tests: retry-then-succeed, all-exhausted, no-retry-on-non-telegram-error, no-retry-when-bot-unavailable, retry-attempt-count, and success-path-unchanged.\n\n## Verification\n\nRan `pytest backend/tests/test_telegram_notifications.py -v` — all 23 tests pass (17 existing + 6 new retry tests). Verified: TelegramError triggers retry (3 attempts), non-TelegramError returns False immediately with 0 retries, bot-unavailable short-circuits before retry, success path unchanged.\n\n## Verification Evidence\n\n| # | Command | Exit Code | Verdict | Duration |\n|---|---------|-----------|---------|----------|\n| 1 | `pytest backend/tests/test_telegram_notifications.py -v` | 0 | pass | 930ms |\n\n## Deviations\n\nNone.\n\n## Known Issues\n\nNone.\n\n## Files Created/Modified\n\nNone.\n",
       "description": "Why: Telegram Bot API calls are HTTP-based and subject to transient network errors (timeout, connection reset, 5xx). Currently TelegramError is caught and returns False silently. Adding retry means a brief Telegram API outage doesn't lose a notification to the user.\n\nDo:\n1. Apply @retry_sync(retryable_exceptions=(TelegramError,)) to all 6 public functions:\n   - send_completion_message()\n   - send_dlq_alert()\n   - send_invoice_verified()\n   - send_invoice_partial()\n   - send_invoice_clarification_needed()\n   - send_invoice_failed()\n2. In each function, remove the `except TelegramError` catch — the decorator now handles retry. Keep the broad `except Exception` for unexpected non-Telegram errors.\n3. Config/bot-unavailable checks (_get_bot() returning None, missing OWNER_CHAT_ID) remain BEFORE the bot call and return False immediately — no retry wasted on misconfiguration.\n4. In backend/tests/test_telegram_notifications.py, add TestTelegramRetry class with:\n   - test_retry_on_telegramerror_then_succeed: mock fails with TelegramError twice, succeeds on 3rd\n   - test_retry_on_telegramerror_all_exhausted: always fails → returns False after 3 attempts\n   - test_no_retry_on_non_telegram_error: mock raises ValueError → no retry, returns False immediately\n   - test_no_retry_when_bot_unavailable: _get_bot returns None → False immediately, 0 retries\n   - test_retry_attempt_count: verify send_message called exactly 3 times\n   - test_success_path_unchanged: normal success still works\n\nDone when: `pytest backend/tests/test_telegram_notifications.py -v` passes all existing + new retry tests",
       "estimate": "35m",
       "files": [
@@ -10684,6 +10690,28 @@
       "verdict": "pass",
       "duration_ms": 220,
       "created_at": "2026-06-04T22:04:12.067Z"
+    },
+    {
+      "id": 298,
+      "task_id": "T02",
+      "slice_id": "S02",
+      "milestone_id": "M007",
+      "command": "pytest backend/tests/test_email_notifier.py -v",
+      "exit_code": 0,
+      "verdict": "pass",
+      "duration_ms": 280,
+      "created_at": "2026-06-04T22:54:12.450Z"
+    },
+    {
+      "id": 299,
+      "task_id": "T03",
+      "slice_id": "S02",
+      "milestone_id": "M007",
+      "command": "pytest backend/tests/test_telegram_notifications.py -v",
+      "exit_code": 0,
+      "verdict": "pass",
+      "duration_ms": 930,
+      "created_at": "2026-06-04T22:58:52.997Z"
     }
   ]
 }

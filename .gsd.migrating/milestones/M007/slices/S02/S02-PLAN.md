@@ -32,7 +32,7 @@ Upstream: aiosmtplib.SMTPException, telegram.error.TelegramError, codebase retry
   - Files: `backend/retry_utils.py`, `backend/tests/test_retry_utils.py`
   - Verify: pytest backend/tests/test_retry_utils.py -v
 
-- [ ] **T02: Wire retry_async into email_notifier.py send_clarification_email and send_test_email** `est:30m`
+- [x] **T02: Wire retry_async into email_notifier.py send_clarification_email and send_test_email** `est:30m`
   Why: SMTP connections are inherently transient — connection refused, TLS negotiation failure, temporary server errors. Currently these are silently swallowed with return False. Adding retry means a brief SMTP outage doesn't lose the clarification email to the supplier.
   - Files: `backend/email_notifier.py`, `backend/tests/test_email_notifier.py`
   - Verify: pytest backend/tests/test_email_notifier.py -v

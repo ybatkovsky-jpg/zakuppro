@@ -1,0 +1,18 @@
+{
+  "id": "0877f48f-45ea-48d9-83a5-75663ff474d1",
+  "runtime": "bash",
+  "purpose": "Check embedded Python and pytest version",
+  "script_chars": 138,
+  "started_at": "2026-06-04T23:02:04.549Z",
+  "finished_at": "2026-06-04T23:02:04.620Z",
+  "exit_code": 1,
+  "signal": null,
+  "timed_out": false,
+  "duration_ms": 71,
+  "stdout_bytes": 544,
+  "stderr_bytes": 0,
+  "stdout_truncated": false,
+  "stderr_truncated": false,
+  "stdout_path": "D:\\CLAUDE\\Project\\zakuppro\\zakuppro\\.gsd\\exec\\0877f48f-45ea-48d9-83a5-75663ff474d1.stdout",
+  "stderr_path": "D:\\CLAUDE\\Project\\zakuppro\\zakuppro\\.gsd\\exec\\0877f48f-45ea-48d9-83a5-75663ff474d1.stderr"
+}

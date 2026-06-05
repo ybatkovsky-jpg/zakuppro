@@ -1,0 +1,2 @@
+{"ts":"2026-06-05T02:25:43.143Z","flowId":"auto-orchestrator-1780626337948","seq":1,"eventType":"iteration-start","data":{"source":"auto-orchestrator","name":"resume"}}
+{"ts":"2026-06-05T02:25:44.651Z","flowId":"auto-orchestrator-1780626337948","seq":2,"eventType":"guard-block","data":{"source":"auto-orchestrator","name":"advance-blocked","reason":"invalid-root: Unit root D:\\CLAUDE\\Project\\zakuppro\\zakuppro is not the expected worktree root for M007.","unitType":"execute-task","unitId":"M007/S02/T03"}}

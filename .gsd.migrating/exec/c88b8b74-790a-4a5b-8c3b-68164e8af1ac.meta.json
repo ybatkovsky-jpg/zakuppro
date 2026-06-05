@@ -1,0 +1,18 @@
+{
+  "id": "c88b8b74-790a-4a5b-8c3b-68164e8af1ac",
+  "runtime": "bash",
+  "purpose": "Check python3 availability",
+  "script_chars": 34,
+  "started_at": "2026-06-04T23:01:19.708Z",
+  "finished_at": "2026-06-04T23:01:19.777Z",
+  "exit_code": 1,
+  "signal": null,
+  "timed_out": false,
+  "duration_ms": 69,
+  "stdout_bytes": 544,
+  "stderr_bytes": 0,
+  "stdout_truncated": false,
+  "stderr_truncated": false,
+  "stdout_path": "D:\\CLAUDE\\Project\\zakuppro\\zakuppro\\.gsd\\exec\\c88b8b74-790a-4a5b-8c3b-68164e8af1ac.stdout",
+  "stderr_path": "D:\\CLAUDE\\Project\\zakuppro\\zakuppro\\.gsd\\exec\\c88b8b74-790a-4a5b-8c3b-68164e8af1ac.stderr"
+}

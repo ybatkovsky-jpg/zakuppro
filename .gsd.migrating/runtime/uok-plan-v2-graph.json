@@ -1,5 +1,5 @@
 {
-  "compiledAt": "2026-06-04T22:09:58.958Z",
+  "compiledAt": "2026-06-04T23:04:56.617Z",
   "milestoneId": "M007",
   "pipeline": {
     "clarifyRoundLimit": 3,
@@ -83,12 +83,15 @@
       "dependsOn": [
         "execute-task:M007:S02:T01"
       ],
-      "writes": [],
+      "writes": [
+        "backend/email_notifier.py",
+        "backend/tests/test_email_notifier.py"
+      ],
       "metadata": {
         "unitType": "execute-task",
         "unitId": "M007.S02.T02",
-        "title": "Wire retry_async into email_notifier.py send_clarification_email and send_test_email",
-        "status": "pending"
+        "title": "Verified @retry_async decorators already wired into send_clarification_email and send_test_email with correct SMTPException retry behavior — all 25 tests pass including 6 retry-specific tests",
+        "status": "complete"
       }
     },
     {
@@ -101,7 +104,7 @@
       "metadata": {
         "unitType": "execute-task",
         "unitId": "M007.S02.T03",
-        "title": "Wire retry_sync into telegram_notifier.py all 6 public notification functions",
+        "title": "Applied @retry_sync(TelegramError) to all 6 telegram_notifier.py functions, removed internal TelegramError catches, added 6 retry tests — 23/23 passing",
         "status": "pending"
       }
     },

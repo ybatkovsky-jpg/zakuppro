@@ -1,0 +1,18 @@
+{
+  "id": "4a1936cc-9b45-487a-8ae2-201747775faf",
+  "runtime": "bash",
+  "purpose": "Slice S02 verification: all retry tests",
+  "script_chars": 193,
+  "started_at": "2026-06-04T23:01:08.993Z",
+  "finished_at": "2026-06-04T23:01:09.089Z",
+  "exit_code": 1,
+  "signal": null,
+  "timed_out": false,
+  "duration_ms": 96,
+  "stdout_bytes": 544,
+  "stderr_bytes": 0,
+  "stdout_truncated": false,
+  "stderr_truncated": false,
+  "stdout_path": "D:\\CLAUDE\\Project\\zakuppro\\zakuppro\\.gsd\\exec\\4a1936cc-9b45-487a-8ae2-201747775faf.stdout",
+  "stderr_path": "D:\\CLAUDE\\Project\\zakuppro\\zakuppro\\.gsd\\exec\\4a1936cc-9b45-487a-8ae2-201747775faf.stderr"
+}

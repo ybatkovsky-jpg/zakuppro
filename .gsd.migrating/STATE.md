@@ -21,4 +21,4 @@
 - None
 
 ## Next Action
-Execute T02: Wire retry_async into email_notifier.py send_clarification_email and send_test_email in slice S02.
+Execute T03: Applied @retry_sync(TelegramError) to all 6 telegram_notifier.py functions, removed internal TelegramError catches, added 6 retry tests — 23/23 passing in slice S02.
