@@ -175,30 +175,35 @@ def mock_task_request():
     return mock_req
 
 
-def call_parse_invoice_task(filename, file_content, metadata, task_request):
+def call_parse_invoice_task(filename, file_content, metadata, task_request, db_session=None, use_run_with_context=False):
     """
     Helper function to call parse_invoice task business logic directly.
 
-    Bypasses Celery task wrapper to test core business logic with mocked context.
+    By default, bypasses Celery task wrapper and calls execute() directly.
+    When use_run_with_context=True, uses run_with_context for DLQ behavior.
     """
-    from unittest.mock import Mock, patch
     from backend.tasks import parse_invoice
 
-    # Create a mock task instance (self) with request attribute
-    class MockTaskInstance:
-        def __init__(self, request_mock):
-            self.request = request_mock
-            self.id = request_mock.id
-
-    mock_self = MockTaskInstance(task_request)
-
-    # Get the actual function from the task object
-    # The __wrapped__ attribute gives us the bound method
-    bound_method = parse_invoice.__wrapped__
-    actual_func = bound_method.__func__  # Get the raw function
-
-    # Call the function with our mock self as the first argument
-    return actual_func(mock_self, filename, file_content, metadata)
+    if use_run_with_context:
+        # Use run_with_context for DLQ persistence tests
+        # We need to call the task via Celery's apply() which sets up request properly
+        with patch('backend.database.SessionLocal', return_value=db_session), \
+             patch('backend.telegram_notifier.send_dlq_alert'):
+            result = parse_invoice.apply(
+                args=['bad.pdf', file_content, metadata],
+            )
+            # Celery apply() returns AsyncResult; re-raise if failed
+            if result.failed():
+                result.get(propagate=True)
+            return result.result
+    else:
+        # Call execute() directly, bypassing run_with_context's DB session management
+        return parse_invoice.execute(
+            db_session,
+            filename=filename,
+            file_content=file_content,
+            metadata=metadata,
+        )
 
 
 # =============================================================================
@@ -290,7 +295,8 @@ class TestParseInvoiceTask:
                     'to': 'invoices@zakuppro.com',
                     'uid': 12345
                 },
-                mock_task_request
+                mock_task_request,
+                db_session=db_session
             )
 
         # Verify result structure
@@ -357,7 +363,8 @@ class TestParseInvoiceTask:
                     'to': 'invoices@zakuppro.com',
                     'uid': 1
                 },
-                mock_task_request
+                mock_task_request,
+                db_session=db_session
             )
 
         # Verify supplier was auto-created
@@ -394,19 +401,20 @@ class TestParseInvoiceTask:
             # Update task_request id for this test
             mock_task_request.id = 'failed-task-123'
 
-            # Task should raise ValueError
+            # Task should raise ValueError and create FailedTask via run_with_context
             with pytest.raises(ValueError, match="Invoice parsing failed"):
                 call_parse_invoice_task(
                     'bad.pdf', sample_pdf_content,
                     {'message_id': '<msg@example.com>', 'from': 'x@y.com', 'subject': 'X', 'date': '2024-01-01', 'to': 'z@z.com', 'uid': 1},
-                    mock_task_request
-                )
+                    mock_task_request,
+                db_session=db_session,
+                use_run_with_context=True,
+            )
 
         # Verify FailedTask record was created
-        failed_task = db_session.query(FailedTask).filter(
-            FailedTask.task_id == 'failed-task-123'
-        ).first()
-        assert failed_task is not None
+        failed_tasks = db_session.query(FailedTask).all()
+        assert len(failed_tasks) >= 1
+        failed_task = failed_tasks[-1]  # Get the latest one
         assert failed_task.task_name == 'tasks.parse_invoice'
         assert 'LLM parsing failed' in failed_task.error_message
         assert failed_task.file_path == 'bad.pdf'
@@ -435,8 +443,9 @@ class TestParseInvoiceTask:
                 call_parse_invoice_task(
                     'empty.pdf', sample_pdf_content,
                     {'message_id': '<x@x.com>', 'from': 'x@y.com', 'subject': 'X', 'date': '2024-01-01', 'to': 'z@z.com', 'uid': 1},
-                    mock_task_request
-                )
+                    mock_task_request,
+                db_session=db_session
+            )
 
     def test_invoice_item_decimal_precision(
         self, db_session, sample_pdf_content, mock_task_request
@@ -476,7 +485,8 @@ class TestParseInvoiceTask:
             result = call_parse_invoice_task(
                 'precision.pdf', sample_pdf_content,
                 {'message_id': '<x@x.com>', 'from': 'x@y.com', 'subject': 'X', 'date': '2024-01-01', 'to': 'z@z.com', 'uid': 1},
-                mock_task_request
+                mock_task_request,
+                db_session=db_session
             )
 
         # Verify Decimal precision is maintained
@@ -523,7 +533,8 @@ class TestProjectAndPurchaseOrderLinking:
             result = call_parse_invoice_task(
                 'invoice.pdf', sample_pdf_content,
                 {'message_id': '<x@x.com>', 'from': 'supplier@test.com', 'subject': 'Inv', 'date': '2024-01-01', 'to': 'x@x.com', 'uid': 1},
-                mock_task_request
+                mock_task_request,
+                db_session=db_session
             )
 
         # Verify project was created
@@ -575,7 +586,8 @@ class TestProjectAndPurchaseOrderLinking:
             result = call_parse_invoice_task(
                 'invoice.pdf', sample_pdf_content,
                 {'message_id': '<x@x.com>', 'from': 'test-supplier@test.com', 'subject': 'Inv', 'date': '2024-01-01', 'to': 'x@x.com', 'uid': 1},
-                mock_task_request
+                mock_task_request,
+                db_session=db_session
             )
 
         # Verify PO was created and linked correctly
@@ -618,8 +630,9 @@ class TestErrorHandling:
                 call_parse_invoice_task(
                     'invoice.pdf', sample_pdf_content,
                     {'message_id': '<x@x.com>', 'from': 'x@y.com', 'subject': 'X', 'date': '2024-01-01', 'to': 'z@z.com', 'uid': 1},
-                    mock_task_request
-                )
+                    mock_task_request,
+                db_session=db_session
+            )
 
     def test_unsupported_file_format_error(
         self, db_session, mock_task_request
@@ -636,8 +649,9 @@ class TestErrorHandling:
                 call_parse_invoice_task(
                     'document.txt', b'content',
                     {'message_id': '<x@x.com>', 'from': 'x@y.com', 'subject': 'X', 'date': '2024-01-01', 'to': 'z@z.com', 'uid': 1},
-                    mock_task_request
-                )
+                    mock_task_request,
+                db_session=db_session
+            )
 
 
 # =============================================================================

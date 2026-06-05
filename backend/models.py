@@ -33,6 +33,7 @@ class Role(str, enum.Enum):
 class User(Base):
     """User entity for authentication and RBAC."""
     __tablename__ = "users"
+    __table_args__ = {'extend_existing': True}
 
     id = Column(Integer, primary_key=True, index=True)
     username = Column(String(100), unique=True, nullable=False, index=True)
@@ -50,6 +51,7 @@ class User(Base):
 class Project(Base):
     """Project entity - main project management."""
     __tablename__ = "projects"
+    __table_args__ = {'extend_existing': True}
 
     id = Column(Integer, primary_key=True, index=True)
     name = Column(String(255), nullable=False)
@@ -71,6 +73,7 @@ class Project(Base):
 class ProjectItem(Base):
     """ProjectItem (BOM) - Bill of Materials for each project."""
     __tablename__ = "project_items"
+    __table_args__ = {'extend_existing': True}
 
     id = Column(Integer, primary_key=True, index=True)
     project_id = Column(Integer, ForeignKey("projects.id"), nullable=False)
@@ -92,6 +95,7 @@ class ProjectItem(Base):
 class Supplier(Base):
     """Supplier entity - vendor information."""
     __tablename__ = "suppliers"
+    __table_args__ = {'extend_existing': True}
 
     id = Column(Integer, primary_key=True, index=True)
     name = Column(String(255), nullable=False)
@@ -108,6 +112,7 @@ class Supplier(Base):
 class PurchaseOrder(Base):
     """PurchaseOrder - orders sent to suppliers."""
     __tablename__ = "purchase_orders"
+    __table_args__ = {'extend_existing': True}
 
     id = Column(Integer, primary_key=True, index=True)
     project_id = Column(Integer, ForeignKey("projects.id"), nullable=False)
@@ -125,6 +130,7 @@ class PurchaseOrder(Base):
 class Invoice(Base):
     """Invoice - supplier invoices linked to purchase orders."""
     __tablename__ = "invoices"
+    __table_args__ = {'extend_existing': True}
 
     id = Column(Integer, primary_key=True, index=True)
     purchase_order_id = Column(Integer, ForeignKey("purchase_orders.id"), nullable=False)
@@ -145,6 +151,7 @@ class Invoice(Base):
 class InvoiceItem(Base):
     """InvoiceItem - line items from supplier invoices with BOM mapping."""
     __tablename__ = "invoice_items"
+    __table_args__ = {'extend_existing': True}
 
     id = Column(Integer, primary_key=True, index=True)
     invoice_id = Column(Integer, ForeignKey("invoices.id"), nullable=False)
@@ -164,6 +171,7 @@ class InvoiceItem(Base):
 class Payment(Base):
     """Payment - payments linked to invoices."""
     __tablename__ = "payments"
+    __table_args__ = {'extend_existing': True}
 
     id = Column(Integer, primary_key=True, index=True)
     invoice_id = Column(Integer, ForeignKey("invoices.id"), nullable=False)
@@ -179,6 +187,7 @@ class Payment(Base):
 class UnresolvedTransaction(Base):
     """UnresolvedTransaction - bank transactions that couldn't be auto-mapped."""
     __tablename__ = "unresolved_transactions"
+    __table_args__ = {'extend_existing': True}
 
     id = Column(Integer, primary_key=True, index=True)
     amount = Column(Numeric(12, 2), nullable=False)
@@ -192,6 +201,7 @@ class UnresolvedTransaction(Base):
 class StockItem(Base):
     """StockItem - warehouse inventory items."""
     __tablename__ = "stock_items"
+    __table_args__ = {'extend_existing': True}
 
     id = Column(Integer, primary_key=True, index=True)
     name = Column(String(500), nullable=False)
@@ -223,6 +233,7 @@ class DelayReason(str, enum.Enum):
 class ProductionTask(Base):
     """ProductionTask - manufacturing/assembly tasks for projects."""
     __tablename__ = "production_tasks"
+    __table_args__ = {'extend_existing': True}
 
     id = Column(Integer, primary_key=True, index=True)
     project_id = Column(Integer, ForeignKey("projects.id"), nullable=False)
@@ -240,6 +251,7 @@ class ProductionTask(Base):
 class BankStatement(Base):
     """BankStatement - bank statement file upload for reconciliation."""
     __tablename__ = "bank_statements"
+    __table_args__ = {'extend_existing': True}
 
     id = Column(Integer, primary_key=True, index=True)
     bank_name = Column(String(100), nullable=False)  # Tinkoff, Ozon, etc.
@@ -257,6 +269,7 @@ class BankStatement(Base):
 class BankTransaction(Base):
     """BankTransaction - individual transactions from bank statements."""
     __tablename__ = "bank_transactions"
+    __table_args__ = {'extend_existing': True}
 
     id = Column(Integer, primary_key=True, index=True)
     bank_statement_id = Column(Integer, ForeignKey("bank_statements.id"), nullable=False)
@@ -275,6 +288,7 @@ class BankTransaction(Base):
 class TransactionMatchingAudit(Base):
     """TransactionMatchingAudit - audit trail for auto-matched and manually matched transactions."""
     __tablename__ = "transaction_matching_audits"
+    __table_args__ = {'extend_existing': True}
 
     id = Column(Integer, primary_key=True, index=True)
     bank_transaction_id = Column(Integer, ForeignKey("bank_transactions.id"), nullable=True)  # Nullable for manual matches from UnresolvedTransaction
@@ -295,6 +309,7 @@ class TransactionMatchingAudit(Base):
 class FailedTask(Base):
     """FailedTask - Dead Letter Queue (DLQ) for failed Celery tasks."""
     __tablename__ = "failed_tasks"
+    __table_args__ = {'extend_existing': True}
 
     id = Column(Integer, primary_key=True, index=True)
     task_id = Column(String(255), unique=True, nullable=False, index=True)  # Celery task UUID
@@ -310,6 +325,7 @@ class FailedTask(Base):
 class ProjectStatusHistory(Base):
     """ProjectStatusHistory - audit trail of project status changes for Kanban guardrails."""
     __tablename__ = "project_status_history"
+    __table_args__ = {'extend_existing': True}
 
     id = Column(Integer, primary_key=True, index=True)
     project_id = Column(Integer, ForeignKey("projects.id"), nullable=False)

@@ -50,9 +50,14 @@ def get_database_url():
 
 
 def is_database_running():
-    """Check if database is accessible."""
+    """Check if database is accessible AND is PostgreSQL (migrations require PG)."""
     try:
         url = get_database_url()
+        if not url:
+            return False
+        # SQLite doesn't support ALTER constraints needed by Alembic migrations
+        if url.startswith('sqlite'):
+            return False
         engine = create_engine(url)
         with engine.connect() as conn:
             conn.execute(text("SELECT 1"))

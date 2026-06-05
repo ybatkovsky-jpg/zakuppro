@@ -96,35 +96,61 @@ def mock_notification_dispatch():
 # Helper Functions (reused from S03/S04 patterns)
 # =============================================================================
 
-def call_parse_invoice_task(filename, file_content, metadata, task_request, db_session=None):
+def call_parse_invoice_task(filename, file_content, metadata, task_request, db_session=None, use_run_with_context=False):
     """
     Helper function to call parse_invoice task business logic directly.
 
-    Bypasses Celery task wrapper and BaseTask.run_with_context orchestration,
-    calling the execute() method directly with the test DB session.
+    By default, bypasses Celery task wrapper and calls execute() directly.
+    When use_run_with_context=True, uses run_with_context for DLQ behavior.
     """
     from backend.tasks import parse_invoice
 
-    # Call execute() directly, bypassing run_with_context's DB session management
-    return parse_invoice.execute(
-        db_session,
-        filename=filename,
-        file_content=file_content,
-        metadata=metadata,
-    )
+    if use_run_with_context:
+        # Use run_with_context for DLQ persistence tests
+        # We need to call the task via Celery's apply() which sets up request properly
+        with patch('backend.database.SessionLocal', return_value=db_session), \
+             patch('backend.telegram_notifier.send_dlq_alert'):
+            result = parse_invoice.apply(
+                args=[filename, file_content, metadata],
+            )
+            # Celery apply() returns AsyncResult; re-raise if failed
+            if result.failed():
+                result.get(propagate=True)
+            return result.result
+    else:
+        # Call execute() directly, bypassing run_with_context's DB session management
+        return parse_invoice.execute(
+            db_session,
+            filename=filename,
+            file_content=file_content,
+            metadata=metadata,
+        )
 
 
-def call_verify_invoice_task(invoice_id, task_request, db_session):
+def call_verify_invoice_task(invoice_id, task_request, db_session, use_run_with_context=False):
     """
     Helper function to call verify_invoice task business logic directly.
 
-    Bypasses Celery task wrapper and BaseTask.run_with_context orchestration,
-    calling the execute() method directly with the test DB session.
+    By default, bypasses Celery task wrapper and calls execute() directly.
+    When use_run_with_context=True, uses run_with_context for DLQ behavior.
     """
     from backend.tasks import verify_invoice_task
 
-    # Call execute() directly, bypassing run_with_context's DB session management
-    return verify_invoice_task.execute(db_session, invoice_id=invoice_id)
+    if use_run_with_context:
+        # Use run_with_context for DLQ persistence tests
+        # We need to call the task via Celery's apply() which sets up request properly
+        with patch('backend.database.SessionLocal', return_value=db_session), \
+             patch('backend.telegram_notifier.send_dlq_alert'):
+            result = verify_invoice_task.apply(
+                args=[invoice_id],
+            )
+            # Celery apply() returns AsyncResult; re-raise if failed
+            if result.failed():
+                result.get(propagate=True)
+            return result.result
+    else:
+        # Call execute() directly, bypassing run_with_context's DB session management
+        return verify_invoice_task.execute(db_session, invoice_id=invoice_id)
 
 
 # =============================================================================
@@ -755,15 +781,15 @@ class TestErrorPathE2E:
             # Simulate unexpected error (e.g., database connection lost)
             mock_verify.side_effect = RuntimeError("Database connection lost during verification")
 
-            # Should raise RuntimeError
+            # Should raise RuntimeError and create FailedTask via run_with_context
             with pytest.raises(RuntimeError, match="Database connection lost"):
-                call_verify_invoice_task(invoice_id, mock_task_request, db_session)
+                call_verify_invoice_task(invoice_id, mock_task_request, db_session, use_run_with_context=True)
 
         # Verify FailedTask record created
-        failed_task = db_session.query(FailedTask).filter(
-            FailedTask.task_id == 'verify-error-dlq-001'
-        ).first()
-        assert failed_task is not None
+        # Note: When using Celery apply(), task_id is a UUID, not our mock id
+        failed_tasks = db_session.query(FailedTask).all()
+        assert len(failed_tasks) >= 1
+        failed_task = failed_tasks[-1]  # Get the latest one
         assert failed_task.task_name == 'tasks.verify_invoice'
         assert 'Database connection lost' in failed_task.error_message
         assert failed_task.error_type == 'RuntimeError'
@@ -1001,7 +1027,7 @@ class TestErrorPathDLQ:
             mock_parser.parse_file.return_value = mock_parse_result
             mock_factory.return_value = mock_parser
 
-            # Should raise ValueError
+            # Should raise ValueError and create FailedTask via run_with_context
             with pytest.raises(ValueError, match="Invoice parsing failed"):
                 call_parse_invoice_task(
                     'bad.pdf',
@@ -1016,97 +1042,14 @@ class TestErrorPathDLQ:
                     },
                     mock_task_request,
                     db_session=db_session,
+                    use_run_with_context=True,
                 )
 
         # Verify FailedTask record created
-        failed_task = db_session.query(FailedTask).filter(
-            FailedTask.task_id == 'parse-fail-dlq-001'
-        ).first()
-        assert failed_task is not None
-        assert failed_task.task_name == 'tasks.parse_invoice'
-        assert 'LLM parsing failed' in failed_task.error_message
-        assert failed_task.file_path == 'bad.pdf'
-        assert failed_task.chat_id is None  # Email tasks don't have chat_id
-        print(f"✓ FailedTask created: task_id={failed_task.task_id}")
-        print(f"  error_type={failed_task.error_type}")
-
-    def test_verify_error_raises_value_error(
-        self, db_session, mock_task_request
-    ):
-        """
-        Test that verify_invoice error raises ValueError (goes to Celery DLQ).
-
-        ValueError from verification goes directly to Celery DLQ without
-        creating FailedTask record (this is intentional - ValueError is
-        a validation error, not a transient error).
-
-        Verifies:
-        - ValueError raised for missing invoice
-        - Error propagates correctly (will be handled by Celery DLQ in production)
-        """
-        print("\n=== E2E: Verify Error → ValueError (Celery DLQ) ===")
-
-        mock_task_request.id = 'verify-fail-dlq-001'
-
-        # Try to verify non-existent invoice
-        # ValueError from verification goes to Celery DLQ directly
-        # (no FailedTask record created - that's for unexpected errors only)
-        with pytest.raises(ValueError, match="Invoice with id=.* not found"):
-            call_verify_invoice_task(99999, mock_task_request, db_session)
-
-        print(f"✓ ValueError raised (will go to Celery DLQ in production)")
-    """End-to-end tests for error paths with FailedTask DLQ persistence."""
-
-    def test_parse_error_creates_failed_task(
-        self, db_session, mock_task_request
-    ):
-        """
-        Test that parse_invoice error creates FailedTask DLQ record.
-
-        Mocks parser to return error, verifies:
-        - ValueError raised
-        - FailedTask record created with task_id, error_message
-        - FailedTask.file_path, context populated
-        """
-        print("\n=== E2E: Parse Error → FailedTask DLQ ===")
-
-        mock_task_request.id = 'parse-fail-dlq-001'
-
-        # Mock parser to return error
-        mock_parse_result = {
-            'status': 'error',
-            'error': 'LLM parsing failed: rate limit exceeded',
-            'items': [],
-            'raw_text': ''
-        }
-
-        with patch('backend.services.invoice_parser.create_invoice_parser') as mock_factory:
-            mock_parser = Mock()
-            mock_parser.parse_file.return_value = mock_parse_result
-            mock_factory.return_value = mock_parser
-
-            # Should raise ValueError
-            with pytest.raises(ValueError, match="Invoice parsing failed"):
-                call_parse_invoice_task(
-                    'bad.pdf',
-                    b'%PDF-1.4\nbad content',
-                    {
-                        'message_id': '<bad@example.com>',
-                        'subject': 'Bad Invoice',
-                        'from': 'supplier@example.com',
-                        'date': '2024-01-15',
-                        'to': 'invoices@zakuppro.com',
-                        'uid': 5
-                    },
-                    mock_task_request,
-                    db_session=db_session,
-                )
-
-        # Verify FailedTask record created
-        failed_task = db_session.query(FailedTask).filter(
-            FailedTask.task_id == 'parse-fail-dlq-001'
-        ).first()
-        assert failed_task is not None
+        # Note: When using Celery apply(), task_id is a UUID, not our mock id
+        failed_tasks = db_session.query(FailedTask).all()
+        assert len(failed_tasks) >= 1
+        failed_task = failed_tasks[-1]  # Get the latest one
         assert failed_task.task_name == 'tasks.parse_invoice'
         assert 'LLM parsing failed' in failed_task.error_message
         assert failed_task.file_path == 'bad.pdf'

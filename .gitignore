@@ -101,3 +101,4 @@ vendor/
 coverage/
 .cache/
 tmp/
+test.db

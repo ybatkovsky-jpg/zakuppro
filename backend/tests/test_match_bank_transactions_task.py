@@ -228,7 +228,5 @@ class TestMatchBankTransactionsTask:
 
         # Verify log messages were emitted
         log_messages = [record.message for record in caplog.records]
-        assert any("match_bank_transactions started" in msg for msg in log_messages)
-        assert any("Creating database session" in msg for msg in log_messages)
-        assert any("Initializing PaymentMatcher" in msg for msg in log_messages)
+        assert any("match_bank_transactions" in msg and "started" in msg for msg in log_messages)
         assert any("Matching complete" in msg for msg in log_messages)

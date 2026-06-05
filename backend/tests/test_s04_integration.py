@@ -96,30 +96,30 @@ def mock_task_request():
 # Helper Functions
 # =============================================================================
 
-def call_verify_invoice_task(invoice_id, task_request, db_session):
+def call_verify_invoice_task(invoice_id, task_request, db_session, use_run_with_context=False):
     """
     Helper function to call verify_invoice task business logic directly.
 
-    Bypasses Celery task wrapper to test core business logic with mocked context.
+    By default, bypasses Celery task wrapper and calls execute() directly.
+    When use_run_with_context=True, uses run_with_context for DLQ behavior.
     """
     from backend.tasks import verify_invoice_task
 
-    # Create a mock task instance (self) with request attribute
-    class MockTaskInstance:
-        def __init__(self, request_mock):
-            self.request = request_mock
-            self.id = request_mock.id
-
-    mock_self = MockTaskInstance(task_request)
-
-    # Get the actual function from the task object
-    bound_method = verify_invoice_task.__wrapped__
-    actual_func = bound_method.__func__  # Get the raw function
-
-    # Patch SessionLocal to use test session
-    with patch('backend.database.SessionLocal', return_value=db_session):
-        # Call the function with our mock self as the first argument
-        return actual_func(mock_self, invoice_id)
+    if use_run_with_context:
+        # Use run_with_context for DLQ persistence tests
+        # We need to call the task via Celery's apply() which sets up request properly
+        with patch('backend.database.SessionLocal', return_value=db_session), \
+             patch('backend.telegram_notifier.send_dlq_alert'):
+            result = verify_invoice_task.apply(
+                args=[invoice_id],
+            )
+            # Celery apply() returns AsyncResult; re-raise if failed
+            if result.failed():
+                result.get(propagate=True)
+            return result.result
+    else:
+        # Call execute() directly, bypassing run_with_context's DB session management
+        return verify_invoice_task.execute(db_session, invoice_id=invoice_id)
 
 
 class TestFailedTaskModel:
@@ -986,18 +986,15 @@ class TestInvoiceVerificationFlow:
         with patch('backend.services.invoice_verifier.verify_invoice') as mock_verify:
             mock_verify.side_effect = RuntimeError("Unexpected database error")
 
-            # Should raise RuntimeError and create FailedTask
+            # Should raise RuntimeError and create FailedTask via run_with_context
             with pytest.raises(RuntimeError, match="Unexpected database error"):
-                call_verify_invoice_task(invoice_id, mock_task_request, db_session)
+                call_verify_invoice_task(invoice_id, mock_task_request, db_session, use_run_with_context=True)
 
         # Verify FailedTask record was created
-        # Note: The task creates FailedTask in its own session, need to query in our session
-        # Since the helper patches SessionLocal, the FailedTask should be in our db_session
-        failed_task = db_session.query(FailedTask).filter(
-            FailedTask.task_id == 'dlq-verify-test'
-        ).first()
-
-        assert failed_task is not None
+        # Note: When using Celery apply(), task_id is a UUID, not our mock id
+        failed_tasks = db_session.query(FailedTask).all()
+        assert len(failed_tasks) >= 1
+        failed_task = failed_tasks[-1]  # Get the latest one
         assert failed_task.task_name == 'tasks.verify_invoice'
         assert 'Unexpected database error' in failed_task.error_message
         assert failed_task.error_type == 'RuntimeError'
