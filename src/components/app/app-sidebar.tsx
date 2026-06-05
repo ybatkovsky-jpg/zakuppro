@@ -27,7 +27,7 @@ import {
   BarChart3,
   Settings,
   Zap,
-  XCircle,
+  AlertTriangle,
 } from 'lucide-react'
 
 interface StatsData {
@@ -45,8 +45,13 @@ const mainNavItems: { label: string; icon: React.ElementType; view: ViewType }[]
   { label: 'Склад', icon: Warehouse, view: 'warehouse' },
   { label: 'Аналитика', icon: BarChart3, view: 'analytics' },
   { label: 'Автоматизация', icon: Zap, view: 'automation' },
-  { label: 'Неудачные задачи', icon: XCircle, view: 'failed-tasks' },
 ]
+
+const adminNavItem: { label: string; icon: React.ElementType; view: ViewType } = {
+  label: 'Неудачные задачи',
+  icon: AlertTriangle,
+  view: 'failed-tasks',
+}
 
 const settingsNavItem: { label: string; icon: React.ElementType; view: ViewType } = {
   label: 'Настройки',
@@ -71,8 +76,7 @@ export function AppSidebar() {
   const visibleMainNavItems = role
     ? mainNavItems.filter((item) => {
         if (role === 'owner') return true
-        if (item.view === 'failed-tasks') return false
-        if (role === 'manager') return true // all main nav items visible
+        if (role === 'manager') return true
         if (role === 'warehouse') return item.view === 'dashboard' || item.view === 'warehouse'
         return true
       })
@@ -201,6 +205,21 @@ export function AppSidebar() {
               <SidebarGroupContent>
                 <SidebarMenu>
                   {renderNavItem(settingsNavItem)}
+                </SidebarMenu>
+              </SidebarGroupContent>
+            </SidebarGroup>
+          </>
+        )}
+
+        {role === 'owner' && (
+          <>
+            <SidebarSeparator className="mx-2 opacity-50" />
+
+            <SidebarGroup>
+              <SidebarGroupLabel>Администрирование</SidebarGroupLabel>
+              <SidebarGroupContent>
+                <SidebarMenu>
+                  {renderNavItem(adminNavItem)}
                 </SidebarMenu>
               </SidebarGroupContent>
             </SidebarGroup>

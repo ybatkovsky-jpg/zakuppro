@@ -55,7 +55,7 @@ ZakupPro автоматизирует полный цикл от специфи�
 | M004 | ✅ Pass | Bank statement import, payment matching, analytics, export, 237 tests |
 | M005 | ✅ Pass | Frontend UI (Next.js + shadcn/ui), Kanban, таблицы спецификаций |
 | M006 | ✅ Pass | Business Logic Polish: Kanban guardrails, stock reservation, readiness matrix |
-| M007 | 🚧 In Progress | Production Hardening: graceful shutdown, health endpoints, retry, RBAC UI, DLQ admin |
+| M007 | ✅ Pass | Production Hardening: graceful shutdown, health endpoints, retry, RBAC UI, DLQ admin, 257 tests |
 
 ## Структура проекта
 
@@ -285,7 +285,7 @@ pytest tests/m001/
 pytest tests/m004/
 ```
 
-**Текущее покрытие:** 36+ тестовых файлов, покрывающих все milestones (M001-M007).
+**Текущее покрытие:** 36+ тестовых файлов, 257 тестов, все 7 milestones завершены.
 
 ## Роли пользователей
 
@@ -302,14 +302,14 @@ pytest tests/m004/
 
 ## Развертывание в продакшене
 
-### Production Hardening (M007)
+### Production Hardening (M007) ✅
 
-Текущий milestone. Ключевые improvements:
+Завершён. Ключевые improvements:
 - **Graceful shutdown** — все сервисы (FastAPI, Celery, Email Worker, Telegram Bot) с SIGTERM/SIGINT handlers
-- **Health endpoints** — multi-service health check с fail-fast (503 при деградации любого сервиса)
+- **Health endpoints** — multi-service health check с fail-fast (503 при деградации любого сервиса), shared volume для heartbeat-синхронизации между контейнерами
 - **Retry с exponential backoff** — `@retry_async`/`@retry_sync` для LLM, email, Telegram, bank statement
-- **RBAC UI** — role-based access в веб-интерфейсе
-- **DLQ Admin UI** — просмотр и повторная обработка failed tasks
+- **RBAC UI** — 6 ролей (owner, manager, warehouse, purchaser, accountant, technician), sidebar filtering, per-component visibility gating, LoginPage с роль-специфичным доступом
+- **DLQ Admin UI** — страница неудачных задач (failed-tasks) для owner, просмотр и повторная обработка
 
 ### Observability
 
