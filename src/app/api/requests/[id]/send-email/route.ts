@@ -9,6 +9,8 @@ import { NextRequest, NextResponse } from 'next/server'
 import nodemailer from 'nodemailer'
 import { db } from '@/lib/db'
 
+export const dynamic = 'force-dynamic'
+
 // POST /api/requests/[id]/send-email — отправить запрос поставщику по email
 export async function POST(
   request: NextRequest,

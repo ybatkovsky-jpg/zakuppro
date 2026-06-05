@@ -8,6 +8,8 @@
 import { db } from '@/lib/db'
 import { NextResponse } from 'next/server'
 
+export const dynamic = 'force-dynamic'
+
 interface ActivityItem {
   id: string
   type: 'project_created' | 'status_changed' | 'request_created' | 'invoice_received' | 'warehouse_transaction'

@@ -5,14 +5,21 @@ FROM node:20-slim AS builder
 # Set working directory
 WORKDIR /app
 
-# Copy package files
+# Prisma needs DATABASE_URL at generate time (it only reads the provider, not the actual DB)
+ARG DATABASE_URL=postgresql://postgres:postgres@db:5432/zakuppro
+ENV DATABASE_URL=$DATABASE_URL
+
+# Copy package files first (for better Docker layer caching)
 COPY package.json package-lock.json* ./
 
 # Install dependencies
 RUN npm ci
 
-# Copy application source
+# Copy application source (prisma schema, src, etc.)
 COPY . .
+
+# Generate Prisma client (required before build)
+RUN npx prisma generate
 
 # Build Next.js standalone output
 RUN npm run build
@@ -24,8 +31,8 @@ FROM node:20-slim
 RUN apt-get update && apt-get install -y --no-install-recommends curl \
     && rm -rf /var/lib/apt/lists/*
 
-# Create non-root user for security
-RUN groupadd -r node && useradd -r -g node node
+# Create non-root user for security (idempotent — skip if 'node' already exists)
+RUN id node 2>/dev/null || (groupadd -r node && useradd -r -g node node)
 
 # Set working directory
 WORKDIR /app

@@ -3,6 +3,8 @@ import { apiFetch } from '@/lib/api-client'
 import type { InvoiceResponse, InvoiceCreate, InvoiceUpdate } from '@/types/fastapi'
 import { db } from '@/lib/db'
 
+export const dynamic = 'force-dynamic'
+
 // =============================================================================
 // Type Mappings
 // =============================================================================

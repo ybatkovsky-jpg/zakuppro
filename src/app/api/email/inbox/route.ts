@@ -9,6 +9,8 @@ import { NextRequest, NextResponse } from 'next/server'
 import { ImapFlow, FetchMessageObject } from 'imapflow'
 import { db } from '@/lib/db'
 
+export const dynamic = 'force-dynamic'
+
 // GET /api/email/inbox — прочитать входящие письма через IMAP
 export async function GET(request: NextRequest) {
   let client: ImapFlow | null = null

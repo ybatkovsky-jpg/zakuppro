@@ -29,7 +29,7 @@ def upgrade() -> None:
         sa.Column('file_path', sa.String(length=500), nullable=True),
         sa.Column('chat_id', sa.Integer(), nullable=True),
         sa.Column('context', sa.Text(), nullable=True),
-        sa.Column('created_at', sa.DateTime(timezone=True), server_default=sa.text('now'), nullable=False),
+        sa.Column('created_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=False),
         sa.PrimaryKeyConstraint('id', name=op.f('pk_failed_tasks')),
         sa.UniqueConstraint('task_id', name=op.f('uq_failed_tasks_task_id'))
     )

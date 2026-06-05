@@ -7,6 +7,8 @@
 import { db } from '@/lib/db'
 import { NextResponse } from 'next/server'
 
+export const dynamic = 'force-dynamic'
+
 export async function GET() {
   try {
     // Count project items by status for the procurement pipeline

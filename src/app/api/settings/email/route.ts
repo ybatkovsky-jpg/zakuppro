@@ -10,6 +10,8 @@ import nodemailer from 'nodemailer'
 import { ImapFlow } from 'imapflow'
 import { db } from '@/lib/db'
 
+export const dynamic = 'force-dynamic'
+
 // GET /api/settings/email — получить настройки почты
 export async function GET() {
   try {

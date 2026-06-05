@@ -9,6 +9,8 @@ import { NextRequest, NextResponse } from 'next/server'
 import nodemailer from 'nodemailer'
 import { db } from '@/lib/db'
 
+export const dynamic = 'force-dynamic'
+
 // POST /api/email/send — отправить письмо через настроенный SMTP
 export async function POST(request: NextRequest) {
   let transport: nodemailer.Transporter | null = null

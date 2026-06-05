@@ -9,6 +9,8 @@ import { NextRequest, NextResponse } from 'next/server'
 import ZAI from 'z-ai-web-dev-sdk'
 import { db } from '@/lib/db'
 
+export const dynamic = 'force-dynamic'
+
 // GET /api/settings/ai — получить настройки ИИ
 export async function GET() {
   try {

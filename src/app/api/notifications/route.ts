@@ -8,6 +8,8 @@
 import { db } from '@/lib/db'
 import { NextRequest, NextResponse } from 'next/server'
 
+export const dynamic = 'force-dynamic'
+
 // In-memory store for notification read states (demo purposes)
 const readState = new Map<string, boolean>()
 // In-memory store for cleared notifications

@@ -1,6 +1,8 @@
 import { db } from '@/lib/db'
 import { NextRequest, NextResponse } from 'next/server'
 
+export const dynamic = 'force-dynamic'
+
 // =============================================================================
 // Status Mappings (for consistency with other invoice routes)
 // =============================================================================

@@ -8,6 +8,8 @@
 import { db } from '@/lib/db'
 import { NextResponse } from 'next/server'
 
+export const dynamic = 'force-dynamic'
+
 // POST: Executes a specific automation rule on demand
 export async function POST(request: Request) {
   try {

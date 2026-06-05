@@ -8,6 +8,8 @@
 import { db } from '@/lib/db'
 import { NextResponse } from 'next/server'
 
+export const dynamic = 'force-dynamic'
+
 // GET: Returns list of available automation rules and their current status
 export async function GET() {
   try {
