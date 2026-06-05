@@ -1,0 +1,18 @@
+{
+  "id": "ff930866-e7b4-4cba-9460-b31ba9f3e973",
+  "runtime": "bash",
+  "purpose": "S03 T01 RBAC integration tests verification",
+  "script_chars": 69,
+  "started_at": "2026-06-05T04:54:09.459Z",
+  "finished_at": "2026-06-05T04:54:09.562Z",
+  "exit_code": 1,
+  "signal": null,
+  "timed_out": false,
+  "duration_ms": 103,
+  "stdout_bytes": 544,
+  "stderr_bytes": 0,
+  "stdout_truncated": false,
+  "stderr_truncated": false,
+  "stdout_path": "D:\\CLAUDE\\Project\\zakuppro\\zakuppro\\.gsd\\exec\\ff930866-e7b4-4cba-9460-b31ba9f3e973.stdout",
+  "stderr_path": "D:\\CLAUDE\\Project\\zakuppro\\zakuppro\\.gsd\\exec\\ff930866-e7b4-4cba-9460-b31ba9f3e973.stderr"
+}

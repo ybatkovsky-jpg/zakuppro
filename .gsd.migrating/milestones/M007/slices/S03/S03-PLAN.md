@@ -47,7 +47,7 @@ What remains before milestone is truly usable end-to-end: M007 S04 (DLQ Admin UI
   - Files: `src/components/app/app-sidebar.tsx`, `src/app/page.tsx`
   - Verify: cd src && npx tsc --noEmit --pretty 2>&1 | head -20
 
-- [ ] **T04: Add per-component role-based visibility gating for action buttons and sections** `est:1.5h`
+- [x] **T04: Add per-component role-based visibility gating for action buttons and sections** `est:1.5h`
   Why: Even with sidebar filtering, warehouse users who access the warehouse page still see "Создать", "Редактировать", "Удалить" buttons that lead to 403 errors. Similarly, manager users see owner-only actions. Each page component needs conditional rendering based on user role to hide UI elements the user cannot use.
   - Files: `src/components/app/warehouse.tsx`, `src/components/app/projects.tsx`, `src/components/app/dashboard.tsx`, `src/components/app/invoices.tsx`, `src/components/app/analytics.tsx`, `src/components/app/suppliers.tsx`
   - Verify: cd src && npx tsc --noEmit --pretty 2>&1 | head -20

@@ -1,0 +1,18 @@
+{
+  "id": "46a932f3-0c92-4b24-9cc3-6727635fded5",
+  "runtime": "bash",
+  "purpose": "S03 T02-T04 fresh TypeScript verification",
+  "script_chars": 200,
+  "started_at": "2026-06-05T04:54:59.559Z",
+  "finished_at": "2026-06-05T04:54:59.631Z",
+  "exit_code": 1,
+  "signal": null,
+  "timed_out": false,
+  "duration_ms": 72,
+  "stdout_bytes": 544,
+  "stderr_bytes": 0,
+  "stdout_truncated": false,
+  "stderr_truncated": false,
+  "stdout_path": "D:\\CLAUDE\\Project\\zakuppro\\zakuppro\\.gsd\\exec\\46a932f3-0c92-4b24-9cc3-6727635fded5.stdout",
+  "stderr_path": "D:\\CLAUDE\\Project\\zakuppro\\zakuppro\\.gsd\\exec\\46a932f3-0c92-4b24-9cc3-6727635fded5.stderr"
+}

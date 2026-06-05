@@ -569,6 +569,31 @@ class UploadBankStatementResponse(BaseSchema):
 
 
 # =============================================================================
+# FailedTask (DLQ) Schemas
+# =============================================================================
+
+class FailedTaskResponse(BaseSchema):
+    """Schema for FailedTask (Dead Letter Queue) response."""
+    id: int
+    task_id: str
+    task_name: str
+    error_message: str
+    error_type: str
+    file_path: Optional[str] = None
+    chat_id: Optional[int] = None
+    context: Optional[str] = None
+    created_at: datetime
+
+
+class FailedTaskListResponse(BaseSchema):
+    """Schema for paginated FailedTask list response."""
+    items: List[FailedTaskResponse]
+    total: int
+    skip: int
+    limit: int
+
+
+# =============================================================================
 # Stock Reservation / Goods Receipt Schemas (M006)
 # =============================================================================
 

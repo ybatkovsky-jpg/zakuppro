@@ -30,14 +30,6 @@ This file is the explicit capability and coverage contract for the project.
 - Source: inferred
 - Primary owning slice: M007 S04
 
-### R018 — Ролевая модель в Web UI: Владелец (видит всё), Менеджер (только свои проекты), Склад (только остатки)
-- Class: compliance/security
-- Status: active
-- Description: Ролевая модель в Web UI: Владелец (видит всё), Менеджер (только свои проекты), Склад (только остатки)
-- Why it matters: Безопасность доступа. Разные пользователи должны видеть только свои данные.
-- Source: user
-- Primary owning slice: M007 S03
-
 ## Validated
 
 ### R001 — Telegram Bot для приёма Excel файлов от владельца, авторизации по chat_id, и отправки уведомлений о статусе операций
@@ -171,6 +163,15 @@ This file is the explicit capability and coverage contract for the project.
 - Validation: S03 delivered GET /api/projects/readiness endpoint returning per-project green/yellow/red readiness with item counts by procurement stage. Backend computes readiness using PRODUCTION_READY_STATUSES from transition_service: green (all items На складе or Оплачено, or empty), yellow (no К закупке but some in transit: Запрошено or Счет получен), red (any К закупке). Frontend renders colored dots (green/amber/red) on Kanban DraggableProjectCard and Dashboard recent project cards with click-to-expand Popover tooltips showing per-status breakdowns. 12 backend tests verify readiness computation, RBAC (owner/manager), ownership filtering, and edge cases. TypeScript compilation clean.
 - Notes: S03 completes the readiness matrix: backend readiness endpoint, frontend visual indicators in both Kanban and Dashboard views. Complete end-to-end flow: DB ProjectItem.status counts → FastAPI endpoint → Next.js proxy → React components with colored indicators.
 
+### R018 — Ролевая модель в Web UI: Владелец (видит всё), Менеджер (только свои проекты), Склад (только остатки)
+- Class: compliance/security
+- Status: validated
+- Description: Ролевая модель в Web UI: Владелец (видит всё), Менеджер (только свои проекты), Склад (только остатки)
+- Why it matters: Безопасность доступа. Разные пользователи должны видеть только свои данные.
+- Source: user
+- Primary owning slice: M007 S03
+- Validation: S03 delivered: All 6 backend routers secured with require_role guards (125 integration tests passing). AuthProvider React context with reactive useAuth hook, LoginPage, sidebar role filtering, view access guards, and per-component action button gating across 6 frontend components. TypeScript compilation clean for all auth-related files.
+
 ### R019 — Retry с exponential backoff для всех external calls (OpenAI API, email, bank API)
 - Class: quality-attribute
 - Status: validated
@@ -206,12 +207,12 @@ This file is the explicit capability and coverage contract for the project.
 | R015 | continuity | active | M007 S01 | none | S01 delivered: telegram-bot SIGTERM/SIGINT handler + shutdown flag, Celery worker_shutdown signal handler logging active task count, docker-compose.yml stop_grace_period (celery-worker=60s, email-worker=30s, telegram-bot=15s), Docker healthchecks using heartbeat freshness instead of ps aux | grep. Tests: 33 email-worker tests + 13 health endpoint tests + 2 shutdown tests all pass. |
 | R016 | quality-attribute | active | M007 S01 | none | S01 delivered: /health endpoint returns email_worker and telegram_bot status via heartbeat file freshness checks (120s/90s thresholds) on shared Docker volume. All 5 services reported: db, rabbitmq, celery_worker, email_worker, telegram_bot. Tests: 13 health endpoint tests covering all-ok, 4 degradation paths, heartbeat freshness unit tests for both workers. |
 | R017 | admin/support | active | M007 S04 | none | unmapped |
-| R018 | compliance/security | active | M007 S03 | none | unmapped |
+| R018 | compliance/security | validated | M007 S03 | none | S03 delivered: All 6 backend routers secured with require_role guards (125 integration tests passing). AuthProvider React context with reactive useAuth hook, LoginPage, sidebar role filtering, view access guards, and per-component action button gating across 6 frontend components. TypeScript compilation clean for all auth-related files. |
 | R019 | quality-attribute | validated | M007 S02 | none | S02 delivered: retry_utils.py with retry_sync and retry_async decorators (exponential backoff + jitter). All 6 Telegram functions wrapped with @retry_sync(TelegramError), 2 email functions wrapped with @retry_async(SMTPException). 61 tests pass covering retry count, backoff timing, jitter, non-retryable skip, and max-retry exhaustion. LLM and Celery retry already existed — this closes the final gaps in email/Telegram notification pathways. |
 
 ## Coverage Summary
 
-- Active requirements: 4
-- Mapped to slices: 4
-- Validated: 15 (R001, R002, R003, R004, R005, R006, R007, R008, R009, R010, R011, R012, R013, R014, R019)
+- Active requirements: 3
+- Mapped to slices: 3
+- Validated: 16 (R001, R002, R003, R004, R005, R006, R007, R008, R009, R010, R011, R012, R013, R014, R018, R019)
 - Unmapped active requirements: 0

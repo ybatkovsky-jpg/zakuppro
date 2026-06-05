@@ -115,6 +115,10 @@ UploadBankStatementResponse = _schemas.UploadBankStatementResponse
 StockReceiveRequest = _schemas.StockReceiveRequest
 ProjectStatusHistoryResponse = _schemas.ProjectStatusHistoryResponse
 
+# FailedTask (DLQ) schemas
+FailedTaskResponse = _schemas.FailedTaskResponse
+FailedTaskListResponse = _schemas.FailedTaskListResponse
+
 __all__ = [
     # Verification
     "ItemVerification",
@@ -198,4 +202,7 @@ __all__ = [
     # Stock Reservation / Goods Receipt (M006)
     "StockReceiveRequest",
     "ProjectStatusHistoryResponse",
+    # FailedTask (DLQ)
+    "FailedTaskResponse",
+    "FailedTaskListResponse",
 ]

@@ -491,3 +491,26 @@ export interface LoginResponse {
   token_type: string;
   role: UserRole;
 }
+
+// =============================================================================
+// FailedTask / DLQ Types
+// =============================================================================
+
+export interface FailedTaskResponse {
+  id: number;
+  task_id: string;
+  task_name: string;
+  error_message: string;
+  error_type: string;
+  file_path?: string | null;
+  chat_id?: number | null;
+  context?: string | null;
+  created_at: DateTime;
+}
+
+export interface FailedTaskListResponse {
+  items: FailedTaskResponse[];
+  total: number;
+  skip: number;
+  limit: number;
+}
