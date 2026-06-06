@@ -39,7 +39,7 @@ class User(Base):
     username = Column(String(100), unique=True, nullable=False, index=True)
     email = Column(String(255), unique=True, nullable=False, index=True)
     hashed_password = Column(String(255), nullable=False)
-    role = Column(Enum(Role), nullable=False, default=Role.MANAGER)
+    role = Column(Enum(Role, values_callable=lambda x: [e.value for e in x]), nullable=False, default=Role.MANAGER)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
 
@@ -239,7 +239,7 @@ class ProductionTask(Base):
     project_id = Column(Integer, ForeignKey("projects.id"), nullable=False)
     status = Column(String(50), nullable=False, default="Ожидание комплектации")  # Ожидание комплектации, В работе, Готов к отгрузке, У заказчика
     expected_completion_date = Column(DateTime(timezone=True), nullable=True)  # Expected completion date for this task
-    delay_reason = Column(Enum(DelayReason), nullable=True)  # Standard delay reason enum
+    delay_reason = Column(Enum(DelayReason, values_callable=lambda x: [e.value for e in x]), nullable=True)  # Standard delay reason enum
     custom_reason = Column(Text, nullable=True)  # Custom delay description (used when delay_reason is OTHER or for additional context)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
