@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { apiFetch } from '@/lib/api-client'
+import { getAuthHeaders } from '@/lib/auth-proxy'
 import type { ProjectResponse, ProjectCreate, ProjectUpdate } from '@/types/fastapi'
 
 // =============================================================================
@@ -126,7 +127,7 @@ export async function GET(request: NextRequest) {
     }
     if (search) params.search = search
 
-    const result = await apiFetch<ProjectResponse[]>('/api/projects', { params })
+    const result = await apiFetch<ProjectResponse[]>('/api/projects', { headers: getAuthHeaders(request), params })
 
     if (result.error) {
       const statusCode = (result.error.details as any)?.status || 500
@@ -177,8 +178,7 @@ export async function POST(request: NextRequest) {
       total_cost: null,
     }
 
-    const result = await apiFetch<ProjectResponse>('/api/projects', {
-      method: 'POST',
+    const result = await apiFetch<ProjectResponse>('/api/projects', { headers: getAuthHeaders(request), method: 'POST',
       body: projectData,
     })
 

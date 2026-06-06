@@ -3,6 +3,7 @@
 import { useState, useMemo, useRef } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { toast } from '@/hooks/use-toast'
+import { authFetch } from '@/lib/auth-fetch'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -505,7 +506,7 @@ export function Settings() {
   const { data: company, isLoading } = useQuery({
     queryKey: ['company'],
     queryFn: async () => {
-      const res = await fetch('/api/company')
+      const res = await authFetch('/api/company')
       if (!res.ok) throw new Error('Failed to fetch company details')
       return res.json() as Promise<CompanyData>
     },
@@ -515,7 +516,7 @@ export function Settings() {
   const { data: emailData } = useQuery({
     queryKey: ['email-settings'],
     queryFn: async () => {
-      const res = await fetch('/api/settings/email')
+      const res = await authFetch('/api/settings/email')
       if (!res.ok) return null
       return res.json()
     },
@@ -525,7 +526,7 @@ export function Settings() {
   const { data: aiData } = useQuery({
     queryKey: ['ai-settings'],
     queryFn: async () => {
-      const res = await fetch('/api/settings/ai')
+      const res = await authFetch('/api/settings/ai')
       if (!res.ok) return null
       return res.json()
     },
@@ -535,7 +536,7 @@ export function Settings() {
   const { data: telegramData } = useQuery({
     queryKey: ['telegram-settings'],
     queryFn: async () => {
-      const res = await fetch('/api/settings/telegram')
+      const res = await authFetch('/api/settings/telegram')
       if (!res.ok) return null
       return res.json()
     },
@@ -560,7 +561,7 @@ export function Settings() {
 
   const saveMutation = useMutation({
     mutationFn: async (data: Omit<CompanyData, 'id'>) => {
-      const res = await fetch('/api/company', {
+      const res = await authFetch('/api/company', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(data),
@@ -727,7 +728,7 @@ export function Settings() {
 
   const handleSaveEmail = async () => {
     try {
-      const res = await fetch('/api/settings/email', {
+      const res = await authFetch('/api/settings/email', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -773,7 +774,7 @@ export function Settings() {
   const handleTestSmtp = async () => {
     setTestingSmtp(true)
     try {
-      const res = await fetch('/api/settings/email', {
+      const res = await authFetch('/api/settings/email', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ testType: 'smtp', ...emailSettings }),
@@ -796,7 +797,7 @@ export function Settings() {
   const handleTestImap = async () => {
     setTestingImap(true)
     try {
-      const res = await fetch('/api/settings/email', {
+      const res = await authFetch('/api/settings/email', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ testType: 'imap', ...emailSettings }),
@@ -824,7 +825,7 @@ export function Settings() {
 
   const handleSaveAi = async () => {
     try {
-      const res = await fetch('/api/settings/ai', {
+      const res = await authFetch('/api/settings/ai', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -861,7 +862,7 @@ export function Settings() {
   const handleTestAi = async () => {
     setTestingAi(true)
     try {
-      const res = await fetch('/api/settings/ai', { method: 'POST' })
+      const res = await authFetch('/api/settings/ai', { method: 'POST' })
       const data = await res.json()
       toast({
         title: data.success ? 'ИИ подключение' : 'Ошибка ИИ',
@@ -885,7 +886,7 @@ export function Settings() {
 
   const handleSaveTelegram = async () => {
     try {
-      const res = await fetch('/api/settings/telegram', {
+      const res = await authFetch('/api/settings/telegram', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(telegramSettings),
@@ -915,7 +916,7 @@ export function Settings() {
   const handleTestTelegram = async () => {
     setTestingTelegram(true)
     try {
-      const res = await fetch('/api/settings/telegram', { method: 'POST' })
+      const res = await authFetch('/api/settings/telegram', { method: 'POST' })
       const data = await res.json()
       if (data.success && data.botInfo) {
         setBotInfo({ username: data.botInfo.username, first_name: data.botInfo.first_name })
@@ -937,7 +938,7 @@ export function Settings() {
     setTogglingBot(true)
     try {
       const newEnabled = !telegramSettings.isEnabled
-      const res = await fetch('/api/settings/telegram', {
+      const res = await authFetch('/api/settings/telegram', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ isEnabled: newEnabled }),
@@ -1122,7 +1123,7 @@ export function Settings() {
     setLoadingInbox(true)
     setInboxError(null)
     try {
-      const res = await fetch('/api/email/inbox?limit=10')
+      const res = await authFetch('/api/email/inbox?limit=10')
       const data = await res.json()
       if (!res.ok) {
         setInboxError(data.error || 'Ошибка проверки почты')

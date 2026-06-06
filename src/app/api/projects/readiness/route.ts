@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { apiFetch } from '@/lib/api-client'
+import { getAuthHeaders } from '@/lib/auth-proxy'
 import type { ProjectReadinessResponse } from '@/types/fastapi'
 
 /**
@@ -12,7 +13,7 @@ import type { ProjectReadinessResponse } from '@/types/fastapi'
 
 export async function GET(request: NextRequest) {
   try {
-    const result = await apiFetch<ProjectReadinessResponse[]>('/api/projects/readiness')
+    const result = await apiFetch<ProjectReadinessResponse[]>('/api/projects/readiness', { headers: getAuthHeaders(request) })
 
     if (result.error) {
       const statusCode =

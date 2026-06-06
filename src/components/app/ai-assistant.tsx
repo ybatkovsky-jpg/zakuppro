@@ -4,6 +4,7 @@ import { useState, useRef, useEffect, useCallback } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Bot, X, Send, Sparkles, TrendingUp, Search, FolderKanban, Loader2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
+import { authFetch } from '@/lib/auth-fetch'
 import { Textarea } from '@/components/ui/textarea'
 import { useMutation } from '@tanstack/react-query'
 
@@ -41,7 +42,7 @@ export function AIAssistant() {
 
   const sendMessage = useMutation({
     mutationFn: async (chatMessages: ChatMessage[]) => {
-      const res = await fetch('/api/assistant', {
+      const res = await authFetch('/api/assistant', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ messages: chatMessages }),

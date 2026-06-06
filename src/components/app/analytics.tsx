@@ -39,6 +39,7 @@ import {
 import { Badge } from '@/components/ui/badge'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Button } from '@/components/ui/button'
+import { authFetch } from '@/lib/auth-fetch'
 import { openReport } from '@/lib/print-report'
 
 // ── Types ──────────────────────────────────────────────────
@@ -280,7 +281,7 @@ function KPISection() {
   const { data: stats, isLoading: statsLoading } = useQuery<StatsData>({
     queryKey: ['analytics-kpi-stats'],
     queryFn: async () => {
-      const res = await fetch('/api/stats')
+      const res = await authFetch('/api/stats')
       if (!res.ok) throw new Error('Failed to fetch stats')
       return res.json()
     },
@@ -289,7 +290,7 @@ function KPISection() {
   const { data: pipelineData } = useQuery<PipelineData>({
     queryKey: ['analytics-kpi-pipeline'],
     queryFn: async () => {
-      const res = await fetch('/api/analytics/pipeline')
+      const res = await authFetch('/api/analytics/pipeline')
       if (!res.ok) return { total: 0, requested: 0, invoiced: 0, paid: 0, delivered: 0 }
       return res.json()
     },
@@ -298,7 +299,7 @@ function KPISection() {
   const { data: suppliers = [] } = useQuery<SupplierAnalytics[]>({
     queryKey: ['analytics-kpi-suppliers'],
     queryFn: async () => {
-      const res = await fetch('/api/analytics/suppliers')
+      const res = await authFetch('/api/analytics/suppliers')
       if (!res.ok) throw new Error('Failed')
       return res.json()
     },
@@ -394,7 +395,7 @@ function PipelineCard() {
   const { data: itemStatusCounts, isLoading } = useQuery<PipelineData>({
     queryKey: ['analytics-item-statuses'],
     queryFn: async () => {
-      const res = await fetch('/api/analytics/pipeline')
+      const res = await authFetch('/api/analytics/pipeline')
       if (!res.ok) return { total: 0, requested: 0, invoiced: 0, paid: 0, delivered: 0 }
       return res.json()
     },
@@ -499,7 +500,7 @@ function SupplierComparisonCard() {
   const { data: suppliers = [], isLoading } = useQuery<SupplierAnalytics[]>({
     queryKey: ['analytics-suppliers'],
     queryFn: async () => {
-      const res = await fetch('/api/analytics/suppliers')
+      const res = await authFetch('/api/analytics/suppliers')
       if (!res.ok) throw new Error('Failed to fetch supplier analytics')
       return res.json()
     },
@@ -625,7 +626,7 @@ function CategorySpendingCard() {
   const { data: stats, isLoading } = useQuery<StatsData>({
     queryKey: ['analytics-stats-category'],
     queryFn: async () => {
-      const res = await fetch('/api/stats')
+      const res = await authFetch('/api/stats')
       if (!res.ok) throw new Error('Failed to fetch stats')
       return res.json()
     },
@@ -754,7 +755,7 @@ function MonthlyTrendsCard() {
   const { data: stats, isLoading } = useQuery<StatsData>({
     queryKey: ['analytics-stats-monthly'],
     queryFn: async () => {
-      const res = await fetch('/api/stats')
+      const res = await authFetch('/api/stats')
       if (!res.ok) throw new Error('Failed to fetch stats')
       return res.json()
     },

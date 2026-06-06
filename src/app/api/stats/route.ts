@@ -5,18 +5,19 @@
  * (not Prisma), we query the FastAPI backend which has direct DB access.
  */
 import { apiFetch } from '@/lib/api-client'
-import { NextResponse } from 'next/server'
+import { getAuthHeaders } from '@/lib/auth-proxy'
+import { NextRequest, NextResponse } from 'next/server'
 
 export const dynamic = 'force-dynamic'
 
-export async function GET() {
+export async function GET(request: NextRequest) {
   try {
     // Fetch data from FastAPI endpoints
     const [projectsResult, suppliersResult, stockItemsResult, analyticsResult] = await Promise.all([
-      apiFetch<any[]>('/api/projects'),
-      apiFetch<any[]>('/api/suppliers'),
-      apiFetch<any[]>('/api/stock-items'),
-      apiFetch<any>('/api/analytics/dashboard'),
+      apiFetch<any[]>('/api/projects', { headers: getAuthHeaders(request) }),
+      apiFetch<any[]>('/api/suppliers', { headers: getAuthHeaders(request) }),
+      apiFetch<any[]>('/api/stock-items', { headers: getAuthHeaders(request) }),
+      apiFetch<any>('/api/analytics/dashboard', { headers: getAuthHeaders(request) }),
     ])
 
     const projects = projectsResult.data || []

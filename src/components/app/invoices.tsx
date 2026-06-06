@@ -3,6 +3,7 @@
 import { useState, useCallback, useMemo } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { toast } from '@/hooks/use-toast'
+import { authFetch } from '@/lib/auth-fetch'
 import { pluralize } from '@/lib/utils'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -978,7 +979,7 @@ export function Invoices() {
     queryFn: async () => {
       const params = new URLSearchParams()
       if (projectFilter && projectFilter !== 'all') params.set('projectId', projectFilter)
-      const res = await fetch(`/api/invoices?${params.toString()}`)
+      const res = await authFetch(`/api/invoices?${params.toString()}`)
       if (!res.ok) throw new Error('Failed to fetch invoices')
       return res.json() as Promise<InvoiceListItem[]>
     },
@@ -987,7 +988,7 @@ export function Invoices() {
   const { data: projects = [] } = useQuery({
     queryKey: ['projects'],
     queryFn: async () => {
-      const res = await fetch('/api/projects')
+      const res = await authFetch('/api/projects')
       if (!res.ok) throw new Error('Failed to fetch projects')
       return res.json() as Promise<Project[]>
     },
@@ -996,7 +997,7 @@ export function Invoices() {
   const { data: suppliers = [] } = useQuery({
     queryKey: ['suppliers'],
     queryFn: async () => {
-      const res = await fetch('/api/suppliers')
+      const res = await authFetch('/api/suppliers')
       if (!res.ok) throw new Error('Failed to fetch suppliers')
       return res.json() as Promise<Supplier[]>
     },
@@ -1005,7 +1006,7 @@ export function Invoices() {
   const { data: projectDetail } = useQuery({
     queryKey: ['project', newProjectId],
     queryFn: async () => {
-      const res = await fetch(`/api/projects/${newProjectId}`)
+      const res = await authFetch(`/api/projects/${newProjectId}`)
       if (!res.ok) throw new Error('Failed to fetch project')
       return res.json() as Promise<Project & { items: ProjectItem[] }>
     },
@@ -1017,7 +1018,7 @@ export function Invoices() {
     queryKey: ['reconcile', reconcileInvoiceId],
     queryFn: async () => {
       if (!reconcileInvoiceId) return null
-      const res = await fetch(`/api/invoices/${reconcileInvoiceId}/reconcile`)
+      const res = await authFetch(`/api/invoices/${reconcileInvoiceId}/reconcile`)
       if (!res.ok) throw new Error('Failed to fetch reconciliation data')
       return res.json() as Promise<ReconciliationResult>
     },
@@ -1098,7 +1099,7 @@ export function Invoices() {
       totalAmount: number
       items: { projectItemId?: string; name: string; quantity: number; price: number }[]
     }) => {
-      const res = await fetch('/api/invoices', {
+      const res = await authFetch('/api/invoices', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(data),
@@ -1121,7 +1122,7 @@ export function Invoices() {
 
   const updateMutation = useMutation({
     mutationFn: async ({ id, data }: { id: string; data: Record<string, unknown> }) => {
-      const res = await fetch(`/api/invoices/${id}`, {
+      const res = await authFetch(`/api/invoices/${id}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(data),
@@ -1213,7 +1214,7 @@ export function Invoices() {
   }
 
   const fetchDetail = async (id: string) => {
-    const res = await fetch(`/api/invoices/${id}`)
+    const res = await authFetch(`/api/invoices/${id}`)
     if (!res.ok) throw new Error('Failed to fetch invoice')
     return res.json() as Promise<Invoice>
   }

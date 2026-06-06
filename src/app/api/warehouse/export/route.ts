@@ -1,5 +1,6 @@
-import { NextResponse } from 'next/server'
+import { NextRequest, NextResponse } from 'next/server'
 import { apiFetch } from '@/lib/api-client'
+import { getAuthHeaders } from '@/lib/auth-proxy'
 import type { StockItemResponse } from '@/types/fastapi'
 import * as XLSX from 'xlsx'
 
@@ -29,10 +30,10 @@ function stockItemToWarehouseItem(stockItem: StockItemResponse): Record<string, 
 // GET /api/warehouse/export - Export warehouse items to Excel
 // =============================================================================
 
-export async function GET() {
+export async function GET(request: NextRequest) {
   try {
     // Fetch stock items from FastAPI
-    const result = await apiFetch<StockItemResponse[]>('/api/stock-items')
+    const result = await apiFetch<StockItemResponse[]>('/api/stock-items', { headers: getAuthHeaders(request) })
 
     if (result.error) {
       console.error('Warehouse export - FastAPI error:', result.error)

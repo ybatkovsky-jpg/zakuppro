@@ -4,6 +4,7 @@ import { useState, useMemo, useCallback } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useAppStore } from '@/store/app-store'
 import { useToast } from '@/hooks/use-toast'
+import { authFetch } from '@/lib/auth-fetch'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Skeleton } from '@/components/ui/skeleton'
@@ -670,7 +671,7 @@ function StatusTransitionModal({
       if (comment.trim()) body.comment = comment.trim()
       if (changedAt) body.changedAt = new Date(changedAt).toISOString()
 
-      const res = await fetch(`/api/projects/${projectId}/status`, {
+      const res = await authFetch(`/api/projects/${projectId}/status`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(body),
@@ -986,7 +987,7 @@ export function ProjectDetail() {
   } = useQuery<ProjectDetail>({
     queryKey: ['project', selectedProjectId],
     queryFn: async () => {
-      const res = await fetch(`/api/projects/${selectedProjectId}`)
+      const res = await authFetch(`/api/projects/${selectedProjectId}`)
       if (!res.ok) throw new Error('Не удалось загрузить проект')
       return res.json()
     },
@@ -998,7 +999,7 @@ export function ProjectDetail() {
   } = useQuery<StatusHistoryEntry[]>({
     queryKey: ['project-history', selectedProjectId],
     queryFn: async () => {
-      const res = await fetch(`/api/projects/${selectedProjectId}/history`)
+      const res = await authFetch(`/api/projects/${selectedProjectId}/history`)
       if (!res.ok) return []
       return res.json()
     },
@@ -1008,7 +1009,7 @@ export function ProjectDetail() {
   const { data: deliveries = [] } = useQuery<Delivery[]>({
     queryKey: ['project-deliveries', selectedProjectId],
     queryFn: async () => {
-      const res = await fetch(`/api/deliveries?projectId=${selectedProjectId}`)
+      const res = await authFetch(`/api/deliveries?projectId=${selectedProjectId}`)
       if (!res.ok) return []
       return res.json()
     },
@@ -1018,7 +1019,7 @@ export function ProjectDetail() {
   const { data: suppliers = [] } = useQuery<{ id: string; name: string; email: string }[]>({
     queryKey: ['suppliers-list'],
     queryFn: async () => {
-      const res = await fetch('/api/suppliers')
+      const res = await authFetch('/api/suppliers')
       if (!res.ok) return []
       return res.json()
     },
@@ -1028,7 +1029,7 @@ export function ProjectDetail() {
 
   const updateProjectStatus = useMutation({
     mutationFn: async ({ status }: { status: string }) => {
-      const res = await fetch(`/api/projects/${selectedProjectId}`, {
+      const res = await authFetch(`/api/projects/${selectedProjectId}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ status }),
@@ -1053,7 +1054,7 @@ export function ProjectDetail() {
     mutationFn: async (requests: { supplierId: string; items: { projectItemId: string; quantity: number; price: number }[] }[]) => {
       const results = []
       for (const req of requests) {
-        const res = await fetch('/api/requests', {
+        const res = await authFetch('/api/requests', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -1082,7 +1083,7 @@ export function ProjectDetail() {
 
   const verifyInvoiceMutation = useMutation({
     mutationFn: async (invoiceId: string) => {
-      const res = await fetch(`/api/invoices/${invoiceId}`, {
+      const res = await authFetch(`/api/invoices/${invoiceId}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ status: 'verified' }),
@@ -1104,7 +1105,7 @@ export function ProjectDetail() {
 
   const updateItemStatus = useMutation({
     mutationFn: async ({ itemId, status }: { itemId: string; status: string }) => {
-      const res = await fetch(`/api/projects/${selectedProjectId}`, {
+      const res = await authFetch(`/api/projects/${selectedProjectId}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ itemUpdates: [{ itemId, status }] }),
@@ -1226,7 +1227,7 @@ export function ProjectDetail() {
 
   const createDeliveryMutation = useMutation({
     mutationFn: async () => {
-      const res = await fetch('/api/deliveries', {
+      const res = await authFetch('/api/deliveries', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -1257,7 +1258,7 @@ export function ProjectDetail() {
 
   const updateDeliveryMutation = useMutation({
     mutationFn: async ({ id, data }: { id: string; data: Record<string, unknown> }) => {
-      const res = await fetch(`/api/deliveries/${id}`, {
+      const res = await authFetch(`/api/deliveries/${id}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(data),

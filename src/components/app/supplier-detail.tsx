@@ -4,6 +4,7 @@ import { useState, useCallback, useMemo } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useAppStore } from '@/store/app-store'
 import { useToast } from '@/hooks/use-toast'
+import { authFetch } from '@/lib/auth-fetch'
 import {
   ArrowLeft,
   Pencil,
@@ -326,7 +327,7 @@ export function SupplierDetail() {
     queryKey: ['supplier-detail', selectedSupplierId],
     queryFn: async () => {
       if (!selectedSupplierId) throw new Error('No supplier ID')
-      const res = await fetch(`/api/suppliers/${selectedSupplierId}`)
+      const res = await authFetch(`/api/suppliers/${selectedSupplierId}`)
       if (!res.ok) throw new Error('Ошибка загрузки данных поставщика')
       return res.json()
     },
@@ -339,7 +340,7 @@ export function SupplierDetail() {
     queryKey: ['supplier-requests', selectedSupplierId],
     queryFn: async () => {
       if (!selectedSupplierId) return []
-      const res = await fetch(`/api/requests?supplierId=${selectedSupplierId}`)
+      const res = await authFetch(`/api/requests?supplierId=${selectedSupplierId}`)
       if (!res.ok) throw new Error('Ошибка загрузки запросов')
       return res.json()
     },
@@ -351,7 +352,7 @@ export function SupplierDetail() {
   } = useQuery<Invoice[]>({
     queryKey: ['supplier-invoices', selectedSupplierId],
     queryFn: async () => {
-      const res = await fetch('/api/invoices')
+      const res = await authFetch('/api/invoices')
       if (!res.ok) throw new Error('Ошибка загрузки счетов')
       const allInvoices: Invoice[] = await res.json()
       return allInvoices.filter((inv) => inv.supplier.id === selectedSupplierId)
@@ -365,7 +366,7 @@ export function SupplierDetail() {
   } = useQuery<SupplierAnalytics[]>({
     queryKey: ['analytics-suppliers'],
     queryFn: async () => {
-      const res = await fetch('/api/analytics/suppliers')
+      const res = await authFetch('/api/analytics/suppliers')
       if (!res.ok) throw new Error('Ошибка загрузки аналитики')
       return res.json()
     },
@@ -406,7 +407,7 @@ export function SupplierDetail() {
   const updateMutation = useMutation({
     mutationFn: async (data: SupplierFormData) => {
       if (!selectedSupplierId) throw new Error('No supplier ID')
-      const res = await fetch(`/api/suppliers/${selectedSupplierId}`, {
+      const res = await authFetch(`/api/suppliers/${selectedSupplierId}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(data),
@@ -431,7 +432,7 @@ export function SupplierDetail() {
   const deleteMutation = useMutation({
     mutationFn: async () => {
       if (!selectedSupplierId) throw new Error('No supplier ID')
-      const res = await fetch(`/api/suppliers/${selectedSupplierId}`, { method: 'DELETE' })
+      const res = await authFetch(`/api/suppliers/${selectedSupplierId}`, { method: 'DELETE' })
       if (!res.ok) {
         const err = await res.json()
         throw new Error(err.error || 'Ошибка удаления поставщика')

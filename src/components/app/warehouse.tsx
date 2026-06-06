@@ -4,6 +4,7 @@ import { useState, useCallback, useMemo } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useAuth } from '@/components/providers/auth-provider'
 import { useToast } from '@/hooks/use-toast'
+import { authFetch } from '@/lib/auth-fetch'
 import {
   Search,
   Plus,
@@ -165,13 +166,13 @@ const emptyTransactionForm: TransactionFormData = {
 async function fetchWarehouseItems(search: string): Promise<WarehouseItem[]> {
   const params = new URLSearchParams()
   if (search) params.set('search', search)
-  const res = await fetch(`/api/warehouse?${params.toString()}`)
+  const res = await authFetch(`/api/warehouse?${params.toString()}`)
   if (!res.ok) throw new Error('Ошибка загрузки складских позиций')
   return res.json()
 }
 
 async function createWarehouseItem(data: ItemFormData): Promise<WarehouseItem> {
-  const res = await fetch('/api/warehouse', {
+  const res = await authFetch('/api/warehouse', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(data),
@@ -184,7 +185,7 @@ async function createWarehouseItem(data: ItemFormData): Promise<WarehouseItem> {
 }
 
 async function updateWarehouseItem({ id, data }: { id: string; data: Partial<ItemFormData> }): Promise<WarehouseItem> {
-  const res = await fetch(`/api/warehouse/${id}`, {
+  const res = await authFetch(`/api/warehouse/${id}`, {
     method: 'PATCH',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(data),
@@ -197,7 +198,7 @@ async function updateWarehouseItem({ id, data }: { id: string; data: Partial<Ite
 }
 
 async function deleteWarehouseItem(id: string): Promise<void> {
-  const res = await fetch(`/api/warehouse/${id}`, { method: 'DELETE' })
+  const res = await authFetch(`/api/warehouse/${id}`, { method: 'DELETE' })
   if (!res.ok) {
     const err = await res.json()
     throw new Error(err.error || 'Ошибка удаления позиции')
@@ -205,7 +206,7 @@ async function deleteWarehouseItem(id: string): Promise<void> {
 }
 
 async function fetchTransactions(): Promise<WarehouseTransaction[]> {
-  const res = await fetch('/api/warehouse/transactions')
+  const res = await authFetch('/api/warehouse/transactions')
   if (!res.ok) throw new Error('Ошибка загрузки транзакций')
   return res.json()
 }
@@ -216,7 +217,7 @@ async function createTransaction(data: {
   quantity: number
   notes: string
 }): Promise<WarehouseTransaction> {
-  const res = await fetch('/api/warehouse/transactions', {
+  const res = await authFetch('/api/warehouse/transactions', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(data),
@@ -723,7 +724,7 @@ export function Warehouse() {
   const { data: suppliersList = [] } = useQuery<{ id: string; name: string }[]>({
     queryKey: ['reorder-suppliers'],
     queryFn: async () => {
-      const res = await fetch('/api/suppliers')
+      const res = await authFetch('/api/suppliers')
       if (!res.ok) return []
       return res.json()
     },

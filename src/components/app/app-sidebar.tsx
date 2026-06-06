@@ -29,6 +29,7 @@ import {
   Zap,
   AlertTriangle,
 } from 'lucide-react'
+import { authFetch } from '@/lib/auth-fetch'
 
 interface StatsData {
   totalProjects: number
@@ -88,7 +89,7 @@ export function AppSidebar() {
   const { data: stats } = useQuery<StatsData>({
     queryKey: ['sidebar-stats'],
     queryFn: async () => {
-      const res = await fetch('/api/stats')
+      const res = await authFetch('/api/stats')
       if (!res.ok) throw new Error('Failed to fetch stats')
       const data = await res.json()
       return {

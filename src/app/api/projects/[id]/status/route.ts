@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { apiFetch } from '@/lib/api-client'
+import { getAuthHeaders } from '@/lib/auth-proxy'
 import type { ProjectUpdate } from '@/types/fastapi'
 
 // =============================================================================
@@ -59,7 +60,7 @@ export async function POST(
     }
 
     // First, fetch the current project to validate transition
-    const currentResult = await apiFetch(`/api/projects/${id}`)
+    const currentResult = await apiFetch(`/api/projects/${id}`, { headers: getAuthHeaders(request) })
 
     if (currentResult.error) {
       const statusCode = (currentResult.error.details as any)?.status || 500
@@ -103,7 +104,7 @@ export async function POST(
       status: getRussianStatus(status),
     }
 
-    const result = await apiFetch(`/api/projects/${id}`, {
+    const result = await apiFetch(`/api/projects/${id}`, { headers: getAuthHeaders(request),
       method: 'PUT',
       body: updateData,
     })

@@ -5,7 +5,8 @@
  * LLM provider. If neither is available, returns a helpful error message.
  */
 import { apiFetch } from '@/lib/api-client'
-import { NextResponse } from 'next/server'
+import { getAuthHeaders } from '@/lib/auth-proxy'
+import { NextRequest, NextResponse } from 'next/server'
 
 const SYSTEM_PROMPT = `Ты — ИИ-ассистент компании ПРОМЕБЕЛЬ (мебельное производство). Ты помогаешь сотрудникам управлять закупками и оптимизировать процессы снабжения.
 
@@ -32,7 +33,7 @@ const SYSTEM_PROMPT = `Ты — ИИ-ассистент компании ПРО�
 - Используй структурированные списки и таблицы для сложных ответов
 - Предлагай конкретные действия с указанием следующих шагов`
 
-export async function POST(req: Request) {
+export async function POST(req: NextRequest) {
   try {
     const { messages } = await req.json()
 
@@ -70,8 +71,7 @@ export async function POST(req: Request) {
     // Fallback: try FastAPI /api/assistant endpoint
     try {
       const trimmedMessages = messages.slice(-20)
-      const result = await apiFetch<{ response: string }>('/api/assistant/chat', {
-        method: 'POST',
+      const result = await apiFetch<{ response: string }>('/api/assistant/chat', { headers: getAuthHeaders(request), method: 'POST',
         body: {
           messages: trimmedMessages,
           system_prompt: SYSTEM_PROMPT,

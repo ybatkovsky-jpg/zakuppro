@@ -26,6 +26,7 @@ import {
   Send,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
+import { authFetch } from '@/lib/auth-fetch'
 import {
   Popover,
   PopoverContent,
@@ -139,7 +140,7 @@ export function NotificationCenter() {
     queryFn: async () => {
       const params = new URLSearchParams()
       if (activeCategory !== 'all') params.set('category', activeCategory)
-      const res = await fetch(`/api/notifications?${params.toString()}`)
+      const res = await authFetch(`/api/notifications?${params.toString()}`)
       if (!res.ok) return { notifications: [], unreadCount: 0, totalCount: 0, categories: ['Проект', 'Счёт', 'Склад', 'Запрос'] as const }
       return res.json()
     },
@@ -153,7 +154,7 @@ export function NotificationCenter() {
   // Mark as read mutation
   const markReadMutation = useMutation({
     mutationFn: async (ids: string[]) => {
-      const res = await fetch('/api/notifications', {
+      const res = await authFetch('/api/notifications', {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ ids }),
@@ -168,7 +169,7 @@ export function NotificationCenter() {
   // Clear all mutation
   const clearAllMutation = useMutation({
     mutationFn: async () => {
-      const res = await fetch('/api/notifications', {
+      const res = await authFetch('/api/notifications', {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ clearAll: true }),

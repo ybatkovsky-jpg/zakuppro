@@ -3,6 +3,7 @@
 import { useState, useCallback, useMemo, Fragment } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { toast } from '@/hooks/use-toast'
+import { authFetch } from '@/lib/auth-fetch'
 import { pluralize } from '@/lib/utils'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -390,7 +391,7 @@ export function Requests() {
       const params = new URLSearchParams()
       if (statusFilter && statusFilter !== 'all') params.set('status', statusFilter)
       if (supplierFilter && supplierFilter !== 'all') params.set('supplierId', supplierFilter)
-      const res = await fetch(`/api/requests?${params.toString()}`)
+      const res = await authFetch(`/api/requests?${params.toString()}`)
       if (!res.ok) throw new Error('Failed to fetch requests')
       return res.json() as Promise<PurchaseRequest[]>
     },
@@ -399,7 +400,7 @@ export function Requests() {
   const { data: projects = [] } = useQuery({
     queryKey: ['projects'],
     queryFn: async () => {
-      const res = await fetch('/api/projects')
+      const res = await authFetch('/api/projects')
       if (!res.ok) throw new Error('Failed to fetch projects')
       return res.json() as Promise<Project[]>
     },
@@ -408,7 +409,7 @@ export function Requests() {
   const { data: suppliers = [] } = useQuery({
     queryKey: ['suppliers'],
     queryFn: async () => {
-      const res = await fetch('/api/suppliers')
+      const res = await authFetch('/api/suppliers')
       if (!res.ok) throw new Error('Failed to fetch suppliers')
       return res.json() as Promise<Supplier[]>
     },
@@ -417,7 +418,7 @@ export function Requests() {
   const { data: projectDetail } = useQuery({
     queryKey: ['project', selectedProjectId],
     queryFn: async () => {
-      const res = await fetch(`/api/projects/${selectedProjectId}`)
+      const res = await authFetch(`/api/projects/${selectedProjectId}`)
       if (!res.ok) throw new Error('Failed to fetch project')
       return res.json() as Promise<Project & { items: ProjectItem[] }>
     },
@@ -427,7 +428,7 @@ export function Requests() {
   const { data: companyData } = useQuery({
     queryKey: ['company'],
     queryFn: async () => {
-      const res = await fetch('/api/company')
+      const res = await authFetch('/api/company')
       if (!res.ok) throw new Error('Failed to fetch company')
       return res.json() as Promise<{ companyName: string; inn: string; email: string; phone: string }>
     },
@@ -456,7 +457,7 @@ export function Requests() {
 
   const sendEmailMutation = useMutation({
     mutationFn: async (requestId: string) => {
-      const res = await fetch(`/api/requests/${requestId}/send-email`, { method: 'POST' })
+      const res = await authFetch(`/api/requests/${requestId}/send-email`, { method: 'POST' })
       if (!res.ok) {
         const err = await res.json()
         throw new Error(err.error || 'Ошибка отправки')
@@ -483,7 +484,7 @@ export function Requests() {
       emailBody: string
       items: { projectItemId: string; quantity: number; price: number }[]
     }) => {
-      const res = await fetch('/api/requests', {
+      const res = await authFetch('/api/requests', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(data),
@@ -506,7 +507,7 @@ export function Requests() {
 
   const updateMutation = useMutation({
     mutationFn: async ({ id, data }: { id: string; data: Record<string, unknown> }) => {
-      const res = await fetch(`/api/requests/${id}`, {
+      const res = await authFetch(`/api/requests/${id}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(data),

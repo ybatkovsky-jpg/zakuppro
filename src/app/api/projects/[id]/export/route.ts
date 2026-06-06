@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { apiFetch } from '@/lib/api-client'
+import { getAuthHeaders } from '@/lib/auth-proxy'
 import type { ProjectResponse } from '@/types/fastapi'
 import * as XLSX from 'xlsx'
 
@@ -80,14 +81,14 @@ function toCamelCase(obj: any): any {
 // =============================================================================
 
 export async function GET(
-  _request: NextRequest,
+  request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const { id } = await params
 
     // Fetch project from FastAPI
-    const result = await apiFetch<ProjectResponse>(`/api/projects/${id}`)
+    const result = await apiFetch<ProjectResponse>(`/api/projects/${id}`, { headers: getAuthHeaders(request) })
 
     if (result.error) {
       const statusCode = (result.error.details as any)?.status || 500

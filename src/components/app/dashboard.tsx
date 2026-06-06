@@ -12,6 +12,7 @@ import {
 } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
+import { authFetch } from '@/lib/auth-fetch'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 import { motion, useMotionValue, useTransform, animate } from 'framer-motion'
@@ -665,7 +666,7 @@ function ActivityFeed() {
   const { data: activities, isLoading } = useQuery<ActivityItem[]>({
     queryKey: ['activity'],
     queryFn: async () => {
-      const res = await fetch('/api/activity')
+      const res = await authFetch('/api/activity')
       if (!res.ok) throw new Error('Failed to fetch activity')
       return res.json()
     },
@@ -947,7 +948,7 @@ function DeliveryTrackingWidget() {
   const { data: deliveries = [], isLoading } = useQuery<DashboardDelivery[]>({
     queryKey: ['dashboard-deliveries'],
     queryFn: async () => {
-      const res = await fetch('/api/deliveries')
+      const res = await authFetch('/api/deliveries')
       if (!res.ok) return []
       return res.json()
     },
@@ -1187,7 +1188,7 @@ export function Dashboard() {
   const { data, isLoading, error } = useQuery<StatsData>({
     queryKey: ['stats'],
     queryFn: async () => {
-      const res = await fetch('/api/stats')
+      const res = await authFetch('/api/stats')
       if (!res.ok) throw new Error('Failed to fetch stats')
       return res.json()
     },

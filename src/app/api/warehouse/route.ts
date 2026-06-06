@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { apiFetch } from '@/lib/api-client'
+import { getAuthHeaders } from '@/lib/auth-proxy'
 import type { StockItemResponse, StockItemCreate, StockItemUpdate } from '@/types/fastapi'
 
 // =============================================================================
@@ -70,7 +71,7 @@ export async function GET(request: NextRequest) {
     const search = searchParams.get('search')
 
     // FastAPI doesn't have search on stock_items yet, fetch all and filter locally
-    const result = await apiFetch<StockItemResponse[]>('/api/stock-items')
+    const result = await apiFetch<StockItemResponse[]>('/api/stock-items', { headers: getAuthHeaders(request) })
 
     if (result.error) {
       const statusCode = (result.error.details as any)?.status || 500
@@ -126,8 +127,7 @@ export async function POST(request: NextRequest) {
     // Note: category, minQuantity, unit, location are not supported by FastAPI StockItem
     // These fields are omitted but we could add them to notes if needed in the future
 
-    const result = await apiFetch<StockItemResponse>('/api/stock-items', {
-      method: 'POST',
+    const result = await apiFetch<StockItemResponse>('/api/stock-items', { headers: getAuthHeaders(request), method: 'POST',
       body: stockItemData,
     })
 

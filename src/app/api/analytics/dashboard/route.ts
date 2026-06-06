@@ -4,7 +4,8 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { apiClient } from '@/lib/api-client';
+import { apiClient } from '@/lib/api-client'
+import { getAuthHeaders } from '@/lib/auth-proxy';
 
 /**
  * GET /api/analytics/dashboard
@@ -26,7 +27,7 @@ export async function GET(request: NextRequest) {
     if (periodEnd) params.period_end = periodEnd;
 
     // Proxy to FastAPI
-    const result = await apiClient.get<{
+    const result = await apiClient.fetch<{
       paid_invoices_count: number;
       unpaid_invoices_count: number;
       total_paid_amount: number;
@@ -34,7 +35,7 @@ export async function GET(request: NextRequest) {
       pending_invoices_count: number;
       period_start: string;
       period_end: string;
-    }>('/analytics/dashboard', params);
+    }>('/analytics/dashboard', { headers: getAuthHeaders(request), params });
 
     if (result.error || !result.data) {
       return NextResponse.json(

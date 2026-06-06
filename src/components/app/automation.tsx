@@ -25,6 +25,7 @@ import {
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
+import { authFetch } from '@/lib/auth-fetch'
 import { Switch } from '@/components/ui/switch'
 import { toast } from 'sonner'
 
@@ -352,7 +353,7 @@ export function Automation() {
   const { data, isLoading } = useQuery<AutomationResponse>({
     queryKey: ['automation-rules'],
     queryFn: async () => {
-      const res = await fetch('/api/automation')
+      const res = await authFetch('/api/automation')
       if (!res.ok) throw new Error('Failed to fetch automation rules')
       return res.json()
     },
@@ -360,7 +361,7 @@ export function Automation() {
 
   const toggleMutation = useMutation({
     mutationFn: async ({ id, enabled }: { id: string; enabled: boolean }) => {
-      const res = await fetch('/api/automation', {
+      const res = await authFetch('/api/automation', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ id, enabled }),
@@ -384,7 +385,7 @@ export function Automation() {
 
   const executeMutation = useMutation({
     mutationFn: async ({ ruleId }: { ruleId: string }) => {
-      const res = await fetch('/api/automation/execute', {
+      const res = await authFetch('/api/automation/execute', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ ruleId }),

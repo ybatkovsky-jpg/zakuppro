@@ -3,6 +3,7 @@
 import { useState, useCallback, useMemo } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useToast } from '@/hooks/use-toast'
+import { authFetch } from '@/lib/auth-fetch'
 import {
   Search,
   Plus,
@@ -151,13 +152,13 @@ const CITY_COORDS: Record<string, { lat: number; lng: number }> = {
 async function fetchSuppliers(search: string): Promise<Supplier[]> {
   const params = new URLSearchParams()
   if (search) params.set('search', search)
-  const res = await fetch(`/api/suppliers?${params.toString()}`)
+  const res = await authFetch(`/api/suppliers?${params.toString()}`)
   if (!res.ok) throw new Error('Ошибка загрузки поставщиков')
   return res.json()
 }
 
 async function createSupplier(data: SupplierFormData): Promise<Supplier> {
-  const res = await fetch('/api/suppliers', {
+  const res = await authFetch('/api/suppliers', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(data),
@@ -170,7 +171,7 @@ async function createSupplier(data: SupplierFormData): Promise<Supplier> {
 }
 
 async function updateSupplier({ id, data }: { id: string; data: Partial<SupplierFormData> }): Promise<Supplier> {
-  const res = await fetch(`/api/suppliers/${id}`, {
+  const res = await authFetch(`/api/suppliers/${id}`, {
     method: 'PATCH',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(data),
@@ -183,7 +184,7 @@ async function updateSupplier({ id, data }: { id: string; data: Partial<Supplier
 }
 
 async function deleteSupplier(id: string): Promise<void> {
-  const res = await fetch(`/api/suppliers/${id}`, { method: 'DELETE' })
+  const res = await authFetch(`/api/suppliers/${id}`, { method: 'DELETE' })
   if (!res.ok) {
     const err = await res.json()
     throw new Error(err.error || 'Ошибка удаления поставщика')
@@ -798,7 +799,7 @@ export function Suppliers() {
   const { data: analyticsData = [], isLoading: analyticsLoading } = useQuery<SupplierAnalytics[]>({
     queryKey: ['analytics-suppliers'],
     queryFn: async () => {
-      const res = await fetch('/api/analytics/suppliers')
+      const res = await authFetch('/api/analytics/suppliers')
       if (!res.ok) throw new Error('Ошибка загрузки аналитики')
       return res.json()
     },

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { apiFetch } from '@/lib/api-client'
+import { getAuthHeaders } from '@/lib/auth-proxy'
 import type { SupplierResponse, SupplierUpdate } from '@/types/fastapi'
 
 // =============================================================================
@@ -82,7 +83,7 @@ export async function GET(
   try {
     const { id } = await params
 
-    const result = await apiFetch<SupplierResponse>(`/api/suppliers/${id}`)
+    const result = await apiFetch<SupplierResponse>(`/api/suppliers/${id}`, { headers: getAuthHeaders(request) })
 
     if (result.error) {
       const statusCode = (result.error.details as any)?.status || 500
@@ -144,7 +145,7 @@ export async function PATCH(
 
     if (hasRequisitesFields) {
       // First fetch existing to merge requisites
-      const existingResult = await apiFetch<SupplierResponse>(`/api/suppliers/${id}`)
+      const existingResult = await apiFetch<SupplierResponse>(`/api/suppliers/${id}`, { headers: getAuthHeaders(request) })
       if (!existingResult.error && existingResult.data) {
         const existing = existingResult.data as any
         let existingRequisites: Record<string, string> = {}
@@ -170,7 +171,7 @@ export async function PATCH(
       }
     }
 
-    const result = await apiFetch<SupplierResponse>(`/api/suppliers/${id}`, {
+    const result = await apiFetch<SupplierResponse>(`/api/suppliers/${id}`, { headers: getAuthHeaders(request),
       method: 'PUT',
       body: updateData,
     })
@@ -205,7 +206,7 @@ export async function DELETE(
   try {
     const { id } = await params
 
-    const result = await apiFetch(`/api/suppliers/${id}`, {
+    const result = await apiFetch(`/api/suppliers/${id}`, { headers: getAuthHeaders(request),
       method: 'DELETE',
     })
 

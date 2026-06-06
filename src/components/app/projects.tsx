@@ -5,6 +5,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useAppStore } from '@/store/app-store'
 import { useAuth } from '@/components/providers/auth-provider'
 import { useToast } from '@/hooks/use-toast'
+import { authFetch } from '@/lib/auth-fetch'
 import {
   DndContext,
   closestCenter,
@@ -632,7 +633,7 @@ export function Projects() {
     queryFn: async () => {
       const params = new URLSearchParams()
       if (statusFilter !== 'all') params.set('status', statusFilter)
-      const res = await fetch(`/api/projects?${params.toString()}`)
+      const res = await authFetch(`/api/projects?${params.toString()}`)
       if (!res.ok) throw new Error('Не удалось загрузить проекты')
       return res.json()
     },
@@ -659,7 +660,7 @@ export function Projects() {
 
   const createMutation = useMutation({
     mutationFn: async (data: { name: string; description: string; customerName: string }) => {
-      const res = await fetch('/api/projects', {
+      const res = await authFetch('/api/projects', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(data),
@@ -686,7 +687,7 @@ export function Projects() {
       const formData = new FormData()
       formData.append('file', data.file)
       formData.append('projectName', data.projectName)
-      const res = await fetch('/api/projects/upload', {
+      const res = await authFetch('/api/projects/upload', {
         method: 'POST',
         body: formData,
       })
@@ -709,7 +710,7 @@ export function Projects() {
 
   const deleteMutation = useMutation({
     mutationFn: async (id: string) => {
-      const res = await fetch(`/api/projects/${id}`, { method: 'DELETE' })
+      const res = await authFetch(`/api/projects/${id}`, { method: 'DELETE' })
       if (!res.ok) {
         const err = await res.json()
         throw new Error(err.error || 'Ошибка удаления')
@@ -728,7 +729,7 @@ export function Projects() {
   // Status update mutation for drag-and-drop
   const statusMutation = useMutation({
     mutationFn: async (data: { projectId: string; status: string; comment?: string }) => {
-      const res = await fetch(`/api/projects/${data.projectId}/status`, {
+      const res = await authFetch(`/api/projects/${data.projectId}/status`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ status: data.status, comment: data.comment }),

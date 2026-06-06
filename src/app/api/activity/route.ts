@@ -5,7 +5,8 @@
  * Since the DB uses SQLAlchemy models (not Prisma), we query FastAPI.
  */
 import { apiFetch } from '@/lib/api-client'
-import { NextResponse } from 'next/server'
+import { getAuthHeaders } from '@/lib/auth-proxy'
+import { NextRequest, NextResponse } from 'next/server'
 
 export const dynamic = 'force-dynamic'
 
@@ -17,12 +18,12 @@ interface ActivityItem {
   timestamp: string
 }
 
-export async function GET() {
+export async function GET(request: NextRequest) {
   try {
     const activities: ActivityItem[] = []
 
     // Fetch recent projects for "project created" activity
-    const projectsResult = await apiFetch<any[]>('/api/projects')
+    const projectsResult = await apiFetch<any[]>('/api/projects', { headers: getAuthHeaders(request) })
     const projects = projectsResult.data || []
 
     for (const p of projects.slice(0, 5)) {

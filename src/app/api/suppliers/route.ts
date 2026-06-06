@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { apiFetch } from '@/lib/api-client'
+import { getAuthHeaders } from '@/lib/auth-proxy'
 import type { SupplierResponse, SupplierCreate } from '@/types/fastapi'
 
 // =============================================================================
@@ -125,7 +126,7 @@ export async function GET(request: NextRequest) {
     if (limit) params.limit = parseInt(limit, 10)
     if (search) params.search = search
 
-    const result = await apiFetch<SupplierResponse[]>('/api/suppliers', { params })
+    const result = await apiFetch<SupplierResponse[]>('/api/suppliers', { headers: getAuthHeaders(request), params })
 
     if (result.error) {
       const statusCode = (result.error.details as any)?.status || 500
@@ -180,8 +181,7 @@ export async function POST(request: NextRequest) {
       }),
     }
 
-    const result = await apiFetch<SupplierResponse>('/api/suppliers', {
-      method: 'POST',
+    const result = await apiFetch<SupplierResponse>('/api/suppliers', { headers: getAuthHeaders(request), method: 'POST',
       body: supplierData,
     })
 

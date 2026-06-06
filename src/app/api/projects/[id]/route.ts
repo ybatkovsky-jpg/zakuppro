@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { apiFetch } from '@/lib/api-client'
+import { getAuthHeaders } from '@/lib/auth-proxy'
 import type { ProjectResponse, ProjectUpdate } from '@/types/fastapi'
 
 // =============================================================================
@@ -109,7 +110,7 @@ export async function GET(
   try {
     const { id } = await params
 
-    const result = await apiFetch<ProjectResponse>(`/api/projects/${id}`)
+    const result = await apiFetch<ProjectResponse>(`/api/projects/${id}`, { headers: getAuthHeaders(request) })
 
     if (result.error) {
       const statusCode = (result.error.details as any)?.status || 500
@@ -151,7 +152,7 @@ export async function PATCH(
       updateData.status = STATUS_TO_FASTAPI[status] || status
     }
 
-    const result = await apiFetch<ProjectResponse>(`/api/projects/${id}`, {
+    const result = await apiFetch<ProjectResponse>(`/api/projects/${id}`, { headers: getAuthHeaders(request),
       method: 'PUT',
       body: updateData,
     })
@@ -186,7 +187,7 @@ export async function DELETE(
   try {
     const { id } = await params
 
-    const result = await apiFetch(`/api/projects/${id}`, {
+    const result = await apiFetch(`/api/projects/${id}`, { headers: getAuthHeaders(request),
       method: 'DELETE',
     })
 

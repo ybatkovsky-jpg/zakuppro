@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { apiFetch } from '@/lib/api-client'
+import { getAuthHeaders } from '@/lib/auth-proxy'
 import type { StockItemResponse, StockItemUpdate } from '@/types/fastapi'
 
 // =============================================================================
@@ -63,7 +64,7 @@ export async function GET(
       return NextResponse.json({ error: 'Invalid warehouse item ID' }, { status: 400 })
     }
 
-    const result = await apiFetch<StockItemResponse>(`/api/stock-items/${numericId}`)
+    const result = await apiFetch<StockItemResponse>(`/api/stock-items/${numericId}`, { headers: getAuthHeaders(request) })
 
     if (result.error) {
       const statusCode = (result.error.details as any)?.status || 500
@@ -115,7 +116,7 @@ export async function PATCH(
       quantity,
     })
 
-    const result = await apiFetch<StockItemResponse>(`/api/stock-items/${numericId}`, {
+    const result = await apiFetch<StockItemResponse>(`/api/stock-items/${numericId}`, { headers: getAuthHeaders(request),
       method: 'PATCH',
       body: stockItemData,
     })
@@ -158,7 +159,7 @@ export async function DELETE(
       return NextResponse.json({ error: 'Invalid warehouse item ID' }, { status: 400 })
     }
 
-    const result = await apiFetch(`/api/stock-items/${numericId}`, {
+    const result = await apiFetch(`/api/stock-items/${numericId}`, { headers: getAuthHeaders(request),
       method: 'DELETE',
     })
 
