@@ -23,11 +23,15 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({
         ...created,
         botToken: raw ? created.botToken : (created.botToken ? '••••••••' : ''),
+        allowedChatIds: '',
       })
     }
     return NextResponse.json({
       ...settings,
       botToken: raw ? settings.botToken : (settings.botToken ? '••••••••' : ''),
+      allowedChatIds: settings.allowedUsers
+        ? (() => { try { return JSON.parse(settings.allowedUsers).join(', ') } catch { return settings.allowedUsers } })()
+        : '',
     })
   } catch (error) {
     console.error('Error fetching telegram settings:', error)
@@ -49,11 +53,18 @@ export async function PUT(request: NextRequest) {
 
     const isConfigured = !!botToken
 
+    // allowedChatIds: comma-separated string like "600270757, 123456789"
+    const allowedChatIds = body.allowedChatIds ?? ''
+    // Store as JSON array for backward compat with allowedUsers field
+    const allowedUsers = allowedChatIds
+      ? JSON.stringify(allowedChatIds.split(',').map((s: string) => s.trim()).filter(Boolean))
+      : '[]'
+
     const data = {
       botToken,
       webhookUrl: body.webhookUrl ?? '',
       chatId: body.chatId ?? '',
-      allowedUsers: body.allowedUsers ?? '[]',
+      allowedUsers,
       isConfigured,
       isEnabled: body.isEnabled ?? false,
     }
@@ -71,6 +82,7 @@ export async function PUT(request: NextRequest) {
     return NextResponse.json({
       ...result,
       botToken: result.botToken ? '••••••••' : '',
+      allowedChatIds: result.allowedUsers ? JSON.parse(result.allowedUsers).join(', ') : '',
     })
   } catch (error) {
     console.error('Error saving telegram settings:', error)

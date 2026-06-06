@@ -429,8 +429,8 @@ export function Settings() {
 
   // ── AI Settings state ──────────────────────────────────────
   const [aiSettings, setAiSettings] = useState({
-    provider: 'z-ai',
-    model: 'glm-4',
+    provider: 'deepseek',
+    model: 'deepseek-chat',
     apiKey: '',
     apiEndpoint: '',
     temperature: '0.7',
@@ -446,6 +446,7 @@ export function Settings() {
     botToken: '',
     webhookUrl: '',
     chatId: '',
+    allowedChatIds: '',
     isEnabled: false,
   })
   const [telegramSettingsChanged, setTelegramSettingsChanged] = useState(false)
@@ -643,8 +644,8 @@ export function Settings() {
   useMemo(() => {
     if (aiData) {
       setAiSettings({
-        provider: aiData.provider ?? 'z-ai',
-        model: aiData.model ?? 'glm-4',
+        provider: aiData.provider ?? 'deepseek',
+        model: aiData.model ?? 'deepseek-chat',
         apiKey: aiData.apiKey ?? '',
         apiEndpoint: aiData.apiEndpoint ?? '',
         temperature: String(aiData.temperature ?? 0.7),
@@ -660,6 +661,7 @@ export function Settings() {
         botToken: telegramData.botToken ?? '',
         webhookUrl: telegramData.webhookUrl ?? '',
         chatId: telegramData.chatId ?? '',
+        allowedChatIds: telegramData.allowedChatIds ?? '',
         isEnabled: telegramData.isEnabled ?? false,
       })
     }
@@ -849,8 +851,8 @@ export function Settings() {
   const handleResetAi = () => {
     if (aiData) {
       setAiSettings({
-        provider: aiData.provider ?? 'z-ai',
-        model: aiData.model ?? 'glm-4',
+        provider: aiData.provider ?? 'deepseek',
+        model: aiData.model ?? 'deepseek-chat',
         apiKey: aiData.apiKey ?? '',
         apiEndpoint: aiData.apiEndpoint ?? '',
         temperature: String(aiData.temperature ?? 0.7),
@@ -909,6 +911,7 @@ export function Settings() {
         botToken: telegramData.botToken ?? '',
         webhookUrl: telegramData.webhookUrl ?? '',
         chatId: telegramData.chatId ?? '',
+        allowedChatIds: telegramData.allowedChatIds ?? '',
         isEnabled: telegramData.isEnabled ?? false,
       })
     }
@@ -2563,6 +2566,21 @@ export function Settings() {
                 placeholder="123456789"
               />
             </div>
+          </div>
+
+          <div className="space-y-2">
+            <Label className="text-sm font-medium flex items-center gap-1">
+              <Shield className="h-3.5 w-3.5" />
+              Разрешённые Chat ID
+            </Label>
+            <Input
+              value={telegramSettings.allowedChatIds}
+              onChange={(e) => handleTelegramChange('allowedChatIds', e.target.value)}
+              placeholder="600270757, 123456789 (через запятую)"
+            />
+            <p className="text-xs text-muted-foreground">
+              Список Telegram chat_id, которым разрешено общаться с ботом. Через запятую. Изменения применяются после перезапуска бота.
+            </p>
           </div>
 
           <Separator />
