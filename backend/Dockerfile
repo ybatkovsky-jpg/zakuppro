@@ -47,8 +47,8 @@ RUN groupadd -r appuser && useradd -r -g appuser appuser
 # Set working directory
 WORKDIR /app
 
-# Copy application code
-COPY --chown=appuser:appuser . .
+# Copy application code into /app/backend/ so that 'backend.main' is importable
+COPY --chown=appuser:appuser . /app/backend/
 
 # Create health check data directory for heartbeat files
 RUN mkdir -p /data/health && chown appuser:appuser /data/health
@@ -64,5 +64,5 @@ HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
     CMD python -c "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')" || exit 1
 
 # Run migrations then start uvicorn server
-# Migrations run before uvicorn; if they fail, container exits (fail-fast)
-CMD ["sh", "-c", "alembic upgrade head && uvicorn backend.main:app --host 0.0.0.0 --port 8000"]
+# Working dir is /app, module path is backend.main
+CMD ["sh", "-c", "cd /app/backend && alembic upgrade head && cd /app && uvicorn backend.main:app --host 0.0.0.0 --port 8000"]
