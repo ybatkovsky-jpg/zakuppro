@@ -60,6 +60,8 @@ services:
       QWEN_API_KEY: ${QWEN_API_KEY:-}
       QWEN_BASE_URL: ${QWEN_BASE_URL:-}
       QWEN_MODEL: ${QWEN_MODEL:-qwen-plus}
+      # Integration API Key (for FinPro sync)
+      ZAKUPPRO_API_KEY: ${ZAKUPPRO_API_KEY:-}
     ports:
       - "${API_PORT:-8000}:8000"
     depends_on:

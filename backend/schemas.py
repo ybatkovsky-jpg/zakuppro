@@ -76,13 +76,14 @@ class ProjectBase(BaseSchema):
 
 class ProjectCreate(ProjectBase):
     """Schema for creating a new project."""
-    pass
+    contract_number: Optional[str] = None  # Auto-generated if not provided
 
 
 class ProjectUpdate(BaseSchema):
     """Schema for updating an existing project."""
     name: Optional[str] = None
     client: Optional[str] = None
+    contract_number: Optional[str] = None
     status: Optional[str] = None
     total_cost: Optional[float] = None
 
@@ -104,6 +105,7 @@ class ProjectItemResponse(BaseSchema):
 class ProjectResponse(ProjectBase):
     """Schema for project response with nested relationships."""
     id: int
+    contract_number: Optional[str] = None
     owner_id: int
     created_at: datetime
     updated_at: Optional[datetime] = None
@@ -593,3 +595,79 @@ class ProjectStatusHistoryResponse(BaseSchema):
     to_status: str
     changed_by: Optional[int] = None
     changed_at: datetime
+
+
+# =============================================================================
+# Integration API Schemas (FinPro sync)
+# =============================================================================
+
+class IntegrationProjectItem(BaseSchema):
+    """Schema for project item in integration responses."""
+    id: int
+    name: str
+    sku: str
+    qty: int
+    status: str
+    supplier_id: Optional[int] = None
+    unit_price: Optional[float] = None
+    total_price: Optional[float] = None
+    created_at: datetime
+    updated_at: Optional[datetime] = None
+
+
+class ProjectSyncItem(BaseSchema):
+    """Schema for a single project in the integration sync response."""
+    id: int
+    contract_number: Optional[str] = None
+    name: str
+    client: str
+    status: str
+    total_cost: Optional[float] = None
+    owner_id: Optional[int] = None
+    created_at: datetime
+    updated_at: Optional[datetime] = None
+    items: List[IntegrationProjectItem] = []
+
+
+class ProjectSyncResponse(BaseSchema):
+    """Schema for paginated project sync response."""
+    items: List[ProjectSyncItem]
+    total: int
+    page: int
+    limit: int
+
+
+class ProcurementLine(BaseSchema):
+    """Schema for a single procurement line item."""
+    id: int
+    project_contract_number: str
+    date: datetime
+    amount: float
+    category: str  # "Материалы", "Доставка", "Комплектующие"
+    counterparty_name: str
+    document_ref: Optional[str] = None  # Номер счета/накладной
+    status: str  # "approved", "paid", "cancelled"
+
+
+class ProcurementResponse(BaseSchema):
+    """Schema for procurement data response."""
+    project_contract_number: str
+    lines: List[ProcurementLine]
+    total_amount: float
+
+
+class ProductionLine(BaseSchema):
+    """Schema for a single production line item."""
+    id: int
+    project_contract_number: str
+    date: datetime
+    amount: float  # Стоимость работ/сдельная оплата
+    description: str  # "Распил", "Сборка корпуса", "Покраска"
+    status: str  # "in_progress", "completed", "accepted"
+
+
+class ProductionResponse(BaseSchema):
+    """Schema for production data response."""
+    project_contract_number: str
+    lines: List[ProductionLine]
+    total_amount: float

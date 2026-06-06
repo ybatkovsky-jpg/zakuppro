@@ -23,6 +23,7 @@ from backend.routers import (
     analytics,
     admin_failed_tasks,
     assistant,
+    integration,
 )
 
 logger = logging.getLogger(__name__)
@@ -71,7 +72,7 @@ app.add_middleware(
     allow_origins=_cors_origins,
     allow_credentials=True,
     allow_methods=["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
-    allow_headers=["Authorization", "Content-Type", "Accept"],
+    allow_headers=["Authorization", "Content-Type", "Accept", "X-API-Key"],
 )
 
 # Include routers
@@ -91,6 +92,7 @@ app.include_router(production_tasks.router)
 app.include_router(analytics.router)
 app.include_router(admin_failed_tasks.router)
 app.include_router(assistant.router)
+app.include_router(integration.router)
 
 
 @app.get("/")

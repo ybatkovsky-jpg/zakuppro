@@ -56,6 +56,8 @@ class Project(Base):
     id = Column(Integer, primary_key=True, index=True)
     name = Column(String(255), nullable=False)
     client = Column(String(255), nullable=False)
+    contract_number = Column(String(50), unique=True, nullable=True, index=True,
+                              comment="Сквозной номер договора: ПМ000001. Генерируется при создании.")
     status = Column(String(50), nullable=False, default="Проектирование")  # Канбан: Проектирование, Закупки, В производстве, Монтаж
     total_cost = Column(Numeric(12, 2), nullable=True)  # Decimal for financial precision
     owner_id = Column(Integer, ForeignKey("users.id"), nullable=True)  # Owner user (nullable for existing data)
@@ -68,6 +70,21 @@ class Project(Base):
     purchase_orders = relationship("PurchaseOrder", back_populates="project", cascade="all, delete-orphan", lazy="selectin")
     production_tasks = relationship("ProductionTask", back_populates="project", cascade="all, delete-orphan", lazy="selectin")
     status_history = relationship("ProjectStatusHistory", back_populates="project", cascade="all, delete-orphan", lazy="selectin")
+
+    @classmethod
+    def generate_contract_number(cls, session) -> str:
+        """Генерация следующего номера ПМXXXXXX"""
+        last = session.query(cls).filter(
+            cls.contract_number.like("ПМ%")
+        ).order_by(cls.contract_number.desc()).first()
+        if not last or not last.contract_number:
+            return "ПМ000001"
+        try:
+            current_num = int(last.contract_number[2:])
+        except (ValueError, IndexError):
+            return "ПМ000001"
+        next_num = current_num + 1
+        return f"ПМ{next_num:06d}"
 
 
 class ProjectItem(Base):

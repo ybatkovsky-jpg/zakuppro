@@ -208,6 +208,9 @@ def create_project(
         Created project with assigned id
     """
     new_project = Project(**project_data.model_dump(), owner_id=current_user.id)
+    # Auto-generate contract_number if not provided
+    if not new_project.contract_number:
+        new_project.contract_number = Project.generate_contract_number(db)
     db.add(new_project)
     db.commit()
     db.refresh(new_project)
