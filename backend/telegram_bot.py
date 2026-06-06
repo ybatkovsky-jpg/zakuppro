@@ -95,8 +95,8 @@ async def error_handler(update: Update, context) -> None:
     if update and update.effective_message:
         try:
             await update.effective_message.reply_text(
-                '❌ An error occurred while processing your request.\n'
-                'Please try again later.'
+                '❌ Произошла ошибка при обработке запроса.\n'
+                'Пожалуйста, попробуйте позже.'
             )
         except Exception as e:
             logger.error(f'Failed to send error message: {e}')

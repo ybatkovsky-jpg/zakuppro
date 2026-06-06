@@ -31,9 +31,9 @@ async def start_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> N
         chat_id = update.effective_chat.id if update.effective_chat else 'unknown'
         if update.effective_message:
             await update.effective_message.reply_text(
-                f'⛔ Access denied. You are not authorized to use this bot.\n\n'
-                f'Your chat_id: `{chat_id}`\n'
-                f'Ask the administrator to add your chat_id to ALLOWED_CHAT_IDS.',
+                f'⛔ Доступ запрещён. Вы не авторизованы для использования бота.\n\n'
+                f'Ваш chat\\_id: `{chat_id}`\n'
+                f'Обратитесь к администратору, чтобы добавить ваш chat\\_id в ALLOWED\\_CHAT\\_IDS.',
                 parse_mode='Markdown'
             )
         return
@@ -41,9 +41,9 @@ async def start_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> N
     chat_id = update.effective_chat.id
     if update.effective_message:
         await update.effective_message.reply_text(
-            '👋 Welcome to ZakupPro Bot!\n\n'
-            'Send me an Excel file (.xlsx) and I will process it.\n\n'
-            'Use /help to see available commands.'
+            '👋 Добро пожаловать в бот ZakupPro!\n\n'
+            'Отправьте мне файл Excel (.xlsx), и я обработаю его.\n\n'
+            'Используйте /help для списка команд.'
         )
     logger.info(f'Start command handled for chat_id={update.effective_chat.id}')
 
@@ -63,24 +63,24 @@ async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> No
         chat_id = update.effective_chat.id if update.effective_chat else 'unknown'
         if update.effective_message:
             await update.effective_message.reply_text(
-                f'⛔ Access denied. Your chat_id: `{chat_id}`',
+                f'⛔ Доступ запрещён. Ваш chat\\_id: `{chat_id}`',
                 parse_mode='Markdown'
             )
         return
 
     help_text = (
-        '📖 *ZakupPro Bot Help*\n\n'
-        '*Available Commands:*\n'
-        '/start - Start the bot and see welcome message\n'
-        '/help - Show this help message\n\n'
-        '*How to use:*\n'
-        '1. Send an Excel file (.xlsx)\n'
-        '2. The bot will save it and queue processing\n'
-        '3. You will receive a task ID for tracking\n\n'
-        '*File requirements:*\n'
-        '- Format: .xlsx (Excel)\n'
-        '- Size: up to 20MB\n'
-        '- Content: purchase order data'
+        '📖 *Справка по боту ZakupPro*\n\n'
+        '*Доступные команды:*\n'
+        '/start — Начать работу с ботом\n'
+        '/help — Показать эту справку\n\n'
+        '*Как пользоваться:*\n'
+        '1. Отправьте файл Excel (.xlsx)\n'
+        '2. Бот сохранит файл и поставит задачу в очередь\n'
+        '3. Вы получите ID задачи для отслеживания\n\n'
+        '*Требования к файлу:*\n'
+        '- Формат: .xlsx (Excel)\n'
+        '- Размер: до 20 МБ\n'
+        '- Содержимое: данные заказов на закупку'
     )
 
     if update.effective_message:

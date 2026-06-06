@@ -46,7 +46,7 @@ async def handle_document(update: Update, context: ContextTypes.DEFAULT_TYPE) ->
         chat_id = update.effective_chat.id if update.effective_chat else 'unknown'
         if update.effective_message:
             await update.effective_message.reply_text(
-                f'⛔ Access denied. Your chat_id: `{chat_id}`',
+                f'⛔ Доступ запрещён. Ваш chat\\_id: `{chat_id}`',
                 parse_mode='Markdown'
             )
         logger.warning(f'Document upload denied: chat_id={chat_id}')
@@ -67,9 +67,9 @@ async def handle_document(update: Update, context: ContextTypes.DEFAULT_TYPE) ->
         logger.warning(f'Invalid file extension: {file_name} from chat_id={chat_id}')
         if update.effective_message:
             await update.effective_message.reply_text(
-                f'❌ Invalid file format.\n\n'
-                f'Please send Excel files (.xlsx or .xls) only.\n'
-                f'Received: {file_name}'
+                f'❌ Неверный формат файла.\n\n'
+                f'Пожалуйста, отправляйте только файлы Excel (.xlsx или .xls).\n'
+                f'Получен: {file_name}'
             )
         return
 
@@ -78,9 +78,9 @@ async def handle_document(update: Update, context: ContextTypes.DEFAULT_TYPE) ->
         logger.warning(f'File too large: {file_name} ({file_size} bytes) from chat_id={chat_id}')
         if update.effective_message:
             await update.effective_message.reply_text(
-                f'❌ File too large.\n\n'
-                f'Maximum size: 20MB\n'
-                f'Your file: {file_size / 1024 / 1024:.2f}MB'
+                f'❌ Файл слишком большой.\n\n'
+                f'Максимальный размер: 20 МБ\n'
+                f'Ваш файл: {file_size / 1024 / 1024:.2f} МБ'
             )
         return
 
@@ -117,11 +117,11 @@ async def handle_document(update: Update, context: ContextTypes.DEFAULT_TYPE) ->
         # Reply to user with confirmation
         if update.effective_message:
             await update.effective_message.reply_text(
-                f'✅ File received!\n\n'
-                f'📄 File: {file_name}\n'
-                f'📊 Size: {file_size / 1024:.2f} KB\n'
-                f'🆔 Task ID: `{task_id}`\n\n'
-                f'Your file is being processed. You will be notified when complete.',
+                f'✅ Файл получен!\n\n'
+                f'📄 Файл: {file_name}\n'
+                f'📊 Размер: {file_size / 1024:.2f} КБ\n'
+                f'🆔 ID задачи: `{task_id}`\n\n'
+                f'Ваш файл обрабатывается. Вы получите уведомление по завершении.',
                 parse_mode='Markdown'
             )
 
@@ -133,8 +133,8 @@ async def handle_document(update: Update, context: ContextTypes.DEFAULT_TYPE) ->
         )
         if update.effective_message:
             await update.effective_message.reply_text(
-                f'❌ Error processing file.\n\n'
-                f'Please try again or contact support.'
+                f'❌ Ошибка обработки файла.\n\n'
+                f'Пожалуйста, попробуйте ещё раз или обратитесь в поддержку.'
             )
 
 

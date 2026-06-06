@@ -25,7 +25,13 @@ export function setOnUnauthorized(callback: (() => void) | null): void {
 // Configuration
 // =============================================================================
 
-const FASTAPI_URL = process.env.FASTAPI_URL || 'http://localhost:8000';
+// Server-side: use FASTAPI_URL env var directly (Docker network: http://api:8000)
+// Client-side: use Next.js rewrites proxy (/fastapi/...) so the browser never
+// needs to know the backend URL.  This avoids CORS issues and hardcoded IPs.
+const FASTAPI_URL =
+  typeof window === 'undefined'
+    ? (process.env.FASTAPI_URL || 'http://localhost:8000')
+    : '/fastapi';
 
 // =============================================================================
 // Auth Token Storage (localStorage)
