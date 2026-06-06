@@ -269,7 +269,7 @@ services:
     extra_hosts:
       - "host.docker.internal:host-gateway"
     ports:
-      - "${FRONTEND_PORT:-3000}:3000"
+      - "3099:3000"
     depends_on:
       api:
         condition: service_healthy
@@ -295,4 +295,5 @@ volumes:
 networks:
   zakuppro-network:
     driver: bridge
+
 
