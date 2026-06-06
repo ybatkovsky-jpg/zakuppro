@@ -137,4 +137,4 @@ async def handle_document(update: Update, context: ContextTypes.DEFAULT_TYPE) ->
 
 
 # Document filter: only accept Excel files
-document_filter = filters.Document.ALL | filters.Document.Extension('xlsx')
+document_filter = filters.Document.ALL | filters.Document.FileExtension('xlsx')
