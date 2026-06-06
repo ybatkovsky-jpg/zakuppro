@@ -66,8 +66,12 @@ def _handle_shutdown(signum: int, frame) -> None:
 
 async def post_init(application: Application) -> None:
     """Register recurring heartbeat job after application is built."""
-    application.job_queue.run_repeating(_write_heartbeat, interval=30, first=5)
-    logger.info('Heartbeat job registered (every 30s)')
+    if application.job_queue:
+        application.job_queue.run_repeating(_write_heartbeat, interval=30, first=5)
+        logger.info('Heartbeat job registered (every 30s)')
+    else:
+        logger.warning('JobQueue not available — heartbeat will be written on each poll cycle')
+        _write_heartbeat()
 
 
 async def error_handler(update: Update, context) -> None:
