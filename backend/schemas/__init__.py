@@ -119,6 +119,15 @@ ProjectStatusHistoryResponse = _schemas.ProjectStatusHistoryResponse
 FailedTaskResponse = _schemas.FailedTaskResponse
 FailedTaskListResponse = _schemas.FailedTaskListResponse
 
+# Integration API schemas (FinPro sync)
+IntegrationProjectItem = _schemas.IntegrationProjectItem
+ProjectSyncItem = _schemas.ProjectSyncItem
+ProjectSyncResponse = _schemas.ProjectSyncResponse
+ProcurementLine = _schemas.ProcurementLine
+ProcurementResponse = _schemas.ProcurementResponse
+ProductionLine = _schemas.ProductionLine
+ProductionResponse = _schemas.ProductionResponse
+
 __all__ = [
     # Verification
     "ItemVerification",
@@ -205,4 +214,12 @@ __all__ = [
     # FailedTask (DLQ)
     "FailedTaskResponse",
     "FailedTaskListResponse",
+    # Integration API (FinPro sync)
+    "IntegrationProjectItem",
+    "ProjectSyncItem",
+    "ProjectSyncResponse",
+    "ProcurementLine",
+    "ProcurementResponse",
+    "ProductionLine",
+    "ProductionResponse",
 ]
