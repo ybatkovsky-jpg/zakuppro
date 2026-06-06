@@ -178,7 +178,7 @@ export function AppSidebar() {
             <Image src="/logo.png" alt="ПРОМЕБЕЛЬ" width={32} height={32} className="h-8 w-8 object-contain rounded-lg" />
           </div>
           <div className="flex flex-col group-data-[collapsible=icon]:hidden">
-            <span className="text-sm font-bold tracking-tight gradient-text">ПРОМЕБЕЛЬ</span>
+            <span className="text-sm font-bold tracking-tight text-sidebar-foreground">ПРОМЕБЕЛЬ</span>
             <span className="text-[10px] text-sidebar-foreground/60">
               Управление закупками ПРОМЕБЕЛЬ
             </span>

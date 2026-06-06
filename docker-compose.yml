@@ -234,6 +234,8 @@ services:
       FASTAPI_URL: http://api:8000
       DATABASE_URL: postgresql://postgres:postgres@db:5432/zakuppro
       HOSTNAME: "0.0.0.0"
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     ports:
       - "${FRONTEND_PORT:-3000}:3000"
     depends_on:

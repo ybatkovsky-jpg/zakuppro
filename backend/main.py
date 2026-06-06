@@ -20,6 +20,7 @@ from backend.routers import (
     production_tasks,
     analytics,
     admin_failed_tasks,
+    assistant,
 )
 
 logger = logging.getLogger(__name__)
@@ -85,6 +86,7 @@ app.include_router(unresolved_transactions.router)
 app.include_router(production_tasks.router)
 app.include_router(analytics.router)
 app.include_router(admin_failed_tasks.router)
+app.include_router(assistant.router)
 
 
 @app.get("/")

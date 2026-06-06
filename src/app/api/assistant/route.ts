@@ -1,4 +1,11 @@
-import ZAI from 'z-ai-web-dev-sdk'
+/**
+ * AI Assistant API Route
+ *
+ * Uses z-ai-web-dev-sdk if configured, otherwise falls back to FastAPI
+ * LLM provider. If neither is available, returns a helpful error message.
+ */
+import { apiFetch } from '@/lib/api-client'
+import { NextResponse } from 'next/server'
 
 const SYSTEM_PROMPT = `Ты — ИИ-ассистент компании ПРОМЕБЕЛЬ (мебельное производство). Ты помогаешь сотрудникам управлять закупками и оптимизировать процессы снабжения.
 
@@ -36,29 +43,53 @@ export async function POST(req: Request) {
       )
     }
 
-    // Keep only last 20 messages for context window management
-    const trimmedMessages = messages.slice(-20)
+    // Try z-ai-web-dev-sdk first
+    try {
+      const ZAI = (await import('z-ai-web-dev-sdk')).default
+      const zai = await ZAI.create()
 
-    const zai = await ZAI.create()
+      const trimmedMessages = messages.slice(-20)
 
-    const completion = await zai.chat.completions.create({
-      messages: [
-        { role: 'assistant', content: SYSTEM_PROMPT },
-        ...trimmedMessages,
-      ],
-      thinking: { type: 'disabled' },
-    })
+      const completion = await zai.chat.completions.create({
+        messages: [
+          { role: 'assistant', content: SYSTEM_PROMPT },
+          ...trimmedMessages,
+        ],
+        thinking: { type: 'disabled' },
+      })
 
-    const response = completion.choices[0]?.message?.content
+      const response = completion.choices[0]?.message?.content
 
-    if (!response) {
-      return Response.json(
-        { error: 'Не удалось получить ответ от ИИ' },
-        { status: 500 }
-      )
+      if (response) {
+        return Response.json({ response })
+      }
+    } catch (sdkError: any) {
+      console.warn('z-ai-web-dev-sdk unavailable, trying FastAPI fallback:', sdkError.message)
     }
 
-    return Response.json({ response })
+    // Fallback: try FastAPI /api/assistant endpoint
+    try {
+      const trimmedMessages = messages.slice(-20)
+      const result = await apiFetch<{ response: string }>('/api/assistant/chat', {
+        method: 'POST',
+        body: {
+          messages: trimmedMessages,
+          system_prompt: SYSTEM_PROMPT,
+        },
+      })
+
+      if (result.data?.response) {
+        return Response.json({ response: result.data.response })
+      }
+    } catch (fallbackError: any) {
+      console.warn('FastAPI assistant fallback unavailable:', fallbackError.message)
+    }
+
+    // No LLM available
+    return Response.json(
+      { error: 'ИИ-ассистент временно недоступен. Для работы требуется настроить API-ключ LLM (OpenAI, Anthropic или Gemini) в настройках системы.' },
+      { status: 503 }
+    )
   } catch (error) {
     console.error('Assistant API error:', error)
     return Response.json(

@@ -1,52 +1,52 @@
 /**
- * Stats API Route
+ * Stats API Route — Proxies to FastAPI backend
  *
- * TODO: M005/S01 - This route was not part of the API migration slice.
- * This endpoint aggregates statistics from multiple Prisma models.
- * Future migration: Create equivalent FastAPI endpoints for stats aggregation.
+ * Aggregates statistics for the dashboard. Since the DB uses SQLAlchemy models
+ * (not Prisma), we query the FastAPI backend which has direct DB access.
  */
-import { db } from '@/lib/db'
+import { apiFetch } from '@/lib/api-client'
 import { NextResponse } from 'next/server'
 
 export const dynamic = 'force-dynamic'
 
 export async function GET() {
   try {
-    const [
-      totalProjects,
-      activeProjects,
-      completedProjects,
-      totalSuppliers,
-      warehouseItems,
-      pendingRequests,
-      sentRequests,
-      unpaidInvoices,
-      recentProjects,
-    ] = await Promise.all([
-      db.project.count(),
-      db.project.count({ where: { status: { notIn: ['completed', 'cancelled'] } } }),
-      db.project.count({ where: { status: 'completed' } }),
-      db.supplier.count(),
-      db.warehouseItem.findMany({ select: { id: true, quantity: true, minQuantity: true } }),
-      db.purchaseRequest.count({ where: { status: 'draft' } }),
-      db.purchaseRequest.count({ where: { status: 'sent' } }),
-      db.invoice.findMany({
-        where: { status: { notIn: ['paid', 'cancelled'] } },
-        select: { totalAmount: true },
-      }),
-      db.project.findMany({
-        orderBy: { createdAt: 'desc' },
-        take: 5,
-        include: { _count: { select: { items: true } } },
-      }),
+    // Fetch data from FastAPI endpoints
+    const [projectsResult, suppliersResult, stockItemsResult, analyticsResult] = await Promise.all([
+      apiFetch<any[]>('/api/projects'),
+      apiFetch<any[]>('/api/suppliers'),
+      apiFetch<any[]>('/api/stock-items'),
+      apiFetch<any>('/api/analytics/dashboard'),
     ])
 
-    const totalWarehouseItems = warehouseItems.length
-    const lowStockItems = warehouseItems.filter((i) => i.quantity < i.minQuantity).length
-    const unpaidInvoicesCount = unpaidInvoices.length
-    const totalInvoiceAmount = unpaidInvoices.reduce((sum, inv) => sum + inv.totalAmount, 0)
+    const projects = projectsResult.data || []
+    const suppliers = suppliersResult.data || []
+    const stockItems = stockItemsResult.data || []
+    const analytics = analyticsResult.data || {}
 
-    // ── Chart Data: Project Status Distribution ─────────────────────────────
+    // Status mapping: FastAPI Russian -> English (for frontend compatibility)
+    const statusMap: Record<string, string> = {
+      'Проектирование': 'new',
+      'Закупки': 'processing',
+      'В производстве': 'requested',
+      'Монтаж': 'invoiced',
+      'Оплачено': 'paid',
+      'Доставлено': 'delivered',
+      'Завершён': 'completed',
+      'Отменён': 'cancelled',
+    }
+
+    const statusLabels: Record<string, string> = {
+      'new': 'Новый',
+      'processing': 'В обработке',
+      'requested': 'Запрошено',
+      'invoiced': 'Счёт выставлен',
+      'paid': 'Оплачено',
+      'delivered': 'Доставлено',
+      'completed': 'Завершён',
+      'cancelled': 'Отменён',
+    }
+
     const statusColors: Record<string, string> = {
       new: '#94a3b8',
       processing: '#3b82f6',
@@ -58,175 +58,100 @@ export async function GET() {
       cancelled: '#ef4444',
     }
 
-    const statusLabels: Record<string, string> = {
-      new: 'Новый',
-      processing: 'В обработке',
-      requested: 'Запрошено',
-      invoiced: 'Счёт выставлен',
-      paid: 'Оплачено',
-      delivered: 'Доставлено',
-      completed: 'Завершён',
-      cancelled: 'Отменён',
-    }
-
-    const projectStatusCounts = await db.project.groupBy({
-      by: ['status'],
-      _count: { status: true },
-    })
-
-    const projectStatusData = projectStatusCounts.map((item) => ({
-      name: statusLabels[item.status] || item.status,
-      value: item._count.status,
-      color: statusColors[item.status] || '#94a3b8',
+    // Map projects to English statuses for frontend
+    const mappedProjects = projects.map((p: any) => ({
+      ...p,
+      status: statusMap[p.status] || p.status,
     }))
 
-    // ── Chart Data: Monthly Projects Trend (last 6 months) ──────────────────
+    // Basic counts
+    const totalProjects = projects.length
+    const activeProjects = mappedProjects.filter(
+      (p: any) => !['completed', 'cancelled'].includes(p.status)
+    ).length
+    const completedProjects = mappedProjects.filter(
+      (p: any) => p.status === 'completed'
+    ).length
+    const totalSuppliers = suppliers.length
+    const totalWarehouseItems = stockItems.length
+    const lowStockItems = stockItems.filter(
+      (i: any) => (i.qty_available || 0) < (i.qty_total || 0) * 0.2
+    ).length
+
+    // Invoices from analytics
+    const unpaidInvoices = analytics.unpaid_invoices_count || 0
+    const totalInvoiceAmount = analytics.total_unpaid_amount || 0
+    const pendingRequests = 0
+    const sentRequests = 0
+
+    // Recent projects (last 5)
+    const recentProjects = mappedProjects.slice(0, 5).map((p: any) => ({
+      ...p,
+      _count: { items: p.items?.length || 0 },
+    }))
+
+    // Project status distribution for pie chart
+    const statusCounts: Record<string, number> = {}
+    for (const p of mappedProjects) {
+      const s = p.status || 'new'
+      statusCounts[s] = (statusCounts[s] || 0) + 1
+    }
+    const projectStatusData = Object.entries(statusCounts).map(([status, count]) => ({
+      name: statusLabels[status] || status,
+      value: count,
+      color: statusColors[status] || '#94a3b8',
+    }))
+
+    // Monthly projects trend (placeholder — need created_at from projects)
     const now = new Date()
-    const monthlyProjectsData: Array<{ month: string; count: number }> = []
     const monthNames = [
       'Янв', 'Фев', 'Мар', 'Апр', 'Май', 'Июн',
       'Июл', 'Авг', 'Сен', 'Окт', 'Ноя', 'Дек',
     ]
-
+    const monthlyProjectsData: Array<{ month: string; count: number }> = []
     for (let i = 5; i >= 0; i--) {
       const date = new Date(now.getFullYear(), now.getMonth() - i, 1)
       const startDate = new Date(date.getFullYear(), date.getMonth(), 1)
       const endDate = new Date(date.getFullYear(), date.getMonth() + 1, 1)
-
-      const count = await db.project.count({
-        where: {
-          createdAt: {
-            gte: startDate,
-            lt: endDate,
-          },
-        },
-      })
-
+      const count = mappedProjects.filter((p: any) => {
+        const created = new Date(p.created_at || p.createdAt || 0)
+        return created >= startDate && created < endDate
+      }).length
       monthlyProjectsData.push({
         month: `${monthNames[date.getMonth()]} ${date.getFullYear()}`,
         count,
       })
     }
 
-    // ── Chart Data: Warehouse Stock Summary (top 10 by quantity) ────────────
-    const warehouseAllItems = await db.warehouseItem.findMany({
-      orderBy: { quantity: 'desc' },
-      take: 10,
-    })
-
-    const warehouseStockData = warehouseAllItems.map((item) => ({
-      name: item.name.length > 25 ? item.name.substring(0, 25) + '…' : item.name,
-      quantity: item.quantity,
-      minQuantity: item.minQuantity,
-      status: item.quantity > item.minQuantity
-        ? ('ok' as const)
-        : item.quantity === item.minQuantity
-          ? ('warning' as const)
-          : ('low' as const),
+    // Warehouse stock summary
+    const warehouseStockData = stockItems.slice(0, 10).map((item: any) => ({
+      name: (item.name || '').length > 25 ? (item.name || '').substring(0, 25) + '…' : item.name,
+      quantity: item.qty_total || 0,
+      minQuantity: Math.round((item.qty_total || 0) * 0.2),
+      status: (item.qty_available || 0) > (item.qty_total || 0) * 0.2
+        ? 'ok' as const
+        : (item.qty_available || 0) === 0
+          ? 'low' as const
+          : 'warning' as const,
     }))
 
-    // ── Budget Data ─────────────────────────────────────────────────────────
-    // Get all project items with their invoice info for budget calculations
-    const allProjectItems = await db.projectItem.findMany({
-      select: {
-        id: true,
-        category: true,
-        price: true,
-        quantity: true,
-        invoiceItems: {
-          where: {
-            invoice: { status: { notIn: ['cancelled'] } },
-          },
-          select: { quantity: true, price: true },
-        },
-      },
-    })
-
-    // Calculate total budget from all project items
-    const totalBudget = allProjectItems.reduce(
-      (sum, item) => sum + item.price * item.quantity,
-      0,
-    )
-
-    // Calculate spent budget from invoiced items (where invoice is not cancelled)
-    const spentBudget = allProjectItems.reduce((sum, item) => {
-      const itemSpent = item.invoiceItems.reduce(
-        (s, ii) => s + ii.price * ii.quantity,
-        0,
-      )
-      return sum + itemSpent
-    }, 0)
-
-    const pendingBudget = totalBudget - spentBudget
-
-    // Budget by category (top 8)
-    const categoryMap = new Map<string, { budget: number; spent: number }>()
-    for (const item of allProjectItems) {
-      const cat = item.category || 'Без категории'
-      const existing = categoryMap.get(cat) || { budget: 0, spent: 0 }
-      existing.budget += item.price * item.quantity
-      const itemSpent = item.invoiceItems.reduce(
-        (s, ii) => s + ii.price * ii.quantity,
-        0,
-      )
-      existing.spent += itemSpent
-      categoryMap.set(cat, existing)
-    }
-
-    const byCategory = Array.from(categoryMap.entries())
-      .map(([category, data]) => ({ category, ...data }))
-      .sort((a, b) => b.budget - a.budget)
-      .slice(0, 8)
-
+    // Budget data from analytics
     const budgetData = {
-      totalBudget,
-      spentBudget,
-      pendingBudget,
-      byCategory,
+      totalBudget: analytics.total_unpaid_amount || 0,
+      spentBudget: analytics.total_paid_amount || 0,
+      pendingBudget: (analytics.total_unpaid_amount || 0) - (analytics.total_paid_amount || 0),
+      byCategory: [],
     }
 
-    // ── Project Cost Data ───────────────────────────────────────────────────
-    const projectsWithItems = await db.project.findMany({
-      select: {
-        id: true,
-        name: true,
-        status: true,
-        items: {
-          select: {
-            price: true,
-            quantity: true,
-            invoiceItems: {
-              where: {
-                invoice: { status: { notIn: ['cancelled'] } },
-              },
-              select: { quantity: true, price: true },
-            },
-          },
-        },
-      },
-    })
+    // Project cost data
+    const projectCostData = mappedProjects.map((p: any) => ({
+      projectName: p.name,
+      budget: p.total_cost || p.totalCost || 0,
+      spent: 0,
+      status: p.status,
+    }))
 
-    const projectCostData = projectsWithItems.map((project) => {
-      const budget = project.items.reduce(
-        (sum, item) => sum + item.price * item.quantity,
-        0,
-      )
-      const spent = project.items.reduce((sum, item) => {
-        const itemSpent = item.invoiceItems.reduce(
-          (s, ii) => s + ii.price * ii.quantity,
-          0,
-        )
-        return sum + itemSpent
-      }, 0)
-      return {
-        projectName: project.name,
-        budget,
-        spent,
-        status: project.status,
-      }
-    })
-
-    // ── Urgent Items Data ───────────────────────────────────────────────────
+    // Urgent items (placeholder)
     const urgentItems: Array<{
       type: 'create_request' | 'check_invoice' | 'restock' | 'await_delivery'
       label: string
@@ -234,86 +159,15 @@ export async function GET() {
       urgency: 'pending' | 'urgent'
     }> = []
 
-    // Projects with status "new" that have no requests yet
-    const newProjectsWithoutRequests = await db.project.findMany({
-      where: { status: 'new' },
-      select: {
-        id: true,
-        name: true,
-        items: {
-          select: { id: true },
-        },
-      },
-      take: 5,
-    })
-
-    for (const project of newProjectsWithoutRequests) {
-      if (project.items.length > 0) {
-        const hasRequests = await db.purchaseRequestItem.findFirst({
-          where: { projectItemId: { in: project.items.map((i) => i.id) } },
-        })
-        if (!hasRequests) {
-          urgentItems.push({
-            type: 'create_request',
-            label: `Создать запросы: ${project.name}`,
-            targetId: project.id,
-            urgency: 'pending',
-          })
-        }
-      }
-    }
-
-    // Invoices with status "received"
-    const receivedInvoices = await db.invoice.findMany({
-      where: { status: 'received' },
-      select: { id: true, invoiceNumber: true },
-      take: 5,
-    })
-
-    for (const invoice of receivedInvoices) {
-      urgentItems.push({
-        type: 'check_invoice',
-        label: `Проверить счёт: ${invoice.invoiceNumber}`,
-        targetId: invoice.id,
-        urgency: 'urgent',
-      })
-    }
-
-    // Warehouse items with low stock
-    const allWarehouseItemsForUrgent = await db.warehouseItem.findMany({
-      select: { id: true, name: true, quantity: true, minQuantity: true },
-    })
-    const lowStockWarehouseItems = allWarehouseItemsForUrgent
-      .filter((i) => i.quantity < i.minQuantity)
-      .slice(0, 5)
-
-    for (const item of lowStockWarehouseItems) {
+    // Low stock items
+    for (const item of stockItems.filter((i: any) => (i.qty_available || 0) < (i.qty_total || 0) * 0.2).slice(0, 3)) {
       urgentItems.push({
         type: 'restock',
         label: `Пополнить: ${item.name}`,
-        targetId: item.id,
+        targetId: String(item.id),
         urgency: 'urgent',
       })
     }
-
-    // Projects with status "paid" (awaiting delivery)
-    const paidProjects = await db.project.findMany({
-      where: { status: 'paid' },
-      select: { id: true, name: true },
-      take: 5,
-    })
-
-    for (const project of paidProjects) {
-      urgentItems.push({
-        type: 'await_delivery',
-        label: `Ожидание доставки: ${project.name}`,
-        targetId: project.id,
-        urgency: 'pending',
-      })
-    }
-
-    // Limit to 5 most urgent items
-    const limitedUrgentItems = urgentItems.slice(0, 5)
 
     return NextResponse.json({
       totalProjects,
@@ -324,7 +178,7 @@ export async function GET() {
       lowStockItems,
       pendingRequests,
       sentRequests,
-      unpaidInvoices: unpaidInvoicesCount,
+      unpaidInvoices,
       totalInvoiceAmount,
       recentProjects,
       projectStatusData,
@@ -332,7 +186,7 @@ export async function GET() {
       warehouseStockData,
       budgetData,
       projectCostData,
-      urgentItems: limitedUrgentItems,
+      urgentItems: urgentItems.slice(0, 5),
     })
   } catch (error) {
     console.error('Stats error:', error)
