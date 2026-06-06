@@ -1195,9 +1195,27 @@ export function Dashboard() {
     refetchInterval: 30_000,
   })
 
+  // Readiness query — MUST be called before any conditional returns (Rules of Hooks)
+  const { data: readinessData = [] } = useQuery<ProjectReadinessResponse[]>({
+    queryKey: ['projectReadiness'],
+    queryFn: async () => {
+      const result = await fetchProjectReadiness()
+      if (result.error) throw new Error(result.error.error)
+      return result.data ?? []
+    },
+    enabled: !!data && data.recentProjects.length > 0,
+  })
+
   // Memoized greeting and date (computed once per render)
   const greeting = useMemo(() => getGreeting(), [])
   const russianDate = useMemo(() => getRussianFullDate(), [])
+
+  // readinessMap MUST be computed before conditional returns (Rules of Hooks)
+  const readinessMap = useMemo(() => {
+    const map: Record<string, ProjectReadinessResponse> = {}
+    readinessData.forEach((r) => (map[String(r.project_id)] = r))
+    return map
+  }, [readinessData])
 
   if (isLoading) return <DashboardSkeleton />
 
@@ -1218,23 +1236,6 @@ export function Dashboard() {
   }
 
   if (!data) return null
-
-  // Readiness query — supplementary data, does not block rendering
-  const { data: readinessData = [] } = useQuery<ProjectReadinessResponse[]>({
-    queryKey: ['projectReadiness'],
-    queryFn: async () => {
-      const result = await fetchProjectReadiness()
-      if (result.error) throw new Error(result.error.error)
-      return result.data ?? []
-    },
-    enabled: data.recentProjects.length > 0,
-  })
-
-  const readinessMap = useMemo(() => {
-    const map: Record<string, ProjectReadinessResponse> = {}
-    readinessData.forEach((r) => (map[String(r.project_id)] = r))
-    return map
-  }, [readinessData])
 
   // Readiness color helpers
   const READINESS_COLORS: Record<string, string> = {
