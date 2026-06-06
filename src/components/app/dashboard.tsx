@@ -186,7 +186,7 @@ const STATUS_BORDER_COLORS: Record<string, string> = {
 
 const STATUS_GRADIENT_BG: Record<string, string> = {
   new: 'from-slate-50/80 to-transparent dark:from-slate-950/40',
-  processing: 'from-primary/5 to-transparent',
+  processing: 'from-slate-50/80 to-transparent dark:from-slate-950/40',
   requested: 'from-violet-50/80 to-transparent dark:from-violet-950/40',
   invoiced: 'from-amber-50/80 to-transparent dark:from-amber-950/40',
   paid: 'from-emerald-50/80 to-transparent dark:from-emerald-950/40',
@@ -344,7 +344,7 @@ const activityItemVariants = {
 // ── Stat Card Component (Improved) ─────────────────────────────────────────
 
 const STAT_GRADIENT_MAP: Record<string, string> = {
-  'border-l-primary': 'from-primary/8 via-primary/3 to-transparent',
+  'border-l-primary': 'from-slate-50/80 to-transparent dark:from-slate-950/40',
   'border-l-sky-500': 'from-sky-100/60 via-sky-50/30 to-transparent dark:from-sky-950/40 dark:via-sky-950/20',
   'border-l-violet-500': 'from-violet-100/60 via-violet-50/30 to-transparent dark:from-violet-950/40 dark:via-violet-950/20',
   'border-l-amber-500': 'from-amber-100/60 via-amber-50/30 to-transparent dark:from-amber-950/40 dark:via-amber-950/20',
@@ -403,7 +403,7 @@ function StatCard({
   formatCounter?: (v: number) => string
 }) {
   const isClickable = !!onClick
-  const gradientBg = borderColor ? (STAT_GRADIENT_MAP[borderColor] ?? 'from-primary/5 to-transparent') : 'from-primary/5 to-transparent'
+  const gradientBg = ''  // Gradient backgrounds removed to prevent blue rectangle artifacts in Tailwind v4
   const iconBg = borderColor ? (STAT_ICON_BG_MAP[borderColor] ?? 'bg-primary/10') : 'bg-primary/10'
   const iconColor = borderColor ? (STAT_ICON_COLOR_MAP[borderColor] ?? 'text-muted-foreground') : 'text-muted-foreground'
 
@@ -417,11 +417,7 @@ function StatCard({
         className={`relative overflow-hidden transition-shadow duration-300 group ${borderColor ? `border-l-4 ${borderColor}` : ''} ${cardClassName ?? ''} ${isClickable ? 'cursor-pointer hover:shadow-xl active:scale-[0.98]' : 'hover:shadow-md'}`}
         onClick={onClick}
       >
-        {/* Gradient background — removed to prevent blue rectangle artifacts */}
-        {/* Subtle inner shadow for depth */}
-        <div className="absolute inset-0 shadow-[inset_0_1px_0_oklch(1_0_0/0.05)] dark:shadow-[inset_0_1px_0_oklch(1_0_0/0.03)] pointer-events-none" />
-        {/* Inner glow on hover */}
-        <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none shadow-[inset_0_0_24px_oklch(0.5_0.15_270/0.06)] dark:shadow-[inset_0_0_24px_oklch(0.6_0.2_270/0.05)]" />
+        {/* All gradient backgrounds removed to prevent blue rectangle artifacts in Tailwind v4 */}
         <CardHeader className="relative flex flex-row items-center justify-between pb-2">
           <CardDescription className="text-sm font-medium">
             {title}
@@ -1165,7 +1161,7 @@ function QuickActionCard({
       whileHover={{ y: -4, scale: 1.02 }}
       whileTap={{ scale: 0.98 }}
       onClick={onClick}
-      className="group gradient-border flex flex-col items-center gap-2.5 rounded-xl border bg-card p-4 text-center transition-all duration-200 hover:shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+      className="group flex flex-col items-center gap-2.5 rounded-xl border bg-card p-4 text-center transition-all duration-200 hover:shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
     >
       <div className={`flex size-12 items-center justify-center rounded-full ${iconBg} transition-transform duration-200 group-hover:scale-110`}>
         <Icon className={`size-6 ${iconColor}`} />
@@ -1297,18 +1293,9 @@ export function Dashboard() {
       {/* ── Welcome Header Section ────────────────────────────────────── */}
       <motion.div
         variants={itemVariants}
-        className="relative -mx-6 -mt-6 px-6 pt-6 pb-5 overflow-hidden rounded-b-2xl"
+        className="relative -mx-6 -mt-6 px-6 pt-6 pb-5"
       >
-        {/* Subtle background accent — no visible gradient rectangle */}
-        <div className="absolute inset-0 bg-transparent" />
-
-        {/* Decorative subtle grid lines */}
-        <div className="absolute inset-0 opacity-[0.015] dark:opacity-[0.03] pointer-events-none" style={{
-          backgroundImage: 'radial-gradient(circle, currentColor 1px, transparent 1px)',
-          backgroundSize: '24px 24px',
-        }} />
-
-        {/* Decorative orbs removed — were causing visible blue rectangles */}
+        {/* Background removed to prevent blue rectangle artifacts */}
 
         <div className="relative flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-center gap-4">
@@ -1985,7 +1972,7 @@ export function Dashboard() {
                         onClick={() => navigateToProject(project.id)}
                         className={`group relative flex w-full items-start gap-4 rounded-xl border border-l-4 ${borderColorClass} bg-card p-4 text-left transition-all duration-300 hover:shadow-lg hover:-translate-y-0.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring overflow-hidden`}
                       >
-                        <div className={`absolute inset-0 bg-gradient-to-r ${gradientBg} pointer-events-none`} />
+                        {/* Gradient overlay removed to prevent blue rectangle artifacts */}
                         <div className="relative flex size-10 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary transition-colors group-hover:bg-primary/15 group-hover:scale-110 duration-200">
                           <FolderKanban className="size-5" />
                         </div>
@@ -2063,7 +2050,7 @@ export function Dashboard() {
 
       {/* ── Quick Actions ────────────────────────────────────────────── */}
       <motion.div variants={itemVariants}>
-        <Card className="glass-card">
+        <Card>
           <CardHeader className="pb-3">
             <CardTitle className="text-sm font-medium text-muted-foreground">Быстрые действия</CardTitle>
           </CardHeader>

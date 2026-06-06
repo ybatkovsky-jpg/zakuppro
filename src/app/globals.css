@@ -450,9 +450,10 @@
 /* ── Glass Card ────────────────────────────────────────────── */
 
 .glass-card {
+  /* saturate() removed — was causing blue tint artifacts in some browsers */
   background: rgba(255, 255, 255, 0.72);
-  backdrop-filter: blur(16px) saturate(180%);
-  -webkit-backdrop-filter: blur(16px) saturate(180%);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
   border: 1px solid rgba(255, 255, 255, 0.3);
   box-shadow:
     0 4px 16px -2px oklch(0 0 0 / 5%),
@@ -470,9 +471,10 @@
 /* ── Glass Panel (lighter, for overlays) ────────────────────── */
 
 .glass-panel {
+  /* saturate() removed — was causing blue tint artifacts in some browsers */
   background: rgba(255, 255, 255, 0.85);
-  backdrop-filter: blur(20px) saturate(200%);
-  -webkit-backdrop-filter: blur(20px) saturate(200%);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
   border: 1px solid rgba(255, 255, 255, 0.4);
 }
 
@@ -637,7 +639,7 @@
   inset: 0;
   padding: 1.5px;
   border-radius: inherit;
-  background: linear-gradient(135deg, oklch(0.5 0.2 270), oklch(0.6 0.15 180), oklch(0.5 0.2 45));
+  background: linear-gradient(135deg, oklch(0.6 0.15 30), oklch(0.5 0.15 160), oklch(0.6 0.1 80));
   -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
   -webkit-mask-composite: xor;
   mask-composite: exclude;
