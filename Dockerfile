@@ -44,7 +44,8 @@ COPY --from=builder --chown=node:node /app/.next/static ./.next/static
 
 # Set environment variables
 ENV NODE_ENV=production \
-    FASTAPI_URL=http://api:8000
+    FASTAPI_URL=http://api:8000 \
+    HOSTNAME=0.0.0.0
 
 # Switch to non-root user
 USER node
