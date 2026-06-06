@@ -417,8 +417,7 @@ function StatCard({
         className={`relative overflow-hidden transition-shadow duration-300 group ${borderColor ? `border-l-4 ${borderColor}` : ''} ${cardClassName ?? ''} ${isClickable ? 'cursor-pointer hover:shadow-xl active:scale-[0.98]' : 'hover:shadow-md'}`}
         onClick={onClick}
       >
-        {/* Gradient background */}
-        <div className={`absolute inset-0 bg-gradient-to-br ${gradientBg} pointer-events-none`} />
+        {/* Gradient background — removed to prevent blue rectangle artifacts */}
         {/* Subtle inner shadow for depth */}
         <div className="absolute inset-0 shadow-[inset_0_1px_0_oklch(1_0_0/0.05)] dark:shadow-[inset_0_1px_0_oklch(1_0_0/0.03)] pointer-events-none" />
         {/* Inner glow on hover */}
@@ -1300,8 +1299,8 @@ export function Dashboard() {
         variants={itemVariants}
         className="relative -mx-6 -mt-6 px-6 pt-6 pb-5 overflow-hidden rounded-b-2xl"
       >
-        {/* Professional gradient background */}
-        <div className="absolute inset-0 bg-gradient-to-br from-primary/[0.06] via-primary/[0.02] to-emerald-500/[0.02] dark:from-primary/10 dark:via-primary/[0.04] dark:to-emerald-500/[0.03]" />
+        {/* Subtle background accent — no visible gradient rectangle */}
+        <div className="absolute inset-0 bg-transparent" />
 
         {/* Decorative subtle grid lines */}
         <div className="absolute inset-0 opacity-[0.015] dark:opacity-[0.03] pointer-events-none" style={{
@@ -1309,11 +1308,7 @@ export function Dashboard() {
           backgroundSize: '24px 24px',
         }} />
 
-        {/* Decorative gradient orbs — very subtle */}
-        <div className="absolute inset-0 overflow-hidden pointer-events-none">
-          <div className="absolute -top-24 -right-24 w-64 h-64 rounded-full bg-gradient-to-br from-primary/[0.08] to-transparent blur-3xl" />
-          <div className="absolute -bottom-16 -left-16 w-48 h-48 rounded-full bg-gradient-to-tr from-emerald-500/[0.06] to-transparent blur-3xl" />
-        </div>
+        {/* Decorative orbs removed — were causing visible blue rectangles */}
 
         <div className="relative flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-center gap-4">
@@ -1329,7 +1324,7 @@ export function Dashboard() {
             </div>
             <div>
               <h2 className="text-2xl font-bold tracking-tight flex items-center gap-2">
-                <span className="gradient-text">{greeting}</span>
+                <span className="text-primary">{greeting}</span>
               </h2>
               <div className="flex items-center gap-2 mt-1 text-muted-foreground">
                 <Calendar className="size-3.5" />
@@ -1596,7 +1591,7 @@ export function Dashboard() {
                 {/* Prominent total budget number */}
                 <div className="text-center">
                   <p className="text-xs text-muted-foreground uppercase tracking-wider">Общий бюджет</p>
-                  <p className="text-3xl font-bold tracking-tight gradient-text">
+                  <p className="text-3xl font-bold tracking-tight text-foreground">
                     {formatAmount(budgetData.totalBudget)}
                   </p>
                 </div>
