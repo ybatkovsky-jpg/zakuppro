@@ -67,7 +67,11 @@ async def chat_with_assistant(
                 max_tokens=2048,
             )
 
-            content = completion.choices[0]?.message?.content
+            content = None
+            if completion.choices:
+                choice = completion.choices[0]
+                if choice.message and choice.message.content:
+                    content = choice.message.content
             if content:
                 return AssistantResponse(response=content)
         except Exception as e:
