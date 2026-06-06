@@ -17,8 +17,9 @@ from passlib.context import CryptContext
 from database import SessionLocal, engine
 from models import User, Base, Role
 
-# Password hashing context
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+# IMPORTANT: Must use the same hashing scheme as auth router (sha256_crypt)
+# See backend/routers/auth.py line 22
+pwd_context = CryptContext(schemes=["sha256_crypt"], deprecated="auto")
 
 
 def create_owner_user():
