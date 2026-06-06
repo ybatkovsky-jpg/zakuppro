@@ -36,7 +36,7 @@ HEARTBEAT_FILE = Path('/data/health/telegram_bot_heartbeat')
 shutdown_requested = False
 
 
-def _write_heartbeat(context=None) -> None:
+async def _write_heartbeat(context=None) -> None:
     """Write UTC timestamp to heartbeat file atomically.
 
     Called every 30s by PTB JobQueue. Writes to /data/health/telegram_bot_heartbeat
