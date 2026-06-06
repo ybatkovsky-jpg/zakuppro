@@ -1,6 +1,6 @@
 """Add contract_number column to projects table
 
-Revision ID: a1b2c3d4e5f6
+Revision ID: f7e8d9c0b1a2
 Revises: 145abfb476cb
 Create Date: 2026-06-06
 
@@ -10,7 +10,7 @@ import sqlalchemy as sa
 
 
 # revision identifiers, used by Alembic.
-revision = 'a1b2c3d4e5f6'
+revision = 'f7e8d9c0b1a2'
 down_revision = '145abfb476cb'
 branch_labels = None
 depends_on = None
