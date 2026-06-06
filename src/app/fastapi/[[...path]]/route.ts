@@ -5,10 +5,6 @@
  * It runs on the Next.js server where FASTAPI_URL env var is available
  * (e.g. http://api:8000 in Docker), so the browser never needs to know
  * the backend URL directly. This avoids CORS issues entirely.
- *
- * Usage from client code:  apiFetch('/api/auth/login', { ... })
- *   → browser sends POST /fastapi/api/auth/login
- *   → this route proxies to http://api:8000/api/auth/login
  */
 
 import { NextRequest, NextResponse } from 'next/server';
@@ -55,7 +51,11 @@ async function proxyRequest(
   paramsPromise: Promise<{ path?: string[] }>
 ) {
   const { path } = await paramsPromise;
-  const pathStr = (path || []).join('/');
+  // Join path segments and strip trailing slashes
+  const pathStr = (path || []).join('/').replace(/\/+$/, '');
+  if (!pathStr) {
+    return NextResponse.json({ error: 'No path provided' }, { status: 400 });
+  }
   const url = `${FASTAPI_URL}/${pathStr}`;
 
   // Forward query parameters
@@ -73,11 +73,18 @@ async function proxyRequest(
     headers['Content-Type'] = contentType;
   }
 
+  // Forward cookies for session-based auth
+  const cookie = request.headers.get('Cookie');
+  if (cookie) {
+    headers['Cookie'] = cookie;
+  }
+
   try {
     // Build fetch options
     const fetchOptions: RequestInit = {
       method: request.method,
       headers,
+      redirect: 'follow',
     };
 
     // Forward request body for non-GET methods
@@ -107,3 +114,4 @@ async function proxyRequest(
     );
   }
 }
+

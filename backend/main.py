@@ -7,6 +7,8 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from backend.routers import (
+    stats,
+    frontend_compat,
     auth,
     health,
     projects,
@@ -73,6 +75,8 @@ app.add_middleware(
 )
 
 # Include routers
+app.include_router(stats.router)
+app.include_router(frontend_compat.router)
 app.include_router(auth.router)
 app.include_router(health.router)
 app.include_router(projects.router)
@@ -97,3 +101,5 @@ async def root():
         "version": "0.1.0",
         "docs": "/docs",
     }
+
+

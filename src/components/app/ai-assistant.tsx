@@ -42,7 +42,7 @@ export function AIAssistant() {
 
   const sendMessage = useMutation({
     mutationFn: async (chatMessages: ChatMessage[]) => {
-      const res = await authFetch('/api/assistant', {
+      const res = await authFetch('/api/assistant/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ messages: chatMessages }),

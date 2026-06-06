@@ -175,7 +175,7 @@ export function AppSidebar() {
     <Sidebar collapsible="icon">
       <SidebarHeader className="border-b border-sidebar-border">
         <div className="flex items-center gap-2 px-2 py-1">
-          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-white shadow-sm overflow-hidden">
+          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg overflow-hidden">
             <Image src="/logo.png" alt="ПРОМЕБЕЛЬ" width={32} height={32} className="h-8 w-8 object-contain rounded-lg" />
           </div>
           <div className="flex flex-col group-data-[collapsible=icon]:hidden">
@@ -228,7 +228,7 @@ export function AppSidebar() {
         )}
       </SidebarContent>
 
-      <SidebarFooter className="border-t border-sidebar-border bg-gradient-to-t from-sidebar-accent/20 to-transparent">
+      <SidebarFooter className="border-t border-sidebar-border ">
         <div className="px-2 py-1.5 group-data-[collapsible=icon]:hidden">
           <div className="flex items-center gap-2 mb-1">
             <span className="inline-flex items-center rounded-md bg-primary/10 px-2 py-0.5 text-[10px] font-semibold text-primary tracking-wide">
@@ -243,3 +243,4 @@ export function AppSidebar() {
     </Sidebar>
   )
 }
+

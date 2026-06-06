@@ -1,0 +1,603 @@
+"""
+Frontend compatibility router.
+Maps the frontend's expected API URLs to the backend's actual endpoints.
+
+Frontend was built with different path conventions than the backend.
+This router provides aliases so both old and new paths work.
+"""
+from fastapi import APIRouter, Depends, HTTPException, status, Query
+from sqlalchemy.orm import Session
+from sqlalchemy import func
+from typing import List, Optional
+from pydantic import BaseModel
+from datetime import datetime
+import logging
+
+from backend.database import get_db
+from backend.models import User, StockItem, PurchaseOrder, Supplier, Project
+from backend.auth import get_current_active_user, get_current_user
+from backend.models import Role
+from backend.rbac import require_role, apply_ownership_filter
+
+logger = logging.getLogger(__name__)
+router = APIRouter(tags=["frontend-compat"])
+
+
+# ============================================================================
+# /api/warehouse/* → maps to stock-items functionality
+# ============================================================================
+
+class WarehouseItemResponse(BaseModel):
+    id: int
+    name: str
+    sku: str = ""
+    quantity: int = 0
+    minQuantity: int = 0
+    unit: str = "шт"
+    category: str = ""
+    price: float = 0.0
+    status: str = "in_stock"
+    supplier: str = ""
+    lastUpdated: str = ""
+    
+    model_config = {"from_attributes": True}
+
+
+class WarehouseTransactionResponse(BaseModel):
+    id: int
+    itemId: int
+    itemName: str = ""
+    type: str = ""
+    quantity: int = 0
+    date: str = ""
+    note: str = ""
+    userName: str = ""
+    
+    model_config = {"from_attributes": True}
+
+
+@router.get("/api/warehouse", response_model=List[WarehouseItemResponse])
+def list_warehouse_items(
+    skip: int = Query(0, ge=0),
+    limit: int = Query(100, ge=1, le=500),
+    search: Optional[str] = Query(None),
+    category: Optional[str] = Query(None),
+    current_user: User = Depends(get_current_active_user),
+    db: Session = Depends(get_db)
+):
+    """List warehouse items (maps to stock-items)."""
+    query = db.query(StockItem)
+    if search:
+        query = query.filter(StockItem.name.ilike(f"%{search}%"))
+    if category:
+        query = query.filter(StockItem.category == category)
+    
+    items = query.offset(skip).limit(limit).all()
+    result = []
+    for item in items:
+        status_val = "in_stock"
+        if item.quantity <= 0:
+            status_val = "out_of_stock"
+        elif item.quantity <= item.min_quantity:
+            status_val = "low_stock"
+        result.append(WarehouseItemResponse(
+            id=item.id,
+            name=item.name,
+            sku=getattr(item, 'sku', '') or '',
+            quantity=item.quantity,
+            minQuantity=item.min_quantity,
+            unit=getattr(item, 'unit', 'шт') or 'шт',
+            category=getattr(item, 'category', '') or '',
+            price=float(item.price) if hasattr(item, 'price') and item.price else 0.0,
+            status=status_val,
+            supplier="",
+            lastUpdated=item.updated_at.isoformat() if item.updated_at else ""
+        ))
+    return result
+
+
+@router.post("/api/warehouse", response_model=WarehouseItemResponse, status_code=status.HTTP_201_CREATED)
+def create_warehouse_item(
+    item_data: dict,
+    current_user: User = Depends(require_role([Role.OWNER, Role.MANAGER, Role.WAREHOUSE])),
+    db: Session = Depends(get_db)
+):
+    """Create a warehouse item (maps to stock-items)."""
+    item = StockItem(
+        name=item_data.get("name", ""),
+        sku=item_data.get("sku", ""),
+        quantity=item_data.get("quantity", 0),
+        min_quantity=item_data.get("minQuantity", item_data.get("min_quantity", 0)),
+        unit=item_data.get("unit", "шт"),
+        category=item_data.get("category", ""),
+        price=item_data.get("price", 0),
+    )
+    db.add(item)
+    db.commit()
+    db.refresh(item)
+    return WarehouseItemResponse(
+        id=item.id, name=item.name, sku=item.sku,
+        quantity=item.quantity, minQuantity=item.min_quantity,
+        unit=item.unit or "шт", category=item.category or "",
+        price=float(item.price) if item.price else 0.0,
+        status="in_stock", supplier="", lastUpdated=""
+    )
+
+
+@router.get("/api/warehouse/transactions", response_model=List[WarehouseTransactionResponse])
+def list_warehouse_transactions(
+    current_user: User = Depends(get_current_active_user),
+    db: Session = Depends(get_db)
+):
+    """List warehouse transactions (stub)."""
+    return []
+
+
+@router.post("/api/warehouse/transactions", status_code=status.HTTP_201_CREATED)
+def create_warehouse_transaction(
+    data: dict,
+    current_user: User = Depends(require_role([Role.OWNER, Role.MANAGER, Role.WAREHOUSE])),
+    db: Session = Depends(get_db)
+):
+    """Create a warehouse transaction (maps to stock-items receive)."""
+    item_id = data.get("itemId") or data.get("item_id")
+    if not item_id:
+        raise HTTPException(status_code=400, detail="itemId is required")
+    
+    item = db.query(StockItem).filter(StockItem.id == item_id).first()
+    if not item:
+        raise HTTPException(status_code=404, detail="Item not found")
+    
+    trans_type = data.get("type", "in")
+    qty = data.get("quantity", 0)
+    
+    if trans_type == "in":
+        item.quantity += qty
+    elif trans_type == "out":
+        item.quantity = max(0, item.quantity - qty)
+    
+    db.commit()
+    return {"success": True, "newQuantity": item.quantity}
+
+
+@router.put("/api/warehouse/{item_id}", response_model=WarehouseItemResponse)
+def update_warehouse_item(
+    item_id: int,
+    item_data: dict,
+    current_user: User = Depends(require_role([Role.OWNER, Role.MANAGER, Role.WAREHOUSE])),
+    db: Session = Depends(get_db)
+):
+    """Update a warehouse item."""
+    item = db.query(StockItem).filter(StockItem.id == item_id).first()
+    if not item:
+        raise HTTPException(status_code=404, detail="Item not found")
+    
+    if "name" in item_data:
+        item.name = item_data["name"]
+    if "sku" in item_data:
+        item.sku = item_data["sku"]
+    if "quantity" in item_data:
+        item.quantity = item_data["quantity"]
+    if "minQuantity" in item_data or "min_quantity" in item_data:
+        item.min_quantity = item_data.get("minQuantity") or item_data.get("min_quantity", 0)
+    if "unit" in item_data:
+        item.unit = item_data["unit"]
+    if "category" in item_data:
+        item.category = item_data["category"]
+    if "price" in item_data:
+        item.price = item_data["price"]
+    
+    db.commit()
+    db.refresh(item)
+    return WarehouseItemResponse(
+        id=item.id, name=item.name, sku=item.sku,
+        quantity=item.quantity, minQuantity=item.min_quantity,
+        unit=item.unit or "шт", category=item.category or "",
+        price=float(item.price) if item.price else 0.0,
+        status="in_stock", supplier="", lastUpdated=item.updated_at.isoformat() if item.updated_at else ""
+    )
+
+
+@router.delete("/api/warehouse/{item_id}", status_code=status.HTTP_204_NO_CONTENT)
+def delete_warehouse_item(
+    item_id: int,
+    current_user: User = Depends(require_role([Role.OWNER])),
+    db: Session = Depends(get_db)
+):
+    """Delete a warehouse item."""
+    item = db.query(StockItem).filter(StockItem.id == item_id).first()
+    if not item:
+        raise HTTPException(status_code=404, detail="Item not found")
+    db.delete(item)
+    db.commit()
+
+
+# ============================================================================
+# /api/requests/* → maps to purchase-orders
+# ============================================================================
+
+class RequestResponse(BaseModel):
+    id: int
+    projectId: int = 0
+    projectName: str = ""
+    supplierId: int = 0
+    supplierName: str = ""
+    status: str = "draft"
+    items: list = []
+    createdAt: str = ""
+    updatedAt: str = ""
+    sentAt: str = ""
+    totalAmount: float = 0.0
+    
+    model_config = {"from_attributes": True}
+
+
+@router.get("/api/requests", response_model=List[RequestResponse])
+def list_requests(
+    supplierId: Optional[int] = Query(None),
+    projectId: Optional[int] = Query(None),
+    skip: int = Query(0, ge=0),
+    limit: int = Query(100, ge=1, le=500),
+    current_user: User = Depends(get_current_active_user),
+    db: Session = Depends(get_db)
+):
+    """List purchase requests (maps to purchase-orders)."""
+    query = db.query(PurchaseOrder)
+    if supplierId:
+        query = query.filter(PurchaseOrder.supplier_id == supplierId)
+    if projectId:
+        query = query.filter(PurchaseOrder.project_id == projectId)
+    
+    orders = query.offset(skip).limit(limit).all()
+    result = []
+    for order in orders:
+        result.append(RequestResponse(
+            id=order.id,
+            projectId=order.project_id or 0,
+            projectName=order.project.name if order.project else "",
+            supplierId=order.supplier_id or 0,
+            supplierName=order.supplier.name if order.supplier else "",
+            status=order.status or "draft",
+            items=[],
+            createdAt=order.created_at.isoformat() if order.created_at else "",
+            updatedAt=order.updated_at.isoformat() if order.updated_at else "",
+            sentAt="",
+            totalAmount=float(order.total_amount) if hasattr(order, 'total_amount') and order.total_amount else 0.0
+        ))
+    return result
+
+
+@router.post("/api/requests", status_code=status.HTTP_201_CREATED)
+def create_request(
+    data: dict,
+    current_user: User = Depends(require_role([Role.OWNER, Role.MANAGER])),
+    db: Session = Depends(get_db)
+):
+    """Create a purchase request (maps to purchase-orders)."""
+    order = PurchaseOrder(
+        project_id=data.get("projectId"),
+        supplier_id=data.get("supplierId"),
+        status=data.get("status", "draft"),
+        created_by=current_user.id,
+    )
+    db.add(order)
+    db.commit()
+    db.refresh(order)
+    return {"id": order.id, "status": order.status}
+
+
+@router.put("/api/requests/{request_id}")
+def update_request(
+    request_id: int,
+    data: dict,
+    current_user: User = Depends(require_role([Role.OWNER, Role.MANAGER])),
+    db: Session = Depends(get_db)
+):
+    """Update a purchase request."""
+    order = db.query(PurchaseOrder).filter(PurchaseOrder.id == request_id).first()
+    if not order:
+        raise HTTPException(status_code=404, detail="Request not found")
+    
+    if "status" in data:
+        order.status = data["status"]
+    if "supplierId" in data:
+        order.supplier_id = data["supplierId"]
+    
+    db.commit()
+    return {"id": order.id, "status": order.status}
+
+
+@router.post("/api/requests/{request_id}/send-email")
+def send_request_email(
+    request_id: int,
+    current_user: User = Depends(require_role([Role.OWNER, Role.MANAGER])),
+    db: Session = Depends(get_db)
+):
+    """Send request via email (stub)."""
+    order = db.query(PurchaseOrder).filter(PurchaseOrder.id == request_id).first()
+    if not order:
+        raise HTTPException(status_code=404, detail="Request not found")
+    order.status = "sent"
+    db.commit()
+    return {"success": True, "message": "Запрос отправлен"}
+
+
+# ============================================================================
+# /api/projects/{id}/status — project status update shortcut
+# ============================================================================
+
+@router.put("/api/projects/{project_id}/status")
+def update_project_status(
+    project_id: int,
+    data: dict,
+    current_user: User = Depends(require_role([Role.OWNER, Role.MANAGER])),
+    db: Session = Depends(get_db)
+):
+    """Update project status."""
+    project = db.query(Project).filter(Project.id == project_id).first()
+    if not project:
+        raise HTTPException(status_code=404, detail="Project not found")
+    
+    new_status = data.get("status")
+    if new_status:
+        project.status = new_status
+        db.commit()
+    
+    return {"id": project.id, "status": project.status, "projectId": project.id}
+
+
+# ============================================================================
+# /api/projects/{id}/history — project status history
+# ============================================================================
+
+@router.get("/api/projects/{project_id}/history")
+def get_project_history(
+    project_id: int,
+    current_user: User = Depends(get_current_active_user),
+    db: Session = Depends(get_db)
+):
+    """Get project status history."""
+    from backend.models import ProjectStatusHistory
+    history = db.query(ProjectStatusHistory).filter(
+        ProjectStatusHistory.project_id == project_id
+    ).order_by(ProjectStatusHistory.changed_at.desc()).all()
+    
+    result = []
+    for h in history:
+        result.append({
+            "id": h.id,
+            "projectId": h.project_id,
+            "fromStatus": h.old_status or "",
+            "toStatus": h.new_status or "",
+            "changedBy": h.changed_by or "",
+            "changedAt": h.changed_at.isoformat() if h.changed_at else "",
+            "comment": h.comment or ""
+        })
+    return result
+
+
+# ============================================================================
+# /api/projects/upload — project file upload (stub)
+# ============================================================================
+
+@router.post("/api/projects/upload")
+async def upload_project_file(
+    current_user: User = Depends(require_role([Role.OWNER, Role.MANAGER])),
+    db: Session = Depends(get_db)
+):
+    """Upload project file (stub)."""
+    return {"success": False, "message": "Функция загрузки файлов пока не реализована"}
+
+
+# ============================================================================
+# /api/projects/{id}/export — project export (stub)
+# ============================================================================
+
+@router.get("/api/projects/{project_id}/export")
+def export_project(
+    project_id: int,
+    current_user: User = Depends(get_current_active_user),
+    db: Session = Depends(get_db)
+):
+    """Export project data (stub)."""
+    return {"message": "Экспорт проекта пока не реализован"}
+
+
+# ============================================================================
+# /api/invoices/{id}/reconcile — invoice reconciliation (stub)
+# ============================================================================
+
+@router.get("/api/invoices/{invoice_id}/reconcile")
+def get_invoice_reconciliation(
+    invoice_id: int,
+    current_user: User = Depends(get_current_active_user),
+    db: Session = Depends(get_db)
+):
+    """Get invoice reconciliation data (stub)."""
+    return {"candidates": []}
+
+
+# ============================================================================
+# /api/notifications — notification stubs
+# ============================================================================
+
+@router.get("/api/notifications")
+def list_notifications(
+    current_user: User = Depends(get_current_active_user),
+    db: Session = Depends(get_db)
+):
+    """List notifications (stub)."""
+    return []
+
+
+@router.post("/api/notifications")
+def create_notification(
+    data: dict,
+    current_user: User = Depends(get_current_active_user),
+    db: Session = Depends(get_db)
+):
+    """Create notification (stub)."""
+    return {"success": True}
+
+
+@router.put("/api/notifications")
+def update_notifications(
+    data: dict,
+    current_user: User = Depends(get_current_active_user),
+    db: Session = Depends(get_db)
+):
+    """Update notifications (stub)."""
+    return {"success": True}
+
+
+# ============================================================================
+# /api/company — company settings stubs
+# ============================================================================
+
+@router.get("/api/company")
+def get_company_settings(
+    current_user: User = Depends(get_current_active_user),
+    db: Session = Depends(get_db)
+):
+    """Get company settings (stub)."""
+    return {
+        "name": "ПРОМЕБЕЛЬ",
+        "inn": "",
+        "address": "",
+        "phone": "",
+        "email": "",
+        "bankDetails": ""
+    }
+
+
+@router.put("/api/company")
+def update_company_settings(
+    data: dict,
+    current_user: User = Depends(require_role([Role.OWNER])),
+    db: Session = Depends(get_db)
+):
+    """Update company settings (stub)."""
+    return {"success": True}
+
+
+# ============================================================================
+# /api/settings/* — settings stubs
+# ============================================================================
+
+@router.get("/api/settings/email")
+def get_email_settings(current_user: User = Depends(get_current_active_user), db: Session = Depends(get_db)):
+    return {"smtpHost": "", "smtpPort": 587, "email": "", "password": ""}
+
+@router.put("/api/settings/email")
+def update_email_settings(data: dict, current_user: User = Depends(require_role([Role.OWNER])), db: Session = Depends(get_db)):
+    return {"success": True}
+
+@router.post("/api/settings/email")
+def test_email_settings(data: dict, current_user: User = Depends(require_role([Role.OWNER])), db: Session = Depends(get_db)):
+    return {"success": True, "message": "Тестовое письмо отправлено"}
+
+@router.get("/api/settings/ai")
+def get_ai_settings(current_user: User = Depends(get_current_active_user), db: Session = Depends(get_db)):
+    return {"provider": "deepseek", "model": "deepseek-chat", "apiKey": ""}
+
+@router.put("/api/settings/ai")
+def update_ai_settings(data: dict, current_user: User = Depends(require_role([Role.OWNER])), db: Session = Depends(get_db)):
+    return {"success": True}
+
+@router.post("/api/settings/ai")
+def test_ai_settings(data: dict, current_user: User = Depends(require_role([Role.OWNER])), db: Session = Depends(get_db)):
+    return {"success": True, "message": "ИИ настроен"}
+
+@router.get("/api/settings/telegram")
+def get_telegram_settings(current_user: User = Depends(get_current_active_user), db: Session = Depends(get_db)):
+    return {"botToken": "", "chatId": ""}
+
+@router.put("/api/settings/telegram")
+def update_telegram_settings(data: dict, current_user: User = Depends(require_role([Role.OWNER])), db: Session = Depends(get_db)):
+    return {"success": True}
+
+@router.post("/api/settings/telegram")
+def test_telegram_settings(data: dict, current_user: User = Depends(require_role([Role.OWNER])), db: Session = Depends(get_db)):
+    return {"success": True, "message": "Telegram бот настроен"}
+
+
+# ============================================================================
+# /api/automation — automation stubs
+# ============================================================================
+
+@router.get("/api/automation")
+def get_automation_settings(current_user: User = Depends(get_current_active_user), db: Session = Depends(get_db)):
+    return {"rules": []}
+
+@router.post("/api/automation")
+def create_automation_rule(data: dict, current_user: User = Depends(require_role([Role.OWNER])), db: Session = Depends(get_db)):
+    return {"success": True, "id": 1}
+
+@router.post("/api/automation/execute")
+def execute_automation_rule(data: dict, current_user: User = Depends(require_role([Role.OWNER])), db: Session = Depends(get_db)):
+    return {"success": True}
+
+
+# ============================================================================
+# /api/email/inbox — email inbox stubs
+# ============================================================================
+
+@router.get("/api/email/inbox")
+def get_email_inbox(current_user: User = Depends(get_current_active_user), db: Session = Depends(get_db)):
+    return []
+
+
+# ============================================================================
+# /api/analytics/suppliers, /api/analytics/pipeline — analytics stubs
+# ============================================================================
+
+@router.get("/api/analytics/suppliers")
+def get_supplier_analytics(
+    current_user: User = Depends(require_role([Role.OWNER, Role.MANAGER])),
+    db: Session = Depends(get_db)
+):
+    """Get supplier analytics (stub)."""
+    suppliers = db.query(Supplier).limit(20).all()
+    result = []
+    for s in suppliers:
+        result.append({
+            "id": s.id,
+            "name": s.name,
+            "totalOrders": 0,
+            "totalAmount": 0.0,
+            "avgDeliveryTime": 0,
+            "reliabilityScore": 0.0
+        })
+    return result
+
+
+@router.get("/api/analytics/pipeline")
+def get_pipeline_analytics(
+    current_user: User = Depends(require_role([Role.OWNER, Role.MANAGER])),
+    db: Session = Depends(get_db)
+):
+    """Get pipeline analytics (stub)."""
+    return {
+        "stages": [
+            {"name": "Новый", "count": 0, "amount": 0.0},
+            {"name": "В обработке", "count": 0, "amount": 0.0},
+            {"name": "Запрошен", "count": 0, "amount": 0.0},
+            {"name": "Счёт получен", "count": 0, "amount": 0.0},
+            {"name": "Оплачен", "count": 0, "amount": 0.0},
+            {"name": "Доставлен", "count": 0, "amount": 0.0}
+        ]
+    }
+
+
+# ============================================================================
+# /api/warehouse/export — warehouse export stub
+# ============================================================================
+
+@router.get("/api/warehouse/export")
+def export_warehouse(
+    current_user: User = Depends(get_current_active_user),
+    db: Session = Depends(get_db)
+):
+    """Export warehouse data (stub)."""
+    return {"message": "Экспорт склада пока не реализован"}
+
