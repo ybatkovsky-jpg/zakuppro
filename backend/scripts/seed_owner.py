@@ -4,7 +4,7 @@ Seed script to create initial owner user for ZakupPro.
 Run this after migration to create the default owner account.
 Username: admin
 Password: admin123 (CHANGE IN PRODUCTION!)
-Email: admin@zakuppro.local
+Email: admin@zakuppro.example.com
 """
 import sys
 import os
@@ -37,7 +37,7 @@ def create_owner_user():
         hashed_password = pwd_context.hash("admin123")
         owner = User(
             username="admin",
-            email="admin@zakuppro.local",
+            email="admin@zakuppro.example.com",
             hashed_password=hashed_password,
             role=Role.OWNER
         )
