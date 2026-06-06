@@ -91,6 +91,7 @@ interface CompanyData {
   kpp: string
   ogrn: string
   address: string
+  physicalAddress: string
   email: string
   phone: string
   bankName: string
@@ -105,6 +106,7 @@ const defaultFormData: Omit<CompanyData, 'id'> = {
   kpp: '',
   ogrn: '',
   address: '',
+  physicalAddress: '',
   email: '',
   phone: '',
   bankName: '',
@@ -597,6 +599,7 @@ export function Settings() {
       kpp: company.kpp || '',
       ogrn: company.ogrn || '',
       address: company.address || '',
+      physicalAddress: company.physicalAddress || '',
       email: company.email || '',
       phone: company.phone || '',
       bankName: company.bankName || '',
@@ -1313,6 +1316,19 @@ export function Settings() {
             value={formData.address}
             onChange={(e) => handleChange('address', e.target.value)}
             placeholder="123456, г. Москва, ул. Примерная, д. 1, оф. 100"
+          />
+        </div>
+
+        <div className="space-y-2">
+          <Label htmlFor="physicalAddress" className="text-sm font-medium flex items-center gap-1">
+            <MapPin className="h-3.5 w-3.5" />
+            Фактический адрес (офис)
+          </Label>
+          <Input
+            id="physicalAddress"
+            value={formData.physicalAddress}
+            onChange={(e) => handleChange('physicalAddress', e.target.value)}
+            placeholder="123456, г. Москва, ул. Примерная, д. 2, оф. 200"
           />
         </div>
 
@@ -2202,9 +2218,11 @@ export function Settings() {
             <Label className="text-sm font-medium">Провайдер ИИ</Label>
             <div className="flex flex-wrap gap-2">
               {[
+                { id: 'deepseek', label: 'DeepSeek', desc: 'DeepSeek-V3/Chat' },
                 { id: 'z-ai', label: 'Z-AI (по умолчанию)', desc: 'Встроенный' },
                 { id: 'openai', label: 'OpenAI', desc: 'GPT-4o' },
                 { id: 'anthropic', label: 'Anthropic', desc: 'Claude' },
+                { id: 'qwen', label: 'Qwen', desc: 'Qwen-Plus/Max' },
                 { id: 'yandex', label: 'Yandex', desc: 'YandexGPT' },
                 { id: 'custom', label: 'Другой', desc: 'Custom API' },
               ].map((p) => (
@@ -2214,9 +2232,11 @@ export function Settings() {
                     handleAiChange('provider', p.id)
                     // Set default model for provider
                     const models: Record<string, string> = {
+                      deepseek: 'deepseek-chat',
                       'z-ai': 'glm-4',
                       openai: 'gpt-4o',
                       anthropic: 'claude-3.5-sonnet',
+                      qwen: 'qwen-plus',
                       yandex: 'yandexgpt-lite',
                       custom: '',
                     }
@@ -2243,10 +2263,24 @@ export function Settings() {
               <Select value={aiSettings.model} onValueChange={(v) => handleAiChange('model', v)}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
+                  {aiSettings.provider === 'deepseek' && (
+                    <>
+                      <SelectItem value="deepseek-chat">DeepSeek Chat (V3)</SelectItem>
+                      <SelectItem value="deepseek-reasoner">DeepSeek Reasoner (R1)</SelectItem>
+                      <SelectItem value="deepseek-v4-pro">DeepSeek V4 Pro</SelectItem>
+                    </>
+                  )}
                   {aiSettings.provider === 'z-ai' && (
                     <>
                       <SelectItem value="glm-4">GLM-4</SelectItem>
                       <SelectItem value="glm-4-flash">GLM-4 Flash</SelectItem>
+                    </>
+                  )}
+                  {aiSettings.provider === 'qwen' && (
+                    <>
+                      <SelectItem value="qwen-plus">Qwen Plus</SelectItem>
+                      <SelectItem value="qwen-max">Qwen Max</SelectItem>
+                      <SelectItem value="qwen-turbo">Qwen Turbo</SelectItem>
                     </>
                   )}
                   {aiSettings.provider === 'openai' && (
@@ -2284,7 +2318,7 @@ export function Settings() {
                   type={showAiApiKey ? 'text' : 'password'}
                   value={aiSettings.apiKey}
                   onChange={(e) => handleAiChange('apiKey', e.target.value)}
-                  placeholder={aiSettings.provider === 'z-ai' ? 'Встроенный (не требуется)' : 'sk-...'}
+                  placeholder={aiSettings.provider === 'z-ai' ? 'Встроенный (не требуется)' : aiSettings.provider === 'deepseek' ? 'sk-...' : 'sk-...'}
                   className="pr-10"
                   disabled={aiSettings.provider === 'z-ai'}
                 />

@@ -1,9 +1,6 @@
 /**
  * AI Settings API Route
- *
- * TODO: M005/S01 - This route was not part of the API migration slice.
- * This endpoint manages AI settings stored in Prisma.
- * Future migration: Create equivalent FastAPI settings endpoints.
+ * Supports: z-ai, deepseek, openai, anthropic, qwen, yandex, custom
  */
 import { NextRequest, NextResponse } from 'next/server'
 import ZAI from 'z-ai-web-dev-sdk'
@@ -11,20 +8,8 @@ import { db } from '@/lib/db'
 
 export const dynamic = 'force-dynamic'
 
-// GET /api/settings/ai — получить настройки ИИ
-export async function GET() {
-  try {
-    const settings = await db.aiSettings.findFirst()
-    if (!settings) {
-      // Создаём запись по умолчанию с русским системным промптом
-      const created = await db.aiSettings.create({
-        data: {
-          provider: 'z-ai',
-          model: 'glm-4',
-          temperature: 0.7,
-          maxTokens: 4096,
-          systemPrompt: `Ты — ИИ-ассистент компании ПРОМЕБЕЛЬ, занимающейся производством мебели. 
-Твоя задача — помогать в управлении закупками: анализировать потребности, находить поставщиков, 
+const SYSTEM_PROMPT_DEFAULT = `Ты — ИИ-ассистент компании ПРОМЕБЕЛЬ, занимающейся производством мебели.
+Твоя задача — помогать в управлении закупками: анализировать потребности, находить поставщиков,
 оптимизировать затраты и отслеживать статус заказов.
 
 Компетенции:
@@ -35,41 +20,53 @@ export async function GET() {
 5. Обработка счетов и сверка
 6. Подготовка отчётов и аналитики
 
-Отвечай на русском языке, профессионально и по существу.`,
+Отвечай на русском языке, профессионально и по существу.`
+
+// GET /api/settings/ai
+export async function GET() {
+  try {
+    const settings = await db.aiSettings.findFirst()
+    if (!settings) {
+      const created = await db.aiSettings.create({
+        data: {
+          provider: 'deepseek',
+          model: 'deepseek-chat',
+          temperature: 0.7,
+          maxTokens: 4096,
+          systemPrompt: SYSTEM_PROMPT_DEFAULT,
         },
       })
       return NextResponse.json({
         ...created,
-        apiKey: created.apiKey ? '••••••••' : '',
+        apiKey: created.apiKey ? '\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022' : '',
       })
     }
     return NextResponse.json({
       ...settings,
-      apiKey: settings.apiKey ? '••••••••' : '',
+      apiKey: settings.apiKey ? '\u2022\u2022\u2022\u2022\u2022\u2022\u2022' : '',
     })
   } catch (error) {
     console.error('Error fetching AI settings:', error)
-    return NextResponse.json({ error: 'Не удалось загрузить настройки ИИ' }, { status: 500 })
+    return NextResponse.json({ error: '\u041d\u0435 \u0443\u0434\u0430\u043b\u043e\u0441\u044c \u0437\u0430\u0433\u0440\u0443\u0437\u0438\u0442\u044c \u043d\u0430\u0441\u0442\u0440\u043e\u0439\u043a\u0438 \u0418\u0418' }, { status: 500 })
   }
 }
 
-// PUT /api/settings/ai — сохранить настройки ИИ
+// PUT /api/settings/ai
 export async function PUT(request: NextRequest) {
   try {
     const body = await request.json()
-
     const existing = await db.aiSettings.findFirst()
 
-    // Не перезаписываем API-ключ-заглушку
-    const apiKey = body.apiKey === '••••••••' && existing?.apiKey
+    const maskedKey = '\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022'
+    const apiKey = body.apiKey === maskedKey && existing?.apiKey
       ? existing.apiKey
       : body.apiKey ?? ''
 
     const isConfigured = body.provider === 'z-ai' ? true : !!apiKey
 
     const data = {
-      provider: body.provider ?? 'z-ai',
-      model: body.model ?? 'glm-4',
+      provider: body.provider ?? 'deepseek',
+      model: body.model ?? 'deepseek-chat',
       apiKey,
       apiEndpoint: body.apiEndpoint ?? '',
       temperature: body.temperature ?? 0.7,
@@ -80,115 +77,132 @@ export async function PUT(request: NextRequest) {
 
     let result
     if (existing) {
-      result = await db.aiSettings.update({
-        where: { id: existing.id },
-        data,
-      })
+      result = await db.aiSettings.update({ where: { id: existing.id }, data })
     } else {
       result = await db.aiSettings.create({ data })
     }
 
     return NextResponse.json({
       ...result,
-      apiKey: result.apiKey ? '••••••••' : '',
+      apiKey: result.apiKey ? maskedKey : '',
     })
   } catch (error) {
     console.error('Error saving AI settings:', error)
-    return NextResponse.json({ error: 'Не удалось сохранить настройки ИИ' }, { status: 500 })
+    return NextResponse.json({ error: '\u041d\u0435 \u0443\u0434\u0430\u043b\u043e\u0441\u044c \u0441\u043e\u0445\u0440\u0430\u043d\u0438\u0442\u044c \u043d\u0430\u0441\u0442\u0440\u043e\u0439\u043a\u0438 \u0418\u0418' }, { status: 500 })
   }
 }
 
-// POST /api/settings/ai — тест подключения к ИИ (реальная проверка)
+// POST /api/settings/ai — test connection
 export async function POST(_request: NextRequest) {
   try {
     const settings = await db.aiSettings.findFirst()
 
     if (!settings) {
-      return NextResponse.json({ success: false, error: 'Настройки ИИ не найдены. Сначала сохраните настройки.' })
+      return NextResponse.json({ success: false, error: '\u041d\u0430\u0441\u0442\u0440\u043e\u0439\u043a\u0438 \u0418\u0418 \u043d\u0435 \u043d\u0430\u0439\u0434\u0435\u043d\u044b.' })
     }
 
-    // Если провайдер не z-ai — сообщаем, что тест работает только с Z-AI
-    if (settings.provider !== 'z-ai') {
-      return NextResponse.json({
-        success: false,
-        error: `Тестирование подключения доступно только для провайдера Z-AI. Для провайдера "${settings.provider}" проверьте API-ключ вручную, отправив тестовый запрос к вашему эндпоинту.`,
-        hint: 'Переключите провайдер на "z-ai" для автоматической проверки, или убедитесь в работоспособности вашего API-ключа самостоятельно.',
+    // Test DeepSeek/OpenAI-compatible provider
+    if (settings.provider === 'deepseek' || settings.provider === 'openai' || settings.provider === 'qwen' || settings.provider === 'custom') {
+      if (!settings.apiKey) {
+        return NextResponse.json({ success: false, error: `API \u043a\u043b\u044e\u0447 \u043d\u0435 \u0443\u043a\u0430\u0437\u0430\u043d \u0434\u043b\u044f \u043f\u0440\u043e\u0432\u0430\u0439\u0434\u0435\u0440\u0430 ${settings.provider}` })
+      }
+
+      let baseUrl = settings.apiEndpoint
+      if (settings.provider === 'deepseek') {
+        baseUrl = baseUrl || 'https://api.deepseek.com'
+      } else if (settings.provider === 'qwen') {
+        baseUrl = baseUrl || 'https://dashscope.aliyuncs.com/compatible-mode/v1'
+      }
+
+      if (!baseUrl) {
+        return NextResponse.json({ success: false, error: '\u041d\u0435 \u0443\u043a\u0430\u0437\u0430\u043d API endpoint' })
+      }
+
+      const testUrl = `${baseUrl.replace(/\/$/, '')}/chat/completions`
+      const testResponse = await fetch(testUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${settings.apiKey}`,
+        },
+        body: JSON.stringify({
+          model: settings.model,
+          messages: [
+            { role: 'user', content: '\u041e\u0442\u0432\u0435\u0442\u044c \u043e\u0434\u043d\u0438\u043c \u0441\u043b\u043e\u0432\u043e\u043c: \u0440\u0430\u0431\u043e\u0442\u0430\u0435\u0442' },
+          ],
+          max_tokens: 20,
+        }),
       })
-    }
 
-    // Реальный тест подключения через z-ai-web-dev-sdk
-    try {
-      const zai = await ZAI.create()
-
-      const completion = await zai.chat.completions.create({
-        messages: [
-          { role: 'assistant', content: 'Ты — тестовый ассистент. Отвечай кратко.' },
-          { role: 'user', content: 'Ответь одним словом: работает' },
-        ],
-        thinking: { type: 'disabled' },
-      })
-
-      const response = completion.choices[0]?.message?.content
-
-      if (!response) {
-        // Пустой ответ — считаем частичной ошибкой
+      if (!testResponse.ok) {
+        const errBody = await testResponse.text()
         await db.aiSettings.update({
           where: { id: settings.id },
-          data: {
-            lastTestedAt: new Date(),
-            testResult: 'warning: пустой ответ от модели',
-          },
+          data: { lastTestedAt: new Date(), testResult: `error: ${testResponse.status}` },
         })
-
         return NextResponse.json({
           success: false,
-          error: `Модель ${settings.model} вернула пустой ответ. Проверьте настройки модели.`,
+          error: `\u041e\u0448\u0438\u0431\u043a\u0430 API (${testResponse.status}): ${errBody.slice(0, 200)}`,
         })
       }
 
-      // Успешный тест — обновляем дату и результат
+      const data = await testResponse.json()
+      const answer = data.choices?.[0]?.message?.content || ''
+
       await db.aiSettings.update({
         where: { id: settings.id },
-        data: {
-          lastTestedAt: new Date(),
-          testResult: 'success',
-        },
+        data: { lastTestedAt: new Date(), testResult: 'success', isConfigured: true },
       })
 
       return NextResponse.json({
         success: true,
-        message: `Подключение к ИИ (${settings.provider}, модель ${settings.model}) — успешно. Ответ получен: "${response.slice(0, 50)}${response.length > 50 ? '...' : ''}"`,
+        message: `\u041f\u043e\u0434\u043a\u043b\u044e\u0447\u0435\u043d\u0438\u0435 \u043a ${settings.provider} (${settings.model}) \u2014 \u0443\u0441\u043f\u0435\u0448\u043d\u043e. \u041e\u0442\u0432\u0435\u0442: "${answer.slice(0, 50)}"`,
       })
-    } catch (aiError: unknown) {
-      const errMsg = aiError instanceof Error ? aiError.message : String(aiError)
-
-      // Обновляем результат в БД
-      await db.aiSettings.update({
-        where: { id: settings.id },
-        data: {
-          lastTestedAt: new Date(),
-          testResult: `error: ${errMsg}`,
-        },
-      })
-
-      // Формируем понятное сообщение на русском
-      let ruMessage = `Ошибка подключения к ИИ: ${errMsg}`
-      if (errMsg.includes('API key') || errMsg.includes('api_key') || errMsg.includes('unauthorized') || errMsg.includes('401')) {
-        ruMessage = 'Ошибка аутентификации ИИ: неверный или просроченный API-ключ.'
-      } else if (errMsg.includes('rate limit') || errMsg.includes('429')) {
-        ruMessage = 'Превышен лимит запросов к ИИ. Попробуйте позже.'
-      } else if (errMsg.includes('timeout') || errMsg.includes('ETIMEDOUT')) {
-        ruMessage = 'Таймаут при подключении к ИИ. Сервер не отвечает.'
-      } else if (errMsg.includes('network') || errMsg.includes('ECONNREFUSED') || errMsg.includes('fetch')) {
-        ruMessage = 'Сетевая ошибка при подключении к ИИ. Проверьте подключение к интернету.'
-      } else if (errMsg.includes('model') || errMsg.includes('not found') || errMsg.includes('404')) {
-        ruMessage = `Модель "${settings.model}" не найдена. Проверьте название модели в настройках.`
-      }
-
-      return NextResponse.json({ success: false, error: ruMessage })
     }
+
+    // Test z-ai provider
+    if (settings.provider === 'z-ai') {
+      try {
+        const zai = await ZAI.create()
+        const completion = await zai.chat.completions.create({
+          messages: [
+            { role: 'assistant', content: '\u0422\u0435\u0441\u0442.' },
+            { role: 'user', content: '\u041e\u0442\u0432\u0435\u0442\u044c \u043e\u0434\u043d\u0438\u043c \u0441\u043b\u043e\u0432\u043e\u043c: \u0440\u0430\u0431\u043e\u0442\u0430\u0435\u0442' },
+          ],
+          thinking: { type: 'disabled' },
+        })
+
+        const response = completion.choices[0]?.message?.content
+        if (!response) {
+          await db.aiSettings.update({
+            where: { id: settings.id },
+            data: { lastTestedAt: new Date(), testResult: 'warning: empty response' },
+          })
+          return NextResponse.json({ success: false, error: '\u041f\u0443\u0441\u0442\u043e\u0439 \u043e\u0442\u0432\u0435\u0442' })
+        }
+
+        await db.aiSettings.update({
+          where: { id: settings.id },
+          data: { lastTestedAt: new Date(), testResult: 'success' },
+        })
+        return NextResponse.json({
+          success: true,
+          message: `\u041f\u043e\u0434\u043a\u043b\u044e\u0447\u0435\u043d\u0438\u0435 \u043a Z-AI (${settings.model}) \u2014 \u0443\u0441\u043f\u0435\u0448\u043d\u043e.`,
+        })
+      } catch (aiError: unknown) {
+        const errMsg = aiError instanceof Error ? aiError.message : String(aiError)
+        await db.aiSettings.update({
+          where: { id: settings.id },
+          data: { lastTestedAt: new Date(), testResult: `error: ${errMsg}` },
+        })
+        return NextResponse.json({ success: false, error: `\u041e\u0448\u0438\u0431\u043a\u0430 Z-AI: ${errMsg}` })
+      }
+    }
+
+    return NextResponse.json({ success: false, error: `\u041f\u0440\u043e\u0432\u0430\u0439\u0434\u0435\u0440 "${settings.provider}" \u043d\u0435 \u043f\u043e\u0434\u0434\u0435\u0440\u0436\u0438\u0432\u0430\u0435\u0442\u0441\u044f \u0434\u043b\u044f \u0442\u0435\u0441\u0442\u0438\u0440\u043e\u0432\u0430\u043d\u0438\u044f` })
   } catch (error) {
-    console.error('Error testing AI connection:', error)
-    return NextResponse.json({ success: false, error: 'Ошибка при проверке подключения' }, { status: 500 })
+    console.error('AI test error:', error)
+    return NextResponse.json({ success: false, error: '\u041e\u0448\u0438\u0431\u043a\u0430 \u043f\u0440\u0438 \u0442\u0435\u0441\u0442\u0438\u0440\u043e\u0432\u0430\u043d\u0438\u0438' })
   }
 }
+

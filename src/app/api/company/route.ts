@@ -1,9 +1,5 @@
 /**
  * Company Settings API Route
- *
- * TODO: M005/S01 - This route was not part of the API migration slice.
- * This endpoint manages company details stored in Prisma.
- * Future migration: Create equivalent FastAPI company settings endpoints.
  */
 import { db } from '@/lib/db'
 import { NextRequest, NextResponse } from 'next/server'
@@ -42,6 +38,7 @@ export async function PUT(request: NextRequest) {
       kpp,
       ogrn,
       address,
+      physicalAddress,
       email,
       phone,
       bankName,
@@ -62,6 +59,7 @@ export async function PUT(request: NextRequest) {
           kpp: kpp?.trim() || '',
           ogrn: ogrn?.trim() || '',
           address: address?.trim() || '',
+          physicalAddress: physicalAddress?.trim() || '',
           email: email?.trim() || '',
           phone: phone?.trim() || '',
           bankName: bankName?.trim() || '',
@@ -78,6 +76,7 @@ export async function PUT(request: NextRequest) {
       if (kpp !== undefined) data.kpp = kpp.trim()
       if (ogrn !== undefined) data.ogrn = ogrn.trim()
       if (address !== undefined) data.address = address.trim()
+      if (physicalAddress !== undefined) data.physicalAddress = physicalAddress.trim()
       if (email !== undefined) data.email = email.trim()
       if (phone !== undefined) data.phone = phone.trim()
       if (bankName !== undefined) data.bankName = bankName.trim()
@@ -97,3 +96,4 @@ export async function PUT(request: NextRequest) {
     return NextResponse.json({ error: 'Failed to update company details' }, { status: 500 })
   }
 }
+
