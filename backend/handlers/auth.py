@@ -34,6 +34,10 @@ class AuthMiddleware:
         """
         Load allowed chat IDs from environment variable.
 
+        When ALLOWED_CHAT_IDS is empty or not set, the bot operates in
+        open mode — any user can access the bot, and their chat_id is
+        logged so it can be added to the allow-list later.
+
         Returns:
             Set of authorized chat IDs as integers.
 
@@ -43,7 +47,11 @@ class AuthMiddleware:
         env_value = os.getenv('ALLOWED_CHAT_IDS', '')
 
         if not env_value:
-            logger.warning('ALLOWED_CHAT_IDS not set - no access will be granted')
+            logger.warning(
+                'ALLOWED_CHAT_IDS not set — bot is in OPEN mode '
+                '(all users allowed). Set ALLOWED_CHAT_IDS to restrict access.'
+            )
+            self._open_mode = True
             return set()
 
         try:
@@ -53,6 +61,7 @@ class AuthMiddleware:
                 if chat_id.strip()
             }
             logger.info(f'Loaded {len(ids)} allowed chat IDs')
+            self._open_mode = False
             return ids
         except ValueError as e:
             logger.error(f'Invalid ALLOWED_CHAT_IDS format: {e}')
@@ -68,6 +77,9 @@ class AuthMiddleware:
     ) -> bool:
         """
         Check if the update's chat_id is authorized.
+
+        When ALLOWED_CHAT_IDS is not set (open mode), all users are allowed.
+        Their chat_id is logged so it can be added to the allow-list later.
 
         Args:
             update: Telegram update object.
@@ -85,6 +97,11 @@ class AuthMiddleware:
             return False
 
         chat_id = update.effective_chat.id
+
+        # Open mode: allow everyone, log chat_id for future restriction
+        if getattr(self, '_open_mode', False):
+            logger.info(f'Access granted (open mode): chat_id={chat_id}')
+            return True
 
         if chat_id in self._allowed_chat_ids:
             logger.info(f'Access granted: chat_id={chat_id}')

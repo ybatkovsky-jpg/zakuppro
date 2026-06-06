@@ -43,11 +43,13 @@ async def handle_document(update: Update, context: ContextTypes.DEFAULT_TYPE) ->
     """
     # Authorization check
     if not await _auth.check_access(update, context):
+        chat_id = update.effective_chat.id if update.effective_chat else 'unknown'
         if update.effective_message:
             await update.effective_message.reply_text(
-                '⛔ Access denied. You are not authorized to use this bot.'
+                f'⛔ Access denied. Your chat_id: `{chat_id}`',
+                parse_mode='Markdown'
             )
-        logger.warning(f'Document upload denied: chat_id not allowed')
+        logger.warning(f'Document upload denied: chat_id={chat_id}')
         return
 
     # Get document from update

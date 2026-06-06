@@ -36,11 +36,11 @@ HEARTBEAT_FILE = Path('/data/health/telegram_bot_heartbeat')
 shutdown_requested = False
 
 
-async def _write_heartbeat(context=None) -> None:
-    """Write UTC timestamp to heartbeat file atomically.
+def _write_heartbeat_file() -> None:
+    """Write UTC timestamp to heartbeat file atomically (synchronous).
 
-    Called every 30s by PTB JobQueue. Writes to /data/health/telegram_bot_heartbeat
-    so the /health endpoint and Docker healthcheck can verify the bot is alive.
+    Writes to /data/health/telegram_bot_heartbeat so the /health endpoint
+    and Docker healthcheck can verify the bot is alive.
     """
     try:
         HEARTBEAT_FILE.parent.mkdir(parents=True, exist_ok=True)
@@ -50,6 +50,11 @@ async def _write_heartbeat(context=None) -> None:
         os.replace(tmp, HEARTBEAT_FILE)
     except Exception:
         logger.warning('Failed to write heartbeat', exc_info=True)
+
+
+async def _write_heartbeat(context=None) -> None:
+    """Async wrapper for heartbeat — called every 30s by PTB JobQueue."""
+    _write_heartbeat_file()
 
 
 def _handle_shutdown(signum: int, frame) -> None:
@@ -71,7 +76,7 @@ async def post_init(application: Application) -> None:
         logger.info('Heartbeat job registered (every 30s)')
     else:
         logger.warning('JobQueue not available — heartbeat will be written on each poll cycle')
-        _write_heartbeat()
+        _write_heartbeat_file()
 
 
 async def error_handler(update: Update, context) -> None:

@@ -28,12 +28,17 @@ async def start_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> N
         context: Bot context.
     """
     if not await _auth.check_access(update, context):
+        chat_id = update.effective_chat.id if update.effective_chat else 'unknown'
         if update.effective_message:
             await update.effective_message.reply_text(
-                '⛔ Access denied. You are not authorized to use this bot.'
+                f'⛔ Access denied. You are not authorized to use this bot.\n\n'
+                f'Your chat_id: `{chat_id}`\n'
+                f'Ask the administrator to add your chat_id to ALLOWED_CHAT_IDS.',
+                parse_mode='Markdown'
             )
         return
 
+    chat_id = update.effective_chat.id
     if update.effective_message:
         await update.effective_message.reply_text(
             '👋 Welcome to ZakupPro Bot!\n\n'
@@ -55,9 +60,11 @@ async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> No
         context: Bot context.
     """
     if not await _auth.check_access(update, context):
+        chat_id = update.effective_chat.id if update.effective_chat else 'unknown'
         if update.effective_message:
             await update.effective_message.reply_text(
-                '⛔ Access denied. You are not authorized to use this bot.'
+                f'⛔ Access denied. Your chat_id: `{chat_id}`',
+                parse_mode='Markdown'
             )
         return
 
