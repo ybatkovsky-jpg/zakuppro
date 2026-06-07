@@ -2,366 +2,323 @@
 
 Mini-MRP система для автоматизации закупок, управления проектами, складом и финансами в строительных и монтажных проектах.
 
+---
+
 ## О проекте
 
 ZakupPro автоматизирует полный цикл от спецификации до оплаты:
 
-1. Владелец загружает Excel спецификацию через Telegram бот
-2. AI распознаёт структуру и создаёт проект с позициями
-3. Система группирует закупки по поставщикам
-4. Отправляет запросы поставщикам (автоматически или вручную)
-5. Обрабатывает входящие счета из email
-6. Сверяет счета с платежами по банковским выпискам
-7. Обновляет остатки на складе
+1. **Загрузка** — владелец загружает Excel спецификацию через Telegram бот или веб-интерфейс
+2. **AI-распознавание** — DeepSeek/OpenAI парсит структуру спецификации и создаёт проект с позициями
+3. **Группировка** — система автоматически группирует закупки по поставщикам
+4. **Запросы** — отправляет запросы поставщикам (email или вручную)
+5. **Счета** — обрабатывает входящие счета из email (IMAP + LLM)
+6. **Сверка** — сопоставляет счета с платежами по банковским выпискам (1C ClientBank)
+7. **Склад** — обновляет остатки, резервирование, списание в производство
 
-Если всё остальное вырезать — этот flow должен работать.
+---
 
 ## Стек технологий
 
 ### Backend
-- **Python 3.12+** с FastAPI 0.115
-- **PostgreSQL 15** с SQLAlchemy 2.0 ORM
-- **RabbitMQ 3** + Celery 5 для асинхронных задач
-- **Alembic** для миграций БД
+- **Python 3.12+** / FastAPI 0.115 — async REST API с OpenAPI документацией
+- **PostgreSQL 15** / SQLAlchemy 2.0 (async) — 16 ORM моделей, Alembic миграции
+- **RabbitMQ 3** + Celery 5 — асинхронные задачи, DLQ для failed tasks
+- **Passlib** (sha256_crypt) — хеширование паролей, JWT + RBAC (owner/manager/warehouse)
 
 ### AI/LLM
-- **OpenAI GPT-4o** для парсинга Excel и счетов
-- **Anthropic Claude** и **Google Gemini** как fallback
-- Провайдер-agnostic wrapper с автоматическим переключением
+- **DeepSeek Chat** — основной провайдер для парсинга Excel и счетов
+- **OpenAI GPT-4o** / **Anthropic Claude** / **Google Gemini** — fallback
+- **Qwen Plus** — дополнительный провайдер
+- Provider-agnostic wrapper с `@retry_async` и автоматическим переключением
 
 ### Frontend
-- **Next.js 16.1.1** с App Router
-- **React 19** + **TypeScript 5**
-- **Tailwind CSS 4** + **shadcn/ui** (Radix UI primitives)
-- **Zustand** для стейт-менеджмента
-- **@tanstack/react-query** + **@tanstack/react-table**
-- **Recharts** для графиков, **Framer Motion** для анимаций
-- **@dnd-kit** для Kanban drag-and-drop
-- **react-hook-form** + **zod** для валидации форм
-- **Prisma** с SQLite для mock данных (dev mode)
+- **Next.js 16** (App Router) / React 19 / TypeScript 5
+- **Tailwind CSS 4** + **shadcn/ui** (48 Radix UI компонентов)
+- **Zustand** — стейт-менеджмент
+- **@tanstack/react-query** + **@tanstack/react-table** — данные и таблицы
+- **Recharts** — графики и дашборд
+- **@dnd-kit** — Kanban drag-and-drop с guardrails
+- **react-hook-form** + **zod** — валидация форм
+- **Prisma** + SQLite — mock данные в dev mode
 
-### Интеграции
-- **Telegram Bot** (python-telegram-bot v21+) для загрузки файлов
-- **IMAP/SMTP** для обработки входящих счетов
-- **1C ClientBank** формат для банковских выписок
+### Инфраструктура
+- **Docker Compose** — 7 сервисов, health checks, graceful shutdown
+- **RabbitMQ Management** — мониторинг очередей и DLQ
+- **Nginx** / **Caddy** — reverse proxy
+
+---
 
 ## Текущий статус
 
 | Milestone | Статус | Описание |
 |-----------|--------|----------|
-| M001 | ✅ Pass | DB schema, FastAPI CRUD, Docker, 58 tests |
-| M002 | ✅ Pass | RabbitMQ, Celery, Telegram Bot, Excel parsing, AI integration |
-| M003 | ✅ Pass | IMAP ingest, invoice parsing/verification, notifications, 221 tests |
-| M004 | ✅ Pass | Bank statement import, payment matching, analytics, export, 237 tests |
-| M005 | ✅ Pass | Frontend UI (Next.js + shadcn/ui), Kanban, таблицы спецификаций |
-| M006 | ✅ Pass | Business Logic Polish: Kanban guardrails, stock reservation, readiness matrix |
-| M007 | ✅ Pass | Production Hardening: graceful shutdown, health endpoints, retry, RBAC UI, DLQ admin, 257 tests |
+| M001 | ✅ Pass | DB schema, FastAPI CRUD, Docker |
+| M002 | ✅ Pass | RabbitMQ, Celery, Telegram Bot, Excel parsing, AI |
+| M003 | ✅ Pass | IMAP ingest, invoice parsing/verification, notifications |
+| M004 | ✅ Pass | Bank statement import, payment matching, analytics, export |
+| M005 | ✅ Pass | Frontend UI (Next.js + shadcn/ui), Kanban, спецификации |
+| M006 | ✅ Pass | Kanban guardrails, stock reservation, readiness matrix |
+| M007 | ✅ Pass | Production hardening, RBAC, health endpoints, retry, DLQ admin |
 
-## Структура проекта
+**Последний баг-фикс:** [BUGFIX_SPEC.md](./BUGFIX_SPEC.md) — 8 исправлений, все верифицированы на production.
+
+---
+
+## Архитектура
 
 ```
 zakuppro/
-├── backend/                  # FastAPI backend
-│   ├── app/
-│   │   ├── routers/         # FastAPI routers (12 модулей)
-│   │   ├── models.py        # SQLAlchemy ORM (17 моделей)
-│   │   ├── schemas/         # Pydantic v2 schemas
-│   │   ├── services/        # Business logic (8 сервисов)
-│   │   ├── tasks.py         # Celery tasks (~59KB)
-│   │   ├── workers/         # Email worker, Telegram bot
-│   │   ├── llm_provider.py  # Multi-LLM wrapper (OpenAI/Claude/Gemini)
-│   │   └── handlers/        # Telegram bot handlers
-│   ├── tests/               # Pytest tests (36+ файлов)
-│   ├── alembic/             # Database migrations
-│   └── requirements.txt
-├── src/                     # Next.js frontend (App Router)
-│   ├── app/                 # Страницы и API route proxies
-│   ├── components/          # React компоненты (app/ + ui/)
-│   ├── lib/                 # API client, auth, утилиты
-│   ├── types/               # TypeScript типы для FastAPI
-│   ├── store/               # Zustand state management
-│   └── hooks/               # React hooks
-├── mini-services/           # Микросервисы
-│   └── telegram-bot/        # Standalone Telegram Web App (Bun + TS)
-├── prisma/                  # Prisma schema (SQLite для dev)
-├── scripts/                 # Утилиты (smoke-test.sh, start-dev.sh)
-├── .gsd/                    # GSD project management
-├── docker-compose.yml       # Оркестрация всех сервисов
-├── .env.example             # Шаблон переменных окружения
-└── README.md
+├── backend/                     # FastAPI backend
+│   ├── routers/                 # 17 API роутеров
+│   │   ├── analytics.py         # Дашборд, динамика платежей, pipeline
+│   │   ├── auth.py              # JWT login + register
+│   │   ├── frontend_compat.py   # Frontend-compatible API proxy
+│   │   ├── projects.py          # Projects CRUD + status transitions
+│   │   ├── suppliers.py         # Suppliers CRUD
+│   │   ├── invoices.py          # Invoices CRUD + upload
+│   │   ├── payments.py          # Payments CRUD
+│   │   ├── stock_items.py       # Warehouse CRUD + receive
+│   │   ├── production_tasks.py  # Production tasks
+│   │   ├── purchase_orders.py   # Purchase orders
+│   │   ├── stats.py             # Aggregated statistics
+│   │   ├── admin_failed_tasks.py # DLQ admin UI
+│   │   └── ...                  # integration, health, assistant
+│   ├── services/                # 14 бизнес-сервисов
+│   │   ├── transition_service.py # Kanban guardrails
+│   │   ├── stock_service.py     # Резервирование и списание
+│   │   ├── invoice_service.py   # Обработка счетов
+│   │   ├── payment_matcher.py   # Сверка платежей
+│   │   ├── imap_client.py       # IMAP email polling
+│   │   └── ...                  # analytics, notifications, LLM
+│   ├── models.py                # 16 SQLAlchemy моделей
+│   ├── schemas.py               # Pydantic v2 schemas
+│   ├── auth.py / rbac.py        # JWT + Role-Based Access Control
+│   ├── status_map.py            # Russian ↔ English status mapping
+│   ├── celery_app.py            # Celery + DLQ configuration
+│   ├── tasks.py                 # Celery tasks (Excel, invoices, bank)
+│   ├── email_worker.py          # IMAP polling + attachment routing
+│   ├── telegram_bot.py          # Telegram bot for file uploads
+│   ├── llm_provider.py          # Multi-LLM wrapper with fallback
+│   ├── alembic/                 # Database migrations
+│   └── tests/                   # 34 тестовых файла
+├── src/                         # Next.js frontend (App Router)
+│   ├── app/                     # Страницы + API route proxies
+│   ├── components/
+│   │   ├── app/                 # 23 бизнес-компонента
+│   │   ├── providers/          # Context providers
+│   │   └── ui/                  # 48 shadcn/ui компонентов
+│   ├── lib/                     # API client, auth, utils
+│   ├── types/                   # TypeScript типы
+│   ├── store/                   # Zustand stores
+│   └── hooks/                   # React hooks
+├── docker-compose.yml           # 7 сервисов
+├── .env.example                 # Шаблон переменных окружения
+├── safe-rebuild.sh              # Zero-downtime rebuild script
+└── BUGFIX_SPEC.md               # Спецификация баг-фиксов M007
 ```
+
+---
 
 ## Быстрый старт
 
-### Требования
+### Предварительные требования
 
-- Docker & Docker Compose
-- Python 3.12+ (для локального запуска backend)
-- Node.js 20+ / Bun (для frontend)
-- PostgreSQL 15+ (или используйте Docker)
+- Docker 20.10+ и Docker Compose 2.0+
+- 4+ GB RAM (рекомендуется 8 GB)
+- 10 GB свободного места на диске
 
-### 1. Клонирование и настройка
+### Установка
 
 ```bash
-git clone <repo-url>
+git clone https://github.com/ybatkovsky-jpg/zakuppro.git
 cd zakuppro
-cp .env.example .env  # Отредактируйте .env с вашими ключами
+cp .env.example .env           # Скопируйте и отредактируйте .env
+./safe-rebuild.sh --all        # Собрать и запустить все сервисы
 ```
 
-### 2. Запуск через Docker (рекомендуется)
+### Доступ к сервисам
 
-**Prerequisites:**
-- Docker 20.10+
-- Docker Compose 2.0+
+| Сервис | URL | Данные для входа |
+|--------|-----|-----------------|
+| **Frontend** | http://localhost:3099 | — |
+| **API (Swagger)** | http://localhost:8100/docs | — |
+| **API Health** | http://localhost:8100/health | — |
+| **RabbitMQ UI** | http://localhost:15672 | `guest / guest` |
+| **API Login** | POST http://localhost:8100/api/auth/login | `admin / admin123` |
 
-**Quick Start:**
-```bash
-# Запуск всех сервисов
-docker-compose up -d
+### Docker сервисы (7 штук)
 
-# Проверка статуса сервисов
-docker-compose ps
+| Сервис | Описание | Health Check |
+|--------|----------|-------------|
+| `db` | PostgreSQL 15 (persistent volume) | `pg_isready` |
+| `rabbitmq` | Message broker + management UI | RabbitMQ health |
+| `api` | FastAPI backend | `GET /health` (multi-service) |
+| `celery-worker` | Async task processing | Celery inspect |
+| `email-worker` | IMAP polling + invoice routing | Heartbeat file |
+| `telegram-bot` | Telegram bot for uploads | Heartbeat file |
+| `frontend` | Next.js UI | HTTP 200 response |
 
-# Smoke test (валидация полного цикла CRUD с авторизацией)
-bash scripts/smoke-test.sh
-```
-
-**Service URLs:**
-| Service | URL | Credentials |
-|---------|-----|-------------|
-| Frontend | http://localhost:3000 | — |
-| Backend API | http://localhost:8000 | `admin / admin123` (default) |
-| API Docs | http://localhost:8000/docs | — |
-| RabbitMQ UI | http://localhost:15672 | `guest / guest` |
-| PostgreSQL | localhost:5432 | `postgres / postgres` |
-
-**Services Description:**
-1. **db** — PostgreSQL 15 database (persistent volume)
-2. **api** — FastAPI backend with health check
-3. **rabbitmq** — Message broker with management UI
-4. **email-worker** — IMAP invoice ingest + LLM parsing
-5. **celery-worker** — Async task processing (LLM fallback, matching)
-6. **telegram-bot** — Telegram bot for file uploads
-7. **frontend** — Next.js UI (App Router + shadcn/ui)
-
-**Logs & Troubleshooting:**
-```bash
-# Логи конкретного сервиса
-docker-compose logs -f api
-docker-compose logs -f celery-worker
-docker-compose logs -f telegram-bot
-docker-compose logs -f email-worker
-
-# Все логи
-docker-compose logs
-
-# Перезапуск сервиса
-docker-compose restart api
-
-# Полная остановка и удаление volumes (сброс данных)
-docker-compose down -v
-```
-
-**Common Issues:**
-- **Port conflicts**: Измените порты в `docker-compose.yml` если заняты
-- **DB connection timeout**: Подождите ~10s после запуска для healthcheck
-- **RabbitMQ slow**: Management UI доступен после ~30s (start_period)
-- **LLM failures**: Проверьте `OPENAI_API_KEY` / `ANTHROPIC_API_KEY` в `.env`
-
-**Shutdown:**
-```bash
-# Остановка сервисов (сохранение данных)
-docker-compose down
-
-# Полная очистка включая volumes
-docker-compose down -v
-```
-
-### 3. Локальный запуск (development)
-
-**Backend:**
-```bash
-cd backend
-pip install -r requirements.txt
-alembic upgrade head
-uvicorn app.main:app --reload --port 8000
-```
-
-**Frontend:**
-```bash
-npm install          # или bun install
-npm run dev          # http://localhost:3000
-```
-
-**Celery Worker:**
-```bash
-cd backend
-celery -A backend.celery_app worker --loglevel=info
-```
-
-**Telegram Bot:**
-```bash
-cd backend
-python -m backend.telegram_bot
-```
-
-**Email Worker:**
-```bash
-cd backend
-python -m backend.email_worker
-```
+---
 
 ## Переменные окружения
 
-Создайте `.env` файл в корне проекта (см. `.env.example` для шаблона):
+Полный шаблон в `.env.example`. Ключевые группы:
 
 ```bash
-# Database
-DATABASE_URL=postgresql+psycopg2://postgres:postgres@localhost:5432/zakuppro
-DATABASE_URL_ASYNC=postgresql+asyncpg://postgres:postgres@localhost:5432/zakuppro
+# База данных
+POSTGRES_USER=postgres
+POSTGRES_PASSWORD=CHANGE_ME
+DATABASE_URL=postgresql+psycopg2://postgres:CHANGE_ME@db:5432/zakuppro
 
-# RabbitMQ (для Celery)
-CELERY_BROKER_URL=pyamqp://guest:guest@rabbitmq:5672//
-REDIS_URL=redis://localhost:6379/0
+# JWT (обязательно заменить в production!)
+JWT_SECRET_KEY=CHANGE_ME_MIN_32_CHARS
+SECRET_KEY=CHANGE_ME_MIN_32_CHARS
 
-# LLM Provider
-LLM_PRIMARY_PROVIDER=openai
-LLM_SECONDARY_PROVIDER=anthropic
-OPENAI_API_KEY=sk-...
-ANTHROPIC_API_KEY=sk-ant-...
+# LLM
+DEEPSEEK_API_KEY=sk-...
+DEEPSEEK_BASE_URL=https://api.deepseek.com
+DEEPSEEK_MODEL=deepseek-chat
 
 # Telegram Bot
 TELEGRAM_BOT_TOKEN=your_bot_token
 TELEGRAM_OWNER_CHAT_ID=your_chat_id
-ALLOWED_CHAT_IDS=123456789,987654321
+ALLOWED_CHAT_IDS=your_chat_id
 
-# Email (SMTP/IMAP)
-SMTP_HOST=smtp.gmail.com
-SMTP_PORT=587
-SMTP_EMAIL=your_email@gmail.com
-SMTP_PASSWORD=your_app_password
+# Email (опционально)
 IMAP_HOST=imap.gmail.com
-IMAP_PORT=993
 IMAP_USER=your_email@gmail.com
 IMAP_PASS=your_app_password
-
-# Security
-SECRET_KEY=your-secret-key-change-in-production
 ```
+
+> ⚠️ **Важно:** Файл `.env` исключён из git (в `.gitignore`). Никогда не коммитьте секреты.
+
+---
 
 ## API Endpoints
 
-Запущено на `http://localhost:8000`, 12 роутеров.
+67 endpoints в 17 роутерах:
 
-| Категория | Endpoints |
-|-----------|-----------|
-| Health | `GET /health` — multi-service health check (DB, RabbitMQ, Celery, workers) |
-| Auth | `POST /api/auth/login` — JWT authentication |
-| Projects | `GET/POST /api/projects`, `GET/PUT/DELETE /api/projects/{id}` |
-| Project Items | `GET/POST /api/project-items`, `PUT/DELETE /api/project-items/{id}` |
-| Suppliers | `GET/POST /api/suppliers`, `PUT/DELETE /api/suppliers/{id}` |
-| Stock | `GET/POST /api/stock-items`, `POST /api/stock-items/receive` |
-| Invoices | `GET/POST /api/invoices`, `POST /api/invoices/upload` |
-| Payments | `GET/POST /api/payments` |
-| Purchase Orders | `GET/POST /api/purchase-orders` |
-| Production Tasks | `GET/POST /api/production-tasks` |
-| Unresolved Transactions | `GET/POST /api/unresolved-transactions`, search, bulk operations |
-| Analytics | `GET /api/analytics/dashboard`, `/payment-dynamics`, `/pipeline`, `/suppliers` |
-| Docs | `GET /docs` — Swagger UI |
+| Группа | Endpoints | Описание |
+|--------|-----------|----------|
+| **Health** | `GET /health` | Multi-service health check (DB, RabbitMQ, Celery, workers) |
+| **Auth** | `POST /login`, `POST /register`, `GET /users/me` | JWT + RBAC |
+| **Projects** | CRUD + `/status`, `/readiness`, `/check-duplicate`, `/upload`, `/export` | Проекты и позиции |
+| **Suppliers** | CRUD | Поставщики |
+| **Invoices** | CRUD + `/upload`, `/reconcile` | Счета |
+| **Payments** | CRUD | Платежи |
+| **Stock** | CRUD + `/receive` | Складские остатки |
+| **Purchase Orders** | CRUD | Заказы поставщикам |
+| **Production Tasks** | CRUD | Производственные задачи |
+| **Analytics** | `/dashboard`, `/payment-dynamics`, `/pipeline`, `/suppliers` | Аналитика |
+| **Stats** | `GET /api/stats`, `GET /api/activity`, `GET /api/deliveries` | Агрегированная статистика |
+| **Admin** | `/failed-tasks`, `/failed-tasks/{id}/retry` | DLQ admin |
+| **Integration** | `/v1/integration/projects/{contract}/procurement` | Внешняя интеграция |
+
+---
+
+## Роли и доступ (RBAC)
+
+| Роль | Права |
+|------|-------|
+| **Owner** | Полный доступ ко всем сущностям и настройкам |
+| **Manager** | CRUD проектов/поставщиков/счетов; чтение аналитики |
+| **Warehouse** | CRUD склада; ограниченный доступ к другим модулям |
+
+JWT-токен содержит `user_id` и `role`. Все защищённые endpoints используют `Depends(require_role(...))`.
+
+---
+
+## Kanban Guardrails
+
+Переходы между статусами проектов валидируются через `can_transition_to()`:
+
+```
+new → processing → requested → invoiced → paid → delivered → completed
+```
+
+Недопустимые переходы (например, `completed → new`) возвращают **422 Unprocessable Entity**.
+
+Дополнительно: переход в "В производстве" требует, чтобы все ProjectItem были "На складе" или "Оплачено" (проверка через `transition_service`).
+
+---
+
+## Observability
+
+- **Health Check:** `GET /health` проверяет DB, RabbitMQ, Celery worker, Email worker, Telegram bot
+- **Heartbeat:** Email worker и Telegram bot пишут heartbeat-файл каждые 30 секунд
+- **Логирование:** Структурированные логи в stdout, файловые логи в `/data/logs/`
+- **RabbitMQ UI:** http://localhost:15672 — мониторинг очередей, DLQ, потребителей
+- **API Docs:** http://localhost:8100/docs — Swagger UI с моделями и примерами
+
+---
+
+## Деплой в production
+
+```bash
+# Zero-downtime rebuild
+./safe-rebuild.sh --all
+
+# Миграции БД
+docker exec -w /app/backend zakuppro-api alembic upgrade head
+
+# Логи
+docker compose logs -f api
+docker compose logs -f celery-worker
+docker compose logs -f email-worker
+docker compose logs -f telegram-bot
+
+# Перезапуск одного сервиса
+docker compose up -d --build api
+```
+
+> ⚠️ **Не используйте** `docker-compose down -v` — это удалит все данные (БД, processed IDs, heartbeat).
+
+---
 
 ## Тестирование
 
 ```bash
-cd backend
+# Все тесты (в контейнере)
+docker exec zakuppro-api pytest /app/backend/tests/ -v
 
-# Все тесты
-pytest
+# Конкретный модуль
+docker exec zakuppro-api pytest /app/backend/tests/test_transition_service.py -v
 
 # С покрытием
-pytest --cov=app --cov-report=html
-
-# Конкретный milestone
-pytest tests/m001/
-pytest tests/m004/
+docker exec zakuppro-api pytest /app/backend/tests/ --cov=backend -v
 ```
 
-**Текущее покрытие:** 36+ тестовых файлов, 257 тестов, все 7 milestones завершены.
+34 тестовых файла покрывают: модели, API, RBAC, transition service, LLM provider, IMAP, invoice parsing, bank statements, stock service, email worker.
 
-## Роли пользователей
-
-| Роль | Права |
-|------|-------|
-| **Admin** | Полный доступ ко всем сущностям и настройкам |
-| **Менеджер** | CRUD проектов, поставщиков, счетов; чтение аналитики |
-| **Бухгалтер-аналитик** | Финансы (счета, выписки, аналитика), поставщики; чтение проектов/склада |
-| **Кладовщик** | CRUD склада; чтение проектов |
-| **Технолог-монтажник** | Чтение/обновление проектов, чтение склада, добавление поставщиков |
-| **Закупщик** | CRUD suppliers/invoices/warehouse, чтение/обновление projects, чтение analytics |
-
-Поддерживается множественные роли на одного пользователя (JWT с `roles: []`).
-
-## Развертывание в продакшене
-
-### Production Hardening (M007) ✅
-
-Завершён. Ключевые improvements:
-- **Graceful shutdown** — все сервисы (FastAPI, Celery, Email Worker, Telegram Bot) с SIGTERM/SIGINT handlers
-- **Health endpoints** — multi-service health check с fail-fast (503 при деградации любого сервиса), shared volume для heartbeat-синхронизации между контейнерами
-- **Retry с exponential backoff** — `@retry_async`/`@retry_sync` для LLM, email, Telegram, bank statement
-- **RBAC UI** — 6 ролей (owner, manager, warehouse, purchaser, accountant, technician), sidebar filtering, per-component visibility gating, LoginPage с роль-специфичным доступом
-- **DLQ Admin UI** — страница неудачных задач (failed-tasks) для owner, просмотр и повторная обработка
-
-### Observability
-
-- **Логирование:** Структурированные JSON-логи (stdout) с `request_id` корреляцией
-- **Метрики:** Prometheus + Grafana (system health, business metrics, Celery queue)
-- **Alerts:** Telegram для критических событий
-
-### Деплой
-
-```bash
-# Production build (все 7 сервисов)
-docker-compose up -d
-
-# Или выборочно
-docker-compose up -d db rabbitmq api celery-worker telegram-bot email-worker frontend
-```
+---
 
 ## Архитектурные решения
 
-### Backend Patterns
-- **Modular routers** — отдельный роутер на сущность (12 роутеров)
-- **Cascade delete** — только для иерархических связей (Project → ProjectItem)
-- **lazy='selectin'** — предотвращение N+1 запросов
-- **LLM provider wrapper** — Strategy pattern, автоматический fallback (OpenAI → Claude → Gemini)
-- **Non-blocking notifications** — ошибки логируются, не блокируют pipeline
+### Backend
+- **Модульные роутеры** — отдельный файл на домен (17 роутеров)
+- **RBAC middleware** — `require_role()` + `require_ownership()` dependencies
+- **Kanban guardrails** — `can_transition_to()` + `transition_service` бизнес-проверки
+- **Status mapping** — `status_map.py` для двустороннего RU ↔ EN перевода
+- **lazy='selectin'** — предотвращение N+1 запросов в SQLAlchemy
+- **LLM fallback** — DeepSeek → OpenAI → Claude → Gemini с `@retry_async`
 - **FailedTask DLQ** — персистентность failed Celery tasks для retry/inspection
-- **Retry с exponential backoff** — декораторы `@retry_async`/`@retry_sync` для внешних вызовов
-- **RBAC** — 6 ролей, множественные роли на пользователя, JWT-based
 - **Stock reservation** — reserve → write-off → receive с invariant enforcement
-- **Kanban guardrails** — `can_transition_to()` с PRODUCTION_READY_STATUSES
 
-### Frontend Patterns
+### Frontend
 - **App Router** — Next.js 16 с серверными и клиентскими компонентами
-- **API proxy** — 43 route handlers для проксирования к FastAPI backend
+- **API proxy** — route handlers проксируют к FastAPI backend
 - **Zustand** — централизованный стейт-менеджмент
-- **shadcn/ui** — 40+ UI компонентов на Radix primitives
+- **shadcn/ui** — 48 компонентов на Radix UI primitives
 
-### Database
-- **SQLAlchemy 2.0** с async/await
-- **relationship(back_populates=...)** — bidirectional relationships
-- **JSONB** для гибких полей (verification_result, parsed_data)
-- **17 ORM моделей** — от Project до TransactionMatchingAudit
+### Безопасность
+- `.env` исключён из git
+- JWT с криптографически стойким секретом (минимум 32 символа)
+- sha256_crypt для хеширования паролей
+- RBAC на всех защищённых endpoints
 
-### Message Queue
-- **RabbitMQ 3-management** с DLQ configuration
-- **Celery** с bind=True для retry access
-- **Health check** на всех workers
+---
 
 ## Лицензия
 
-Proprietary — для "ПРОМЕБЕЛЬ"
-
-## Поддержка
-
-Для вопросов и проблем создавайте issues в репозитории.
+Proprietary — для «ПРОМЕБЕЛЬ»
