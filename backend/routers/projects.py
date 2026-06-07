@@ -14,6 +14,7 @@ import logging
 from backend.database import get_db
 from backend.models import User, Project, ProjectItem, ProjectStatusHistory
 from backend.schemas import ProjectCreate, ProjectUpdate, ProjectResponse, ProjectReadinessResponse
+from backend.status_map import map_project_status, map_item_status, map_project_status_to_ru
 from backend.auth import get_current_user
 from backend.rbac import require_role, require_ownership, apply_ownership_filter
 from backend.services import stock_service, transition_service
@@ -55,6 +56,14 @@ def list_projects(
     query = apply_ownership_filter(query, Project, current_user.id, current_user.role)
 
     projects = query.offset(skip).limit(limit).all()
+    # Map Russian statuses to English for frontend compatibility
+    for p in projects:
+        if hasattr(p, 'status') and p.status:
+            p.status = map_project_status(p.status)
+            if hasattr(p, 'items') and p.items:
+                for item in p.items:
+                    if hasattr(item, 'status') and item.status:
+                        item.status = map_item_status(item.status)
     return projects
 
 
@@ -288,6 +297,14 @@ def create_project(
     Returns:
         Created project with assigned id
     """
+    # BUG-004 FIX: Check for duplicate project name
+    existing = db.query(Project).filter(Project.name == project_data.name).first()
+    if existing:
+        raise HTTPException(
+            status_code=409,
+            detail=f"Project with name '{project_data.name}' already exists (id={existing.id}). Use duplicate check endpoint to resolve."
+        )
+
     new_project = Project(**project_data.model_dump(), owner_id=current_user.id)
     # Auto-generate contract_number if not provided
     if not new_project.contract_number:

@@ -672,7 +672,7 @@ function StatusTransitionModal({
       if (changedAt) body.changedAt = new Date(changedAt).toISOString()
 
       const res = await authFetch(`/api/projects/${projectId}/status`, {
-        method: 'POST',
+        method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(body),
       })
@@ -1055,8 +1055,8 @@ export function ProjectDetail() {
 
   const updateProjectStatus = useMutation({
     mutationFn: async ({ status }: { status: string }) => {
-      const res = await authFetch(`/api/projects/${selectedProjectId}`, {
-        method: 'PATCH',
+      const res = await authFetch(`/api/projects/${selectedProjectId}/status`, {
+        method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ status }),
       })
@@ -1081,7 +1081,7 @@ export function ProjectDetail() {
       const results = []
       for (const req of requests) {
         const res = await authFetch('/api/requests', {
-          method: 'POST',
+          method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             projectId: selectedProjectId,
@@ -1110,7 +1110,7 @@ export function ProjectDetail() {
   const verifyInvoiceMutation = useMutation({
     mutationFn: async (invoiceId: string) => {
       const res = await authFetch(`/api/invoices/${invoiceId}`, {
-        method: 'PATCH',
+        method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ status: 'verified' }),
       })
@@ -1132,7 +1132,7 @@ export function ProjectDetail() {
   const updateItemStatus = useMutation({
     mutationFn: async ({ itemId, status }: { itemId: string; status: string }) => {
       const res = await authFetch(`/api/projects/${selectedProjectId}`, {
-        method: 'PATCH',
+        method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ itemUpdates: [{ itemId, status }] }),
       })
@@ -1254,7 +1254,7 @@ export function ProjectDetail() {
   const createDeliveryMutation = useMutation({
     mutationFn: async () => {
       const res = await authFetch('/api/deliveries', {
-        method: 'POST',
+        method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           projectId: selectedProjectId,
@@ -1285,7 +1285,7 @@ export function ProjectDetail() {
   const updateDeliveryMutation = useMutation({
     mutationFn: async ({ id, data }: { id: string; data: Record<string, unknown> }) => {
       const res = await authFetch(`/api/deliveries/${id}`, {
-        method: 'PATCH',
+        method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(data),
       })

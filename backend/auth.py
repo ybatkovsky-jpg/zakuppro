@@ -29,7 +29,11 @@ if not SECRET_KEY:
     # In production, JWT_SECRET_KEY MUST be set via environment variable.
     # The fallback below is ONLY for local development and will raise a
     # warning at startup.
-    SECRET_KEY = "dev-only-secret-key-DO-NOT-USE-IN-PRODUCTION"
+    SECRET_KEY = os.getenv("SECRET_KEY") or os.getenv("JWT_SECRET_KEY")
+    if not SECRET_KEY:
+        import warnings
+        warnings.warn("SECRET_KEY/JWT_SECRET_KEY not set in environment. Using dev-only key. DO NOT use in production!", RuntimeWarning)
+        SECRET_KEY = "dev-only-secret-key-DO-NOT-USE-IN-PRODUCTION"
     import warnings
     warnings.warn(
         "JWT_SECRET_KEY is not set! Using insecure default. "

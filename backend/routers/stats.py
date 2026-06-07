@@ -18,6 +18,7 @@ from backend.models import (
 from backend.auth import get_current_active_user
 from backend.models import Role
 from backend.rbac import require_role, apply_ownership_filter
+from backend.status_map import map_project_status
 
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/api", tags=["stats"])
@@ -103,7 +104,7 @@ def get_stats(
                 "id": str(p.id),
                 "name": p.name,
                 "description": getattr(p, "description", "") or "",
-                "status": p.status,
+                "status": map_project_status(p.status),
                 "fileName": "",
                 "customerName": p.client or "",
                 "createdAt": p.created_at.isoformat() if p.created_at else "",
@@ -111,18 +112,16 @@ def get_stats(
                 "_count": {"items": len(p.items) if hasattr(p, 'items') and p.items else 0}
             })
         
-        # Project status distribution
+        # Project status distribution (BUG-009 FIX: map Russian to English)
         status_counts = {}
         for p in project_query.all():
-            s = p.status or "unknown"
+            s = map_project_status(p.status or "unknown")
             status_counts[s] = status_counts.get(s, 0) + 1
         
         status_colors = {
             "new": "#3b82f6", "processing": "#f59e0b", "requested": "#8b5cf6",
             "invoiced": "#06b6d4", "paid": "#10b981", "delivered": "#22c55e",
             "completed": "#10b981", "cancelled": "#ef4444",
-            "Проектирование": "#3b82f6", "Закупки": "#f59e0b", "К закупке": "#8b5cf6",
-            "В производстве": "#06b6d4", "Монтаж": "#22c55e", "Завершён": "#10b981",
         }
         project_status_data = [
             {"name": k, "value": v, "color": status_colors.get(k, "#6b7280")}
