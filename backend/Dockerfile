@@ -50,8 +50,9 @@ WORKDIR /app
 # Copy application code into /app/backend/ so that 'backend.main' is importable
 COPY --chown=appuser:appuser . /app/backend/
 
-# Create health check data directory for heartbeat files
-RUN mkdir -p /data/health && chown appuser:appuser /data/health
+# Create data directories for uploads and health check heartbeat files
+# These must be owned by appuser since the volume mount inherits ownership
+RUN mkdir -p /data/uploads /data/health && chown -R appuser:appuser /data
 
 # Switch to non-root user
 USER appuser
