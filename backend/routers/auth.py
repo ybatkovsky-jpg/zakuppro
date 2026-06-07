@@ -38,6 +38,19 @@ def verify_password(plain_password: str, hashed_password: str) -> bool:
     return pwd_context.verify(plain_password, hashed_password)
 
 
+def get_password_hash(password: str) -> str:
+    """
+    Hash a plain password using the same scheme as login verification.
+
+    Args:
+        password: Plain text password to hash
+
+    Returns:
+        Hashed password string compatible with verify_password
+    """
+    return pwd_context.hash(password)
+
+
 @router.post("/login", response_model=LoginResponse, status_code=status.HTTP_200_OK)
 async def login(
     credentials: LoginRequest,
@@ -120,6 +133,11 @@ def register_user(
     email = user_data.get("email", "")
     role = user_data.get("role", "warehouse")
     
+    # Ensure email is unique - generate placeholder if empty
+    if not email:
+        import uuid
+        email = f"{username}@placeholder.local" 
+    
     if not username or not password:
         raise HTTPException(status_code=400, detail="Username and password are required")
     
@@ -133,10 +151,8 @@ def register_user(
     if role not in valid_roles:
         raise HTTPException(status_code=400, detail=f"Invalid role. Must be one of: {valid_roles}")
     
-    # Create user
-    from passlib.context import CryptContext
-    _pwd_ctx = CryptContext(schemes=["sha512_crypt"], deprecated="auto")
-    hashed_password = _pwd_ctx.hash(password)
+    # Create user - use same hashing as login (sha256_crypt)
+    hashed_password = get_password_hash(password)
     new_user = User(
         username=username,
         email=email,

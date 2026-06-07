@@ -36,6 +36,7 @@ app = Celery(
 # Task serialization and security settings
 app.conf.update(
     # Use JSON for serialization (fast and secure)
+    broker_connection_retry_on_startup=True,
     task_serializer='json',
     accept_content=['json'],
     result_serializer='json',

@@ -297,6 +297,14 @@ def create_project(
     Returns:
         Created project with assigned id
     """
+    # BUG-004 FIX: Check for duplicate project name
+    existing = db.query(Project).filter(Project.name == project_data.name).first()
+    if existing:
+        raise HTTPException(
+            status_code=409,
+            detail=f"Project with name '{project_data.name}' already exists (id={existing.id}). Use duplicate check endpoint to resolve."
+        )
+
     new_project = Project(**project_data.model_dump(), owner_id=current_user.id)
     # Auto-generate contract_number if not provided
     if not new_project.contract_number:

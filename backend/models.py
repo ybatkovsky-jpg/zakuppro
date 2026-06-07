@@ -48,6 +48,52 @@ class User(Base):
     status_changes = relationship("ProjectStatusHistory", back_populates="changed_by_user")
 
 
+
+
+# Allowed project status transitions (Kanban guardrails)
+ALLOWED_PROJECT_TRANSITIONS = {
+    "new": ["processing"],
+    "processing": ["requested", "completed"],
+    "requested": ["invoiced", "processing"],
+    "invoiced": ["completed", "paid"],
+    "paid": ["completed", "delivered"],
+    "delivered": ["completed"],
+    "completed": [],
+}
+
+# Russian status equivalents
+ALLOWED_PROJECT_TRANSITIONS_RU = {
+    "\u041f\u0440\u043e\u0435\u043a\u0442\u0438\u0440\u043e\u0432\u0430\u043d\u0438\u0435": ["\u0417\u0430\u043a\u0443\u043f\u043a\u0438"],
+    "\u0417\u0430\u043a\u0443\u043f\u043a\u0438": ["\u0412 \u043f\u0440\u043e\u0438\u0437\u0432\u043e\u0434\u0441\u0442\u0432\u0435", "\u041f\u0440\u043e\u0435\u043a\u0442\u0438\u0440\u043e\u0432\u0430\u043d\u0438\u0435"],
+    "\u0412 \u043f\u0440\u043e\u0438\u0437\u0432\u043e\u0434\u0441\u0442\u0432\u0435": ["\u041c\u043e\u043d\u0442\u0430\u0436", "\u0417\u0430\u043a\u0443\u043f\u043a\u0438"],
+    "\u041c\u043e\u043d\u0442\u0430\u0436": ["\u041f\u0440\u043e\u0435\u043a\u0442\u0438\u0440\u043e\u0432\u0430\u043d\u0438\u0435"],
+}
+
+
+def can_transition_to(current_status: str, new_status: str) -> bool:
+    """Check if a project status transition is allowed.
+
+    Supports both English and Russian status values.
+    Returns True for unknown statuses (no restriction for custom values).
+
+    Args:
+        current_status: Current project status
+        new_status: Desired new status
+
+    Returns:
+        True if transition is allowed, False otherwise
+    """
+    # Check English transitions
+    if current_status in ALLOWED_PROJECT_TRANSITIONS:
+        return new_status in ALLOWED_PROJECT_TRANSITIONS[current_status]
+
+    # Check Russian transitions
+    if current_status in ALLOWED_PROJECT_TRANSITIONS_RU:
+        return new_status in ALLOWED_PROJECT_TRANSITIONS_RU[current_status]
+
+    # Unknown status - allow transition (backward compatible)
+    return True
+
 class Project(Base):
     """Project entity - main project management."""
     __tablename__ = "projects"

@@ -346,6 +346,14 @@ def update_project_status(
 
     new_status = data.get("status")
     if new_status:
+        # BUG-003 FIX: Validate status transition (Kanban guardrails)
+        from backend.models import can_transition_to
+        current_en_status = map_project_status(project.status)
+        if not can_transition_to(current_en_status, new_status):
+            raise HTTPException(
+                status_code=422,
+                detail=f"Invalid status transition: {current_en_status} -> {new_status}"
+            )
         # Translate English status from frontend to Russian for DB
         project.status = map_project_status_to_ru(new_status)
         db.commit()
