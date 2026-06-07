@@ -455,6 +455,7 @@ async def upload_project_file(
             items=items,
             metadata=metadata,
             file_path=file_path,
+            owner_id=current_user.id,
         )
         
         logger.info(f"Upload: created project '{project.name}' (ID: {project.id}) with {items_created} items")
