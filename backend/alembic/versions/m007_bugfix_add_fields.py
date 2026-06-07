@@ -10,7 +10,7 @@ import sqlalchemy as sa
 
 # revision identifiers
 revision = 'm007_bugfix'
-down_revision = None
+down_revision = 'c2d3e4f5a6b7'
 branch_labels = None
 depends_on = None
 

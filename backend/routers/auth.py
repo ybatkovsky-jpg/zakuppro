@@ -14,6 +14,8 @@ from backend.database import get_db
 from backend.models import User
 from backend.schemas import LoginRequest, LoginResponse, UserResponse
 from backend.auth import create_access_token, get_current_active_user
+from backend.rbac import require_role
+from backend.models import User, Role
 
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/api/auth", tags=["Authentication"])
@@ -132,8 +134,10 @@ def register_user(
         raise HTTPException(status_code=400, detail=f"Invalid role. Must be one of: {valid_roles}")
     
     # Create user
-    from backend.auth import get_password_hash
-    hashed_password = get_password_hash(password)
+    from passlib.context import CryptContext
+
+_pwd_ctx = CryptContext(schemes=["sha512_crypt"], deprecated="auto")
+    hashed_password = _pwd_ctx.hash(password)
     new_user = User(
         username=username,
         email=email,
