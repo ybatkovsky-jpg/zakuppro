@@ -3,7 +3,7 @@ Pydantic v2 schemas for the Mini-MRP system.
 Provides request/response validation for all entities.
 Uses from_attributes=True for ORM mode compatibility with SQLAlchemy.
 """
-from backend.routers.frontend_compat import map_project_status, map_item_status
+from backend.status_map import map_project_status, map_item_status
 from pydantic import BaseModel, ConfigDict, EmailStr, Field, model_validator
 from typing import Optional, List, Literal
 from datetime import datetime

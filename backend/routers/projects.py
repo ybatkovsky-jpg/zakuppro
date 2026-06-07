@@ -14,7 +14,7 @@ import logging
 from backend.database import get_db
 from backend.models import User, Project, ProjectItem, ProjectStatusHistory
 from backend.schemas import ProjectCreate, ProjectUpdate, ProjectResponse, ProjectReadinessResponse
-from backend.routers.frontend_compat import map_project_status, map_item_status, map_project_status_to_ru
+from backend.status_map import map_project_status, map_item_status, map_project_status_to_ru
 from backend.auth import get_current_user
 from backend.rbac import require_role, require_ownership, apply_ownership_filter
 from backend.services import stock_service, transition_service

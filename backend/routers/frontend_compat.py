@@ -21,54 +21,16 @@ from backend.services import stock_service
 from backend.auth import get_current_active_user, get_current_user
 from backend.models import Role
 from backend.rbac import require_role, apply_ownership_filter
+from backend.status_map import (
+    PROJECT_STATUS_RU_TO_EN, PROJECT_STATUS_EN_TO_RU,
+    ITEM_STATUS_RU_TO_EN, ITEM_STATUS_EN_TO_RU,
+    map_project_status, map_project_status_to_ru,
+    map_item_status, map_item_status_to_ru
+)
 
 logger = logging.getLogger(__name__)
 
 # ============================================================================
-# Status mapping: Russian (DB) <-> English (Frontend)
-# ============================================================================
-
-PROJECT_STATUS_RU_TO_EN = {
-    "Проектирование": "new",
-    "Закупки": "processing",
-    "В производстве": "requested",
-    "Монтаж": "delivered",
-}
-
-PROJECT_STATUS_EN_TO_RU = {v: k for k, v in PROJECT_STATUS_RU_TO_EN.items()}
-
-ITEM_STATUS_RU_TO_EN = {
-    "К закупке": "pending",
-    "Запрошено": "requested",
-    "Счет получен": "invoiced",
-    "Оплачено": "paid",
-    "На складе": "delivered",
-    "В производстве": "ordered",
-}
-
-ITEM_STATUS_EN_TO_RU = {v: k for k, v in ITEM_STATUS_RU_TO_EN.items()}
-
-
-def map_project_status(status: str) -> str:
-    """Convert Russian status to English for frontend."""
-    return PROJECT_STATUS_RU_TO_EN.get(status, status)
-
-
-def map_project_status_to_ru(status: str) -> str:
-    """Convert English status from frontend to Russian for DB."""
-    return PROJECT_STATUS_EN_TO_RU.get(status, status)
-
-
-def map_item_status(status: str) -> str:
-    """Convert Russian item status to English for frontend."""
-    return ITEM_STATUS_RU_TO_EN.get(status, status)
-
-
-def map_item_status_to_ru(status: str) -> str:
-    """Convert English item status from frontend to Russian for DB."""
-    return ITEM_STATUS_EN_TO_RU.get(status, status)
-
-
 router = APIRouter(tags=["frontend-compat"])
 
 
