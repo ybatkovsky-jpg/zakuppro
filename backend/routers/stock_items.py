@@ -22,7 +22,7 @@ logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/api/stock-items", tags=["stock-items"])
 
 
-@router.get("/", response_model=List[StockItemResponse])
+@router.get("", response_model=List[StockItemResponse])
 def list_stock_items(
     skip: int = 0,
     limit: int = 100,
@@ -56,7 +56,7 @@ def get_stock_item(
     return item
 
 
-@router.post("/", response_model=StockItemResponse, status_code=status.HTTP_201_CREATED)
+@router.post("", response_model=StockItemResponse, status_code=status.HTTP_201_CREATED)
 def create_stock_item(
     item_data: StockItemCreate,
     current_user: User = Depends(require_role([Role.OWNER, Role.MANAGER])),

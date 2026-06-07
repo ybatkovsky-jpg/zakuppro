@@ -42,7 +42,7 @@ logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/api/unresolved-transactions", tags=["unresolved-transactions"])
 
 
-@router.get("/", response_model=List[UnresolvedTransactionResponse])
+@router.get("", response_model=List[UnresolvedTransactionResponse])
 def list_unresolved_transactions(
     skip: int = Query(0, ge=0, description="Number of records to skip for pagination"),
     limit: int = Query(100, ge=1, le=1000, description="Maximum number of records to return"),
@@ -250,7 +250,7 @@ def get_unresolved_transaction(
     return transaction
 
 
-@router.post("/", response_model=UnresolvedTransactionResponse, status_code=status.HTTP_201_CREATED)
+@router.post("", response_model=UnresolvedTransactionResponse, status_code=status.HTTP_201_CREATED)
 def create_unresolved_transaction(
     transaction_data: UnresolvedTransactionCreate,
     current_user: User = Depends(require_role([Role.OWNER, Role.MANAGER])),

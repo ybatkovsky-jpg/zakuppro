@@ -38,7 +38,7 @@ def _check_ownership(item: ProjectItem, current_user: User) -> None:
             )
 
 
-@router.get("/", response_model=List[ProjectItemResponse])
+@router.get("", response_model=List[ProjectItemResponse])
 def list_project_items(
     skip: int = 0,
     limit: int = 100,
@@ -87,7 +87,7 @@ def get_project_item(
     return item
 
 
-@router.post("/", response_model=ProjectItemResponse, status_code=status.HTTP_201_CREATED)
+@router.post("", response_model=ProjectItemResponse, status_code=status.HTTP_201_CREATED)
 def create_project_item(
     item_data: ProjectItemCreate,
     current_user: User = Depends(require_role([Role.OWNER, Role.MANAGER])),

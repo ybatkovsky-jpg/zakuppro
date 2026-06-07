@@ -37,7 +37,7 @@ def _check_ownership(payment: Payment, current_user: User) -> None:
             )
 
 
-@router.get("/", response_model=List[PaymentResponse])
+@router.get("", response_model=List[PaymentResponse])
 def list_payments(
     skip: int = 0,
     limit: int = 100,
@@ -86,7 +86,7 @@ def get_payment(
     return payment
 
 
-@router.post("/", response_model=PaymentResponse, status_code=status.HTTP_201_CREATED)
+@router.post("", response_model=PaymentResponse, status_code=status.HTTP_201_CREATED)
 def create_payment(
     payment_data: PaymentCreate,
     current_user: User = Depends(require_role([Role.OWNER, Role.MANAGER])),

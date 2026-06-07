@@ -22,7 +22,7 @@ logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/api/suppliers", tags=["suppliers"])
 
 
-@router.get("/", response_model=List[SupplierResponse])
+@router.get("", response_model=List[SupplierResponse])
 def list_suppliers(
     skip: int = 0,
     limit: int = 100,
@@ -56,7 +56,7 @@ def get_supplier(
     return supplier
 
 
-@router.post("/", response_model=SupplierResponse, status_code=status.HTTP_201_CREATED)
+@router.post("", response_model=SupplierResponse, status_code=status.HTTP_201_CREATED)
 def create_supplier(
     supplier_data: SupplierCreate,
     current_user: User = Depends(require_role([Role.OWNER])),

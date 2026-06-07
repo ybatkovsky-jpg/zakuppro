@@ -25,7 +25,7 @@ logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/api/projects", tags=["projects"])
 
 
-@router.get("/", response_model=List[ProjectResponse])
+@router.get("", response_model=List[ProjectResponse])
 def list_projects(
     skip: int = 0,
     limit: int = 100,
@@ -183,7 +183,7 @@ def get_project(
     return project
 
 
-@router.post("/", response_model=ProjectResponse, status_code=status.HTTP_201_CREATED)
+@router.post("", response_model=ProjectResponse, status_code=status.HTTP_201_CREATED)
 def create_project(
     project_data: ProjectCreate,
     current_user: User = Depends(require_role([Role.OWNER, Role.MANAGER])),

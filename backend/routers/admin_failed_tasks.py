@@ -31,7 +31,7 @@ router = APIRouter(prefix="/api/admin/failed-tasks", tags=["admin"])
 # List — paginated with optional task_name filter
 # =============================================================================
 
-@router.get("/", response_model=FailedTaskListResponse)
+@router.get("", response_model=FailedTaskListResponse)
 def list_failed_tasks(
     skip: int = Query(0, ge=0, description="Number of records to skip for pagination"),
     limit: int = Query(100, ge=1, le=1000, description="Maximum number of records to return"),

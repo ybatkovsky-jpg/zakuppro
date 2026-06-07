@@ -37,7 +37,7 @@ def _check_ownership(invoice: Invoice, current_user: User) -> None:
             )
 
 
-@router.get("/", response_model=List[InvoiceResponse])
+@router.get("", response_model=List[InvoiceResponse])
 def list_invoices(
     skip: int = 0,
     limit: int = 100,
@@ -86,7 +86,7 @@ def get_invoice(
     return invoice
 
 
-@router.post("/", response_model=InvoiceResponse, status_code=status.HTTP_201_CREATED)
+@router.post("", response_model=InvoiceResponse, status_code=status.HTTP_201_CREATED)
 def create_invoice(
     invoice_data: InvoiceCreate,
     current_user: User = Depends(require_role([Role.OWNER, Role.MANAGER])),

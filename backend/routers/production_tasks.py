@@ -37,7 +37,7 @@ def _check_ownership(task: ProductionTask, current_user: User) -> None:
             )
 
 
-@router.get("/", response_model=List[ProductionTaskResponse])
+@router.get("", response_model=List[ProductionTaskResponse])
 def list_production_tasks(
     skip: int = 0,
     limit: int = 100,
@@ -86,7 +86,7 @@ def get_production_task(
     return task
 
 
-@router.post("/", response_model=ProductionTaskResponse, status_code=status.HTTP_201_CREATED)
+@router.post("", response_model=ProductionTaskResponse, status_code=status.HTTP_201_CREATED)
 def create_production_task(
     task_data: ProductionTaskCreate,
     current_user: User = Depends(require_role([Role.OWNER, Role.MANAGER])),

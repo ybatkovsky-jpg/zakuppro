@@ -37,7 +37,7 @@ def _check_ownership(purchase_order: PurchaseOrder, current_user: User) -> None:
             )
 
 
-@router.get("/", response_model=List[PurchaseOrderResponse])
+@router.get("", response_model=List[PurchaseOrderResponse])
 def list_purchase_orders(
     skip: int = 0,
     limit: int = 100,
@@ -86,7 +86,7 @@ def get_purchase_order(
     return order
 
 
-@router.post("/", response_model=PurchaseOrderResponse, status_code=status.HTTP_201_CREATED)
+@router.post("", response_model=PurchaseOrderResponse, status_code=status.HTTP_201_CREATED)
 def create_purchase_order(
     order_data: PurchaseOrderCreate,
     current_user: User = Depends(require_role([Role.OWNER, Role.MANAGER])),

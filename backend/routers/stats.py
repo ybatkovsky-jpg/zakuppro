@@ -80,7 +80,7 @@ def get_stats(
         
         # Warehouse items
         total_warehouse = db.query(StockItem).count()
-        low_stock = db.query(StockItem).filter(StockItem.quantity <= StockItem.min_quantity).count()
+        low_stock = db.query(StockItem).filter(StockItem.qty_available <= 0).count()
         
         # Purchase orders (requests)
         po_query = db.query(PurchaseOrder)
@@ -143,25 +143,25 @@ def get_stats(
         warehouse_stock_data = []
         for item in stock_items:
             status_val = "ok"
-            if item.quantity <= item.min_quantity:
-                status_val = "low" if item.quantity == 0 else "warning"
+            if item.qty_available <= 0:
+                status_val = "low" if item.qty_total == 0 else "warning"
             warehouse_stock_data.append({
                 "name": item.name,
-                "quantity": item.quantity,
-                "minQuantity": item.min_quantity,
+                "quantity": item.qty_total,
+                "minQuantity": 0,
                 "status": status_val
             })
         
         # Urgent items
         urgent_items = []
         if low_stock > 0:
-            low_items = db.query(StockItem).filter(StockItem.quantity <= StockItem.min_quantity).limit(5).all()
+            low_items = db.query(StockItem).filter(StockItem.qty_available <= 0).limit(5).all()
             for item in low_items:
                 urgent_items.append({
                     "type": "restock",
                     "label": f"Низкий запас: {item.name}",
                     "targetId": str(item.id),
-                    "urgency": "urgent" if item.quantity == 0 else "pending"
+                    "urgency": "urgent" if item.qty_total == 0 else "pending"
                 })
         
         return StatsResponse(

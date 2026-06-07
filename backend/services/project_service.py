@@ -24,6 +24,7 @@ def create_project_from_bom(
     items: List[dict],
     metadata: dict,
     file_path: str,
+    owner_id: Optional[int] = None,
 ) -> Tuple[Project, int, int]:
     """
     Create a Project with ProjectItems from a parsed BOM.
@@ -64,10 +65,19 @@ def create_project_from_bom(
     project_name = metadata.get('project_name') or file_stem
     client = metadata.get('client') or 'Не указан'
 
+    # If no owner_id specified, find the first owner user
+    if owner_id is None:
+        from backend.models import User, Role
+        owner_user = db.query(User).filter(User.role == Role.OWNER).first()
+        if owner_user:
+            owner_id = owner_user.id
+            logger.info("Auto-assigned owner_id=%d to project from bot upload", owner_id)
+
     project = Project(
         name=project_name,
         client=client,
         status='Проектирование',
+        owner_id=owner_id,
     )
     db.add(project)
     db.commit()
