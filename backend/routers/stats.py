@@ -72,8 +72,8 @@ def get_stats(
         project_query = apply_ownership_filter(project_query, Project, current_user.id, current_user.role)
         
         total_projects = project_query.count()
-        active_projects = project_query.filter(Project.status.in_(["new", "processing", "requested"])).count()
-        completed_projects = project_query.filter(Project.status == "completed").count()
+        active_projects = project_query.filter(Project.status.in_(["Проектирование", "Закупки", "К закупке"])).count()
+        completed_projects = project_query.filter(Project.status == "Завершён").count()
         
         # Supplier count
         total_suppliers = db.query(Supplier).count()
@@ -102,10 +102,10 @@ def get_stats(
             recent_projects.append({
                 "id": str(p.id),
                 "name": p.name,
-                "description": p.description or "",
+                "description": getattr(p, "description", "") or "",
                 "status": p.status,
                 "fileName": "",
-                "customerName": getattr(p, 'customer_name', '') or '',
+                "customerName": p.client or "",
                 "createdAt": p.created_at.isoformat() if p.created_at else "",
                 "updatedAt": p.updated_at.isoformat() if p.updated_at else "",
                 "_count": {"items": len(p.items) if hasattr(p, 'items') and p.items else 0}
@@ -120,7 +120,9 @@ def get_stats(
         status_colors = {
             "new": "#3b82f6", "processing": "#f59e0b", "requested": "#8b5cf6",
             "invoiced": "#06b6d4", "paid": "#10b981", "delivered": "#22c55e",
-            "completed": "#10b981", "cancelled": "#ef4444"
+            "completed": "#10b981", "cancelled": "#ef4444",
+            "Проектирование": "#3b82f6", "Закупки": "#f59e0b", "К закупке": "#8b5cf6",
+            "В производстве": "#06b6d4", "Монтаж": "#22c55e", "Завершён": "#10b981",
         }
         project_status_data = [
             {"name": k, "value": v, "color": status_colors.get(k, "#6b7280")}
