@@ -56,6 +56,14 @@ def list_projects(
     query = apply_ownership_filter(query, Project, current_user.id, current_user.role)
 
     projects = query.offset(skip).limit(limit).all()
+    # Map Russian statuses to English for frontend compatibility
+    for p in projects:
+        if hasattr(p, 'status') and p.status:
+            p.status = map_project_status(p.status)
+            if hasattr(p, 'items') and p.items:
+                for item in p.items:
+                    if hasattr(item, 'status') and item.status:
+                        item.status = map_item_status(item.status)
     return projects
 
 
