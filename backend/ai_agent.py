@@ -23,7 +23,10 @@ logger = logging.getLogger(__name__)
 class BOMItem(BaseModel):
     """Single item in a Bill of Materials."""
 
-    sku: str = Field(description="Product SKU or article number")
+    sku: Optional[str] = Field(
+        default=None,
+        description="Product SKU or article number (nullable — not all items have SKUs)"
+    )
     name: str = Field(description="Product name or description")
     qty: int = Field(description="Quantity", ge=0)
     supplier: Optional[str] = Field(
@@ -80,7 +83,10 @@ BOM_JSON_SCHEMA = {
             "items": {
                 "type": "object",
                 "properties": {
-                    "sku": {"type": "string", "description": "Product SKU or article number"},
+                    "sku": {
+                        "type": ["string", "null"],
+                        "description": "Product SKU or article number. Use null if not found in the table."
+                    },
                     "name": {"type": "string", "description": "Product name or description"},
                     "qty": {"type": "integer", "description": "Quantity (must be >= 0)"},
                     "supplier": {
@@ -88,7 +94,7 @@ BOM_JSON_SCHEMA = {
                         "description": "Supplier name or null if not found"
                     }
                 },
-                "required": ["sku", "name", "qty"]
+                "required": ["name", "qty"]
             }
         },
         "metadata": {
@@ -108,7 +114,7 @@ SYSTEM_PROMPT = """You are a BOM extraction assistant specialized in Russian inv
 Extract structured bill-of-materials data from the provided markdown table.
 
 COLUMN MAPPING (Russian to English):
-- "Артикул", "SKU", "Код", "Арт." → sku (product article number)
+- "Артикул", "SKU", "Код", "Арт." → sku (product article number, null if not found)
 - "Наименование", "Название", "Описание", "Товар" → name (product name/description)
 - "Кол", "Количество", "Кол-во", "Qty", "Шт." → qty (quantity as integer)
 - "Поставщик", "Supplier" → supplier (supplier name, null if not found)
@@ -116,12 +122,13 @@ COLUMN MAPPING (Russian to English):
 RULES:
 1. Return ONLY valid JSON matching the schema.
 2. qty must be a positive integer (convert "5шт" to 5, not "5шт").
-3. If a column is missing, use null or empty string for nullable fields.
-4. Skip header rows and empty rows - extract only actual data items.
-5. Preserve original SKU/name values exactly as shown in the table.
-6. If multiple tables exist, extract items from all relevant rows.
-7. IMPORTANT: Your response must be a valid JSON object with the exact structure:
-   {"items": [{"sku": "...", "name": "...", "qty": 0, "supplier": "..."}], "metadata": {"project_name": "...", "client": "..."}}
+3. If a column is missing, use null for nullable fields (sku, supplier).
+4. If a row has no article/SKU value, set sku to null — this is normal for many items.
+5. Skip header rows and empty rows - extract only actual data items.
+6. Preserve original name values exactly as shown in the table.
+7. If multiple tables exist, extract items from all relevant rows.
+8. IMPORTANT: Your response must be a valid JSON object with the exact structure:
+   {"items": [{"sku": "..." or null, "name": "...", "qty": 0, "supplier": "..." or null}], "metadata": {"project_name": "...", "client": "..."}}
 """
 
 

@@ -128,7 +128,7 @@ class ProjectReadinessResponse(BaseSchema):
 
 class ProjectItemBase(BaseSchema):
     name: str
-    sku: str
+    sku: Optional[str] = ""
     qty: int
     status: str = "К закупке"
     supplier_id: Optional[int] = None
@@ -154,6 +154,7 @@ class ProjectItemResponse(ProjectItemBase):
     """Schema for project item response."""
     id: int
     project_id: int
+    sku: Optional[str] = ""
     created_at: datetime
     updated_at: Optional[datetime] = None
 

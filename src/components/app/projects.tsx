@@ -660,14 +660,21 @@ export function Projects() {
 
   const createMutation = useMutation({
     mutationFn: async (data: { name: string; description: string; customerName: string }) => {
+      // Map frontend fields to FastAPI ProjectCreate schema
+      const payload = {
+        name: data.name,
+        client: data.customerName || 'Не указан',
+        status: 'Проектирование',
+        total_cost: null,
+      }
       const res = await authFetch('/api/projects', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(data),
+        body: JSON.stringify(payload),
       })
       if (!res.ok) {
         const err = await res.json()
-        throw new Error(err.error || 'Ошибка создания проекта')
+        throw new Error(err.detail || err.error || 'Ошибка создания проекта')
       }
       return res.json()
     },
@@ -693,7 +700,7 @@ export function Projects() {
       })
       if (!res.ok) {
         const err = await res.json()
-        throw new Error(err.error || 'Ошибка загрузки файла')
+        throw new Error(err.detail || err.error || 'Ошибка загрузки файла')
       }
       return res.json()
     },

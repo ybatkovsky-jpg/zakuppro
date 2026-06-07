@@ -95,7 +95,7 @@ class ProjectItem(Base):
     id = Column(Integer, primary_key=True, index=True)
     project_id = Column(Integer, ForeignKey("projects.id"), nullable=False)
     name = Column(String(500), nullable=False)
-    sku = Column(String(100), nullable=False)  # Stock keeping unit / Артикул
+    sku = Column(String(100), nullable=False, server_default='')  # Stock keeping unit / Артикул (empty string if not available)
     qty = Column(Integer, nullable=False)  # Quantity needed
     supplier_id = Column(Integer, ForeignKey("suppliers.id"), nullable=True)
     stock_item_id = Column(Integer, ForeignKey("stock_items.id"), nullable=True)

@@ -86,9 +86,9 @@ def create_project_from_bom(
 
         project_item = ProjectItem(
             project_id=project.id,
-            name=item.get('name'),
-            sku=item.get('sku'),
-            qty=item.get('qty'),
+            name=item.get('name', ''),
+            sku=item.get('sku') or '',
+            qty=item.get('qty', 0),
             supplier_id=supplier_id,
             status='К закупке',
         )
