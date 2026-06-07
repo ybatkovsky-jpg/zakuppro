@@ -83,8 +83,14 @@ def detect_header_row(df: pd.DataFrame, max_search_rows: int = 10) -> int:
 
         # Count non-empty string values
         non_empty = row.dropna()
-        string_count = sum(isinstance(v, str) and v.strip() for v in non_empty)
-        numeric_count = sum(isinstance(v, (int, float, np.number)) for v in non_empty)
+        string_count = 0
+        numeric_count = 0
+        for v in non_empty:
+            if isinstance(v, str):
+                if v.strip():
+                    string_count += 1
+            elif isinstance(v, (int, float, np.integer, np.floating)):
+                numeric_count += 1
 
         # Header candidate: at least 2 strings and not mostly numbers
         if string_count >= 2 and string_count >= numeric_count:

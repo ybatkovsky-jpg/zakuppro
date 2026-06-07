@@ -4,15 +4,17 @@ Telegram Notification Helper for Celery tasks.
 Provides functions for sending outbound messages from Celery tasks:
 - Completion notifications to users
 - DLQ alerts to owner
+- Processing error notifications
 
 Uses python-telegram-bot Bot class with TELEGRAM_BOT_TOKEN env var.
+All send operations run synchronously via asyncio.run() since Celery
+workers are synchronous.
 """
 
 import os
 import logging
+import asyncio
 from typing import Optional
-
-from backend.retry_utils import retry_sync
 
 logger = logging.getLogger(__name__)
 
@@ -62,7 +64,37 @@ def _get_bot() -> Optional[Bot]:
         return None
 
 
-@retry_sync(retryable_exceptions=(TelegramError,))
+def _sync_send(bot: Bot, chat_id: int, text: str, parse_mode: Optional[str] = None) -> bool:
+    """
+    Synchronously send a Telegram message from a Celery worker.
+
+    python-telegram-bot v21+ uses async Bot.send_message(), but Celery
+    workers are synchronous. We use asyncio.run() to bridge the gap.
+
+    Returns:
+        True if sent successfully, False otherwise
+    """
+    try:
+        loop = asyncio.get_event_loop()
+        if loop.is_running():
+            # We're inside an existing event loop — create a new one in a thread
+            import concurrent.futures
+            with concurrent.futures.ThreadPoolExecutor() as pool:
+                future = pool.submit(
+                    asyncio.run,
+                    bot.send_message(chat_id=chat_id, text=text, parse_mode=parse_mode)
+                )
+                future.result(timeout=30)
+        else:
+            asyncio.run(bot.send_message(chat_id=chat_id, text=text, parse_mode=parse_mode))
+        return True
+    except Exception as e:
+        if isinstance(e, TelegramError):
+            raise
+        logger.error(f'Failed to send Telegram message: {e}')
+        return False
+
+
 def send_completion_message(
     chat_id: int,
     project_name: str,
@@ -71,12 +103,6 @@ def send_completion_message(
 ) -> bool:
     """
     Send completion message to user with processing statistics.
-
-    Message format (Russian):
-        ✅ Обработка завершена!
-        📁 Проект: {project_name}
-        📊 Товаров: {items_count}
-        📦 Резерв: {reserved_count}
 
     Args:
         chat_id: Telegram chat_id to send message to
@@ -101,37 +127,23 @@ def send_completion_message(
         message += f'📦 В резерве: {reserved_count}\n'
 
     try:
-        bot.send_message(chat_id=chat_id, text=message)
+        _sync_send(bot, chat_id=chat_id, text=message)
         logger.info(
             f'Completion message sent: chat_id={chat_id}, '
             f'project={project_name}, items={items_count}'
         )
         return True
-
     except Exception as e:
-        if isinstance(e, TelegramError):
-            raise  # Let decorator handle retry
-        logger.error(
-            f'Unexpected error sending completion message: chat_id={chat_id}, error={e}',
-            exc_info=True
-        )
+        logger.error(f'Error sending completion message: {e}', exc_info=True)
         return False
 
 
-@retry_sync(retryable_exceptions=(TelegramError,))
 def send_processing_error(
     chat_id: int,
     error_message: str,
 ) -> bool:
     """
     Send processing error message to the user who uploaded a file.
-
-    Called from Celery task failure handler so the user gets a clear
-    notification instead of silence when their file processing fails.
-
-    Message format (Russian):
-        ❌ Ошибка обработки файла
-        📄 Ошибка: {error_message}
 
     Args:
         chat_id: Telegram chat_id to send message to
@@ -155,27 +167,14 @@ def send_processing_error(
     )
 
     try:
-        bot.send_message(
-            chat_id=chat_id,
-            text=message,
-            parse_mode='Markdown'
-        )
-        logger.info(
-            f'Processing error notification sent: chat_id={chat_id}'
-        )
+        _sync_send(bot, chat_id=chat_id, text=message, parse_mode='Markdown')
+        logger.info(f'Processing error notification sent: chat_id={chat_id}')
         return True
-
     except Exception as e:
-        if isinstance(e, TelegramError):
-            raise  # Let decorator handle retry
-        logger.error(
-            f'Unexpected error sending processing error notification: chat_id={chat_id}, error={e}',
-            exc_info=True
-        )
+        logger.error(f'Error sending processing error notification: {e}', exc_info=True)
         return False
 
 
-@retry_sync(retryable_exceptions=(TelegramError,))
 def send_dlq_alert(
     task_id: str,
     error_message: str,
@@ -184,12 +183,6 @@ def send_dlq_alert(
 ) -> bool:
     """
     Send DLQ alert to owner about failed task.
-
-    Message format (Russian):
-        🚨 DLQ Alert
-        Task: {task_id}
-        File: {file_path}
-        Error: {error_message}
 
     Args:
         task_id: Celery task ID that failed
@@ -220,49 +213,19 @@ def send_dlq_alert(
     message += f'\n❌ Error:\n```\n{error_message}\n```'
 
     try:
-        bot.send_message(
-            chat_id=OWNER_CHAT_ID,
-            text=message,
-            parse_mode='Markdown'
-        )
+        _sync_send(bot, chat_id=int(OWNER_CHAT_ID), text=message, parse_mode='Markdown')
         logger.info(
             f'DLQ alert sent: task_id={task_id}, file={file_path}, '
             f'owner_chat_id={OWNER_CHAT_ID}'
         )
         return True
-
     except Exception as e:
-        if isinstance(e, TelegramError):
-            raise  # Let decorator handle retry
-        logger.error(
-            f'Unexpected error sending DLQ alert: task_id={task_id}, error={e}',
-            exc_info=True
-        )
+        logger.error(f'Error sending DLQ alert: {e}', exc_info=True)
         return False
 
 
-@retry_sync(retryable_exceptions=(TelegramError,))
-def send_invoice_verified(
-    chat_id: int,
-    invoice_id: int,
-    stats: dict
-) -> bool:
-    """
-    Send success notification when invoice verification completes successfully.
-
-    Message format (Russian):
-        ✅ Счет сверен
-        📄 Счет #{invoice_id}
-        📊 Статистика: {stats}
-
-    Args:
-        chat_id: Telegram chat_id to send message to
-        invoice_id: ID of the verified invoice
-        stats: Dictionary with verification statistics (matched, total, confidence)
-
-    Returns:
-        bool: True if message sent successfully, False otherwise
-    """
+def send_invoice_verified(chat_id: int, invoice_id: int, stats: dict) -> bool:
+    """Send success notification when invoice verification completes."""
     bot = _get_bot()
     if not bot:
         return False
@@ -272,55 +235,19 @@ def send_invoice_verified(
         f'📄 Счет №: `{invoice_id}`\n'
         f'🔗 Совпадений: {stats.get("matched", 0)}/{stats.get("total", 0)}\n'
     )
-
     if 'confidence' in stats:
         message += f'📈 Точность: {stats["confidence"]:.1%}\n'
 
     try:
-        bot.send_message(
-            chat_id=chat_id,
-            text=message,
-            parse_mode='Markdown'
-        )
-        logger.info(
-            f'Invoice verified notification sent: chat_id={chat_id}, '
-            f'invoice_id={invoice_id}, matched={stats.get("matched", 0)}'
-        )
+        _sync_send(bot, chat_id=chat_id, text=message, parse_mode='Markdown')
         return True
-
     except Exception as e:
-        if isinstance(e, TelegramError):
-            raise  # Let decorator handle retry
-        logger.error(
-            f'Unexpected error sending invoice verified notification: '
-            f'chat_id={chat_id}, invoice_id={invoice_id}, error={e}',
-            exc_info=True
-        )
+        logger.error(f'Error sending invoice verified: {e}', exc_info=True)
         return False
 
 
-@retry_sync(retryable_exceptions=(TelegramError,))
-def send_invoice_partial(
-    chat_id: int,
-    invoice_id: int,
-    discrepancies: list
-) -> bool:
-    """
-    Send warning notification when invoice verification finds quantity discrepancies.
-
-    Message format (Russian):
-        ⚠️ Частичное совпадение
-        📄 Счет #{invoice_id}
-        📊 Расхождения: {discrepancies}
-
-    Args:
-        chat_id: Telegram chat_id to send message to
-        invoice_id: ID of the partially matched invoice
-        discrepancies: List of discrepancy descriptions
-
-    Returns:
-        bool: True if message sent successfully, False otherwise
-    """
+def send_invoice_partial(chat_id: int, invoice_id: int, discrepancies: list) -> bool:
+    """Send warning notification when invoice verification finds quantity discrepancies."""
     bot = _get_bot()
     if not bot:
         return False
@@ -330,123 +257,21 @@ def send_invoice_partial(
         f'📄 Счет №: `{invoice_id}`\n'
         f'🔍 Найдены расхождения в количестве:\n'
     )
-
     for idx, disc in enumerate(discrepancies[:5], 1):
         message += f'  {idx}. {disc}\n'
-
     if len(discrepancies) > 5:
         message += f'  ... и еще {len(discrepancies) - 5}\n'
 
     try:
-        bot.send_message(
-            chat_id=chat_id,
-            text=message,
-            parse_mode='Markdown'
-        )
-        logger.info(
-            f'Invoice partial notification sent: chat_id={chat_id}, '
-            f'invoice_id={invoice_id}, discrepancies={len(discrepancies)}'
-        )
+        _sync_send(bot, chat_id=chat_id, text=message, parse_mode='Markdown')
         return True
-
     except Exception as e:
-        if isinstance(e, TelegramError):
-            raise  # Let decorator handle retry
-        logger.error(
-            f'Unexpected error sending invoice partial notification: '
-            f'chat_id={chat_id}, invoice_id={invoice_id}, error={e}',
-            exc_info=True
-        )
+        logger.error(f'Error sending invoice partial: {e}', exc_info=True)
         return False
 
 
-@retry_sync(retryable_exceptions=(TelegramError,))
-def send_invoice_clarification_needed(
-    chat_id: int,
-    invoice_id: int,
-    fuzzy_matches: list
-) -> bool:
-    """
-    Send alert when invoice requires supplier clarification via fuzzy matching.
-
-    Message format (Russian):
-        🔔 Требуется уточнение
-        📄 Счет #{invoice_id}
-        📝 Возможные совпадения: {fuzzy_matches}
-
-    Args:
-        chat_id: Telegram chat_id to send message to
-        invoice_id: ID of the invoice needing clarification
-        fuzzy_matches: List of fuzzy match candidates with confidence scores
-
-    Returns:
-        bool: True if message sent successfully, False otherwise
-    """
-    bot = _get_bot()
-    if not bot:
-        return False
-
-    message = (
-        f'🔔 *Требуется уточнение*\n\n'
-        f'📄 Счет №: `{invoice_id}`\n'
-        f'🔍 Найдены возможные совпадения (требуется подтверждение):\n'
-    )
-
-    for idx, match in enumerate(fuzzy_matches[:3], 1):
-        name = match.get('name', 'Unknown')
-        confidence = match.get('confidence', 0)
-        message += f'  {idx}. {name} ({confidence:.0%})\n'
-
-    if len(fuzzy_matches) > 3:
-        message += f'  ... и еще {len(fuzzy_matches) - 3}\n'
-
-    message += '\n💡 Отправьте письмо поставщику для уточнения.'
-
-    try:
-        bot.send_message(
-            chat_id=chat_id,
-            text=message,
-            parse_mode='Markdown'
-        )
-        logger.info(
-            f'Invoice clarification notification sent: chat_id={chat_id}, '
-            f'invoice_id={invoice_id}, matches={len(fuzzy_matches)}'
-        )
-        return True
-
-    except Exception as e:
-        if isinstance(e, TelegramError):
-            raise  # Let decorator handle retry
-        logger.error(
-            f'Unexpected error sending invoice clarification notification: '
-            f'chat_id={chat_id}, invoice_id={invoice_id}, error={e}',
-            exc_info=True
-        )
-        return False
-
-
-@retry_sync(retryable_exceptions=(TelegramError,))
-def send_invoice_failed(
-    chat_id: int,
-    invoice_id: int,
-    error: str
-) -> bool:
-    """
-    Send critical alert when invoice verification fails.
-
-    Message format (Russian):
-        🚨 Ошибка сверка счета
-        📄 Счет #{invoice_id}
-        ❌ Ошибка: {error}
-
-    Args:
-        chat_id: Telegram chat_id to send message to
-        invoice_id: ID of the failed invoice
-        error: Error message describing the failure
-
-    Returns:
-        bool: True if message sent successfully, False otherwise
-    """
+def send_invoice_failed(chat_id: int, invoice_id: int, error: str) -> bool:
+    """Send critical alert when invoice verification fails."""
     bot = _get_bot()
     if not bot:
         return False
@@ -458,23 +283,8 @@ def send_invoice_failed(
     )
 
     try:
-        bot.send_message(
-            chat_id=chat_id,
-            text=message,
-            parse_mode='Markdown'
-        )
-        logger.info(
-            f'Invoice failed notification sent: chat_id={chat_id}, '
-            f'invoice_id={invoice_id}'
-        )
+        _sync_send(bot, chat_id=chat_id, text=message, parse_mode='Markdown')
         return True
-
     except Exception as e:
-        if isinstance(e, TelegramError):
-            raise  # Let decorator handle retry
-        logger.error(
-            f'Unexpected error sending invoice failed notification: '
-            f'chat_id={chat_id}, invoice_id={invoice_id}, error={e}',
-            exc_info=True
-        )
+        logger.error(f'Error sending invoice failed: {e}', exc_info=True)
         return False

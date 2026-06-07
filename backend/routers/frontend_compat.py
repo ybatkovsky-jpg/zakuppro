@@ -5,16 +5,18 @@ Maps the frontend's expected API URLs to the backend's actual endpoints.
 Frontend was built with different path conventions than the backend.
 This router provides aliases so both old and new paths work.
 """
-from fastapi import APIRouter, Depends, HTTPException, status, Query
+from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Form, status, Query
 from sqlalchemy.orm import Session
 from sqlalchemy import func
 from typing import List, Optional
 from pydantic import BaseModel
 from datetime import datetime
 import logging
+import tempfile
+import os
 
 from backend.database import get_db
-from backend.models import User, StockItem, PurchaseOrder, Supplier, Project
+from backend.models import User, StockItem, PurchaseOrder, Supplier, Project, ProjectItem
 from backend.auth import get_current_active_user, get_current_user
 from backend.models import Role
 from backend.rbac import require_role, apply_ownership_filter
@@ -69,26 +71,24 @@ def list_warehouse_items(
     query = db.query(StockItem)
     if search:
         query = query.filter(StockItem.name.ilike(f"%{search}%"))
-    if category:
-        query = query.filter(StockItem.category == category)
     
     items = query.offset(skip).limit(limit).all()
     result = []
     for item in items:
+        # Use qty_total as the primary quantity field
+        qty = item.qty_total or 0
         status_val = "in_stock"
-        if item.quantity <= 0:
+        if qty <= 0:
             status_val = "out_of_stock"
-        elif item.quantity <= item.min_quantity:
-            status_val = "low_stock"
         result.append(WarehouseItemResponse(
             id=item.id,
             name=item.name,
-            sku=getattr(item, 'sku', '') or '',
-            quantity=item.quantity,
-            minQuantity=item.min_quantity,
-            unit=getattr(item, 'unit', 'шт') or 'шт',
-            category=getattr(item, 'category', '') or '',
-            price=float(item.price) if hasattr(item, 'price') and item.price else 0.0,
+            sku=item.sku or '',
+            quantity=qty,
+            minQuantity=0,  # No min_quantity column in model
+            unit="шт",
+            category="",
+            price=0.0,
             status=status_val,
             supplier="",
             lastUpdated=item.updated_at.isoformat() if item.updated_at else ""
@@ -103,23 +103,22 @@ def create_warehouse_item(
     db: Session = Depends(get_db)
 ):
     """Create a warehouse item (maps to stock-items)."""
+    qty = item_data.get("quantity", 0)
     item = StockItem(
         name=item_data.get("name", ""),
         sku=item_data.get("sku", ""),
-        quantity=item_data.get("quantity", 0),
-        min_quantity=item_data.get("minQuantity", item_data.get("min_quantity", 0)),
-        unit=item_data.get("unit", "шт"),
-        category=item_data.get("category", ""),
-        price=item_data.get("price", 0),
+        qty_total=qty,
+        qty_reserved=0,
+        qty_available=qty,
     )
     db.add(item)
     db.commit()
     db.refresh(item)
     return WarehouseItemResponse(
         id=item.id, name=item.name, sku=item.sku,
-        quantity=item.quantity, minQuantity=item.min_quantity,
-        unit=item.unit or "шт", category=item.category or "",
-        price=float(item.price) if item.price else 0.0,
+        quantity=item.qty_total, minQuantity=0,
+        unit="шт", category="",
+        price=0.0,
         status="in_stock", supplier="", lastUpdated=""
     )
 
@@ -152,12 +151,14 @@ def create_warehouse_transaction(
     qty = data.get("quantity", 0)
     
     if trans_type == "in":
-        item.quantity += qty
+        item.qty_total = (item.qty_total or 0) + qty
+        item.qty_available = (item.qty_available or 0) + qty
     elif trans_type == "out":
-        item.quantity = max(0, item.quantity - qty)
+        item.qty_total = max(0, (item.qty_total or 0) - qty)
+        item.qty_available = max(0, (item.qty_available or 0) - qty)
     
     db.commit()
-    return {"success": True, "newQuantity": item.quantity}
+    return {"success": True, "newQuantity": item.qty_total}
 
 
 @router.put("/api/warehouse/{item_id}", response_model=WarehouseItemResponse)
@@ -177,23 +178,17 @@ def update_warehouse_item(
     if "sku" in item_data:
         item.sku = item_data["sku"]
     if "quantity" in item_data:
-        item.quantity = item_data["quantity"]
-    if "minQuantity" in item_data or "min_quantity" in item_data:
-        item.min_quantity = item_data.get("minQuantity") or item_data.get("min_quantity", 0)
-    if "unit" in item_data:
-        item.unit = item_data["unit"]
-    if "category" in item_data:
-        item.category = item_data["category"]
-    if "price" in item_data:
-        item.price = item_data["price"]
+        new_qty = item_data["quantity"]
+        item.qty_total = new_qty
+        item.qty_available = new_qty - (item.qty_reserved or 0)
     
     db.commit()
     db.refresh(item)
     return WarehouseItemResponse(
         id=item.id, name=item.name, sku=item.sku,
-        quantity=item.quantity, minQuantity=item.min_quantity,
-        unit=item.unit or "шт", category=item.category or "",
-        price=float(item.price) if item.price else 0.0,
+        quantity=item.qty_total, minQuantity=0,
+        unit="шт", category="",
+        price=0.0,
         status="in_stock", supplier="", lastUpdated=item.updated_at.isoformat() if item.updated_at else ""
     )
 
@@ -262,7 +257,7 @@ def list_requests(
             createdAt=order.created_at.isoformat() if order.created_at else "",
             updatedAt=order.updated_at.isoformat() if order.updated_at else "",
             sentAt="",
-            totalAmount=float(order.total_amount) if hasattr(order, 'total_amount') and order.total_amount else 0.0
+            totalAmount=0.0
         ))
     return result
 
@@ -278,7 +273,6 @@ def create_request(
         project_id=data.get("projectId"),
         supplier_id=data.get("supplierId"),
         status=data.get("status", "draft"),
-        created_by=current_user.id,
     )
     db.add(order)
     db.commit()
@@ -367,26 +361,137 @@ def get_project_history(
         result.append({
             "id": h.id,
             "projectId": h.project_id,
-            "fromStatus": h.old_status or "",
-            "toStatus": h.new_status or "",
+            "fromStatus": h.from_status or "",
+            "toStatus": h.to_status or "",
             "changedBy": h.changed_by or "",
             "changedAt": h.changed_at.isoformat() if h.changed_at else "",
-            "comment": h.comment or ""
+            "comment": ""
         })
     return result
 
 
 # ============================================================================
-# /api/projects/upload — project file upload (stub)
+# /api/projects/upload — project file upload (IMPLEMENTED)
 # ============================================================================
 
 @router.post("/api/projects/upload")
 async def upload_project_file(
+    projectName: str = Form(""),
+    file: UploadFile = File(...),
     current_user: User = Depends(require_role([Role.OWNER, Role.MANAGER])),
     db: Session = Depends(get_db)
 ):
-    """Upload project file (stub)."""
-    return {"success": False, "message": "Функция загрузки файлов пока не реализована"}
+    """
+    Upload Excel file and create a project with items parsed from it.
+    
+    Accepts multipart form data with:
+    - projectName: optional project name (defaults to filename)
+    - file: Excel .xlsx/.xls file
+    
+    Parses the file using the same pipeline as Telegram bot:
+    Excel → pandas → markdown → DeepSeek LLM → project + items
+    """
+    # Validate file extension
+    if not file.filename or not file.filename.lower().endswith(('.xlsx', '.xls')):
+        raise HTTPException(
+            status_code=400,
+            detail="Неверный формат файла. Пожалуйста, загрузите файл Excel (.xlsx или .xls)."
+        )
+    
+    # Save uploaded file to temp location
+    try:
+        content = await file.read()
+        if len(content) == 0:
+            raise HTTPException(status_code=400, detail="Файл пуст")
+        if len(content) > 20 * 1024 * 1024:
+            raise HTTPException(status_code=400, detail="Файл слишком большой (макс. 20 МБ)")
+        
+        # Write to temp file
+        tmp_dir = tempfile.mkdtemp()
+        file_path = os.path.join(tmp_dir, file.filename)
+        with open(file_path, 'wb') as f:
+            f.write(content)
+        
+        logger.info(f"Upload: saved file to {file_path} ({len(content)} bytes)")
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Upload: failed to save file: {e}")
+        raise HTTPException(status_code=500, detail=f"Ошибка сохранения файла: {str(e)}")
+    
+    # Parse Excel and extract BOM using AI
+    try:
+        from backend.excel_parser import read_excel_file, clean_dataframe, dataframe_to_markdown
+        from backend.ai_agent import extract_bom_structure, ExtractedBOM
+        from backend.services.project_service import create_project_from_bom
+        from backend.supplier_resolver import find_or_create_supplier
+        
+        # Step 1: Parse Excel
+        df = read_excel_file(file_path)
+        df_clean = clean_dataframe(df)
+        markdown = dataframe_to_markdown(df_clean)
+        logger.info(f"Upload: parsed Excel, {len(df_clean)} rows, {len(markdown)} chars markdown")
+        
+        # Step 2: Extract BOM with AI
+        extracted = extract_bom_structure(markdown)
+        validated = ExtractedBOM.model_validate(extracted)
+        items = [item.model_dump() for item in validated.items]
+        metadata = validated.metadata.model_dump() if validated.metadata else {}
+        logger.info(f"Upload: extracted {len(items)} items from Excel")
+        
+        if not items:
+            raise HTTPException(
+                status_code=422,
+                detail="Не удалось извлечь позиции из файла. Проверьте формат таблицы."
+            )
+        
+        # Override project name if provided
+        if projectName and projectName.strip():
+            metadata['project_name'] = projectName.strip()
+        
+        # Step 3: Create project with items
+        project, items_created, reserved_count = create_project_from_bom(
+            db=db,
+            items=items,
+            metadata=metadata,
+            file_path=file_path,
+        )
+        
+        logger.info(f"Upload: created project '{project.name}' (ID: {project.id}) with {items_created} items")
+        
+        # Clean up temp file
+        try:
+            os.remove(file_path)
+            os.rmdir(tmp_dir)
+        except Exception:
+            pass
+        
+        return {
+            "success": True,
+            "project": {
+                "id": project.id,
+                "name": project.name,
+                "status": project.status,
+                "itemsCount": items_created,
+                "reservedCount": reserved_count,
+            },
+            "message": f"Проект '{project.name}' создан с {items_created} позициями"
+        }
+    
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Upload: error processing file: {e}", exc_info=True)
+        # Clean up temp file
+        try:
+            os.remove(file_path)
+            os.rmdir(tmp_dir)
+        except Exception:
+            pass
+        raise HTTPException(
+            status_code=500,
+            detail=f"Ошибка обработки файла: {str(e)[:200]}"
+        )
 
 
 # ============================================================================
@@ -600,4 +705,3 @@ def export_warehouse(
 ):
     """Export warehouse data (stub)."""
     return {"message": "Экспорт склада пока не реализован"}
-
