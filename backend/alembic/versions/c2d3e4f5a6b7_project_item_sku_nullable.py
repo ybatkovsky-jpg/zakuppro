@@ -1,6 +1,6 @@
 """Make project_items.sku nullable with server_default
 
-Revision ID: a1b2c3d4e5f6
+Revision ID: c2d3e4f5a6b7
 Revises: f7e8d9c0b1a2
 Create Date: 2026-06-07
 
@@ -10,7 +10,7 @@ import sqlalchemy as sa
 
 
 # revision identifiers, used by Alembic.
-revision = 'a1b2c3d4e5f6'
+revision = 'c2d3e4f5a6b7'
 down_revision = 'f7e8d9c0b1a2'
 branch_labels = None
 depends_on = None
