@@ -135,8 +135,7 @@ def register_user(
     
     # Create user
     from passlib.context import CryptContext
-
-_pwd_ctx = CryptContext(schemes=["sha512_crypt"], deprecated="auto")
+    _pwd_ctx = CryptContext(schemes=["sha512_crypt"], deprecated="auto")
     hashed_password = _pwd_ctx.hash(password)
     new_user = User(
         username=username,
