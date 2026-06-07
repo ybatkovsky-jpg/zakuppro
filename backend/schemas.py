@@ -97,6 +97,10 @@ class ProjectItemResponse(BaseSchema):
     status: str
     supplier_id: Optional[int] = None
     stock_item_id: Optional[int] = None
+    price: Optional[float] = None
+    unit: Optional[str] = "шт"
+    article: Optional[str] = ""
+    category: Optional[str] = ""
     project_id: int
     created_at: datetime
     updated_at: Optional[datetime] = None

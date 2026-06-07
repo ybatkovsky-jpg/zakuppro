@@ -99,7 +99,11 @@ class ProjectItem(Base):
     qty = Column(Integer, nullable=False)  # Quantity needed
     supplier_id = Column(Integer, ForeignKey("suppliers.id"), nullable=True)
     stock_item_id = Column(Integer, ForeignKey("stock_items.id"), nullable=True)
-    status = Column(String(50), nullable=False, default="К закупке")  # К закупке, Запрошено, Счет получен, Оплачено, На складе, В производстве
+    status = Column(String(50), nullable=False, default="К закупке")
+    price = Column(Numeric(12, 2), nullable=True, default=0)  # Unit price from BOM
+    unit = Column(String(20), nullable=True, server_default="шт")  # Measurement unit
+    article = Column(String(100), nullable=True, server_default="")  # Article/vendor code
+    category = Column(String(255), nullable=True, server_default="")  # Item category  # К закупке, Запрошено, Счет получен, Оплачено, На складе, В производстве
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
 

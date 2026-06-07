@@ -104,3 +104,50 @@ def get_current_user_info(
     """
     return current_user
 
+
+
+@router.post("/register", response_model=dict)
+def register_user(
+    user_data: dict,
+    current_user: User = Depends(require_role([Role.OWNER])),
+    db: Session = Depends(get_db)
+):
+    """Register a new user. Only Owner role can create new users."""
+    username = user_data.get("username")
+    password = user_data.get("password")
+    email = user_data.get("email", "")
+    role = user_data.get("role", "warehouse")
+    
+    if not username or not password:
+        raise HTTPException(status_code=400, detail="Username and password are required")
+    
+    # Check if username already exists
+    existing = db.query(User).filter(User.username == username).first()
+    if existing:
+        raise HTTPException(status_code=409, detail="Username already exists")
+    
+    # Validate role
+    valid_roles = [r.value for r in Role]
+    if role not in valid_roles:
+        raise HTTPException(status_code=400, detail=f"Invalid role. Must be one of: {valid_roles}")
+    
+    # Create user
+    from backend.auth import get_password_hash
+    hashed_password = get_password_hash(password)
+    new_user = User(
+        username=username,
+        email=email,
+        hashed_password=hashed_password,
+        role=Role(role)
+    )
+    db.add(new_user)
+    db.commit()
+    db.refresh(new_user)
+    
+    return {
+        "id": new_user.id,
+        "username": new_user.username,
+        "email": new_user.email,
+        "role": new_user.role.value,
+        "created_at": new_user.created_at.isoformat() if new_user.created_at else None
+    }

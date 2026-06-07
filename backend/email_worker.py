@@ -288,6 +288,12 @@ class EmailWorker:
 
     def poll_once(self) -> None:
         """Execute a single IMAP poll and process new emails."""
+    imap_host = os.getenv("IMAP_HOST", "")
+    imap_user = os.getenv("EMAIL_ADDRESS", "") or os.getenv("IMAP_USER", "")
+    imap_pass = os.getenv("EMAIL_PASSWORD", "") or os.getenv("IMAP_PASSWORD", "")
+    if not imap_host or not imap_user or not imap_pass:
+        logger.debug("IMAP credentials not configured, skipping poll")
+        continue
         logger.info("Starting IMAP poll...")
 
         try:

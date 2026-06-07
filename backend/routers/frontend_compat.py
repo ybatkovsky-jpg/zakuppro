@@ -23,6 +23,52 @@ from backend.models import Role
 from backend.rbac import require_role, apply_ownership_filter
 
 logger = logging.getLogger(__name__)
+
+# ============================================================================
+# Status mapping: Russian (DB) <-> English (Frontend)
+# ============================================================================
+
+PROJECT_STATUS_RU_TO_EN = {
+    "Проектирование": "new",
+    "Закупки": "processing",
+    "В производстве": "requested",
+    "Монтаж": "delivered",
+}
+
+PROJECT_STATUS_EN_TO_RU = {v: k for k, v in PROJECT_STATUS_RU_TO_EN.items()}
+
+ITEM_STATUS_RU_TO_EN = {
+    "К закупке": "pending",
+    "Запрошено": "requested",
+    "Счет получен": "invoiced",
+    "Оплачено": "paid",
+    "На складе": "delivered",
+    "В производстве": "ordered",
+}
+
+ITEM_STATUS_EN_TO_RU = {v: k for k, v in ITEM_STATUS_RU_TO_EN.items()}
+
+
+def map_project_status(status: str) -> str:
+    """Convert Russian status to English for frontend."""
+    return PROJECT_STATUS_RU_TO_EN.get(status, status)
+
+
+def map_project_status_to_ru(status: str) -> str:
+    """Convert English status from frontend to Russian for DB."""
+    return PROJECT_STATUS_EN_TO_RU.get(status, status)
+
+
+def map_item_status(status: str) -> str:
+    """Convert Russian item status to English for frontend."""
+    return ITEM_STATUS_RU_TO_EN.get(status, status)
+
+
+def map_item_status_to_ru(status: str) -> str:
+    """Convert English item status from frontend to Russian for DB."""
+    return ITEM_STATUS_EN_TO_RU.get(status, status)
+
+
 router = APIRouter(tags=["frontend-compat"])
 
 
@@ -42,7 +88,7 @@ class WarehouseItemResponse(BaseModel):
     status: str = "in_stock"
     supplier: str = ""
     lastUpdated: str = ""
-    
+
     model_config = {"from_attributes": True}
 
 
@@ -55,7 +101,7 @@ class WarehouseTransactionResponse(BaseModel):
     date: str = ""
     note: str = ""
     userName: str = ""
-    
+
     model_config = {"from_attributes": True}
 
 
@@ -72,7 +118,7 @@ def list_warehouse_items(
     query = db.query(StockItem)
     if search:
         query = query.filter(StockItem.name.ilike(f"%{search}%"))
-    
+
     items = query.offset(skip).limit(limit).all()
     result = []
     for item in items:
@@ -81,6 +127,9 @@ def list_warehouse_items(
         status_val = "in_stock"
         if qty <= 0:
             status_val = "out_of_stock"
+        # If item has a Russian status in DB, map it to English
+        if hasattr(item, "status") and item.status:
+            status_val = map_item_status(item.status)
         result.append(WarehouseItemResponse(
             id=item.id,
             name=item.name,
@@ -143,21 +192,21 @@ def create_warehouse_transaction(
     item_id = data.get("itemId") or data.get("item_id")
     if not item_id:
         raise HTTPException(status_code=400, detail="itemId is required")
-    
+
     item = db.query(StockItem).filter(StockItem.id == item_id).first()
     if not item:
         raise HTTPException(status_code=404, detail="Item not found")
-    
+
     trans_type = data.get("type", "in")
     qty = data.get("quantity", 0)
-    
+
     if trans_type == "in":
         item.qty_total = (item.qty_total or 0) + qty
         item.qty_available = (item.qty_available or 0) + qty
     elif trans_type == "out":
         item.qty_total = max(0, (item.qty_total or 0) - qty)
         item.qty_available = max(0, (item.qty_available or 0) - qty)
-    
+
     db.commit()
     return {"success": True, "newQuantity": item.qty_total}
 
@@ -173,7 +222,7 @@ def update_warehouse_item(
     item = db.query(StockItem).filter(StockItem.id == item_id).first()
     if not item:
         raise HTTPException(status_code=404, detail="Item not found")
-    
+
     if "name" in item_data:
         item.name = item_data["name"]
     if "sku" in item_data:
@@ -182,7 +231,7 @@ def update_warehouse_item(
         new_qty = item_data["quantity"]
         item.qty_total = new_qty
         item.qty_available = new_qty - (item.qty_reserved or 0)
-    
+
     db.commit()
     db.refresh(item)
     return WarehouseItemResponse(
@@ -224,7 +273,7 @@ class RequestResponse(BaseModel):
     updatedAt: str = ""
     sentAt: str = ""
     totalAmount: float = 0.0
-    
+
     model_config = {"from_attributes": True}
 
 
@@ -243,7 +292,7 @@ def list_requests(
         query = query.filter(PurchaseOrder.supplier_id == supplierId)
     if projectId:
         query = query.filter(PurchaseOrder.project_id == projectId)
-    
+
     orders = query.offset(skip).limit(limit).all()
     result = []
     for order in orders:
@@ -292,12 +341,12 @@ def update_request(
     order = db.query(PurchaseOrder).filter(PurchaseOrder.id == request_id).first()
     if not order:
         raise HTTPException(status_code=404, detail="Request not found")
-    
+
     if "status" in data:
         order.status = data["status"]
     if "supplierId" in data:
         order.supplier_id = data["supplierId"]
-    
+
     db.commit()
     return {"id": order.id, "status": order.status}
 
@@ -332,13 +381,19 @@ def update_project_status(
     project = db.query(Project).filter(Project.id == project_id).first()
     if not project:
         raise HTTPException(status_code=404, detail="Project not found")
-    
+
     new_status = data.get("status")
     if new_status:
-        project.status = new_status
+        # Translate English status from frontend to Russian for DB
+        project.status = map_project_status_to_ru(new_status)
         db.commit()
-    
-    return {"id": project.id, "status": project.status, "projectId": project.id}
+
+    # Return English status to frontend
+    return {
+        "id": project.id,
+        "status": map_project_status(project.status),
+        "projectId": project.id
+    }
 
 
 # ============================================================================
@@ -356,14 +411,14 @@ def get_project_history(
     history = db.query(ProjectStatusHistory).filter(
         ProjectStatusHistory.project_id == project_id
     ).order_by(ProjectStatusHistory.changed_at.desc()).all()
-    
+
     result = []
     for h in history:
         result.append({
             "id": h.id,
             "projectId": h.project_id,
-            "fromStatus": h.from_status or "",
-            "toStatus": h.to_status or "",
+            "fromStatus": map_project_status(h.from_status or ""),
+            "toStatus": map_project_status(h.to_status or ""),
             "changedBy": h.changed_by or "",
             "changedAt": h.changed_at.isoformat() if h.changed_at else "",
             "comment": ""
@@ -386,11 +441,11 @@ async def upload_project_file(
 ):
     """
     Upload Excel file and create a project with items parsed from it.
-    
+
     Accepts multipart form data with:
     - projectName: optional project name (defaults to filename)
     - file: Excel .xlsx/.xls file
-    
+
     Parses the file using the same pipeline as Telegram bot:
     Excel → pandas → markdown → DeepSeek LLM → project + items
     """
@@ -400,7 +455,7 @@ async def upload_project_file(
             status_code=400,
             detail="Неверный формат файла. Пожалуйста, загрузите файл Excel (.xlsx или .xls)."
         )
-    
+
     # Save uploaded file to temp location
     try:
         content = await file.read()
@@ -408,57 +463,68 @@ async def upload_project_file(
             raise HTTPException(status_code=400, detail="Файл пуст")
         if len(content) > 20 * 1024 * 1024:
             raise HTTPException(status_code=400, detail="Файл слишком большой (макс. 20 МБ)")
-        
+
         # Write to temp file
         tmp_dir = tempfile.mkdtemp()
         file_path = os.path.join(tmp_dir, file.filename)
         with open(file_path, 'wb') as f:
             f.write(content)
-        
+
         logger.info(f"Upload: saved file to {file_path} ({len(content)} bytes)")
     except HTTPException:
         raise
     except Exception as e:
         logger.error(f"Upload: failed to save file: {e}")
         raise HTTPException(status_code=500, detail=f"Ошибка сохранения файла: {str(e)}")
-    
+
     # Parse Excel and extract BOM using AI
     try:
         from backend.excel_parser import read_excel_file, clean_dataframe, dataframe_to_markdown
         from backend.ai_agent import extract_bom_structure, ExtractedBOM
         from backend.services.project_service import create_project_from_bom
         from backend.supplier_resolver import find_or_create_supplier
-        
+
         # Step 1: Parse Excel
         df = read_excel_file(file_path)
         df_clean = clean_dataframe(df)
         markdown = dataframe_to_markdown(df_clean)
         logger.info(f"Upload: parsed Excel, {len(df_clean)} rows, {len(markdown)} chars markdown")
-        
+
         # Step 2: Extract BOM with AI
         extracted = extract_bom_structure(markdown)
         validated = ExtractedBOM.model_validate(extracted)
         items = [item.model_dump() for item in validated.items]
         metadata = validated.metadata.model_dump() if validated.metadata else {}
         logger.info(f"Upload: extracted {len(items)} items from Excel")
-        
+
         if not items:
             raise HTTPException(
                 status_code=422,
                 detail="Не удалось извлечь позиции из файла. Проверьте формат таблицы."
             )
-        
+
         # Override project name if provided
         if projectName and projectName.strip():
             metadata['project_name'] = projectName.strip()
-        
+
         # Step 3: Handle based on mode
+        # Auto-dedup: check for existing project with same name when mode="new"
+        if mode == "new":
+            project_name_check = metadata.get('project_name', file.filename or '').strip()
+            if project_name_check:
+                existing = db.query(Project).filter(Project.name == project_name_check).first()
+                if existing:
+                    raise HTTPException(
+                        status_code=409,
+                        detail=f"Проект с именем '{project_name_check}' уже существует (ID: {existing.id}, статус: {existing.status}). Используйте режим слияния или перезаписи."
+                    )
+
         if mode == "merge" and targetProjectId:
             # Merge: add new items to existing project
             existing_project = db.query(Project).filter(Project.id == targetProjectId).first()
             if not existing_project:
                 raise HTTPException(status_code=404, detail=f"Проект с ID {targetProjectId} не найден")
-            
+
             # Add items to existing project
             items_created = 0
             for item in items:
@@ -467,7 +533,7 @@ async def upload_project_file(
                 if supplier_name:
                     from backend.supplier_resolver import find_or_create_supplier
                     supplier_id = find_or_create_supplier(db, supplier_name)
-                
+
                 project_item = ProjectItem(
                     project_id=existing_project.id,
                     name=item.get('name', ''),
@@ -475,32 +541,36 @@ async def upload_project_file(
                     qty=item.get('qty', 0),
                     supplier_id=supplier_id,
                     status='К закупке',
+                    price=item.get('price'),
+                    unit=item.get('unit', 'шт'),
+                    article=item.get('article') or item.get('sku') or '',
+                    category=item.get('category', ''),
                 )
                 db.add(project_item)
                 items_created += 1
-            
+
             db.commit()
             stock_service.reserve_for_project(existing_project.id, db)
             db.commit()
-            
+
             reserved_count = db.query(ProjectItem).filter(
                 ProjectItem.project_id == existing_project.id,
                 ProjectItem.stock_item_id.isnot(None),
             ).count()
-            
+
             project = existing_project
             logger.info(f"Upload: merged {items_created} items into project '{project.name}' (ID: {project.id})")
-        
+
         elif mode == "overwrite" and targetProjectId:
             # Overwrite: delete existing items and add new ones
             existing_project = db.query(Project).filter(Project.id == targetProjectId).first()
             if not existing_project:
                 raise HTTPException(status_code=404, detail=f"Проект с ID {targetProjectId} не найден")
-            
+
             # Delete existing items
             db.query(ProjectItem).filter(ProjectItem.project_id == existing_project.id).delete()
             db.commit()
-            
+
             # Add new items
             items_created = 0
             for item in items:
@@ -509,7 +579,7 @@ async def upload_project_file(
                 if supplier_name:
                     from backend.supplier_resolver import find_or_create_supplier
                     supplier_id = find_or_create_supplier(db, supplier_name)
-                
+
                 project_item = ProjectItem(
                     project_id=existing_project.id,
                     name=item.get('name', ''),
@@ -517,27 +587,31 @@ async def upload_project_file(
                     qty=item.get('qty', 0),
                     supplier_id=supplier_id,
                     status='К закупке',
+                    price=item.get('price'),
+                    unit=item.get('unit', 'шт'),
+                    article=item.get('article') or item.get('sku') or '',
+                    category=item.get('category', ''),
                 )
                 db.add(project_item)
                 items_created += 1
-            
+
             db.commit()
             # Update project name if provided
             if projectName and projectName.strip():
                 existing_project.name = projectName.strip()
                 db.commit()
-            
+
             stock_service.reserve_for_project(existing_project.id, db)
             db.commit()
-            
+
             reserved_count = db.query(ProjectItem).filter(
                 ProjectItem.project_id == existing_project.id,
                 ProjectItem.stock_item_id.isnot(None),
             ).count()
-            
+
             project = existing_project
             logger.info(f"Upload: overwrote project '{project.name}' (ID: {project.id}) with {items_created} items")
-        
+
         else:
             # New project (default)
             project, items_created, reserved_count = create_project_from_bom(
@@ -548,26 +622,26 @@ async def upload_project_file(
                 owner_id=current_user.id,
             )
             logger.info(f"Upload: created project '{project.name}' (ID: {project.id}) with {items_created} items")
-        
+
         # Clean up temp file
         try:
             os.remove(file_path)
             os.rmdir(tmp_dir)
         except Exception:
             pass
-        
+
         return {
             "success": True,
             "project": {
                 "id": project.id,
                 "name": project.name,
-                "status": project.status,
+                "status": map_project_status(project.status),
                 "itemsCount": items_created,
                 "reservedCount": reserved_count,
             },
             "message": f"Проект '{project.name}' создан с {items_created} позициями"
         }
-    
+
     except HTTPException:
         raise
     except Exception as e:
@@ -774,12 +848,12 @@ def get_pipeline_analytics(
     """Get pipeline analytics (stub)."""
     return {
         "stages": [
-            {"name": "Новый", "count": 0, "amount": 0.0},
-            {"name": "В обработке", "count": 0, "amount": 0.0},
-            {"name": "Запрошен", "count": 0, "amount": 0.0},
-            {"name": "Счёт получен", "count": 0, "amount": 0.0},
-            {"name": "Оплачен", "count": 0, "amount": 0.0},
-            {"name": "Доставлен", "count": 0, "amount": 0.0}
+            {"name": "New", "count": 0, "amount": 0.0},
+            {"name": "Processing", "count": 0, "amount": 0.0},
+            {"name": "Requested", "count": 0, "amount": 0.0},
+            {"name": "Invoiced", "count": 0, "amount": 0.0},
+            {"name": "Paid", "count": 0, "amount": 0.0},
+            {"name": "Delivered", "count": 0, "amount": 0.0}
         ]
     }
 
