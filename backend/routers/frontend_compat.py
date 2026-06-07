@@ -16,8 +16,8 @@ import tempfile
 import os
 
 from backend.database import get_db
-from backend.models import Project, ProjectItem, User
-from backend.services import stock_service, StockItem, PurchaseOrder, Supplier, Project, ProjectItem
+from backend.models import Project, ProjectItem, User, Supplier, StockItem, PurchaseOrder
+from backend.services import stock_service
 from backend.auth import get_current_active_user, get_current_user
 from backend.models import Role
 from backend.rbac import require_role, apply_ownership_filter
