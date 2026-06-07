@@ -144,6 +144,87 @@ def project_readiness(
     return results
 
 
+
+
+@router.get("/check-duplicate")
+def check_duplicate_project(
+    name: str,
+    current_user: User = Depends(require_role([Role.OWNER, Role.MANAGER])),
+    db: Session = Depends(get_db)
+):
+    """
+    Check if a project with a similar name already exists.
+
+    Searches for projects whose name contains the query string (case-insensitive).
+    Used before uploading a new project to warn about potential duplicates.
+
+    Args:
+        name: Project name to check (e.g., "11ПМ26")
+        current_user: Authenticated user
+        db: Database session
+
+    Returns:
+        Dictionary with 'found' (bool) and 'projects' (list of matching projects)
+    """
+    import re
+
+    if not name or len(name.strip()) < 3:
+        return {"found": False, "projects": []}
+
+    # Extract key identifiers from the name (numbers, letters sequences)
+    # e.g., "Смета закуп кухня 11ПМ26" → search for "11ПМ26" or "11ПМ"
+    clean_name = name.strip()
+
+    # Build search: look for projects containing the key part of the name
+    query = db.query(Project)
+    query = apply_ownership_filter(query, Project, current_user.id, current_user.role)
+
+    # Try exact match first
+    exact_matches = query.filter(Project.name == clean_name).all()
+
+    # Then try partial match (ILIKE)
+    partial_matches = query.filter(
+        Project.name.ilike(f"%{clean_name}%"),
+        Project.id.notin_([p.id for p in exact_matches]) if exact_matches else True
+    ).all()
+
+    # Also extract alphanumeric key from name and search by it
+    # e.g., "11ПМ26" from "Смета закуп кухня 11ПМ26"
+    key_parts = re.findall(r'[A-Za-zА-Яа-яЁё]*\d+[A-Za-zА-Яа-яЁё]*', clean_name)
+    key_matches = []
+    for key in key_parts:
+        if len(key) >= 3:
+            key_results = query.filter(
+                Project.name.ilike(f"%{key}%"),
+                Project.id.notin_([p.id for p in exact_matches + partial_matches])
+            ).all()
+            key_matches.extend(key_results)
+
+    all_matches = exact_matches + partial_matches + key_matches
+    # Deduplicate by id
+    seen = set()
+    unique_matches = []
+    for p in all_matches:
+        if p.id not in seen:
+            seen.add(p.id)
+            unique_matches.append(p)
+
+    result_projects = []
+    for p in unique_matches:
+        result_projects.append({
+            "id": p.id,
+            "name": p.name,
+            "status": p.status,
+            "items_count": len(p.items) if hasattr(p, 'items') and p.items else 0,
+            "created_at": p.created_at.isoformat() if p.created_at else "",
+        })
+
+    return {
+        "found": len(result_projects) > 0,
+        "projects": result_projects,
+    }
+
+
 @router.get("/{project_id}", response_model=ProjectResponse)
 def get_project(
     project_id: int,

@@ -689,11 +689,36 @@ export function Projects() {
     },
   })
 
+  // Duplicate check state
+  const [duplicateCheck, setDuplicateCheck] = useState<{ found: boolean; projects: any[] } | null>(null)
+  const [uploadMode, setUploadMode] = useState<'new' | 'merge' | 'overwrite'>('new')
+  const [targetProjectId, setTargetProjectId] = useState<number | null>(null)
+
+  const checkDuplicateProject = async (projectName: string) => {
+    if (!projectName || projectName.trim().length < 3) {
+      setDuplicateCheck(null)
+      return
+    }
+    try {
+      const res = await authFetch(`/api/projects/check-duplicate?name=${encodeURIComponent(projectName)}`)
+      if (res.ok) {
+        const data = await res.json()
+        setDuplicateCheck(data)
+      }
+    } catch {
+      // Silently ignore check errors
+    }
+  }
+
   const uploadMutation = useMutation({
-    mutationFn: async (data: { projectName: string; file: File }) => {
+    mutationFn: async (data: { projectName: string; file: File; mode: 'new' | 'merge' | 'overwrite'; targetProjectId?: number | null }) => {
       const formData = new FormData()
       formData.append('file', data.file)
       formData.append('projectName', data.projectName)
+      formData.append('mode', data.mode)
+      if (data.targetProjectId) {
+        formData.append('targetProjectId', String(data.targetProjectId))
+      }
       const res = await authFetch('/api/projects/upload', {
         method: 'POST',
         body: formData,
@@ -708,6 +733,9 @@ export function Projects() {
       queryClient.invalidateQueries({ queryKey: ['projects'] })
       setUploadOpen(false)
       resetUploadForm()
+      setDuplicateCheck(null)
+      setUploadMode('new')
+      setTargetProjectId(null)
       toast({ title: 'Проект загружен из Excel' })
     },
     onError: (err: Error) => {
@@ -790,7 +818,19 @@ export function Projects() {
     uploadMutation.mutate({
       projectName: uploadProjectName.trim(),
       file: uploadFile,
+      mode: uploadMode,
+      targetProjectId: targetProjectId,
     })
+  }
+
+  // Debounced duplicate check on project name change
+  const uploadNameTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  function handleUploadNameChange(name: string) {
+    setUploadProjectName(name)
+    if (uploadNameTimeoutRef.current) clearTimeout(uploadNameTimeoutRef.current)
+    uploadNameTimeoutRef.current = setTimeout(() => {
+      checkDuplicateProject(name)
+    }, 500)
   }
 
   function formatDate(dateStr: string) {
@@ -930,6 +970,51 @@ export function Projects() {
                         rows={3}
                       />
                     </div>
+                    {/* Duplicate check warning */}
+                    {duplicateCheck?.found && duplicateCheck.projects.length > 0 && (
+                      <div className="rounded-lg border border-amber-200 bg-amber-50 p-3 space-y-2">
+                        <div className="flex items-start gap-2">
+                          <AlertTriangle className="h-4 w-4 text-amber-600 mt-0.5 shrink-0" />
+                          <div className="text-sm">
+                            <p className="font-medium text-amber-800">Найден похожий проект:</p>
+                            {duplicateCheck.projects.map((p: any) => (
+                              <p key={p.id} className="text-amber-700">
+                                «{p.name}» — {p.items_count} поз., статус: {p.status}
+                              </p>
+                            ))}
+                          </div>
+                        </div>
+                        <div className="grid grid-cols-3 gap-2 mt-2">
+                          <button
+                            type="button"
+                            className={`text-xs px-2 py-1.5 rounded border transition-colors ${uploadMode === 'new' ? 'border-primary bg-primary/10 text-primary' : 'border-gray-200 hover:border-gray-300'}`}
+                            onClick={() => { setUploadMode('new'); setTargetProjectId(null) }}
+                          >
+                            Новый проект
+                          </button>
+                          <button
+                            type="button"
+                            className={`text-xs px-2 py-1.5 rounded border transition-colors ${uploadMode === 'merge' ? 'border-primary bg-primary/10 text-primary' : 'border-gray-200 hover:border-gray-300'}`}
+                            onClick={() => { setUploadMode('merge'); setTargetProjectId(duplicateCheck.projects[0]?.id) }}
+                          >
+                            Добавить позиции
+                          </button>
+                          <button
+                            type="button"
+                            className={`text-xs px-2 py-1.5 rounded border transition-colors ${uploadMode === 'overwrite' ? 'border-primary bg-primary/10 text-primary' : 'border-gray-200 hover:border-gray-300'}`}
+                            onClick={() => { setUploadMode('overwrite'); setTargetProjectId(duplicateCheck.projects[0]?.id) }}
+                          >
+                            Перезаписать
+                          </button>
+                        </div>
+                        {uploadMode === 'merge' && (
+                          <p className="text-xs text-amber-600">Новые позиции будут добавлены к существующему проекту</p>
+                        )}
+                        {uploadMode === 'overwrite' && (
+                          <p className="text-xs text-red-600">Все позиции существующего проекта будут заменены новыми</p>
+                        )}
+                      </div>
+                    )}
                   </div>
                   <DialogFooter>
                     <Button type="button" variant="outline" onClick={() => { setCreateOpen(false); resetCreateForm() }}>
@@ -969,7 +1054,7 @@ export function Projects() {
                         id="upload-name"
                         placeholder="Название проекта"
                         value={uploadProjectName}
-                        onChange={(e) => setUploadProjectName(e.target.value)}
+                        onChange={(e) => handleUploadNameChange(e.target.value)}
                         required
                       />
                     </div>
@@ -989,6 +1074,51 @@ export function Projects() {
                         </p>
                       )}
                     </div>
+                    {/* Duplicate check warning */}
+                    {duplicateCheck?.found && duplicateCheck.projects.length > 0 && (
+                      <div className="rounded-lg border border-amber-200 bg-amber-50 p-3 space-y-2">
+                        <div className="flex items-start gap-2">
+                          <AlertTriangle className="h-4 w-4 text-amber-600 mt-0.5 shrink-0" />
+                          <div className="text-sm">
+                            <p className="font-medium text-amber-800">Найден похожий проект:</p>
+                            {duplicateCheck.projects.map((p: any) => (
+                              <p key={p.id} className="text-amber-700">
+                                «{p.name}» — {p.items_count} поз., статус: {p.status}
+                              </p>
+                            ))}
+                          </div>
+                        </div>
+                        <div className="grid grid-cols-3 gap-2 mt-2">
+                          <button
+                            type="button"
+                            className={`text-xs px-2 py-1.5 rounded border transition-colors ${uploadMode === 'new' ? 'border-primary bg-primary/10 text-primary' : 'border-gray-200 hover:border-gray-300'}`}
+                            onClick={() => { setUploadMode('new'); setTargetProjectId(null) }}
+                          >
+                            Новый проект
+                          </button>
+                          <button
+                            type="button"
+                            className={`text-xs px-2 py-1.5 rounded border transition-colors ${uploadMode === 'merge' ? 'border-primary bg-primary/10 text-primary' : 'border-gray-200 hover:border-gray-300'}`}
+                            onClick={() => { setUploadMode('merge'); setTargetProjectId(duplicateCheck.projects[0]?.id) }}
+                          >
+                            Добавить позиции
+                          </button>
+                          <button
+                            type="button"
+                            className={`text-xs px-2 py-1.5 rounded border transition-colors ${uploadMode === 'overwrite' ? 'border-primary bg-primary/10 text-primary' : 'border-gray-200 hover:border-gray-300'}`}
+                            onClick={() => { setUploadMode('overwrite'); setTargetProjectId(duplicateCheck.projects[0]?.id) }}
+                          >
+                            Перезаписать
+                          </button>
+                        </div>
+                        {uploadMode === 'merge' && (
+                          <p className="text-xs text-amber-600">Новые позиции будут добавлены к существующему проекту</p>
+                        )}
+                        {uploadMode === 'overwrite' && (
+                          <p className="text-xs text-red-600">Все позиции существующего проекта будут заменены новыми</p>
+                        )}
+                      </div>
+                    )}
                   </div>
                   <DialogFooter>
                     <Button type="button" variant="outline" onClick={() => { setUploadOpen(false); resetUploadForm() }}>

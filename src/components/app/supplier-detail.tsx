@@ -329,7 +329,27 @@ export function SupplierDetail() {
       if (!selectedSupplierId) throw new Error('No supplier ID')
       const res = await authFetch(`/api/suppliers/${selectedSupplierId}`)
       if (!res.ok) throw new Error('Ошибка загрузки данных поставщика')
-      return res.json()
+      const data = await res.json()
+      // Map API response to frontend SupplierDetailData shape with safe defaults
+      let requisites: Record<string, string> = {}
+      try {
+        if (data.requisites) {
+          requisites = typeof data.requisites === 'string' ? JSON.parse(data.requisites) : data.requisites
+        }
+      } catch { /* ignore parse errors */ }
+      return {
+        id: String(data.id),
+        name: data.name || '',
+        email: data.email || '',
+        phone: requisites.phone || '',
+        contactPerson: requisites.contactPerson || '',
+        address: requisites.address || '',
+        notes: requisites.notes || '',
+        createdAt: data.created_at || new Date().toISOString(),
+        updatedAt: data.updated_at || '',
+        projectItems: data.projectItems || [],
+        _count: data._count || { purchaseRequests: 0, invoices: 0 },
+      }
     },
     enabled: !!selectedSupplierId,
   })
@@ -341,7 +361,7 @@ export function SupplierDetail() {
     queryFn: async () => {
       if (!selectedSupplierId) return []
       const res = await authFetch(`/api/requests?supplierId=${selectedSupplierId}`)
-      if (!res.ok) throw new Error('Ошибка загрузки запросов')
+      if (!res.ok) return []
       return res.json()
     },
     enabled: !!selectedSupplierId,
@@ -352,10 +372,12 @@ export function SupplierDetail() {
   } = useQuery<Invoice[]>({
     queryKey: ['supplier-invoices', selectedSupplierId],
     queryFn: async () => {
-      const res = await authFetch('/api/invoices')
-      if (!res.ok) throw new Error('Ошибка загрузки счетов')
-      const allInvoices: Invoice[] = await res.json()
-      return allInvoices.filter((inv) => inv.supplier.id === selectedSupplierId)
+      try {
+        const res = await authFetch('/api/invoices')
+        if (!res.ok) return []
+        const allInvoices: any[] = await res.json()
+        return allInvoices.filter((inv: any) => inv.supplier && inv.supplier.id === selectedSupplierId)
+      } catch { return [] }
     },
     enabled: !!selectedSupplierId,
   })
@@ -367,7 +389,7 @@ export function SupplierDetail() {
     queryKey: ['analytics-suppliers'],
     queryFn: async () => {
       const res = await authFetch('/api/analytics/suppliers')
-      if (!res.ok) throw new Error('Ошибка загрузки аналитики')
+      if (!res.ok) return []
       return res.json()
     },
   })

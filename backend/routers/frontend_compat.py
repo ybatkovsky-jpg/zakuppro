@@ -16,7 +16,8 @@ import tempfile
 import os
 
 from backend.database import get_db
-from backend.models import User, StockItem, PurchaseOrder, Supplier, Project, ProjectItem
+from backend.models import Project, ProjectItem, User
+from backend.services import stock_service, StockItem, PurchaseOrder, Supplier, Project, ProjectItem
 from backend.auth import get_current_active_user, get_current_user
 from backend.models import Role
 from backend.rbac import require_role, apply_ownership_filter
@@ -377,6 +378,8 @@ def get_project_history(
 @router.post("/api/projects/upload")
 async def upload_project_file(
     projectName: str = Form(""),
+    mode: str = Form("new"),  # "new", "merge", "overwrite"
+    targetProjectId: int = Form(None),  # For merge/overwrite mode
     file: UploadFile = File(...),
     current_user: User = Depends(require_role([Role.OWNER, Role.MANAGER])),
     db: Session = Depends(get_db)
@@ -449,16 +452,102 @@ async def upload_project_file(
         if projectName and projectName.strip():
             metadata['project_name'] = projectName.strip()
         
-        # Step 3: Create project with items
-        project, items_created, reserved_count = create_project_from_bom(
-            db=db,
-            items=items,
-            metadata=metadata,
-            file_path=file_path,
-            owner_id=current_user.id,
-        )
+        # Step 3: Handle based on mode
+        if mode == "merge" and targetProjectId:
+            # Merge: add new items to existing project
+            existing_project = db.query(Project).filter(Project.id == targetProjectId).first()
+            if not existing_project:
+                raise HTTPException(status_code=404, detail=f"Проект с ID {targetProjectId} не найден")
+            
+            # Add items to existing project
+            items_created = 0
+            for item in items:
+                supplier_name = item.get('supplier')
+                supplier_id = None
+                if supplier_name:
+                    from backend.supplier_resolver import find_or_create_supplier
+                    supplier_id = find_or_create_supplier(db, supplier_name)
+                
+                project_item = ProjectItem(
+                    project_id=existing_project.id,
+                    name=item.get('name', ''),
+                    sku=item.get('sku') or '',
+                    qty=item.get('qty', 0),
+                    supplier_id=supplier_id,
+                    status='К закупке',
+                )
+                db.add(project_item)
+                items_created += 1
+            
+            db.commit()
+            stock_service.reserve_for_project(existing_project.id, db)
+            db.commit()
+            
+            reserved_count = db.query(ProjectItem).filter(
+                ProjectItem.project_id == existing_project.id,
+                ProjectItem.stock_item_id.isnot(None),
+            ).count()
+            
+            project = existing_project
+            logger.info(f"Upload: merged {items_created} items into project '{project.name}' (ID: {project.id})")
         
-        logger.info(f"Upload: created project '{project.name}' (ID: {project.id}) with {items_created} items")
+        elif mode == "overwrite" and targetProjectId:
+            # Overwrite: delete existing items and add new ones
+            existing_project = db.query(Project).filter(Project.id == targetProjectId).first()
+            if not existing_project:
+                raise HTTPException(status_code=404, detail=f"Проект с ID {targetProjectId} не найден")
+            
+            # Delete existing items
+            db.query(ProjectItem).filter(ProjectItem.project_id == existing_project.id).delete()
+            db.commit()
+            
+            # Add new items
+            items_created = 0
+            for item in items:
+                supplier_name = item.get('supplier')
+                supplier_id = None
+                if supplier_name:
+                    from backend.supplier_resolver import find_or_create_supplier
+                    supplier_id = find_or_create_supplier(db, supplier_name)
+                
+                project_item = ProjectItem(
+                    project_id=existing_project.id,
+                    name=item.get('name', ''),
+                    sku=item.get('sku') or '',
+                    qty=item.get('qty', 0),
+                    supplier_id=supplier_id,
+                    status='К закупке',
+                )
+                db.add(project_item)
+                items_created += 1
+            
+            db.commit()
+            # Update project name if provided
+            if projectName and projectName.strip():
+                existing_project.name = projectName.strip()
+                db.commit()
+            
+            stock_service.reserve_for_project(existing_project.id, db)
+            db.commit()
+            
+            reserved_count = db.query(ProjectItem).filter(
+                ProjectItem.project_id == existing_project.id,
+                ProjectItem.stock_item_id.isnot(None),
+            ).count()
+            
+            project = existing_project
+            logger.info(f"Upload: overwrote project '{project.name}' (ID: {project.id}) with {items_created} items")
+        
+        else:
+            # New project (default)
+            project, items_created, reserved_count = create_project_from_bom(
+                db=db,
+                items=items,
+                metadata=metadata,
+                file_path=file_path,
+                owner_id=current_user.id,
+            )
+            logger.info(f"Upload: created project '{project.name}' (ID: {project.id}) with {items_created} items")
         
         # Clean up temp file
         try:

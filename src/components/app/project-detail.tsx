@@ -989,7 +989,33 @@ export function ProjectDetail() {
     queryFn: async () => {
       const res = await authFetch(`/api/projects/${selectedProjectId}`)
       if (!res.ok) throw new Error('Не удалось загрузить проект')
-      return res.json()
+      const data = await res.json()
+      // Map API response to frontend ProjectDetail shape with safe defaults
+      return {
+        id: String(data.id),
+        name: data.name || '',
+        description: data.client || '',
+        status: data.status || 'Проектирование',
+        fileName: '',
+        customerName: data.client || '',
+        createdAt: data.created_at || new Date().toISOString(),
+        updatedAt: data.updated_at || '',
+        items: (data.items || []).map((item: any) => ({
+          id: String(item.id),
+          name: item.name || '',
+          sku: item.sku || '',
+          qty: item.qty || 0,
+          status: item.status || 'К закупке',
+          supplierId: item.supplier_id ? String(item.supplier_id) : null,
+          stockItemId: item.stock_item_id ? String(item.stock_item_id) : null,
+          projectId: String(item.project_id),
+          createdAt: item.created_at || '',
+          updatedAt: item.updated_at || '',
+        })),
+        purchaseRequests: data.purchaseRequests || [],
+        invoices: data.invoices || [],
+        statusHistory: data.statusHistory || [],
+      }
     },
     enabled: !!selectedProjectId,
   })
