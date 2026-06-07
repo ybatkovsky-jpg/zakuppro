@@ -131,9 +131,12 @@ async def handle_document(update: Update, context: ContextTypes.DEFAULT_TYPE) ->
             f'chat_id={chat_id}, error={e}',
             exc_info=True
         )
+        error_detail = str(e)[:200]
         if update.effective_message:
             await update.effective_message.reply_text(
                 f'❌ Ошибка обработки файла.\n\n'
+                f'📄 Файл: {file_name}\n'
+                f'⚠️ Ошибка: {error_detail}\n\n'
                 f'Пожалуйста, попробуйте ещё раз или обратитесь в поддержку.'
             )
 

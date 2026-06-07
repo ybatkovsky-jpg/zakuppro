@@ -119,6 +119,63 @@ def send_completion_message(
 
 
 @retry_sync(retryable_exceptions=(TelegramError,))
+def send_processing_error(
+    chat_id: int,
+    error_message: str,
+) -> bool:
+    """
+    Send processing error message to the user who uploaded a file.
+
+    Called from Celery task failure handler so the user gets a clear
+    notification instead of silence when their file processing fails.
+
+    Message format (Russian):
+        ❌ Ошибка обработки файла
+        📄 Ошибка: {error_message}
+
+    Args:
+        chat_id: Telegram chat_id to send message to
+        error_message: Short error description
+
+    Returns:
+        bool: True if message sent successfully, False otherwise
+    """
+    bot = _get_bot()
+    if not bot:
+        return False
+
+    # Truncate error message to avoid Telegram message length limit
+    display_error = error_message[:500] if len(error_message) > 500 else error_message
+
+    message = (
+        f'❌ *Ошибка обработки файла*\n\n'
+        f'Ваш файл не удалось обработать.\n\n'
+        f'📄 Ошибка:\n```\n{display_error}\n```\n\n'
+        f'Пожалуйста, проверьте формат файла или обратитесь в поддержку.'
+    )
+
+    try:
+        bot.send_message(
+            chat_id=chat_id,
+            text=message,
+            parse_mode='Markdown'
+        )
+        logger.info(
+            f'Processing error notification sent: chat_id={chat_id}'
+        )
+        return True
+
+    except Exception as e:
+        if isinstance(e, TelegramError):
+            raise  # Let decorator handle retry
+        logger.error(
+            f'Unexpected error sending processing error notification: chat_id={chat_id}, error={e}',
+            exc_info=True
+        )
+        return False
+
+
+@retry_sync(retryable_exceptions=(TelegramError,))
 def send_dlq_alert(
     task_id: str,
     error_message: str,

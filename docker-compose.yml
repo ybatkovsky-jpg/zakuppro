@@ -170,6 +170,8 @@ services:
     command: celery -A backend.celery_app worker --loglevel=info
     environment:
       CELERY_BROKER_URL: pyamqp://${RABBITMQ_USER:-guest}:${RABBITMQ_PASS:-guest}@rabbitmq:5672//
+      # Database (needed for direct DB access in tasks)
+      DATABASE_URL: postgresql+psycopg2://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@db:5432/${POSTGRES_DB:-zakuppro}
       # LLM Provider Configuration
       LLM_PRIMARY_PROVIDER: ${LLM_PRIMARY_PROVIDER:-openai}
       LLM_SECONDARY_PROVIDER: ${LLM_SECONDARY_PROVIDER:-anthropic}
@@ -192,9 +194,17 @@ services:
       QWEN_API_KEY: ${QWEN_API_KEY:-}
       QWEN_BASE_URL: ${QWEN_BASE_URL:-}
       QWEN_MODEL: ${QWEN_MODEL:-qwen-plus}
+      # Telegram (for error notifications to users)
+      TELEGRAM_BOT_TOKEN: ${TELEGRAM_BOT_TOKEN:-}
+      TELEGRAM_OWNER_CHAT_ID: ${TELEGRAM_OWNER_CHAT_ID:-}
     depends_on:
       rabbitmq:
         condition: service_healthy
+      db:
+        condition: service_healthy
+    volumes:
+      - uploads_data:/data/uploads
+      - healthcheck_data:/data/health
     stop_grace_period: 60s
     healthcheck:
       test: ["CMD-SHELL", "celery -A backend.celery_app inspect ping --timeout=2 || exit 1"]

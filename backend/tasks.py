@@ -96,7 +96,7 @@ def queue_excel_processing(self, file_path: str, chat_id: int) -> dict:
 
 
 class _ParseExcelBomTask(BaseTask):
-    """Parse Excel file and extract BOM structure using GPT-4o."""
+    """Parse Excel file and extract BOM structure using configured LLM."""
 
     task_name = 'tasks.parse_excel_bom'
 
@@ -104,7 +104,7 @@ class _ParseExcelBomTask(BaseTask):
         from backend.excel_parser import read_excel_file, clean_dataframe, dataframe_to_markdown
         from backend.ai_agent import extract_bom_structure, ExtractedBOM
 
-        logger.info("Reading Excel file")
+        logger.info("Reading Excel file: %s", file_path)
         df = read_excel_file(file_path)
         logger.info("Excel read successful, %d rows", len(df))
 
@@ -116,7 +116,7 @@ class _ParseExcelBomTask(BaseTask):
         markdown = dataframe_to_markdown(df_clean)
         logger.info("Markdown generated (%d chars)", len(markdown))
 
-        logger.info("Calling GPT-4o for BOM extraction")
+        logger.info("Calling LLM for BOM extraction")
         extracted = extract_bom_structure(markdown)
 
         validated = ExtractedBOM.model_validate(extracted)
@@ -148,16 +148,28 @@ class _ProcessBomToProjectTask(BaseTask):
     def execute(self, db, *, file_path: str, chat_id: int, **kwargs) -> dict:
         from backend.models import Project, ProjectItem
         from backend.services.project_service import create_project_from_bom
+        from backend.excel_parser import read_excel_file, clean_dataframe, dataframe_to_markdown
+        from backend.ai_agent import extract_bom_structure, ExtractedBOM
 
-        # Step 1: Parse Excel with AI (blocking call)
-        logger.info("Calling parse_excel_bom")
-        parse_result = parse_excel_bom.apply(args=(file_path, chat_id)).get()
+        # Step 1: Parse Excel and extract BOM inline (avoids subtask + result backend issues)
+        logger.info("Parsing Excel file: %s", file_path)
+        df = read_excel_file(file_path)
+        logger.info("Excel read successful, %d rows", len(df))
 
-        if parse_result.get('status') != 'success':
-            raise ValueError(f"parse_excel_bom failed: {parse_result}")
+        df_clean = clean_dataframe(df)
+        logger.info("Dataframe cleaned, %d data rows", len(df_clean))
 
-        items = parse_result.get('items', [])
-        metadata = parse_result.get('metadata', {})
+        markdown = dataframe_to_markdown(df_clean)
+        logger.info("Markdown generated (%d chars)", len(markdown))
+
+        logger.info("Calling LLM for BOM extraction")
+        extracted = extract_bom_structure(markdown)
+
+        validated = ExtractedBOM.model_validate(extracted)
+        logger.info("Validation passed — %d items extracted", len(validated.items))
+
+        items = [item.model_dump() for item in validated.items]
+        metadata = validated.metadata.model_dump() if validated.metadata else {}
 
         if not items:
             raise ValueError("No items extracted from Excel file")
@@ -195,6 +207,31 @@ class _ProcessBomToProjectTask(BaseTask):
             'reserved_count': reserved_count,
             'task_id': self.request.id,
         }
+
+    def _handle_failure(
+        self,
+        task_id: str,
+        db,
+        error: Exception,
+        **kwargs,
+    ) -> None:
+        """Override to also send error notification to the user."""
+        # Call parent implementation (DLQ persistence + owner alert)
+        super()._handle_failure(task_id, db, error, **kwargs)
+
+        # Send error notification to the user who uploaded the file
+        chat_id = kwargs.get('chat_id')
+        if chat_id:
+            try:
+                from backend.telegram_notifier import send_processing_error
+                send_processing_error(
+                    chat_id=chat_id,
+                    error_message=str(error),
+                )
+            except Exception as notify_err:
+                logger.error(
+                    "Failed to send error notification to user: %s", notify_err,
+                )
 
 
 @app.task(name='tasks.process_bom_to_project', bind=True, base=_ProcessBomToProjectTask, max_retries=2)

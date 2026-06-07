@@ -38,7 +38,19 @@ def read_excel_file(path: str | Path, engine: str = "openpyxl") -> pd.DataFrame:
         raise FileNotFoundError(f"Excel file not found: {path}")
 
     # Read without header detection - get raw data
-    df = pd.read_excel(path, engine=engine, header=None)
+    # Use data_only=True to read computed values instead of formulas
+    # (e.g., =G3*H3 becomes the actual number like 15249)
+    try:
+        df = pd.read_excel(path, engine=engine, header=None)
+    except Exception:
+        # Fallback: try reading with data_only via openpyxl directly
+        import openpyxl
+        wb = openpyxl.load_workbook(path, data_only=True)
+        ws = wb.active
+        data = []
+        for row in ws.iter_rows(values_only=True):
+            data.append(row)
+        df = pd.DataFrame(data)
 
     if df.empty:
         raise ValueError(f"Excel file is empty: {path}")

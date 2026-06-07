@@ -1,5 +1,8 @@
 """
-AI Agent module for BOM extraction from dirty invoice tables using OpenAI GPT-4o.
+AI Agent module for BOM extraction from dirty invoice tables.
+
+Uses the provider-agnostic LLMProvider (which supports DeepSeek, OpenAI,
+Anthropic, Gemini, Qwen) instead of hardcoded OpenAI GPT-4o.
 
 Handles Russian column mapping and returns structured JSON with validated output.
 Includes retry logic with exponential backoff for rate limits and timeouts.
@@ -10,11 +13,8 @@ from __future__ import annotations
 import json
 import logging
 import os
-import time
 from typing import Any, Optional
 
-from openai import OpenAI, OpenAIError
-from openai import RateLimitError, APITimeoutError, APIError, APIResponseValidationError
 from pydantic import BaseModel, Field, model_validator
 
 logger = logging.getLogger(__name__)
@@ -120,28 +120,68 @@ RULES:
 4. Skip header rows and empty rows - extract only actual data items.
 5. Preserve original SKU/name values exactly as shown in the table.
 6. If multiple tables exist, extract items from all relevant rows.
+7. IMPORTANT: Your response must be a valid JSON object with the exact structure:
+   {"items": [{"sku": "...", "name": "...", "qty": 0, "supplier": "..."}], "metadata": {"project_name": "...", "client": "..."}}
 """
 
-# Retry configuration
-MAX_RETRIES = 3
-RETRY_DELAYS = [1, 2, 4]  # seconds: exponential backoff
-TIMEOUT_SECONDS = 30
 
+def _get_llm_provider():
+    """
+    Get the LLM provider instance based on environment configuration.
 
-def _get_openai_client() -> OpenAI:
-    """Initialize OpenAI client from environment variable."""
-    api_key = os.getenv("OPENAI_API_KEY")
-    if not api_key:
-        raise ValueError(
-            "OPENAI_API_KEY environment variable is not set. "
-            "Please set it before running BOM extraction."
+    Tries providers in order of availability:
+    1. DeepSeek (if DEEPSEEK_API_KEY is set) — preferred for cost efficiency
+    2. OpenAI (if OPENAI_API_KEY is set)
+    3. Qwen (if QWEN_API_KEY and QWEN_BASE_URL are set)
+
+    Falls back to the first available provider with proper API keys.
+
+    Returns:
+        BaseLLMProvider instance
+
+    Raises:
+        ValueError: If no LLM provider is configured
+    """
+    from backend.llm_provider import (
+        create_llm_provider,
+        DeepSeekProvider,
+        QwenProvider,
+        OpenAIProvider,
+        LLMProviderType,
+    )
+
+    # Check which providers have API keys configured
+    deepseek_key = os.getenv("DEEPSEEK_API_KEY")
+    openai_key = os.getenv("OPENAI_API_KEY")
+    qwen_key = os.getenv("QWEN_API_KEY")
+    qwen_url = os.getenv("QWEN_BASE_URL")
+
+    if deepseek_key:
+        logger.info("Using DeepSeek provider for BOM extraction")
+        return create_llm_provider(
+            primary=LLMProviderType.DEEPSEEK.value,
+            secondary=LLMProviderType.OPENAI.value if openai_key else None,
         )
-    return OpenAI(api_key=api_key, timeout=TIMEOUT_SECONDS)
+    elif openai_key:
+        logger.info("Using OpenAI provider for BOM extraction")
+        return create_llm_provider(primary=LLMProviderType.OPENAI.value)
+    elif qwen_key and qwen_url:
+        logger.info("Using Qwen provider for BOM extraction")
+        return create_llm_provider(primary=LLMProviderType.QWEN.value)
+    else:
+        raise ValueError(
+            "No LLM provider configured. Set one of: "
+            "DEEPSEEK_API_KEY, OPENAI_API_KEY, or QWEN_API_KEY+QWEN_BASE_URL"
+        )
 
 
 def extract_bom_structure(table_markdown: str) -> dict[str, Any]:
     """
-    Extract structured BOM data from markdown table using GPT-4o.
+    Extract structured BOM data from markdown table using configured LLM.
+
+    Uses the provider-agnostic LLMProvider which automatically selects
+    the best available provider (DeepSeek, OpenAI, Qwen, etc.) based on
+    environment configuration.
 
     Args:
         table_markdown: Markdown table string (from excel_parser)
@@ -151,81 +191,36 @@ def extract_bom_structure(table_markdown: str) -> dict[str, Any]:
         Each item has: sku, name, qty (int), supplier (nullable)
 
     Raises:
-        ValueError: If table_markdown is empty
-        OpenAIError: For non-retryable API errors
-        RateLimitError: If all retries exhausted
-        APITimeoutError: If all retries exhausted
-
-    Example:
-        >>> table = "| Артикул | Наименование | Кол |\\n|---|---|---|\\n| ABC123 | Bolt | 10 |"
-        >>> result = extract_bom_structure(table)
-        >>> result["items"][0]
-        {'sku': 'ABC123', 'name': 'Bolt', 'qty': 10, 'supplier': None}
+        ValueError: If table_markdown is empty or no LLM provider configured
+        LLMProviderError: For API-related errors
     """
     if not table_markdown or not table_markdown.strip():
         raise ValueError("table_markdown cannot be empty")
 
-    client = _get_openai_client()
+    from backend.llm_provider import LLMProviderError
 
-    for attempt, delay in enumerate(RETRY_DELAYS):
-        try:
-            logger.info(f"Calling OpenAI GPT-4o for BOM extraction (attempt {attempt + 1}/{MAX_RETRIES})")
+    provider = _get_llm_provider()
 
-            response = client.chat.completions.create(
-                model="gpt-4o",
-                messages=[
-                    {"role": "system", "content": SYSTEM_PROMPT},
-                    {"role": "user", "content": f"Extract BOM from this table:\n\n{table_markdown}"}
-                ],
-                response_format={
-                    "type": "json_schema",
-                    "json_schema": {
-                        "name": "bom_extraction",
-                        "strict": True,
-                        "schema": BOM_JSON_SCHEMA
-                    }
-                },
-                temperature=0,  # Deterministic for structured extraction
-            )
+    prompt = f"Extract BOM from this table:\n\n{table_markdown}"
 
-            # Parse response
-            content = response.choices[0].message.content
-            if not content:
-                raise APIError("Empty response from OpenAI")
+    try:
+        result = provider.call(
+            prompt=prompt,
+            system_prompt=SYSTEM_PROMPT,
+            response_schema=BOM_JSON_SCHEMA,
+        )
+        logger.info(f"Successfully extracted {len(result.get('items', []))} BOM items")
 
-            result = json.loads(content)
-            logger.info(f"Successfully extracted {len(result.get('items', []))} BOM items")
+        # Validate with Pydantic
+        validated = ExtractedBOM(**result)
+        return validated.model_dump(mode="json")
 
-            # Validate with Pydantic
-            validated = ExtractedBOM(**result)
-            return validated.model_dump(mode="json")
-
-        except RateLimitError as e:
-            logger.warning(f"Rate limit hit (attempt {attempt + 1}): {e}")
-            if attempt >= MAX_RETRIES - 1:
-                logger.error("All retries exhausted for rate limit")
-                raise
-            time.sleep(delay)
-
-        except APITimeoutError as e:
-            logger.warning(f"API timeout (attempt {attempt + 1}): {e}")
-            if attempt >= MAX_RETRIES - 1:
-                logger.error("All retries exhausted for timeout")
-                raise
-            time.sleep(delay)
-
-        except (APIError, APIResponseValidationError) as e:
-            # Non-retryable errors - fail immediately
-            logger.error(f"Non-retryable API error: {e}")
-            raise
-
-        except Exception as e:
-            # Unexpected error - log and fail
-            logger.error(f"Unexpected error during BOM extraction: {e}")
-            raise
-
-    # Should not reach here, but handle gracefully
-    raise APIError("BOM extraction failed after all retries")
+    except LLMProviderError as e:
+        logger.error(f"LLM provider error during BOM extraction: {e}")
+        raise
+    except Exception as e:
+        logger.error(f"Unexpected error during BOM extraction: {e}")
+        raise
 
 
 def extract_bom_with_validation(table_markdown: str) -> ExtractedBOM:
@@ -237,7 +232,7 @@ def extract_bom_with_validation(table_markdown: str) -> ExtractedBOM:
 
     Raises:
         ValidationError: If JSON doesn't match expected schema
-        OpenAIError: For API-related errors
+        LLMProviderError: For API-related errors
     """
     raw_result = extract_bom_structure(table_markdown)
     return ExtractedBOM(**raw_result)

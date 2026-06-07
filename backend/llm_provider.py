@@ -29,6 +29,8 @@ class LLMProviderType(str, Enum):
     OPENAI = "openai"
     ANTHROPIC = "anthropic"
     GEMINI = "gemini"
+    DEEPSEEK = "deepseek"
+    QWEN = "qwen"
 
 
 # Environment configuration with defaults
@@ -425,10 +427,128 @@ class LLMConfigurationError(LLMProviderError):
 # Provider Factory
 # =============================================================================
 
+# =============================================================================
+# DeepSeek Provider
+# =============================================================================
+
+class DeepSeekProvider(BaseLLMProvider):
+    """DeepSeek provider implementation using OpenAI-compatible API."""
+
+    provider_name = LLMProviderType.DEEPSEEK
+
+    def _initialize_client(self) -> Any:
+        from openai import OpenAI
+        api_key = os.getenv("DEEPSEEK_API_KEY")
+        if not api_key:
+            raise ValueError("DEEPSEEK_API_KEY environment variable is not set")
+        base_url = os.getenv("DEEPSEEK_BASE_URL", "https://api.deepseek.com")
+        model = os.getenv("DEEPSEEK_MODEL", "deepseek-chat")
+        logger.info(f"Initializing DeepSeek client with model: {model}, base_url: {base_url}")
+        self.model = model
+        return OpenAI(api_key=api_key, base_url=base_url, timeout=self.timeout)
+
+    def _call_api(
+        self,
+        prompt: str,
+        system_prompt: str,
+        response_schema: dict[str, Any]
+    ) -> dict[str, Any]:
+        from openai import APIError
+
+        response = self.client.chat.completions.create(
+            model=self.model,
+            messages=[
+                {"role": "system", "content": system_prompt},
+                {"role": "user", "content": prompt}
+            ],
+            response_format={"type": "json_object"},
+            temperature=0,
+        )
+
+        content = response.choices[0].message.content
+        if not content:
+            raise APIError("Empty response from DeepSeek")
+
+        result = json.loads(content)
+        return result
+
+    def _is_rate_limit_error(self, error: Exception) -> bool:
+        from openai import RateLimitError
+        return isinstance(error, RateLimitError)
+
+    def _is_timeout_error(self, error: Exception) -> bool:
+        from openai import APITimeoutError
+        return isinstance(error, APITimeoutError)
+
+
+# =============================================================================
+# Qwen Provider
+# =============================================================================
+
+class QwenProvider(BaseLLMProvider):
+    """Qwen (Alibaba Cloud) provider implementation using OpenAI-compatible API."""
+
+    provider_name = LLMProviderType.QWEN
+
+    def _initialize_client(self) -> Any:
+        from openai import OpenAI
+        api_key = os.getenv("QWEN_API_KEY")
+        if not api_key:
+            raise ValueError("QWEN_API_KEY environment variable is not set")
+        base_url = os.getenv("QWEN_BASE_URL")
+        if not base_url:
+            raise ValueError("QWEN_BASE_URL environment variable is not set")
+        # Ensure URL has protocol prefix
+        if not base_url.startswith(("http://", "https://")):
+            base_url = f"https://{base_url}"
+        # Ensure URL ends with /v1 for OpenAI-compatible API
+        if not base_url.endswith("/v1"):
+            base_url = base_url.rstrip("/") + "/v1"
+        model = os.getenv("QWEN_MODEL", "qwen-plus")
+        logger.info(f"Initializing Qwen client with model: {model}, base_url: {base_url}")
+        self.model = model
+        return OpenAI(api_key=api_key, base_url=base_url, timeout=self.timeout)
+
+    def _call_api(
+        self,
+        prompt: str,
+        system_prompt: str,
+        response_schema: dict[str, Any]
+    ) -> dict[str, Any]:
+        from openai import APIError
+
+        response = self.client.chat.completions.create(
+            model=self.model,
+            messages=[
+                {"role": "system", "content": system_prompt},
+                {"role": "user", "content": prompt}
+            ],
+            response_format={"type": "json_object"},
+            temperature=0,
+        )
+
+        content = response.choices[0].message.content
+        if not content:
+            raise APIError("Empty response from Qwen")
+
+        result = json.loads(content)
+        return result
+
+    def _is_rate_limit_error(self, error: Exception) -> bool:
+        from openai import RateLimitError
+        return isinstance(error, RateLimitError)
+
+    def _is_timeout_error(self, error: Exception) -> bool:
+        from openai import APITimeoutError
+        return isinstance(error, APITimeoutError)
+
+
 _PROVIDER_CLASSES: dict[str, type[BaseLLMProvider]] = {
     LLMProviderType.OPENAI.value: OpenAIProvider,
     LLMProviderType.ANTHROPIC.value: AnthropicProvider,
     LLMProviderType.GEMINI.value: GeminiProvider,
+    LLMProviderType.DEEPSEEK.value: DeepSeekProvider,
+    LLMProviderType.QWEN.value: QwenProvider,
 }
 
 

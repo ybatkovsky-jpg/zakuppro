@@ -18,10 +18,12 @@ broker_url = os.getenv(
     'pyamqp://guest:guest@rabbitmq:5672//'
 )
 
-# Backend URL for result storage (uses Redis)
+# Result backend — use RPC (AMQP) for task results.
+# This avoids the need for a separate Redis container.
+# RPC backend stores results in the same RabbitMQ broker.
 result_backend = os.getenv(
     'CELERY_RESULT_BACKEND',
-    'redis://redis:6379/0'
+    'rpc://'
 )
 
 # Create Celery app instance
